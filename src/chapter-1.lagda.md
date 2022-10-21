@@ -1,4 +1,4 @@
-## Proofs
+# #Proofs
 
 What constitutes a mathematical proof? How do you know when you are done? This
 was always the hardest part in my math education. The course notes from my first
@@ -134,14 +134,15 @@ The first step is to import `PropositionalEquality` from the Agda standard
 library:
 
 ```agda
-open import Relation.Binary.PropositionalEquality
+module _ where
+  open import Relation.Binary.PropositionalEquality
 ```
 
 We can now assert, for example, that `not (not tt)`{.Agda} is equal to
 `tt`{.Agda}:
 
 ```agda
-not-not-tt-is-tt : not (not tt) ≡ tt
+  not-not-tt-is-tt : not (not tt) ≡ tt
 ```
 
 Here we use the triple equals (`_≡_`{.Agda}), not to define the equality of two
@@ -157,7 +158,7 @@ making a mathematical claim. Mathematical claims require proofs, and thus we
 must give one. Thankfully, the proof is extraordinarily easy:
 
 ```agda
-not-not-tt-is-tt = refl
+  not-not-tt-is-tt = refl
 ```
 
 The term `refl`{.Agda} is short for *reflexivity,* which is the mathematical
@@ -171,8 +172,8 @@ justified in saying this proposition holds by reflexivity.
 If you were to try to write a falsity, perhaps that:
 
 ```wrong
-not-tt-is-tt : not tt ≡ tt
-not-tt-is-tt = refl
+  not-tt-is-tt : not tt ≡ tt
+  not-tt-is-tt = refl
 ```
 
 you would instead get a big red error message from Agda, saying:
@@ -191,7 +192,7 @@ reusable by saying that for *any* `Bool`{.Agda} `x`, it is the case that `not
 (not x) ≡ x`{.Agda}. As usual, we begin with a typing judgment:
 
 ```agda
-not-not : (x : Bool) → not (not x) ≡ x
+  not-not : (x : Bool) → not (not x) ≡ x
 ```
 
 which is a very strange type indeed. Here we're saying `not-not`{.Agda} is a
@@ -199,39 +200,284 @@ function which takes a `Bool`{.Agda} argument, names it `x`, and then produces
 an equality proof for that same `x`! This is our first example of a *dependent
 type,* which we will get significantly more practice with in due time.
 
+You might expect that we can write this as simply
 
-
-```agda
-not-not tt = refl
-not-not ff = refl
+```wrong
+not-not x = refl
 ```
 
+but such a thing doesn't work. You see, we have rules for how to reduce `not
+tt`{.Agda} and `not ff`{.Agda}, but nothing of the form `not x`{.Agda}. Because
+we don't know which constructor of `Bool`{.Agda} `x`, we are unable to make
+progress in the reduction. Such terms are said to be *stuck.*
+
+The way we can unstick our computation is by pattern matching on `x`, and then
+giving a proof for the case when `x` is `tt`{.Agda}, and another for when it is
+`ff`{.Agda}. In both of these cases, pattern matching unsticks the computation
+and reveals that the proof for each is merely `refl`{.Agda}:
+
 ```agda
-demorgan : (x y : Bool) → or x y ≡ not (and (not x) (not y))
-demorgan tt tt = refl
-demorgan tt ff = refl
-demorgan ff tt = refl
-demorgan ff ff = refl
+  not-not tt = refl
+  not-not ff = refl
+```
 
-and-unit : (x : Bool) → and tt x ≡ x
-and-unit tt = refl
-and-unit ff = refl
+This style of proof --- pattern match on every input, and return `refl`{.Agda}
+for each --- is known as a *proof by exhaustion,* or, more colloquially, as a
+*case bash.*
 
-or-unit : (x : Bool) → or ff x ≡ x
-or-unit x =
-  begin
-    or ff x
-  ≡⟨ demorgan ff x ⟩
-    not (and tt (not x))
-  ≡⟨ cong not (and-unit (not x)) ⟩
-    not (not x)
-  ≡⟨ not-not x ⟩
-    x
-  ∎
-  where
-    open ≡-Reasoning
+We can case bash our way through a proof that De Morgan's laws hold. As usual,
+state the typing judgment:
+
+```agda
+  de-morgan : (x y : Bool) → or x y ≡ not (and (not x) (not y))
+```
+
+which is trivially proven by exhaustion:
+
+```agda
+  de-morgan tt tt = refl
+  de-morgan tt ff = refl
+  de-morgan ff tt = refl
+  de-morgan ff ff = refl
+```
+
+Let's introduce one more lemma before doing something a little more interesting.
+Notice that when the first argument of `and`{.Agda} is `tt`{.Agda}, `and`{.Agda}
+returns its second argument unchanged. In the lingo, we say that `tt`{.Agda} is
+a *left-unit* of `and`{.Agda}, and we can prove it again by case bash:
+
+```agda
+  and-unit : (x : Bool) → and tt x ≡ x
+  and-unit tt = refl
+  and-unit ff = refl
+```
+
+As it happens, `or`{.Agda} also has a left-unit, but this time it is
+`ff`{.Agda}. Let's prove the following:
+
+```agda
+module _ where
+  open import Relation.Binary.PropositionalEquality
+  open ≡-Reasoning
+
+  or-unit : (x : Bool) → or ff x ≡ x
+```
+
+but this time we will not show it by exhaustion, and instead do something a
+little more traditionally mathematical. We can give a chain of reasoning steps,
+using things we've already proven to make progress. We'll walk through the
+argument "by hand" before writing it in Agda to get a feel for the idea.
 
 
+Proof
+
+:   We begin with `or ff x`{.Agda} which we know, by De Morgan's laws, is equal
+    to `not (and (not ff) (not x))`{.Agda}. The definition of `not ff`{.Agda} is
+    `tt`{.Agda}, so we can replace that, resulting in `not (and tt (not x))`. We
+    know now that `tt`{.Agda} is a left unit for `and`, so this reduces to `not
+    (not x)`{.Agda}, which then by the `not-not`{.Agda} rule reduces to `x`.
+    We've now shown what we set out to, so we are done.
+
+
+Our proof in Agda will follow exactly the same steps. At each step, we write the
+expression as it currently stands, and then write a justification for why we can
+transform it into the next step. These justifications are written inside of
+`≡⟨_⟩`{.Agda} brackets. Our proof begins with the word `begin_`{.Agda}:
+
+```agda
+  or-unit x =
+    begin
+```
+
+And we write the left-hand side of the equality.
+
+```agda
+      or ff x
+```
+
+We happen to know (and have a proof!) of De Morgan's laws, so we can use those
+to rewrite the expression:
+
+```agda
+    ≡⟨ de-morgan ff x ⟩
+      not (and (not ff) (not x))
+```
+
+This is definitionally equal to the following, so we require no justification:
+
+```agda
+    ≡⟨⟩
+      not (and tt (not x))
+```
+
+We'd now like to invoke the `and-unit`{.Agda} law, but Agda requires us to
+"target" it in the expression. We need to apply it *inside* of the call to
+`not`{.Agda}, which we can do via the `cong not`{.Agda} function (discussed
+soon):
+
+```agda
+    ≡⟨ cong not (and-unit (not x)) ⟩
+      not (not x)
+```
+
+All that's left is to use `not-not`{.Agda}:
+
+```agda
+    ≡⟨ not-not x ⟩
+      x
+```
+
+The proof is now finished, which mathematicians indicate with a black square:
+
+```agda
+    ∎
+```
+
+Don't ask why. I don't know. Tradition is a weird thing.
+
+Perhaps having written `or-unit`{.Agda} has given you a taste of what
+constitutes a mathematical proof. Here we didn't do any silly
+proof-by-exhaustion stuff; `or-unit`{.Agda} is unquestionably a mathematical
+proof --- and a very explicit one at that. As our mathematical vocabulary grows
+larger (and our software library of proofs), we'll find ourselves capable of
+proving more for less. But just like in software, math is built one layer of
+abstraction at a time.
+
+
+### Equivalence Relationships
+
+```agda
+module Example where
+  open import Relation.Binary.PropositionalEquality using (_≡_)
+
+  postulate
+
+    refl  : {A : Set} {x y   : A} → x ≡ y
+    sym   : {A : Set} {x y   : A} → x ≡ y → y ≡ x
+    trans : {A : Set} {x y z : A} → x ≡ y → y ≡ z → x ≡ z
+
+module _ where
+
+  data ℕ : Set where
+    zero : ℕ
+    suc  : ℕ → ℕ
+
+  _+_ : ℕ → ℕ → ℕ
+  zero + y = y
+  suc x + y = suc (x + y)
+
+
+  open import Relation.Binary.PropositionalEquality
+
+  +-zero : (x : ℕ) → x + zero ≡ x
+  +-zero zero = refl
+  +-zero (suc x) = cong suc (+-zero x)
+
+  +-suc : (x y : ℕ) → x + suc y ≡ suc (x + y)
+  +-suc zero y = refl
+  +-suc (suc x) y = cong suc (+-suc x y)
+
+  +-assoc : (x y z : ℕ) → x + (y + z) ≡ (x + y) + z
+  +-assoc zero y z = refl
+  +-assoc (suc x) y z = cong suc (+-assoc x y z)
+
+  +-comm : (x y : ℕ) → x + y ≡ y + x
+  +-comm zero y = sym (+-zero y)
+  +-comm (suc x) y =
+    begin
+      suc (x + y)
+    ≡⟨ cong suc (+-comm x y) ⟩
+      suc (y + x)
+    ≡⟨⟩
+      suc y + x
+    ≡⟨ sym (+-suc y x) ⟩
+      y + suc x
+    ∎
+    where open ≡-Reasoning
+
+  infixr 5 _+_
+  infixr 6 _*_
+
+  _*_ : ℕ → ℕ → ℕ
+  zero * y = zero
+  suc x * y = y + (x * y)
+
+  *-zero : (x : ℕ) → x * zero ≡ zero
+  *-zero zero = refl
+  *-zero (suc x) = *-zero x
+
+  +-swizzle : (x y z : ℕ) → x + (y + z) ≡ y + (x + z)
+  +-swizzle x y z =
+    begin
+      x + y + z
+    ≡⟨ +-assoc x y z ⟩
+      (x + y) + z
+    ≡⟨ cong (_+ z) (+-comm x y) ⟩
+      (y + x) + z
+    ≡⟨ sym (+-assoc y x z) ⟩
+      y + x + z
+    ∎
+    where open ≡-Reasoning
+
+  *-suc : (x y : ℕ) → x * suc y ≡ (x * y) + x
+  *-suc zero y = refl
+  *-suc (suc x) y =
+    begin
+      suc (y + x * suc y)
+    ≡⟨ cong (\ φ → suc (y + φ)) (*-suc x y) ⟩
+      suc (y + ((x * y) + x))
+    ≡⟨ cong (\ φ → suc (y + φ)) (+-comm (x * y) x) ⟩
+      suc (y + (x + (x * y)))
+    ≡⟨ cong suc (+-swizzle y x (x * y)) ⟩
+      suc (x + (y + (x * y)))
+    ≡⟨⟩
+      suc x + (y + x * y)
+    ≡⟨ +-comm (suc x) (y + x * y) ⟩
+      (y + x * y) + suc x
+    ∎
+    where open ≡-Reasoning
+
+  +-*-distrib : (x y z : ℕ) → (x + y) * z ≡ x * z + y * z
+  +-*-distrib zero y z = refl
+  +-*-distrib (suc x) y z =
+    begin
+      z + (x + y) * z
+    ≡⟨ cong (z +_) (+-*-distrib x y z) ⟩
+      z + ((x * z) + (y * z))
+    ≡⟨ +-assoc z (x * z) (y * z) ⟩
+      (z + x * z) + y * z
+    ∎
+    where open ≡-Reasoning
+
+  *-assoc : (x y z : ℕ) → x * (y * z) ≡ (x * y) * z
+  *-assoc zero y z = refl
+  *-assoc (suc x) y z =
+    begin
+      (y * z) + (x * (y * z))
+    ≡⟨ cong ((y * z) +_) (*-assoc x y z) ⟩
+      y * z + (x * y) * z
+    ≡⟨ sym (+-*-distrib y (x * y) z) ⟩
+      (y + x * y) * z
+    ∎
+    where open ≡-Reasoning
+
+  *-comm : (x y : ℕ) → x * y ≡ y * x
+  *-comm zero y = sym (*-zero y)
+  *-comm (suc x) y =
+    begin
+      suc x * y
+    ≡⟨⟩
+      y + (x * y)
+    ≡⟨ +-comm y (x * y) ⟩
+      (x * y) + y
+    ≡⟨ cong (_+ y) (*-comm x y) ⟩
+      (y * x) + y
+    ≡⟨ sym (*-suc y x) ⟩
+      y * suc x
+    ∎
+    where open ≡-Reasoning
 
 ```
+
+
 
