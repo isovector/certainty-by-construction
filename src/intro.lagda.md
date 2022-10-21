@@ -1,6 +1,8 @@
+<!--
 ```
 module intro where
 ```
+-->
 
 This book is ostensibly about math for programmers, but one of the major
 takeaways is that the two fields are not nearly as distance as they might
@@ -113,5 +115,115 @@ booleans, written:
 $$
 \text{Bool} = \{\top, \bot\}
 $$
+
+Conventionally $\top$ is called "top" or "true" (the mnemonic is hopefully
+clear,) while $\bot$ is called "bottom" or "false." We will prefer to call the
+boolean members "top" and "bottom" and save the notions of *true* and *false*
+for the validity of mathematical statements.
+
+Notice that $\top$ and $\bot$ have no meaning: they are merely symbols. Their
+only distinguishing feature is that they are *different* symbols from one
+another. Any meaning we choose to impart upon these symbols is necessarily
+arbitrary. A *corollary* is an immediate consequence of a mathematical
+statement, and a corollary of the meaninglessness of the symbols in a set is
+that the only distinguishing feature of a set is the number of elements it
+contains.
+
+To illustrate, I could choose to rewrite $\top$ as $a$ and $\bot$ as $b$, and
+thus our earlier definition of the set of booleans becomes:
+
+$$
+\text{Bool}_2 = \{a, b\}
+$$
+
+Because the symbols have no meaning, it's a challenging thing to argue that
+$\text{Bool}$ and $\text{Bool}_2$ are different in any real sense. Nevertheless,
+it would be *false* to say that $a \in \text{Bool}$ or that $\bot \in
+\text{Bool}_2$. Just because the symbols are meaningless doesn't mean we can
+change our minds after the fact. We will later formalize this idea that sets
+with the same number of elements are equivalent.
+
+One particularly interesting set is the set of natural numbers, written
+$\mathbb{N}$. This is an infinite set, so we cannot write it directly, and
+instead need to invent new notation:
+
+$$
+\mathbb{N} = \{0, 1, \dots, 652, \dots \}
+$$
+
+stating that the natural numbers start at 0 and duly count their way up, one at
+a time, forever. Of course, this understanding is merely by convention, and in
+order to know what it means you must already understand the idea of numbers and
+the number line. Instead, we can construct the natural numbers more precisely,
+by noting that every natural number is either 0 or $1+$ some other natural
+number. Thus, 2 can be constructed via $1+1+0$, 3 via $1+1+1+0$, and so on.
+Using this formulation, we can define the natural numbers as the following
+"recursive" definition:
+
+$$
+\mathbb{N} = \{0\} \cup \{ n \in \mathbb{N} \mid 1 + n\}
+$$
+
+Here the $\cup$ means "merge these two sets" and $\{ n \in \mathbb{N} \mid 1 + n\}$
+means "construct a set by taking every element $n$ in $\mathbb{N}$, and
+replacing it with $1 + n$." If you do that infinitely many times, eventually you
+build all of the natural numbers.
+
+To tie this back to computing, we make the observation that types are sets and
+values are elements of those sets. We can build the *type* of `Bool`{.Agda}s:
+
+```
+data Bool : Set where
+  ff : Bool
+  tt : Bool
+```
+
+again, choosing arbitrary symbols for the two values of the type. Notice that
+not only do we say `Bool : Set` (that is, that `Bool` is of type `Set`) but also
+that `ff : Bool` (`ff` is of type `Bool`.) Perhaps it feels redundant to need to
+write `Bool` on each line, but this is for a good reason that we will explore
+soon.
+
+These definitions `ff : Bool` and `tt : Bool` are known as *introduction rules,*
+and between them state that the *only means* of constructing a `Bool`{.Agda} is
+via `ff`{.Agda} or `tt`{.Agda}. That means if we have some other value, `x`,
+which is known to be a `Bool`{.Agda}, it must be either `ff`{.Agda} or
+`tt`{.Agda} --- there are no other options:
+
+```
+x : Bool
+x = ff
+```
+
+Let us now construct the type of natural numbers. We will proceed in steps.
+First, the type definition itself:
+
+```
+data ℕ : Set where
+```
+
+We know that 0 is a natural number, and can state it directly:
+
+```
+  zero : ℕ
+```
+
+Our other means of building a natural number is by adding one to some other
+natural number. This operation is traditionally known as taking the *successor,*
+which we shorten to `suc`{.Agda}:
+
+```
+  suc  : ℕ → ℕ
+```
+
+While the type of `zero`{.Agda} is `ℕ`{.Agda}, the type of `suc`{.Agda} is `ℕ →
+ℕ`{.Agda}. The arrow represents a function, taking the type on the left side as
+a parameter, and returning a value of the right side as a result. Thus,
+`suc`{.Agda} is a function that takes a natural number and returns a new natural
+number. Completely analogously to writing 3 as $1+1+1+0$, we can write it as
+`suc (suc (suc zero))`{.Agda} under this formulation.
+
+If you are sufficiently patient, you can construct any natural number out of
+`zero`{.Agda} and `suc`{.Agda} --- but it might take a while!
 
 
