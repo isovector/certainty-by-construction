@@ -1,8 +1,8 @@
-<!--
-```
+\beginhidden
+```agda
 module intro where
 ```
--->
+\endhidden
 
 This book is ostensibly about math for programmers, but one of the major
 takeaways is that the two fields are not nearly as distance as they might
@@ -174,7 +174,7 @@ values are elements of those sets. This isn't strictly true, but it's *true
 enough* for now. We clean up the subtleties in @sec:models. Ignoring those
 details, we can build the *type* of `Bool`{.Agda}s:
 
-```
+```agda
 data Bool : Set where
   ff : Bool
   tt : Bool
@@ -192,7 +192,7 @@ via `ff`{.Agda} or `tt`{.Agda}. That means if we have some other value, `x`,
 which is known to be a `Bool`{.Agda}, it must be either `ff`{.Agda} or
 `tt`{.Agda} --- there are no other options:
 
-```
+```agda
 x : Bool
 x = ff
 ```
@@ -200,19 +200,20 @@ x = ff
 Let us now construct the type of natural numbers. We will proceed in steps.
 First, the type definition itself:
 
-<!--
-```
+\beginhidden
+```agda
 module nats where
 ```
--->
+\endhidden
 
-```
+
+```agda
   data ℕ : Set where
 ```
 
 We know that 0 is a natural number, and can state it directly:
 
-```
+```agda
     zero : ℕ
 ```
 
@@ -220,15 +221,15 @@ Our other means of building a natural number is by adding one to some other
 natural number. This operation is traditionally known as taking the *successor,*
 which we shorten to `suc`{.Agda}:
 
-```
+```agda
     suc  : ℕ → ℕ
 ```
 
-<!--
-```
+\beginhidden
+```agda
 open import Data.Nat using (ℕ; zero; suc)
 ```
--->
+\endhidden
 
 While the type of `zero`{.Agda} is `ℕ`{.Agda}, the type of `suc`{.Agda} is `ℕ →
 ℕ`{.Agda}. The arrow represents a function, taking the type on the left side as
@@ -252,19 +253,19 @@ Closely related to the natural numbers are the linked lists. As our first
 attempt, let's define the type of linked lists over natural numbers. A linked
 list is a `Set`{.Agda}:
 
-```
+```agda
 data ListOfℕ : Set where
 ```
 
 which is either the empty list:
 
-```
+```agda
   [] : ListOfℕ
 ```
 
 or a `ℕ`{.Agda} prepended to another list:
 
-```
+```agda
   _∷_ : ℕ → ListOfℕ → ListOfℕ
 ```
 
@@ -273,13 +274,13 @@ associates to the right[^cons-list]:
 
 [^cons-list]: That is, `1 ∷ 2 ∷ 3 ∷ []`{.Agda} is parsed as `1 ∷ (2 ∷ (3 ∷ []))`{.Agda}
 
-```
+```agda
 infixr 3 _∷_
 ```
 
 Armed with this, we can now give a linked list of the first five square numbers:
 
-```
+```agda
 first-five-squares : ListOfℕ
 first-five-squares = 1 ∷ 4 ∷ 9 ∷ 16 ∷ 25 ∷ []
 ```
@@ -292,7 +293,7 @@ to refer to the type of the contents, which we must add as a parameter to the
 type, but otherwise the definition remains identical (substituting `A` for
 `ℕ`{.Agda})
 
-```
+```agda
 data List (A : Set) : Set where
   []  : List A
   _∷_ : A → List A → List A
@@ -300,14 +301,14 @@ data List (A : Set) : Set where
 
 Just to prove it works, we can construct a linked list of `Bool`{.Agda}s:
 
-```
+```agda
 all-bools : List Bool
 all-bools = ff ∷ tt ∷ []
 ```
 
 or a list of lists of natural numbers:
 
-```
+```agda
 list-of-lists : List (List ℕ)
 list-of-lists = (3 ∷ 2 ∷ 1 ∷ [])
               ∷ (10 ∷ [])
@@ -328,7 +329,7 @@ not quite true, however, since `A` doesn't actually name a type. We must first
 bind `A` to a type, which we can do with the given syntax (explained in full
 detail later):
 
-```
+```agda
 length : {A : Set} → List A → ℕ
 ```
 
@@ -337,7 +338,7 @@ constructing a `List`{.Agda}: via `[]`{.Agda} or via `_∷_`{.Agda}. Therefore, 
 must give two *separate* algorithms for computing a list's length: one for each
 case. The empty case is easy: the length is just 0:
 
-```
+```agda
 length [] = zero
 ```
 
@@ -345,7 +346,7 @@ Otherwise, the list must have been built via `_∷_`{.Agda}, which we know is a
 single element prepended to a smaller list. Therefore, its total length must be
 one more than the length of the smaller list:
 
-```
+```agda
 length (_ ∷ as) = suc (length as)
 ```
 
@@ -360,7 +361,7 @@ your head. Unfortunately, there are other functions with the same type as
 `length`{.Agda} which compute the wrong answer --- for example,
 `wrong-length`{.Agda}:
 
-```
+```agda
 wrong-length : {A : Set} → List A → ℕ
 wrong-length _ = zero
 ```
@@ -378,14 +379,14 @@ it's a feature that almost no programming languages have.
 We begin by defining our `Vec`{.Agda} type, by this time, instead of saying it's
 type is `Set`, we now say it's type is a function `ℕ → Set`{.Agda}:
 
-```
+```agda
 data Vec (A : Set) : ℕ → Set where
 ```
 
 We are now responsible for *filling in* that natural number in each of our
 constructors. The empty vector is easy enough, it has length zero:
 
-```
+```agda
   [] : Vec A zero
 ```
 
@@ -394,13 +395,13 @@ prepends an element to a vector of size `n`, resulting in a vector of size `suc
 n`. As before, like in `length`{.Agda}, we need to bind the variable `n` before
 we use it:
 
-```
+```agda
   _∷_ : {n : ℕ}
 ```
 
 and then we can proceed with the type of `_∷_`{.Agda}:
 
-```
+```agda
       → A → Vec A n → Vec A (suc n)
 ```
 
@@ -408,7 +409,7 @@ The type of `Vec A n` thus describes a linked list made of exactly `n` elements
 of type `A`. By our rules above, anything else is a type error and simply won't
 compile if we attempt it. For example, this is OK:
 
-```
+```agda
 ok : Vec Bool 1
 ok = ff ∷ []
 ```
@@ -430,13 +431,13 @@ when checking that the expression [] has type Vec Bool 1
 We are thus guaranteed that a `Vec A n` has length `n`, which we can state by
 writing a function `vec-length`{.Agda}:
 
-```
+```agda
 vec-length : {A : Set} {n : ℕ} → Vec A n → ℕ
 ```
 
 TODO: oh crap this doens't work
 
-```
+```agda
 vec-length {n = n} _ = n
 ```
 

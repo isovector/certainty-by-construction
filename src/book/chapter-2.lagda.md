@@ -34,12 +34,12 @@ module crap where
     postulate
       ≤-refl : (a : A) → a ≤ a ≡ tt
 
-    insert-has : (x : A) → (t : BST _≤_) → has x (insert x t) ≡ tt
-    insert-has x leaf rewrite ≤-refl x = refl
-    insert-has x (node l a r) with x ≤ a | a ≤ x
-    ... | ff | ff = {! !}
-    ... | ff | tt = {! !}
-    ... | tt | z = {! !}
+    -- insert-has : (x : A) → (t : BST _≤_) → has x (insert x t) ≡ tt
+    -- insert-has x leaf rewrite ≤-refl x = refl
+    -- insert-has x (node l a r) with x ≤ a | a ≤ x
+    -- ... | ff | ff = {! !}
+    -- ... | ff | tt = {! !}
+    -- ... | tt | z = {! !}
 
 open import Relation.Binary.PropositionalEquality
 

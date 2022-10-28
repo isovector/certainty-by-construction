@@ -1,0 +1,76 @@
+RULES := pdf
+CONTENT := book
+
+PANDOC_OPTS := --citeproc \
+               --from markdown+fancy_lists \
+               -t latex+lagda \
+               --top-level-division=part
+
+PANDOC_PDF_OPTS := --from latex+raw_tex \
+                   --template format/tex/template.tex \
+                   -s \
+                   -t latex+lagda
+
+
+agda := $(wildcard src/book/*.lagda.md)
+
+ALL_LAGDA := $(patsubst src/book/%.lagda.md,build/tex/agda/%.lagda.tex,$(wildcard src/book/*.lagda.md))
+ALL_AGDA := $(patsubst src/book/%,build/tex/agda/%,$(wildcard src/book/*.agda))
+ALL_TEX := $(patsubst src/book/%.lagda.md,build/tex/book/%.tex,$(wildcard src/book/*.lagda.md))
+
+# Transpile markdown to latex
+build/tex/agda/%.lagda.tex : src/book/%.lagda.md
+	pandoc $(PANDOC_OPTS) -o $@ $^
+
+# Copy non-literate agda into build directory
+build/tex/agda/%.agda : src/book/%.agda
+	cp $^ $@
+
+# Run the agda processor
+build/tex/agda/latex/%.tex : build/tex/agda/%.lagda.tex $(ALL_LAGDA) $(ALL_AGDA)
+	(cd build/tex/agda && agda --latex $*.lagda.tex)
+
+# Copy the resulting latex document
+build/tex/book/%.tex : build/tex/agda/latex/%.tex
+	mv $^ $@
+
+# Compile all the resulting latex documents together
+build/tex/pdf.tex : $(ALL_TEX) format/tex/template.tex
+	pandoc $(PANDOC_PDF_OPTS) -o $@ $^
+
+# Copy the agda style
+build/tex/agda.sty : format/tex/agda.sty
+	cp $^ $@
+
+# Build the pdf!
+build/pdf.pdf : build/tex/pdf.tex build/tex/agda.sty
+	make -C build pdf.pdf
+
+
+
+
+# $(RULES): %: build/%.pdf
+all : build/pdf.pdf
+
+
+
+
+# targets = $(addsuffix .pdf,$(addprefix build/,$(RULES)))
+# $(targets): build/%.pdf: build/tex/%.tex
+#		make -C build $*.pdf
+
+# sources = $(addsuffix .tex,$(addprefix build/tex/,$(RULES)))
+# prose = $(addsuffix /*.lagda.md,$(addprefix src/,$(CONTENT)))
+# $(sources): build/tex/%.tex: src/metadata.md src/%.md $(prose) format/tex/template.tex
+#		pandoc $(PANDOC_OPTS) $(PANDOC_PDF_OPTS) -o $@ $(filter %.lagda.md,$^)
+#		# cp .design-tools/*.png build/.design-tools
+#		sed -i 's/\CommentTok{{-}{-} ! \([0-9]\)}/annotate{\1}/g' $@
+#		sed -i 's/\CommentTok{{-}{-} .via \([^}]\+\)}/reducevia{\1}/g' $@
+#		sed -i 's/\(\\KeywordTok{law} \\StringTok\){"\([^"]\+\)"}/\1{\\lawname{\2}}/g' $@
+
+.PHONY: clean all $(RULES)
+
+clean:
+	rm -r build/tex/agda/*
+	rm -r build/tex/book/*
+	make -C build clean

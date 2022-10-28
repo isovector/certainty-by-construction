@@ -1,3 +1,3 @@
 name: math-for-programmers
 depend: standard-library-future
-include: src/book
+include: tex/agda

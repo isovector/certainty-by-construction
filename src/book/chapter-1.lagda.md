@@ -1,4 +1,4 @@
-# #Proofs
+## Proofs
 
 What constitutes a mathematical proof? How do you know when you are done? This
 was always the hardest part in my math education. The course notes from my first
@@ -83,7 +83,7 @@ this, Agda is strongly normalizing, and will *reduce* the left-hand side to the
 right-hand side whenever possible. It is syntactically invalid to write this
 equation as
 
-```AGDA
+```wrong
 ff = not tt
 ```
 

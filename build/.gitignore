@@ -1,0 +1,3 @@
+*.*
+!.gitignore
+!math-for-programmers.agda-lib
