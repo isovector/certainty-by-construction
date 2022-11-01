@@ -186,7 +186,7 @@ bigger, arbitrarily-deep chains of the form `s (s (... (s z)))`.
 With a little creative renaming, we can see that what we have really done is
 just define the *natural numbers:*
 
-```agda
+```wrong
 data ℕ : Set where
   0 : ℕ
   1+ : ℕ → ℕ
@@ -214,5 +214,127 @@ problems we intend to tackle in this book are sufficiently hard that our only
 hope of making progress is to reason about simple structures and optimize only
 at the end. But this is getting ahead of ourselves; we will see this technique
 fleshed out in overwhelming amounts of detail in @sec:denotations.
+
+### Data Structures
+
+Closely related to the natural numbers are (rather surprisingly) a common data
+structure: linked lists. The exact nature of this relationship we will not
+explore right this instant, but the reader is encouraged to ponder it
+themselves. For our purposes, a linked list contains zero or more nodes of the
+same type. But which type? Any type you want, so long as you are consistent all
+the way through the list.
+
+We can define a linked list as follows, where we add a new `A : Set` parameter
+to the type itself, parameterizing us over the type of the contents of the list.
+
+```agda
+data List (A : Set) : Set where
+  [] : List A
+  _∷_ : A → List A → List A
+
+infixr 3 _∷_
+```
+
+We use the `[]` constructor to indicate an empty list, while the infix `_∷_`
+operation allows us to stick an `A` value in front of an existing list. Thus, we
+can make a `List` that enumerates our primary colors:
+
+```agda
+all-primary-colors : List PrimaryColor
+all-primary-colors = red ∷ green ∷ blue ∷ []
+```
+
+Now that we have a flavor of implementing a data structure, let's see what other
+data structures we can build. One particularly elegant data structure is the
+*binary tree.* There are many variants of binary trees, but ours will keep data
+only in the internal nodes.
+
+A binary tree is thus parameterized by its contents:
+
+```agda
+data BinTree (A : Set) : Set where
+```
+
+and is either an empty tree:
+
+
+```agda
+  empty : BinTree A
+```
+
+or is an internal node, with subtrees on the left and right, and a piece of data
+between them:
+
+```agda
+  branch : BinTree A → A → BinTree A → BinTree A
+```
+
+Recall that the last arrow indicates the resulting type, while every one before
+the final arrow indicates a parameter. Thus `branch` has three parameters, its
+left sub-tree `BinTree A`, data contents `A`, and a right sub-tree `BinTree A`.
+
+Notice that all we are doing here is describing the *shape* of values of a data
+structure. We are not implementing any of the interfaces or operations for
+working with these structures. As it turns out, getting the shapes right is the
+hard part; when those are in place, the operations come mostly "for free." All
+of the work has been done in ensuring the necessary invariants hold at the
+type-level.
+
+This gives us a new way of thinking about types: they are maintainers of
+invariants. For example, binary trees have the invariant that they are either
+empty, or have a left and a right sub-tree. We have constrained the creation of
+binary trees to always be exactly one of these cases --- you can either build
+one out of `empty`, or one out of `branch`. It is impossible (and meaningless)
+to construct a `BinTree` that has three immediate sub-trees.
+
+
+Exercise
+
+:   Give a type corresponding to a stack data structure. Does it remind you of
+    anything?
+
+
+Many programming languages have "the billion dollar mistake" --- a value called
+`null` that lives as an extra inhabitant inside of every type. While `null` can
+be convenient in some circumstances, primarily in cases of not-yet-initialized,
+intentionally-excluded, or no-result, making it omnipresent in all types means
+the programmer must be hyper vigilant. No matter how well-reasoned their code
+is, there's always the possibility that something which logically must exist
+could somehow be set to `null`.
+
+In the type theory, we forbid the omnipresent `null`, while acknowledging that
+it has its time and its place: the need to "extend" some other type with a
+possible extra value corresponding to nothingness. As such, we can build a
+nullable type in the same way that we built our silly `Tribool` earlier: just
+extend a different type!
+
+"Nullable" types are better known as `Maybe`, which are parameterized by the
+desired "wrapped" type:
+
+```agda
+data Maybe (A : Set) : Set where
+```
+
+We have two ways of building a `Maybe A`; either you don't have an `A` in the
+first place, in which case you have the "null" case:
+
+```agda
+  nothing : Maybe A
+```
+
+or you do in fact have an `A`, in which case you can build it via `just`:
+
+```agda
+  just : A → Maybe A
+```
+
+As a result, `nothing` isn't an inhabitant of `Bool`, but it *is* an inhabitant
+of `Maybe Bool`. Dually, `true` isn't an inhabitant of `Maybe Bool`, but it has
+an equivalent, `just true` which is. By being more rigid about what types things
+have, we have completely eliminated an entire family of bugs. In this
+formulation, there is no such thing as a forgotten null check; the check is
+either impossible to write (in the case of `Bool`), or mandated (in the case of
+`Maybe Bool` where it's impossible to be used as a `Bool` until you've proven it
+isn't `nothing`.)
 
 
