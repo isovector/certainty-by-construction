@@ -294,6 +294,14 @@ Exercise
     anything?
 
 
+Solution
+
+:   ```agda
+data Stack (A : Set) : Set where
+  empty : Stack A
+  push : A → Stack A → Stack A
+    ```
+
 Many programming languages have "the billion dollar mistake" --- a value called
 `null` that lives as an extra inhabitant inside of every type. While `null` can
 be convenient in some circumstances, primarily in cases of not-yet-initialized,
