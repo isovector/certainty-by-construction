@@ -492,5 +492,15 @@ pop-front (many x d y) with pop-front d
 
 ```
 
+The truly important takeaway here is that the values of the types should hold
+exactly the information we're interested in, nothing more, and nothing else. Of
+course, this isn't quite enough; we'd also like to optimize for ease-of-use,
+in whatever way is most convenient for our intended application. Of course, we
+can always use a (singly) linked list to represent a double-ended queue, but
+doing so would privilege one side of the queue unfairly over the other. Clever
+type design allows us to instill our desired properties into data *by
+construction* --- that is to say, that our invariants must hold, because it is
+impossible to build data which doesn't satisfy them.
+
 
 
