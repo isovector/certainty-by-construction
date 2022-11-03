@@ -345,4 +345,152 @@ either impossible to write (in the case of `Bool`), or mandated (in the case of
 `Maybe Bool` where it's impossible to be used as a `Bool` until you've proven it
 isn't `nothing`.)
 
+<!-- TODO(sandy): awkward transition -->
+
+
+There is a general rule at play here, which is that if two types "contain the
+same data" they should *have the same construction.* Another way of saying that
+is *there is only a single way of representing a given piece of data.* This rule
+is fast and loose, but it is certainly something to strive for --- especially in
+the beginning. You'll notice that if we were to draw a tree on paper, for
+example @fig:tree-ex.
+
+---yo{design=code/Dot.hs #fig:tree-ex}
+Split "Mika"
+  (Split "Foggy"
+    (leaf "Brandon")
+    (leaf "Gem")
+  )
+  (Split "Sierra"
+    (leaf "Pokey")
+    (leaf "Vavilov")
+  )
+---
+
+we have exactly one way of representing it:
+
+```agda
+open import Data.String using (String)
+
+singleton : {A : Set} → A → BinTree A
+singleton x = branch empty x empty
+
+tree-ex : BinTree String
+tree-ex =
+  branch
+    (branch
+      (singleton "Brandon")
+      "Foggy"
+      (singleton "Gem"))
+    "Mika"
+    (branch
+      (singleton "Pokey")
+      "Sierra"
+      (singleton "Vavilov"))
+```
+
+With this constraint in mind, it's worth taking some time to describe common
+data structures which *do not* correspond to types as we've seen thus far. For
+example, consider the double-ended queue (the "D-E-queue"), which we could
+potentially encode thusly:
+
+```agda
+module Stupid where
+  data Dequeue (A : Set) : Set where
+    empty : Dequeue A
+    at-front : A → Dequeue A → Dequeue A
+    at-back  : Dequeue A → A → Dequeue A
+```
+
+which seems perfectly reasonable, except that it captures more than just the
+contents of the dequeue; it also captures the way in which the dequeue was
+*built*. To illustrate, consider the dequeue `[1, 2]` --- it could have built in
+any of four ways, and therefore there are four values of type `Dequeue N` which
+correspond:
+
+* `at-front 1 (at-front 2 empty)`
+* `at-front 1 (at-back 2 empty)`
+* `at-back 2 (at-back 1 empty)`
+* `at-back 2 (at-front 1 empty)`
+
+Perhaps this information might be useful for tracking some sort of
+user-facing, undoable operation, but it is superfluous in the case of *what are
+the contents of this dequeue.* Data structures are interested only in the data
+they store, and thus any other data they track is necessarily "junk."
+
+A better means of implementing a double-ended queue is instead to ask ourselves
+"how can we ensure there is no junk in our data structure?" One way is to lay
+out the possible cases, ignoring the usual interface. In this case, a dequeue is
+either empty:
+
+```agda
+data Dequeue (A : Set) : Set where
+  empty : Dequeue A
+```
+
+or it contains a single element:
+
+```agda
+  one : A → Dequeue A
+```
+
+or it contains many elements, with one the front, some in the middle, and one on
+the back:
+
+```agda
+  many : A → Dequeue A → A → Dequeue A
+```
+
+The purpose of the `many` constructor is to ensure the last element is equally
+"accessable" as the first element. Contrast this to the linked list, in which we
+are required to traverse the entire "spine" of the list in order to get to the
+last element --- an operation which necessarily takes $O(n)$ time. Instead, in
+`Dequeue`, we have equal opportunity to look at either the front or the back.
+
+You can imagine what a `push-front` operation on our `Dequeue` type would look
+like. If the dequeue were already `empty`, it would now contain `one` element:
+
+```agda
+push-front : {A : Set} → A → Dequeue A → Dequeue A
+push-front a empty = one a
+```
+
+Otherwise, if it already had `one` element, it now has `many` with an `empty`
+middle:
+
+```agda
+push-front a (one x) = many a empty x
+```
+
+And finally, if it were already `many`, we can put our new value at the front
+and recursively `push-front` the old front value down the middle:
+
+```agda
+push-front a (many x d y) = many a (push-front x d) y
+```
+
+Compare this to a more traditional, procedural data structure for a dequeue. If
+you're thinking about data as *memory,* a dequeue is usually implemented as a
+doubly-linked list, where each node has a pointer to its next element and its
+previous one. The dequeue itself has pointers to the front and back, and
+enqueueing a new element at the front requires creating a new node on the heap,
+setting its next pointer to the front of the dequeue, and then setting the front
+of the dequeue to the new node! Notice that none of this work is relevant to the
+problem; it's merely shunting memory around in a way that happens to work.
+Contrasted against our `push-front` function, in which we can see exactly how
+the data structure changes, on a case-by-case basis. Neat, and simple.
+
+```agda
+open import Data.Product
+
+pop-front : {A : Set} → Dequeue A → Maybe (A × Dequeue A)
+pop-front empty = nothing
+pop-front (one x) = just (x , empty)
+pop-front (many x d y) with pop-front d
+... | nothing = just (x , one y)
+... | just (x' , d') = just (x , many x' d' y)
+
+```
+
+
 
