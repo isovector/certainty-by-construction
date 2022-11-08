@@ -763,7 +763,83 @@ definitions; split the definition into cases, and then use "obvious"
 mathematical facts to give the answers. Then, go back, and prove the
 less-obvious facts.
 
-Following
+Following the process
+
+```agda
+  *-zero : (n : ℕ) → n * zero ≡ zero
+  *-zero zero = refl
+  *-zero (suc n) = *-zero n
+
+  *-distrib-+r : (m n k : ℕ) → (m + n) * k ≡ m * k + n * k
+  *-distrib-+r zero n k = refl
+  *-distrib-+r (suc m) n k =
+    begin
+      (suc m + n) * k
+    ≡⟨⟩
+      k + (m + n) * k
+    ≡⟨ cong (k +_) (*-distrib-+r m n k) ⟩
+      k + (m * k + n * k)
+    ≡⟨ +-assoc k (m * k) (n * k) ⟩
+      k + m * k + n * k
+    ≡⟨⟩
+      suc m * k + n * k
+    ∎
+    where open ≡-Reasoning
+
+  *-suc : (m n : ℕ) → m * suc n ≡ m + m * n
+  *-suc zero n = refl
+  *-suc (suc m) n =
+    begin
+      suc m * suc n
+    ≡⟨⟩
+      suc (n + m * suc n)
+    ≡⟨ cong (\ φ → suc (n + φ)) (*-suc m n) ⟩
+      suc (n + (m + m * n))
+    ≡⟨ cong suc (+-assoc n m (m * n)) ⟩
+      suc (n + m + m * n)
+    ≡⟨ sym (cong suc (+-assoc n m (m * n))) ⟩
+      suc (n + (m + m * n))
+    ≡⟨ ? ⟩
+      suc (m + (n + m * n))
+    ≡⟨⟩
+      suc (m + suc m * n)
+    ≡⟨⟩
+      suc m + suc m * n
+    ∎
+    where open ≡-Reasoning
+
+  *-assoc : (m n k : ℕ) → m * (n * k) ≡ (m * n) * k
+  *-assoc zero n k = refl
+  *-assoc (suc m) n k =
+    begin
+      suc m * (n * k)
+    ≡⟨⟩
+      n * k + m * (n * k)
+    ≡⟨ cong (\ φ → n * k + φ) (*-assoc m n k) ⟩
+      n * k + (m * n) * k
+    ≡⟨⟩
+      (n * k) + (m * n) * k
+    ≡⟨ sym (*-distrib-+r n (m * n) k) ⟩
+      (n + m * n) * k
+    ≡⟨⟩
+      (suc m * n) * k
+    ∎
+    where open ≡-Reasoning
+
+  *-comm : (m n : ℕ) → m * n ≡ n * m
+  *-comm zero n = sym (*-zero n)
+  *-comm (suc m) n =
+    begin
+      suc m * n
+    ≡⟨⟩
+      n + m * n
+    ≡⟨ cong (n +_) (*-comm m n) ⟩
+      n + n * m
+    ≡⟨ sym (*-suc n m) ⟩
+      n * suc m
+    ∎
+    where open ≡-Reasoning
+```
 
 
 
