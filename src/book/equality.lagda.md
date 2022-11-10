@@ -751,10 +751,10 @@ operation.
 Just like we can view addition as repeated counting, we can view multiplication
 as repeated addition:
 
-```example
+```shambple
 _*_ : ℕ → ℕ → ℕ
-zero * n = zero
-suc m * n = n + m * n
+_*_ zero n = zero
+_*_ (suc m) n = n + m * n
 ```
 
 This last equation is the familiar property that $(1 + m) \times n = n + m
