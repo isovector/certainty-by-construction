@@ -2,16 +2,17 @@
 
 ```agda
 open import Relation.Binary using (Setoid)
-open import Agda.Primitive using (Level; lsuc; _⊔_)
+open import Agda.Primitive renaming (_⊔_ to _⊔l_) using (Level; lsuc)
 
 module structures where
 
 postulate
   todo : {A : Set} → A
 
+open import Data.Maybe
 open import Data.Bool
-open import Data.List hiding (merge)
-open import Data.Nat hiding (_⊔_)
+open import Data.List hiding (merge; last)
+open import Data.Nat
 open import Data.Unit
 
 module monoid {c l : Level} (eq : Setoid c l)  where
@@ -34,7 +35,7 @@ corresponding to the "set." The phrase "equipped with" means "these things
 always go together," which is to say, we should bundle them up in a record:
 
 ```agda
-  record Monoid : Set (lsuc (c ⊔ l)) where
+  record Monoid : Set (lsuc (c ⊔l l)) where
     constructor monoid
     infixr 5 _∙_
 ```
@@ -429,11 +430,11 @@ Because we'll need the two monoids in scope first, we can parameterize our
 module over them:
 
 ```agda
-open monoid
-module homs {c l : Level}
+module monoid-hom {c l : Level}
             {s1 s2 : Setoid c l}
-            (m1 : Monoid s1)
-            (m2 : Monoid s2) where
+            (m1 : monoid.Monoid s1)
+            (m2 : monoid.Monoid s2) where
+  open monoid
 ```
 
 Our next step is to get the types `A` and `B` into scope by renaming the
@@ -458,7 +459,7 @@ type. We still have to tie the homomorphic function into the mix, so we can
 parameterize the record by the function in question:
 
 ```agda
-  record IsMonoidHom (f : A → B) : Set (lsuc (c ⊔ l)) where
+  record IsMonoidHom (f : A → B) : Set (lsuc (c ⊔l l)) where
 ```
 
 And then we can write our desired laws down verbatim:
@@ -469,6 +470,17 @@ And then we can write our desired laws down verbatim:
       preserves-∙ : (a b : A) → f (a ∙₁ b) ≈₂ f a ∙₂ f b
 ```
 
+In addition, we require one final, additional law that isn't written down in the
+definition of the monoid homomorphism. It's that `f` needs to preserve all
+equalities; that is to say, if `a` is equal to `b` then `f a` is equal to `f b`.
+This seems like it should always be true, but some sets admit very queer notions
+of equality, and this law does not hold by default. Therefore, we must also
+introduce the `f-cong` law:
+
+```agda
+      f-cong : (a b : A) → a ≈₁ b → f a ≈₂ f b
+```
+
 Now that we have the machinery in place to prove we're not fooling ourselves,
 let's begin hunting for a monoid homomorphism. The `⊤` type seems too simple, so
 let's instead think about functions between booleans. We know two monoid
@@ -477,7 +489,7 @@ monoids.
 
 ```agda
 module _ where
-  open homs true-and-monoid false-or-monoid
+  open monoid-hom true-and-monoid false-or-monoid
   open IsMonoidHom
 ```
 
@@ -496,6 +508,7 @@ The proofs, as it happen, are trivial:
   preserves-ε not-hom₁ = refl
   preserves-∙ not-hom₁ false b = refl
   preserves-∙ not-hom₁ true b  = refl
+  f-cong not-hom₁ a .a refl = refl
 ```
 
 which works like a charm.
@@ -514,6 +527,7 @@ Solution
   preserves-ε dumb = refl
   preserves-∙ dumb false b = refl
   preserves-∙ dumb true b  = refl
+  f-cong dumb a .a refl = refl
     ```
 
 Returning to `not-hom₁`, we have shown (via `preserves-∙`):
@@ -536,7 +550,7 @@ start a new module and instantiate `IsMonoidHom` in the desired direction:
 
 ```agda
 module _ where
-  open homs false-or-monoid true-and-monoid
+  open monoid-hom false-or-monoid true-and-monoid
   open IsMonoidHom
 ```
 
@@ -553,6 +567,7 @@ Solution
   preserves-ε not-hom₂ = refl
   preserves-∙ not-hom₂ false b = refl
   preserves-∙ not-hom₂ true b  = refl
+  f-cong not-hom₂ a .a refl = refl
     ```
 
 Perhaps you're beginning to see, if not yet the use, at least the importance of
@@ -583,7 +598,7 @@ like one between `[]-++-monoid` and `0-+-monoid`:
 
 ```agda
 module _ {A : Set} where
-  open homs ([]-++-monoid {A}) 0-+-monoid
+  open monoid-hom ([]-++-monoid {A}) 0-+-monoid
   open IsMonoidHom
 ```
 
@@ -596,6 +611,7 @@ monoids. All we have left to do is to show it:
   preserves-∙ length-hom [] b = refl
   preserves-∙ length-hom (x ∷ a) b =
     cong suc (preserves-∙ length-hom a b)
+  f-cong length-hom a .a refl = refl
 ```
 
 Monoid homomorphisms allow us to reify this idea that there are two ways to get
@@ -617,6 +633,7 @@ For example, consider some function-like data structure, maybe we'll call it
 
 ```agda
 module Example where
+  open monoid
   postulate
     Map Key Val : Set
 
@@ -636,18 +653,12 @@ you'd expect" on the implementations of `get` and `set` by showing the following
 two monoid homomorphisms:
 
 ```agda
-  open homs
+  open monoid-hom
 
   postulate
     get-hom
       : (k : Key)
       → IsMonoidHom map-monoid val-monoid (get k)
-
-    -- TODO(sandy) this can't be a monoid hom, it should only be a semi hom
-    set-hom
-      : (m : Map)
-      → (k : Key)
-      → IsMonoidHom val-monoid map-monoid (set m k)
 ```
 
 You'll notice here that we haven't instantiated the `homs` module with any
@@ -676,13 +687,190 @@ forall k m1 m2.
 
 which states that getting a key out of a merged map is the same as merging the
 values obtained by getting that key in either map. At a higher level, we're
-saying "merging really does do merging!"
+saying "merging really does do merging --- and doesn't do anything else!"
+
+A `get`-based monoid homomorphism seems like it correctly classifies the
+behavior we'd like. Is the same true for `set-hom`?
+
+```agda
+    set-hom
+      : (m : Map)
+      → (k : Key)
+      → IsMonoidHom val-monoid map-monoid (set m k)
+```
+
+What laws fall out of this? The first is that we have a distribution of `_∙_`
+over `set`:
+
+```math
+forall m k v1 v2.
+  set m k (v1 ∙₁ v2) = set m k v1 ∙₂ set m k v2
+```
+
+All told, this law looks good. Merging two maps with the same key is the same as
+just merging the values at those keys. Note that this is probably surprising
+behavior if you haven't seen it before. Most data structures will simply
+*replace* the value at a key with another if it overlaps. Perhaps that's an
+indication that this is the wrong law? I would argue no; we can get the
+"replacement"-style implementation by choosing the "last value wins" monoid:
+
+```agda
+module _ {A : Set} where
+  open monoid (setoid (Maybe A))
+  open Monoid
+
+  last : Maybe A → Maybe A → Maybe A
+  last a (just x) = just x
+  last a nothing = a
+
+  last-monoid : Monoid
+  _∙_ last-monoid = last
+  ε last-monoid = nothing
+  ∙-assoc last-monoid a b (just x) = refl
+  ∙-assoc last-monoid a b nothing = refl
+  ε-unitˡ last-monoid (just x) = refl
+  ε-unitˡ last-monoid nothing = refl
+  ε-unitʳ last-monoid a = refl
+```
+
+The `last-wins` gives us the traditional behavior of data structures: that
+writes are destructive to the value previously there. We need to do a little
+lifting however, since for an arbitrary type `A` we don't have a suitable unit
+value. So instead of using `A` directly we use `Maybe A`, which extends `A` with
+`nothing`, and we use this value as our unit.
+
+By parameterizing our data container over its monoidal structure, we can pull
+extra behavior out of it. Users now have more options as to how it should
+behave, and this customizability comes without any cost; in fact, it gives us a
+more elegant specification of how the container should behave.
+
+Unfortunately, as we push through with this monoid homomorphism for `set`, we
+realize that this might not be the best choice. Our next required law indicates
+why:
+
+```math
+forall m k.
+  set m k ε₁ = ε₂
+```
+
+This states that inserting an empty value into the map should *delete* the rest
+of the contents of the map! Egads! Surely this is a step too far, and suggests
+that we did not in fact want a *monoid* homomorphism for `set`. But since the
+`_∙_` law is desirable, is there something weaker we can require of `set`?
 
 
+### Semigroups
+
+As a matter of fact, there is. We can weaken the `Monoid` structure by dropping
+the `ε` element and relevant laws. We're left with just the associative binary
+operation, in an algebraic structure known as a *semigroup:*
+
+```agda
+module semigroup {c l : Level} (eq : Setoid c l)  where
+  open Setoid eq renaming (_≈_ to _≈_; Carrier to A)
+  record Semigroup : Set (lsuc (c ⊔l l)) where
+    constructor semigroup
+    infixr 5 _∙_
+    field
+      _∙_ : A → A → A
+      ∙-assoc : (a b c : A) → (a ∙ b) ∙ c ≈ a ∙ (b ∙ c)
+```
+
+Exercise
+
+:   Show that every monoid is a semigroup.
 
 
+Solution
+
+:   ```agda
+module _ {c l : Level} (eq : Setoid c l) where
+  open monoid eq
+  open semigroup eq
+  open Semigroup
+  open Monoid
+
+  monoid→semigroup : Monoid → Semigroup
+  _∙_ (monoid→semigroup x) = x ._∙_
+  ∙-assoc (monoid→semigroup x) = x .∙-assoc
+    ```
 
 
+Because semigroups are weaker notions that monoids, there are strictly more
+semigroups than monoids. For example, while there's a `max` monoid over
+naturals:
+
+```agda
+module _ where
+  open monoid (setoid ℕ)
+  open Monoid
+  open import Data.Nat.Properties
+
+  max-monoid : Monoid
+  _∙_ max-monoid = _⊔_
+  ε max-monoid = 0
+  ∙-assoc max-monoid = ⊔-assoc
+  ε-unitˡ max-monoid = ⊔-identityˡ
+  ε-unitʳ max-monoid = ⊔-identityʳ
+```
+
+which uses 0 as the identity element, since it's the smallest possible natural
+number, we don't have a corresponding `min` monoid --- because we don't have an
+identity element! In this case, we have two options: extend the naturals with a
+"top" element `+∞` that is guaranteed to be bigger than every other number, or
+settle for building a semigroup. We will do the latter here.
+
+```agda
+module _ where
+  open semigroup (setoid ℕ)
+  open Semigroup
+  open import Data.Nat.Properties
+
+  min-semigroup : Semigroup
+  _∙_ min-semigroup = _⊓_
+  ∙-assoc min-semigroup = ⊓-assoc
+```
+
+We can follow the same pattern as when we defined monoid homomorphisms to build
+semigroup homomorphisms:
+
+```agda
+module semigroup-hom {c l : Level}
+            {s1 s2 : Setoid c l}
+            (m1 : semigroup.Semigroup s1)
+            (m2 : semigroup.Semigroup s2) where
+  open semigroup
+  open Setoid s1 renaming (Carrier to A; _≈_ to _≈₁_)
+  open Setoid s2 renaming (Carrier to B; _≈_ to _≈₂_)
+  open Semigroup m1 renaming (_∙_ to _∙₁_)
+  open Semigroup m2 renaming (_∙_ to _∙₂_)
+
+  record IsSemigroupHom (f : A → B) : Set (lsuc (c ⊔l l)) where
+    field
+      preserves-∙ : (a b : A) → f (a ∙₁ b) ≈₂ f a ∙₂ f b
+      f-cong : (a b : A) → a ≈₁ b → f a ≈₂ f b
+```
+
+Exercise
+
+:   Show that every monoid homomorphism gives rise to a semigroup homomorphism.
 
 
+Solution
+
+:   ```agda
+module _ {c l : Level} {s1 s2 : Setoid c l}
+    (m1 : monoid.Monoid s1)
+    (m2 : monoid.Monoid s2) where
+  open Setoid s1 renaming (Carrier to A)
+  open Setoid s2 renaming (Carrier to B)
+  open monoid-hom m1 m2
+  open semigroup-hom (monoid→semigroup s1 m1) (monoid→semigroup s2 m2)
+  open IsMonoidHom
+  open IsSemigroupHom
+
+  monoid-hom→semigroup-hom : {f : A → B} → IsMonoidHom f → IsSemigroupHom f
+  preserves-∙ (monoid-hom→semigroup-hom x) = x .preserves-∙
+  f-cong (monoid-hom→semigroup-hom x) = x .f-cong
+    ```
 
