@@ -32,27 +32,19 @@ The definition almost rolls off the tongue:
 module _ where
   open import Relation.Binary.PropositionalEquality
 
-  data Modular (n a b : ℕ) : Set where
+  infix 4 _≈_⟨mod_⟩
+  data _≈_⟨mod_⟩ (a b n : ℕ) : Set where
     ≈-mod
       : (x y : ℕ)
       → a + x * n ≡ b + y * n  -- ! 1
-      → Modular n a b
+      → a ≈ b ⟨mod n ⟩
 ```
 
 Notice that we use propositional equality at [1](Ann) to assert that we're
 witnessing the fact that these two expressions *really are the same!* But that's
 merely an implementation detail.
 
-To smooth things out, we can use a mixfix operator to get back to the same
-syntax that mathematicians use:
-
-```agda
-  infix 4 _≈_⟨mod_⟩
-  _≈_⟨mod_⟩ : ℕ → ℕ → ℕ → Set
-  _≈_⟨mod_⟩ a b n = Modular n a b
-```
-
-and we can now show that our clock example works as expected:
+We can now show that our clock example works as expected:
 
 ```agda
   _ : 11 + 2 ≈ 1 ⟨mod 12 ⟩
@@ -184,7 +176,7 @@ We are now satisfied that `_≈_⟨mod_⟩` is indeed an equivalence relationshi
 All that's left is to bundle everything together into an `IsEquivalence`:
 
 ```agda
-  mod-equiv : IsEquivalence (Modular n)
+  mod-equiv : IsEquivalence (_≈_⟨mod n ⟩)
   IsEquivalence.refl mod-equiv = mod-refl
   IsEquivalence.sym mod-equiv = mod-sym
   IsEquivalence.trans mod-equiv = mod-trans
@@ -308,7 +300,7 @@ rewarded by the Agda standard library with setoid reasoning: syntax for doing
     open import Relation.Binary
     mod-setoid : (n : ℕ) → Setoid _ _
     Setoid.Carrier (mod-setoid n) = ℕ
-    Setoid._≈_ (mod-setoid n) = Modular n
+    Setoid._≈_ (mod-setoid n) = _≈_⟨mod n ⟩
     IsEquivalence.refl (Setoid.isEquivalence (mod-setoid n)) = mod-refl
     IsEquivalence.sym (Setoid.isEquivalence (mod-setoid n)) = mod-sym
     IsEquivalence.trans (Setoid.isEquivalence (mod-setoid n)) = mod-trans
@@ -334,7 +326,7 @@ and it's trivial to show now that `_≈_⟨mod_⟩` forms a setoid:
 ```agda
 mod-setoid : ℕ → Setoid
 Carrier (mod-setoid n) = ℕ
-_≈_ (mod-setoid n) = Modular n
+_≈_ (mod-setoid n) = _≈_⟨mod n ⟩
 isEquivalence (mod-setoid n) = mod-equiv
 ```
 
