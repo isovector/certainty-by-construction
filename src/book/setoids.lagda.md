@@ -77,12 +77,11 @@ Let's now show that `_≈_⟨mod_⟩` forms an equivalence relation. We begin by
 binding a few helper variables:
 
 ```agda
-module _ where
+module mod-base (n : ℕ) where
   open import Relation.Binary.PropositionalEquality
 
   private
     variable
-      n : ℕ
       a b c d : ℕ
 ```
 
@@ -138,39 +137,48 @@ This gives us our desired multiples of $n$ for implementing transitivity:
 
 ```agda
   mod-trans : a ≈ b ⟨mod n ⟩ → b ≈ c ⟨mod n ⟩ → a ≈ c ⟨mod n ⟩
-  mod-trans {a} {b} {n} {c} (≈-mod x y pxy)  (≈-mod z w pzw) =
-    ≈-mod (x + z) (w + y)
+  mod-trans {a} {b} {c} (≈-mod x y pxy)  (≈-mod z w pzw) =
+    ≈-mod (x + z) (w + y) ( begin
 ```
 
 And all that's left is to carry out the proof we performed above. This is not
-hard, but requires a good amount of symbolic manipulation. It's left as an
-exercise to the reader.
+hard, but requires a good amount of symbolic manipulation:
 
+```agda
+      a + (x + z) * n      ≡⟨ lemma₁ ⟩
+      (a + x * n) + z * n  ≡⟨ cong (_+ z * n) pxy ⟩
+      (b + y * n) + z * n  ≡⟨ lemma₂ ⟩
+      (b + z * n) + y * n  ≡⟨ cong (_+ y * n) pzw ⟩
+      c + w * n + y * n    ≡⟨ lemma₃ ⟩
+      c + (w + y) * n      ∎
+    )
+```
 
-Exercise
+The lemmas here are an annoying amount of work simply to move the equation into
+the right shape such that we can apply `pxy` and `pzw`. Rather than write them
+by hand, we can turn to our trusty friend, the ring solver:
 
-:   Finish the proof that `mod-trans` requires to show the two terms are equal.
+```agda
+    where
+      open ≡-Reasoning
+      open import Data.Nat.Solver
+      open +-*-Solver
 
+      lemma₁ = solve 4
+        (λ a n x z → a :+ (x :+ z) :* n
+                  := (a :+ x :* n) :+ z :* n)
+        refl a n x z
 
-Solution
+      lemma₂ = solve 4
+        (λ b n y z → (b :+ y :* n) :+ z :* n
+                  := (b :+ z :* n) :+ y :* n)
+        refl b n y z
 
-:   ```agda
-      (
-      begin
-        a + (x + z) * n      ≡⟨ cong (a +_) (*-distribʳ-+ n x z) ⟩
-        a + (x * n + z * n)  ≡⟨ sym (+-assoc a (x * n) (z * n)) ⟩
-        (a + x * n) + z * n  ≡⟨ cong (_+ z * n) pxy ⟩
-        (b + y * n) + z * n  ≡⟨ +-assoc b (y * n) (z * n) ⟩
-        b + (y * n + z * n)  ≡⟨ cong (b +_) (+-comm (y * n) (z * n)) ⟩
-        b + (z * n + y * n)  ≡⟨ sym (+-assoc b (z * n) (y * n)) ⟩
-        (b + z * n) + y * n  ≡⟨ cong (_+ y * n) pzw ⟩
-        c + w * n + y * n    ≡⟨ +-assoc c (w * n) (y * n) ⟩
-        c + (w * n + y * n)  ≡⟨ sym (cong (c +_) (*-distribʳ-+ n w y)) ⟩
-        c + (w + y) * n      ∎
-      )
-    where open ≡-Reasoning
-    ```
-
+      lemma₃ = solve 4
+        (λ c n w y → c :+ w :* n :+ y :* n
+                  := c :+ (w :+ y) :* n)
+        refl c n w y
+```
 
 We are now satisfied that `_≈_⟨mod_⟩` is indeed an equivalence relationship.
 All that's left is to bundle everything together into an `IsEquivalence`:
@@ -182,108 +190,16 @@ All that's left is to bundle everything together into an `IsEquivalence`:
   IsEquivalence.trans mod-equiv = mod-trans
 ```
 
-Before we go further discussing equality, let's also come up with a few theorems
-about modular arithmetic. One nice one is that we can perform `_≡_`-equality on
-both sides of the `_≈_⟨mod_⟩` equality, as shown by `mod-subst`:
+As you've seen, it's quite a lot of work to prove anything about `_≈_⟨mod_⟩`;
+whenever we'd like to do anything, we need to construct two numbers `x` and `y`,
+and then prove the underlying equality holds. While this is OK for trivial
+propositions, things like `mod-trans` are nearly overwhelming. You can imagine
+how much effort it would be to prove anything of actual *substance* in this
+domain. Mathematicians hate number crunching as much, if not more, than anyone
+else, so surely they are not doing all this work by hand, are they? How can we
+simplify our workload?
 
-```agda
-  mod-subst
-    : a ≡ c
-    → b ≡ d
-    → a ≈ b ⟨mod n ⟩
-    → c ≈ d ⟨mod n ⟩
-  mod-subst refl refl x = x
-```
-
-Another thing that's trivial to show is the fact that $0 ≈ n (\text{mod} n)$:
-
-```agda
-  0≈n : {n : ℕ} → 0 ≈ n ⟨mod n ⟩
-  0≈n = ≈-mod 1 0 refl
-```
-
-It's also nice to show that addition is cancellative inside of `_≈_⟨mod_⟩`,
-for which we can use the corresponding lemma about natural numbers,
-`+-cancelˡ-≡`:
-
-```agda
-  mod-+-cancelˡ
-      : (c a b : ℕ)
-      → c + a ≈ c + b ⟨mod n ⟩
-      → a ≈ b ⟨mod n ⟩
-  mod-+-cancelˡ {n} c a b (≈-mod x y p) =
-    ≈-mod x y ((+-cancelˡ-≡ c)
-      (
-      begin
-        c + (a + x * n)  ≡⟨ sym (+-assoc c a (x * n)) ⟩
-        (c + a) + x * n  ≡⟨ p ⟩
-        c + b + y * n    ≡⟨ +-assoc c b (y * n) ⟩
-        c + (b + y * n)  ∎
-      ))
-    where open ≡-Reasoning
-```
-
-A helpful lemma is that we can move terms between pairs of additions:
-
-```agda
-  swizzle
-      : (a b c d : ℕ)
-      → (a + b) + (c + d) ≡ (a + c) + (b + d)
-  swizzle a b c d =
-    begin
-      (a + b) + (c + d)  ≡⟨ +-assoc a b (c + d) ⟩
-      a + (b + (c + d))  ≡⟨ sym (cong (a +_) (+-assoc b c d)) ⟩
-      a + ((b + c) + d)  ≡⟨ cong (\ φ → a + (φ + d)) (+-comm b c) ⟩
-      a + ((c + b) + d)  ≡⟨ cong (a +_) (+-assoc c b d) ⟩
-      a + (c + (b + d))  ≡⟨ sym (+-assoc a c (b + d)) ⟩
-      (a + c) + (b + d)  ∎
-    where open ≡-Reasoning
-```
-
-And finally, as our main theorem of this section, we can show that `_≈_⟨mod_⟩`
-preserves addition:
-
-```agda
-  +-homo-mod
-      : a ≈ b ⟨mod n ⟩
-      → c ≈ d ⟨mod n ⟩
-      → a + c ≈ b + d ⟨mod n ⟩
-  +-homo-mod {a} {b} {n} {c} {d} (≈-mod x y pxy) (≈-mod z w pzw) =
-    ≈-mod (x + z) (y + w)
-      (
-      begin
-        (a + c) + (x + z) * n
-      ≡⟨ cong ((a + c) +_) (*-distribʳ-+ n x z) ⟩
-        (a + c) + (x * n + z * n)
-      ≡⟨ swizzle a c (x * n) (z * n) ⟩
-        (a + x * n) + (c + z * n)
-      ≡⟨ cong₂ _+_ pxy pzw ⟩
-        (b + y * n) + (d + w * n)
-      ≡⟨ swizzle b (y * n) d (w * n) ⟩
-        (b + d) + (y * n + w * n)
-      ≡⟨ sym (cong ((b + d) +_) (*-distribʳ-+ n y w)) ⟩
-        b + d + (y + w) * n
-      ∎
-      )
-    where open ≡-Reasoning
-```
-
-
-Exercise
-
-:   Define `mod-trans` in terms of `mod-+-cancelˡ`, `mod-subst` and
-    `+-homo-mod`.
-
-
-Solution
-
-:   ```agda
-  mod-trans2 : a ≈ b ⟨mod n ⟩ → b ≈ c ⟨mod n ⟩ → a ≈ c ⟨mod n ⟩
-  mod-trans2 {a} {b} {c = c} a=b b=c =
-    mod-+-cancelˡ b a c
-      (mod-subst (+-comm a b) refl
-        (+-homo-mod a=b b=c))
-    ```
+The answer, is setoids.
 
 
 ### Setoids
@@ -293,23 +209,27 @@ talking about equality, we are now ready to tackle *setoids* in their full
 glory. A setoid is a bundled binary relation alongside a proof that it's an
 equivalence relationship. By putting all of these things together, we're
 rewarded by the Agda standard library with setoid reasoning: syntax for doing
-"equational" reasoning over our objects.
+"equational" reasoning over our objects. This reasoning lets us operate at a
+much higher level than we could when we were constructing pairs of numbers and
+proofs between them.
 
 ```agda
   private
     open import Relation.Binary
-    mod-setoid : (n : ℕ) → Setoid _ _
-    Setoid.Carrier (mod-setoid n) = ℕ
-    Setoid._≈_ (mod-setoid n) = _≈_⟨mod n ⟩
-    IsEquivalence.refl (Setoid.isEquivalence (mod-setoid n)) = mod-refl
-    IsEquivalence.sym (Setoid.isEquivalence (mod-setoid n)) = mod-sym
-    IsEquivalence.trans (Setoid.isEquivalence (mod-setoid n)) = mod-trans
+    mod-setoid : Setoid _ _
+    Setoid.Carrier mod-setoid = ℕ
+    Setoid._≈_ mod-setoid = _≈_⟨mod n ⟩
+    IsEquivalence.refl (Setoid.isEquivalence mod-setoid) = mod-refl
+    IsEquivalence.sym (Setoid.isEquivalence mod-setoid) = mod-sym
+    IsEquivalence.trans (Setoid.isEquivalence mod-setoid) = mod-trans
 
-  module mod-reasoning (n : ℕ) where
-    open import Relation.Binary.Reasoning.Setoid (mod-setoid n) public
+  module mod-reasoning where
+    open import Relation.Binary.Reasoning.Setoid mod-setoid public
 ```
 
-Our `Setoid` record is just the following:
+Our `Setoid` record merely needs to bundle the underlying set with its
+equivalence relation (and a proof that that relation is in fact an equivalence
+relation!)
 
 ```agda
 record Setoid : Set₁ where
@@ -321,69 +241,332 @@ record Setoid : Set₁ where
 open Setoid
 ```
 
-and it's trivial to show now that `_≈_⟨mod_⟩` forms a setoid:
+Given this, it's trivial to show now that `_≈_⟨mod_⟩` forms a setoid:
 
 ```agda
 mod-setoid : ℕ → Setoid
-Carrier (mod-setoid n) = ℕ
-_≈_ (mod-setoid n) = _≈_⟨mod n ⟩
-isEquivalence (mod-setoid n) = mod-equiv
+Carrier       (mod-setoid n) = ℕ
+_≈_           (mod-setoid n) = _≈_⟨mod n ⟩
+isEquivalence (mod-setoid n) = mod-equiv where open mod-base n
 ```
 
-Finally, we've now built the reasoning structure around which we can write
-proofs about `_≈_⟨mod_⟩` significantly more directly than we have been able to
-thus far.
-
-For example, let's show the following fact:
+We're almost ready to build some interesting proofs; but we're going to need to
+define a few more trivial ones first. But let's start proving some properties
+about `_≈_⟨mod_⟩` in a new module:
 
 ```agda
-module _ {n : ℕ} where
-  open IsEquivalence (mod-equiv {n})
-
-  0≈a*n : (a : ℕ) → 0 ≈ a * n ⟨mod n ⟩
+module mod-properties (n : ℕ) where
 ```
 
-Rather than faff about with `x` and `y` such that they multiply against `n` to
-equal the left and right sides, we can now use our setoid reasoning to abstract
-away the awkward details. We begin by pattern matching on `a`; the zero case is
-trivial:
+We'll still need propositional equality for a few things, but the setoid
+infrastructure is meant to be a mostly drop-in replacement for propositional
+equality, and so we will import it qualified:
 
 ```agda
-  0≈a*n zero = refl
+  import Relation.Binary.PropositionalEquality as PropEq
 ```
 
-Otherwise, it's time to `open mod-reasoning n` and get to work. We are trying to
-show `0 ≈ suc a * n ⟨mod n ⟩`, so setoid reasoning lets us begin with 0:
+We also need our base types and equivalence in scope:
 
 ```agda
-  0≈a*n (suc a) =
+  open mod-base n
+  open IsEquivalence mod-equiv public
+```
+
+Let's prove two more fact "by hand", the fact that $0 = n (\text{mod} n)$:
+
+```agda
+  0≈n : 0 ≈ n ⟨mod n ⟩
+  0≈n = ≈-mod 1 0 PropEq.refl
+```
+
+and the fact that we can `cong suc` onto proofs about `_≈_⟨mod_⟩`. While this
+sounds obvious, it doesn't hold for most functions! Most functions do not
+preserve setoid equality, so it's very exciting to find ones that do. To
+illustrate this point, consider the function `4 *_`, which doesn't preserve
+equality whenever, for example, $n = 5$.
+
+```agda
+  mod-suc-cong : {a b : ℕ} → a ≈ b ⟨mod n ⟩ → suc a ≈ suc b ⟨mod n ⟩
+  mod-suc-cong (≈-mod x y p) = ≈-mod x y (PropEq.cong suc p)
+```
+
+Now that our setoid infrastructure is bought and paid for, and also that we have
+a few primitive lemmas to work with, we're ready to begin proving things about
+modular arithmetic in earnest. We can open the `mod-reasoning` module to enable
+setoid reasoning throughout the rest of the current module.
+
+```agda
+  open mod-reasoning
+```
+
+Let's begin by proving the following theorem:
+
+```agda
+  +-zero-mod : (a b : ℕ) → a ≈ 0 ⟨mod n ⟩ → a + b ≈ b ⟨mod n ⟩
+```
+
+We can proceed in two cases, by splitting on `b`. In the zero case, we need to
+show `a + zero ≈ zero ⟨mod n⟩`. Like when we did reasoning over propositional
+equality, we `begin`:
+
+```agda
+  +-zero-mod a zero a≈0 =
     begin
-      0
+      a + zero
 ```
 
-which is definitionally equal (via everyday propositional equality `≡⟨⟩`) to $0
-+ 0$:
+and we still have access to propositional equality rewriting:
 
 ```agda
-    ≡⟨⟩
-      0 + 0
-```
-We can now use `≈⟨_⟩` as admitted by our setoid to give a `_≈_⟨mod_⟩`
-justification as to why the two things are equal:
-
-```agda
-    ≈⟨ +-homo-mod 0≈n (0≈a*n a) ⟩
-      n + a * n
+    ≡⟨ +-identityʳ a ⟩
+      a
 ```
 
-And then, finally, another propositional equality justification to show that
-we've completed the proof:
+However, now that we have setoid reasoning enable, we can also do *setoid
+rewriting* via the `≈⟨_⟩` operator. We have an `a` and want `zero`, and
+conveniently, already have a proof that `a ≈ 0 ⟨mod n⟩`, so we can just apply it:
 
 ```agda
-    ≡⟨⟩
-      suc a * n
+    ≈⟨ a≈0 ⟩
+      zero
     ∎
-    where
-      open mod-reasoning n
 ```
+
+You can see already how much nicer this style of reasoning is, compared with our
+old method of building the `_≈_⟨mod_⟩` term directly.
+
+We also need to show the `suc b` case, presented without further commentary.
+
+```agda
+  +-zero-mod a (suc b) a≈0 = begin
+    a + suc b    ≡⟨ +-suc a b ⟩
+    suc a + b    ≡⟨⟩
+    suc (a + b)  ≈⟨ mod-suc-cong (+-zero-mod a b a≈0) ⟩
+    suc b        ∎
+
+```
+
+Let's hoist another theorem about natural numbers that will come in handy: the
+fact that `suc` is injective.
+
+```agda
+  mod-suc-injective
+    : {a b : ℕ} → suc a ≈ suc b ⟨mod n ⟩ → a ≈ b ⟨mod n ⟩
+  mod-suc-injective (≈-mod x y p) =
+    ≈-mod x y (suc-injective p)
+```
+
+We're now ready to show a major result, the fact that `_≈_⟨mod_⟩` preserves
+addition. Congruence proofs like this are the real workhorses of getting real
+mathematics done, so it's exciting that we're able to build it.
+
+```agda
+  +-cong₂-mod
+      : {a b c d : ℕ}
+      → a ≈ b ⟨mod n ⟩
+      → c ≈ d ⟨mod n ⟩
+      → a + c ≈ b + d ⟨mod n ⟩
+```
+
+We can begin by case splitting on `a`. The zero case is straightforward, making
+use of our previous lemma `+-zero-mod`:
+
+```agda
+  +-cong₂-mod {zero} {b} {c} {d} pab pcd = begin
+    c         ≈⟨ pcd ⟩
+    d         ≈⟨ sym (+-zero-mod b d (sym pab)) ⟩
+    b + d     ∎
+```
+
+In the `suc a` case, we can now case split on `b`. The zero case is equally
+straightforward:
+
+```agda
+  +-cong₂-mod {suc a} {zero} {c} {d} pab pcd = begin
+    suc a + c  ≈⟨ +-zero-mod (suc a) c pab ⟩
+    c          ≈⟨ pcd ⟩
+    d          ∎
+```
+
+And all that's left is the non-zero cases, in which we can hand the problem over
+to induction, using `mod-suc-cong` and `mod-suc-injective` to manipulate our
+proofs back into the right shape.
+
+```agda
+  +-cong₂-mod {suc a} {suc b} {c} {d} pab pcd =
+      mod-suc-cong (+-cong₂-mod (mod-suc-injective pab) pcd)
+```
+
+`+-cong₂-mod` is quite a marvel of a theorem, especially when you consider
+needing to build this proof term by hand. Let's take a moment to appreciate what
+we've accomplished here, by reasoning our way through how we would have solved
+the problem naively.
+
+Our parameters to `+-cong₂-mod` work out to two equations:
+
+$$
+a + xn = b + yn \\
+c + zn = d + wn
+$$
+
+and we are tasked with finding $p$ and $q$ such that the following holds:
+
+$$
+(a + c) + pn = (b + d) + qn
+$$
+
+The solution is to add the two original equations together, point-wise:
+
+$$
+a + xn + c + zn = b + yn + d + wn
+$$
+
+and then group like terms:
+
+$$
+(a + c) + xn + zn = (b + d) + yn + wn
+$$
+
+of which we can then factor out an $n$ term:
+
+$$
+(a + c) + (x + z)n = (b + d) + (y + w)n
+$$
+
+giving us the solutions $p = x + z$ and $q = y + w$. So far so good, but now we
+are tasked with building this equality term given the original equations. It's
+not hard, but it's a consider amount of work. But the worst part is that this
+reasoning is at a lower level than we'd like to be operating; we want to be
+thinking about modular arithmetic, not juggling equations!
+
+We'll prove two more facts about modular arithmetic, one in service of the
+other. We can show that modular multiplication by zero results in zero:
+
+```agda
+  *-zero-mod : (a b : ℕ) → b ≈ 0 ⟨mod n ⟩ → a * b ≈ 0 ⟨mod n ⟩
+  *-zero-mod zero b x = refl
+  *-zero-mod (suc a) b x = begin
+    suc a * b  ≡⟨⟩
+    b + a * b  ≈⟨ +-cong₂-mod x (*-zero-mod a b x) ⟩
+    0          ∎
+```
+
+And at long last, we can show that modular arithmetic is also congruent over
+multiplication, via `*-cong₂-mod`:
+
+```agda
+  *-cong₂-mod
+      : {a b c d : ℕ}
+      → a ≈ b ⟨mod n ⟩
+      → c ≈ d ⟨mod n ⟩
+      → a * c ≈ b * d ⟨mod n ⟩
+  *-cong₂-mod {zero} {b} {c} {d} a=b c=d = begin
+    zero * c  ≡⟨⟩
+    zero      ≈⟨ sym (*-zero-mod d b (sym a=b)) ⟩
+    d * b     ≡⟨ *-comm d b ⟩
+    b * d     ∎
+  *-cong₂-mod {suc a} {zero} {c} {d} a=b c=d = begin
+    suc a * c  ≡⟨ *-comm (suc a) c ⟩
+    c * suc a  ≈⟨ *-zero-mod c (suc a) a=b ⟩
+    zero       ≡⟨⟩
+    zero * d   ∎
+  *-cong₂-mod {suc a} {suc b} {c} {d} a=b c=d = begin
+    suc a * c  ≡⟨⟩
+    c + a * c
+      ≈⟨ +-cong₂-mod c=d (*-cong₂-mod (mod-suc-injective a=b) c=d) ⟩
+    d + b * d  ≡⟨⟩
+    suc b * d  ∎
+```
+
+While the proof of `*-cong₂-mod` is still quite involved, again, it's worth
+considering the problem in its more "raw" form. Given:
+
+$$
+a + xn = b + yn \\
+c + zn = d + wn
+$$
+
+we are looking for $p$ and $q$ such that the following holds:
+
+$$
+ac + pn = bd + qn
+$$
+
+The solution again is analogous to solving for `+-cong₂-mod`, except in this
+case we must multiply the two sides of our equations, resulting in the hairy
+solutions:
+
+$$
+p = cx + az + xzn \\
+q = dy + bw + ywn
+$$
+
+Convincing Agda of the equality of these terms is on the order of 50 algebraic
+manipulations; most of it being gentle massaging of the expression into
+something you can `cong` one proof over, and then massaging it into a form on
+which you can `cong` the other.
+
+All in all, setoids have bought us a great deal of algebraic power. We've used
+them to manage working over an equivalence relation, showing how we can quotient
+over values that are not *literally* equal to one another, but still operate in
+a context that allows us to work as if they were. The only real loss here is
+that `cong` no longer holds for all functions, and that we must prove it holds
+whenever we'd like to use that fact. This is a limitation more of Agda's type
+theory than it is of mathematics; in the latter, it's perfectly acceptable to
+define a quotient relationship that holds by fiat. It is only in our
+computational context that we are required to *show* that functions cannot
+observe the difference between quotiented values.
+
+On the other hand, the rigor afforded to us by doing mathematics in a rich type
+theory is what has driven so much of the recent study of equality. When you're
+doing mathematics by pen and paper, it's easy to be sloppy about what equality
+actually *means.* The setoid approach can be paraphrased as "whenever you define
+a set, you must also define what equality means over it."
+
+
+### Constructions on Setoids
+
+By virtue of being first-class objects, setoids are *values* that we can pass
+as parameters, and return from functions. That means there's an entire set of
+combinators we can use for building setoids out of other things. For example,
+given a type, we can trivially construct a setoid using propositional equality:
+
+```agda
+module _ where
+  import Relation.Binary.PropositionalEquality as PropEq
+
+  setoid : Set → Setoid
+  Carrier (setoid A) = A
+  _≈_ (setoid A) = PropEq._≡_
+  IsEquivalence.refl (isEquivalence (setoid A)) = PropEq.refl
+  IsEquivalence.sym (isEquivalence (setoid A)) = PropEq.sym
+  IsEquivalence.trans (isEquivalence (setoid A)) = PropEq.trans
+```
+
+We can also lift setoids over functions to get a setoid-extensional version of
+function equality. By ensuring two functions are equal for every possible input,
+we can show two functions are equal:
+
+```agda
+  hom-setoid : Set → Setoid → Setoid
+  Carrier (hom-setoid A s) = A → Carrier s
+  _≈_ (hom-setoid A s) f g = (a : A) → (_≈_ s) (f a) (g a)  -- ! 1
+  isEquivalence (hom-setoid A s) = equiv
+    where
+    open IsEquivalence (s .isEquivalence)
+
+    equiv : IsEquivalence _
+    IsEquivalence.refl equiv a = refl
+    IsEquivalence.sym equiv f a = sym (f a)
+    IsEquivalence.trans equiv f g a = trans (f a) (g a)
+```
+
+Notice at [1](Ann) we are unable to write the more natural `f a ≈ g a`, because
+as we've set up the problem, `_≈_` is a field of the `s` record, and is thus a
+*ternary* function with binary operator syntax. We solve this problem by
+writing the function in head-normal form. Left to its own devices, Agda will
+attempt to rewrite this in cursed form as `(s ≈ f a) (g a)`, which we go through
+great lengths to avoid.
+
 
