@@ -29,7 +29,7 @@ two. That is to say, we need to find $x, y : ℕ$ such that $a + xn = b + yn$.
 The definition almost rolls off the tongue:
 
 ```agda
-module _ where
+module mod-def where
   open import Relation.Binary.PropositionalEquality
 
   infix 4 _≈_⟨mod_⟩
@@ -78,6 +78,7 @@ binding a few helper variables:
 
 ```agda
 module mod-base (n : ℕ) where
+  open mod-def public
   open import Relation.Binary.PropositionalEquality
 
   private
@@ -247,7 +248,9 @@ Given this, it's trivial to show now that `_≈_⟨mod_⟩` forms a setoid:
 mod-setoid : ℕ → Setoid
 Carrier       (mod-setoid n) = ℕ
 _≈_           (mod-setoid n) = _≈_⟨mod n ⟩
-isEquivalence (mod-setoid n) = mod-equiv where open mod-base n
+  where open mod-def
+isEquivalence (mod-setoid n) = mod-equiv
+  where open mod-base n
 ```
 
 We're almost ready to build some interesting proofs; but we're going to need to
