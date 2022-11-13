@@ -1,7 +1,7 @@
 # Decidability
 
 ```agda
-module decidability where
+module 7-decidability where
 ```
 
 In classical logic, there exists the so-called *law of the excluded middle*
@@ -248,8 +248,8 @@ with a function aptly named `suc-injective`:
 
 ```agda
 module mod-dec (n : ℕ) where
-  import setoids
-  open setoids.mod-base n
+  import 6-setoids
+  open 6-setoids.mod-base n
   import Data.Nat.Properties as Nat
   open import Relation.Binary
 

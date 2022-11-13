@@ -4,7 +4,7 @@
 open import Relation.Binary using (Setoid)
 open import Agda.Primitive renaming (_⊔_ to _⊔l_) using (Level; lsuc)
 
-module structures where
+module 8-structures where
 
 postulate
   todo : {A : Set} → A
@@ -236,7 +236,7 @@ proving that `M : Set` is a monoid, a function `A → M`, and then transforms a
 its importance. We begin as always with the type:
 
 ```agda
-open import types using (BinTree; branch; empty)
+open import 3-types using (BinTree; branch; empty)
 
 module _ {A : Set} {M : Set} where
   open monoid (setoid M)

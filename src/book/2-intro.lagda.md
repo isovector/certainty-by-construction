@@ -2,7 +2,7 @@
 
 \hidestart
 ```agda
-module intro where
+module 2-intro where
 ```
 \hideend
 

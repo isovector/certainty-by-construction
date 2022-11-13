@@ -1,5 +1,9 @@
 # Proofs
 
+```agda
+module ok-hello where
+```
+
 What constitutes a mathematical proof? How do you know when you are done? This
 was always the hardest part in my math education. The course notes from my first
 class on proofs state:

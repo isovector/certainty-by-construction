@@ -1,7 +1,7 @@
 # Data and Types
 
 ```agda
-module types where
+module 3-types where
 ```
 
 Because this is a book about mathematics for programmers, it bears discussing a

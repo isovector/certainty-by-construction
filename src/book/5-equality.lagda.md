@@ -1,7 +1,7 @@
 # Equality
 
 ```agda
-module equality where
+module 5-equality where
 
 open import Data.Nat
 

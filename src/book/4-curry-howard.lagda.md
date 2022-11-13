@@ -1,7 +1,7 @@
 # Propositions as Types
 
 ```agda
-module curry-howard where
+module 4-curry-howard where
 
 open import Data.List
 open import Data.Nat
