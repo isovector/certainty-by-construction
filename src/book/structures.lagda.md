@@ -146,7 +146,9 @@ Solution
   ∙-assoc false-or-monoid = ∨-assoc
   ε-unitˡ false-or-monoid = ∨-identityˡ
   ε-unitʳ false-or-monoid = ∨-identityʳ
+    ```
 
+    ```agda
   false-xor-monoid : Monoid
   _∙_ false-xor-monoid = _xor_
   ε false-xor-monoid = false
@@ -175,14 +177,18 @@ module _ where
   open monoid (setoid ℕ)
   open Monoid
   open import Data.Nat.Properties
+    ```
 
+    ```agda
   0-+-monoid : Monoid
   _∙_ 0-+-monoid = _+_
   ε 0-+-monoid = 0
   ∙-assoc 0-+-monoid = +-assoc
   ε-unitˡ 0-+-monoid = +-identityˡ
   ε-unitʳ 0-+-monoid = +-identityʳ
+    ```
 
+    ```agda
   1-*-monoid : Monoid
   _∙_ 1-*-monoid = _*_
   ε 1-*-monoid = 1
@@ -203,7 +209,9 @@ module _ {A : Set} where
   open monoid (setoid (List A))
   open Monoid
   open import Data.List.Properties
+    ```
 
+    ```agda
   []-++-monoid : Monoid
   _∙_ []-++-monoid = _++_
   ε []-++-monoid = []
@@ -669,9 +677,9 @@ only one.
 Anyway, returning to doing-what-you'd-expect, we can think of the conditions
 from `get-hom` as these:
 
-```math
+```mathstuff
 forall k.
-  get k ε₁ = ε₂
+  get k e1 = e2
 ```
 
 which is to say, if we attempt to pull a key out of an empty container, we get
@@ -680,9 +688,9 @@ really are empty.
 
 Our other constraint from `get-hom` is the following:
 
-```math
+```mathstuff
 forall k m1 m2.
-  get k (m1 ∙₁ m2) = get k m1 ∙₂ get k m2
+  get k (m1 .1 m2) = get k m1 .2 get k m2
 ```
 
 which states that getting a key out of a merged map is the same as merging the
@@ -702,9 +710,9 @@ behavior we'd like. Is the same true for `set-hom`?
 What laws fall out of this? The first is that we have a distribution of `_∙_`
 over `set`:
 
-```math
+```mathstuff
 forall m k v1 v2.
-  set m k (v1 ∙₁ v2) = set m k v1 ∙₂ set m k v2
+  set m k (v1 .1 v2) = set m k v1 .2 set m k v2
 ```
 
 All told, this law looks good. Merging two maps with the same key is the same as
@@ -748,9 +756,9 @@ Unfortunately, as we push through with this monoid homomorphism for `set`, we
 realize that this might not be the best choice. Our next required law indicates
 why:
 
-```math
+```mathstuff
 forall m k.
-  set m k ε₁ = ε₂
+  set m k e1 = e2
 ```
 
 This states that inserting an empty value into the map should *delete* the rest
@@ -789,7 +797,9 @@ module _ {c l : Level} (eq : Setoid c l) where
   open semigroup eq
   open Semigroup
   open Monoid
+    ```
 
+    ```agda
   monoid→semigroup : Monoid → Semigroup
   _∙_ (monoid→semigroup x) = x ._∙_
   ∙-assoc (monoid→semigroup x) = x .∙-assoc
@@ -868,7 +878,9 @@ module _ {c l : Level} {s1 s2 : Setoid c l}
   open semigroup-hom (monoid→semigroup s1 m1) (monoid→semigroup s2 m2)
   open IsMonoidHom
   open IsSemigroupHom
+    ```
 
+    ```agda
   monoid-hom→semigroup-hom : {f : A → B} → IsMonoidHom f → IsSemigroupHom f
   preserves-∙ (monoid-hom→semigroup-hom x) = x .preserves-∙
   f-cong (monoid-hom→semigroup-hom x) = x .f-cong

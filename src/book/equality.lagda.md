@@ -221,6 +221,7 @@ The proof of transitivity follows a similar technique.
 Exercise
 
 :   Give a proof of
+
     ```agda
   trans : a ≡ b → b ≡ c → a ≡ c
     ```
@@ -461,7 +462,7 @@ Proving `conga` is very easy. We need only look at the definition of the input
 equality, see that it's `refl`, and therefore that the result type is actually
 of type `f x ≡ f x` (and is therefore also `refl`):
 
-```
+```agda
   cong f refl = refl
 ```
 
@@ -493,9 +494,11 @@ that:
 
 Exercise
 
-:   Prove ```agda
+:   Prove
+
+    ```agda
   m+suc : (m n : ℕ) → suc m + n ≡ m + suc n
-```
+    ```
 
 
 Solution
@@ -503,7 +506,7 @@ Solution
 :   ```agda
   m+suc zero n = refl
   m+suc (suc m) n = cong suc (m+suc m n)
-```
+    ```
 
 ### Equational Reasoning
 
@@ -672,30 +675,25 @@ further in the next section.
 
 Exercise
 
-:   Prove the following property about addition. Hint: remember that you have
-    case splitting, equational reasoning, `cong`, any lemma we've already
-    proven, and recursion at your disposal.
+:     Prove the following property about addition. Hint: remember that you have
+      case splitting, equational reasoning, `cong`, any lemma we've already
+      proven, and recursion at your disposal.
 
-    ```agda
+      ```agda
   m+n≡n+m : (m n : ℕ) → m + n ≡ n + m
-    ```
+      ```
 
 Solution
 
-:   ```agda
+:     ```agda
   m+n≡n+m zero n = n≡n+0 n
-  m+n≡n+m (suc m) n =
-    begin
-      suc m + n
-    ≡⟨⟩
-      suc (m + n)
-    ≡⟨ cong suc (m+n≡n+m m n) ⟩
-      suc (n + m)
-    ≡⟨ m+suc n m ⟩
-      n + suc m
-    ∎
+  m+n≡n+m (suc m) n = begin
+    suc m + n    ≡⟨⟩
+    suc (m + n)  ≡⟨ cong suc (m+n≡n+m m n) ⟩
+    suc (n + m)  ≡⟨ m+suc n m ⟩
+    n + suc m    ∎
     where open ≡-Reasoning
-    ```
+      ```
 
 
 The previous exercise had you show the well-known property of addition that $m +
@@ -799,7 +797,7 @@ Following the process
       suc (n + m + m * n)
     ≡⟨ sym (cong suc (+-assoc n m (m * n))) ⟩
       suc (n + (m + m * n))
-    ≡⟨ ? ⟩
+    ≡⟨ todo ⟩
       suc (m + (n + m * n))
     ≡⟨⟩
       suc (m + suc m * n)

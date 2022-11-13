@@ -2,20 +2,15 @@
 \PassOptionsToPackage{unicode$for(hyperrefoptions)$,$hyperrefoptions$$endfor$}{hyperref}
 \PassOptionsToPackage{hyphens}{url}
 $if(colorlinks)$
-\PassOptionsToPackage{dvipsnames,svgnames*,x11names*}{xcolor}
+\PassOptionsToPackage{dvipsnames,svgnames,x11names}{xcolor}
 $endif$
-$if(dir)$
-$if(latex-dir-rtl)$
-\PassOptionsToPackage{RTLdocument}{bidi}
-$endif$
+$if(CJKmainfont)$
+\PassOptionsToPackage{space}{xeCJK}
 $endif$
 %
 \documentclass[
 $if(fontsize)$
   $fontsize$,
-$endif$
-$if(lang)$
-  $babel-lang$,
 $endif$
 $if(papersize)$
   $papersize$paper,
@@ -86,6 +81,7 @@ $endif$
 $if(beamerarticle)$
 \usepackage{beamerarticle} % needs to be loaded first
 $endif$
+\usepackage{amsmath,amssymb}
 $if(fontfamily)$
 \usepackage[$for(fontfamilyoptions)$$fontfamilyoptions$$sep$,$endfor$]{$fontfamily$}
 $else$
@@ -94,15 +90,14 @@ $endif$
 $if(linestretch)$
 \usepackage{setspace}
 $endif$
-\usepackage{amssymb,amsmath}
-\usepackage{ifxetex,ifluatex}
-\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+\usepackage{iftex}
+\ifPDFTeX
   \usepackage[$if(fontenc)$$fontenc$$else$T1$endif$]{fontenc}
   \usepackage[utf8]{inputenc}
   \usepackage{textcomp} % provide euro and other symbols
 \else % if luatex or xetex
 $if(mathspec)$
-  \ifxetex
+  \ifXeTeX
     \usepackage{mathspec}
   \else
     \usepackage{unicode-math}
@@ -124,24 +119,54 @@ $endif$
 $for(fontfamilies)$
   \newfontfamily{$fontfamilies.name$}[$for(fontfamilies.options)$$fontfamilies.options$$sep$,$endfor$]{$fontfamilies.font$}
 $endfor$
+$if(mathfont)$
+$if(mathspec)$
+  \ifXeTeX
+    \setmathfont(Digits,Latin,Greek)[$for(mathfontoptions)$$mathfontoptions$$sep$,$endfor$]{$mathfont$}
+  \else
+    \setmathfont[$for(mathfontoptions)$$mathfontoptions$$sep$,$endfor$]{$mathfont$}
+  \fi
+$else$
+  \setmathfont[$for(mathfontoptions)$$mathfontoptions$$sep$,$endfor$]{$mathfont$}
+$endif$
+$endif$
 $if(CJKmainfont)$
-  \ifxetex
+  \ifXeTeX
     \usepackage{xeCJK}
     \setCJKmainfont[$for(CJKoptions)$$CJKoptions$$sep$,$endfor$]{$CJKmainfont$}
   \fi
 $endif$
 $if(luatexjapresetoptions)$
-  \ifluatex
+  \ifLuaTeX
     \usepackage[$for(luatexjapresetoptions)$$luatexjapresetoptions$$sep$,$endfor$]{luatexja-preset}
   \fi
 $endif$
 $if(CJKmainfont)$
-  \ifluatex
+  \ifLuaTeX
     \usepackage[$for(luatexjafontspecoptions)$$luatexjafontspecoptions$$sep$,$endfor$]{luatexja-fontspec}
     \setmainjfont[$for(CJKoptions)$$CJKoptions$$sep$,$endfor$]{$CJKmainfont$}
   \fi
 $endif$
 \fi
+$if(zero-width-non-joiner)$
+%% Support for zero-width non-joiner characters.
+\makeatletter
+\def\zerowidthnonjoiner{%
+  % Prevent ligatures and adjust kerning, but still support hyphenating.
+  \texorpdfstring{%
+    \TextOrMath{\nobreak\discretionary{-}{}{\kern.03em}%
+      \ifvmode\else\nobreak\hskip\z@skip\fi}{}%
+  }{}%
+}
+\makeatother
+\ifPDFTeX
+  \DeclareUnicodeCharacter{200C}{\zerowidthnonjoiner}
+\else
+  \catcode`^^^^200c=\active
+  \protected\def ^^^^200c{\zerowidthnonjoiner}
+\fi
+%% End of ZWNJ support
+$endif$
 $if(beamer)$
 $if(theme)$
 \usetheme[$for(themeoptions)$$themeoptions$$sep$,$endfor$]{$theme$}
@@ -185,38 +210,6 @@ $if(verbatim-in-note)$
 \usepackage{fancyvrb}
 $endif$
 \usepackage{xcolor}
-\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
-\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
-\hypersetup{
-$if(title-meta)$
-  pdftitle={$title-meta$},
-$endif$
-$if(author-meta)$
-  pdfauthor={$author-meta$},
-$endif$
-$if(lang)$
-  pdflang={$lang$},
-$endif$
-$if(subject)$
-  pdfsubject={$subject$},
-$endif$
-$if(keywords)$
-  pdfkeywords={$for(keywords)$$keywords$$sep$, $endfor$},
-$endif$
-$if(colorlinks)$
-  colorlinks=true,
-  linkcolor=$if(linkcolor)$$linkcolor$$else$Maroon$endif$,
-  filecolor=$if(filecolor)$$filecolor$$else$Maroon$endif$,
-  citecolor=$if(citecolor)$$citecolor$$else$Blue$endif$,
-  urlcolor=$if(urlcolor)$$urlcolor$$else$Blue$endif$,
-$else$
-  hidelinks,
-$endif$
-  pdfcreator={LaTeX via pandoc}}
-\urlstyle{same} % disable monospaced font for URLs
-$if(verbatim-in-note)$
-\VerbatimFootnotes % allow verbatim text in footnotes
-$endif$
 $if(geometry)$
 $if(beamer)$
 \geometry{$for(geometry)$$geometry$$sep$,$endfor$}
@@ -240,7 +233,11 @@ $if(highlighting-macros)$
 $highlighting-macros$
 $endif$
 $if(tables)$
-\usepackage{longtable,booktabs}
+\usepackage{longtable,booktabs,array}
+$if(multirow)$
+\usepackage{multirow}
+$endif$
+\usepackage{calc} % for calculating minipage widths
 $if(beamer)$
 \usepackage{caption}
 % Make caption package work with longtable
@@ -259,7 +256,7 @@ $else$
 $endif$
 $endif$
 $if(graphics)$
-\usepackage{graphicx,grffile}
+\usepackage{graphicx}
 \makeatletter
 \def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
 \def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
@@ -273,14 +270,9 @@ $if(graphics)$
 \def\fps@figure{htbp}
 \makeatother
 $endif$
-$if(links-as-notes)$
-% Make links footnotes instead of hotlinks:
-\DeclareRobustCommand{\href}[2]{#2\footnote{\url{#1}}}
-$endif$
 $if(strikeout)$
+$-- also used for underline
 \usepackage[normalem]{ulem}
-% Avoid problems with \sout in headers with hyperref
-\pdfstringdefDisableCommands{\renewcommand{\sout}{}}
 $endif$
 \setlength{\emergencystretch}{3em} % prevent overfull lines
 \providecommand{\tightlist}{%
@@ -307,30 +299,55 @@ $endif$
 $if(pagestyle)$
 \pagestyle{$pagestyle$}
 $endif$
+$if(csl-refs)$
+\newlength{\cslhangindent}
+\setlength{\cslhangindent}{1.5em}
+\newlength{\csllabelwidth}
+\setlength{\csllabelwidth}{3em}
+\newlength{\cslentryspacingunit} % times entry-spacing
+\setlength{\cslentryspacingunit}{\parskip}
+\newenvironment{CSLReferences}[2] % #1 hanging-ident, #2 entry spacing
+ {% don't indent paragraphs
+  \setlength{\parindent}{0pt}
+  % turn on hanging indent if param 1 is 1
+  \ifodd #1
+  \let\oldpar\par
+  \def\par{\hangindent=\cslhangindent\oldpar}
+  \fi
+  % set entry spacing
+  \setlength{\parskip}{#2\cslentryspacingunit}
+ }%
+ {}
+\usepackage{calc}
+\newcommand{\CSLBlock}[1]{#1\hfill\break}
+\newcommand{\CSLLeftMargin}[1]{\parbox[t]{\csllabelwidth}{#1}}
+\newcommand{\CSLRightInline}[1]{\parbox[t]{\linewidth - \csllabelwidth}{#1}\break}
+\newcommand{\CSLIndent}[1]{\hspace{\cslhangindent}#1}
+$endif$
+$if(lang)$
+\ifLuaTeX
+\usepackage[bidi=basic]{babel}
+\else
+\usepackage[bidi=default]{babel}
+\fi
+$if(babel-lang)$
+\babelprovide[main,import]{$babel-lang$}
+$endif$
+$for(babel-otherlangs)$
+\babelprovide[import]{$babel-otherlangs$}
+$endfor$
+% get rid of language-specific shorthands (see #6817):
+\let\LanguageShortHands\languageshorthands
+\def\languageshorthands#1{}
+$endif$
 $for(header-includes)$
 $header-includes$
 $endfor$
-$if(lang)$
-\ifxetex
-  % Load polyglossia as late as possible: uses bidi with RTL langages (e.g. Hebrew, Arabic)
-  \usepackage{polyglossia}
-  \setmainlanguage[$polyglossia-lang.options$]{$polyglossia-lang.name$}
-$for(polyglossia-otherlangs)$
-  \setotherlanguage[$polyglossia-otherlangs.options$]{$polyglossia-otherlangs.name$}
-$endfor$
-\else
-  \usepackage[shorthands=off,$for(babel-otherlangs)$$babel-otherlangs$,$endfor$main=$babel-lang$]{babel}
-$if(babel-newcommands)$
-  $babel-newcommands$
-$endif$
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
 \fi
-$endif$
 $if(dir)$
-\ifxetex
-  % Load bidi as late as possible as it modifies e.g. graphicx
-  \usepackage{bidi}
-\fi
-\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+\ifPDFTeX
   \TeXXeTstate=1
   \newcommand{\RL}[1]{\beginR #1\endR}
   \newcommand{\LR}[1]{\beginL #1\endL}
@@ -348,14 +365,51 @@ $for(bibliography)$
 \addbibresource{$bibliography$}
 $endfor$
 $endif$
-$if(csl-refs)$
-\newlength{\cslhangindent}
-\setlength{\cslhangindent}{1.5em}
-\newenvironment{cslreferences}%
-  {$if(csl-hanging-indent)$\setlength{\parindent}{0pt}%
-  \everypar{\setlength{\hangindent}{\cslhangindent}}\ignorespaces$endif$}%
-  {\par}
+$if(nocite-ids)$
+\nocite{$for(nocite-ids)$$it$$sep$, $endfor$}
 $endif$
+$if(csquotes)$
+\usepackage{csquotes}
+$endif$
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same} % disable monospaced font for URLs
+$if(links-as-notes)$
+% Make links footnotes instead of hotlinks:
+\DeclareRobustCommand{\href}[2]{#2\footnote{\url{#1}}}
+$endif$
+$if(verbatim-in-note)$
+\VerbatimFootnotes % allow verbatim text in footnotes
+$endif$
+\hypersetup{
+$if(title-meta)$
+  pdftitle={$title-meta$},
+$endif$
+$if(author-meta)$
+  pdfauthor={$author-meta$},
+$endif$
+$if(lang)$
+  pdflang={$lang$},
+$endif$
+$if(subject)$
+  pdfsubject={$subject$},
+$endif$
+$if(keywords)$
+  pdfkeywords={$for(keywords)$$keywords$$sep$, $endfor$},
+$endif$
+$if(colorlinks)$
+  colorlinks=true,
+  linkcolor={$if(linkcolor)$$linkcolor$$else$Maroon$endif$},
+  filecolor={$if(filecolor)$$filecolor$$else$Maroon$endif$},
+  citecolor={$if(citecolor)$$citecolor$$else$Blue$endif$},
+  urlcolor={$if(urlcolor)$$urlcolor$$else$Blue$endif$},
+$else$
+$if(boxlinks)$
+$else$
+  hidelinks,
+$endif$
+$endif$
+  pdfcreator={LaTeX via pandoc}}
 
 $if(title)$
 \title{$title$$if(thanks)$\thanks{$thanks$}$endif$}
@@ -372,9 +426,7 @@ $else$
 $endif$
 \subtitle{$subtitle$}
 $endif$
-$if(author)$
 \author{$for(author)$$author$$sep$ \and $endfor$}
-$endif$
 \date{$date$}
 $if(beamer)$
 $if(institute)$
@@ -389,38 +441,27 @@ $endif$
 $endif$
 
 
+
+
 % NOTE(sandy): here is where my stuff lives
+
+\newcommand{\hidestart}{}
+\newcommand{\hideend}{}
 
 \usepackage{tex/agda}
 \usepackage{unicode-math}
 \setsansfont[Scale=MatchLowercase]{DejaVuSansMono.ttf}
 \setmathfont{XITS Math}
+\setmonofont{Noto Sans Mono}
 
 \colorlet{RED}{black}
 
-
-\newenvironment{EqnBox}[1]{\begin{tcolorbox}[arc=0mm,colback=gray!5,colframe=gray!75!black,fonttitle=\bfseries,before skip=20pt plus 2pt,after skip=20pt plus 2pt,title={Law: \lawname{#1}}]}{\vspace{-0.5cm}\end{tcolorbox}}
-
 \usepackage{ragged2e}
 \usepackage{fvextra}
-\DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,commandchars=\\\{\}}
 
-\usepackage{tcolorbox}
 \usepackage{pdfpages}
 
 \newlength\longest
-
-\let\oldShaded\Shaded
-\let\oldendShaded\endShaded
-\def\Shaded{\vspace{1em}\oldShaded}
-\def\endShaded{\oldendShaded\vspace{1em}}
-
-% workaround for https://github.com/jgm/pandoc/issues/5801
-\renewcommand{\linethickness}{0.05em}
-
-\DeclareFontFamily{U}{skulls}{}
-\DeclareFontShape{U}{skulls}{m}{n}{ <-> skull }{}
-\newcommand{\skull}{\text{\usefont{U}{skulls}{m}{n}\symbol{'101}}}
 
 
 \usepackage{fancyhdr}
@@ -432,27 +473,6 @@ $endif$
 \usepackage[thmmarks, amsmath, thref]{ntheorem}
 % \newfontface{\libertinus}{FreeSans}
 % \newfontface{\monospacefont}{Inconsolata}
-
-\newunicodechar{∀}{%
-  \begingroup
-  \normalfont\libertinus ∀%
-  \endgroup
-}
-
-\newunicodechar{⋆}{%
-  \begingroup
-  \normalfont\libertinus ⋆%
-  \endgroup
-}
-
-\newfontfamily\suitfont{DejaVu Sans}
-
-
-\newunicodechar{♥}{\begingroup\normalfont\suitfont♥\endgroup}
-\newunicodechar{♦}{\begingroup\normalfont\suitfont♦\endgroup}
-\newunicodechar{♣}{\begingroup\normalfont\suitfont♣\endgroup}
-\newunicodechar{♠}{\begingroup\normalfont\suitfont♠\endgroup}
-\newunicodechar{⊗}{\begingroup\normalfont\suitfont⊗\endgroup}
 
 
 \newfontfamily{\substitutefont}[Scale=MatchLowercase]{Noto Sans}
@@ -477,11 +497,6 @@ font=\sffamily\bfseries,minimum size=2mm,inner sep=0mm,draw,circle,fill=black]
 
 \newcommand{\ann}[1]{\hspace{1.5mm}\anncirc{#1}\hspace{1.5mm}}
 \newcommand{\annotate}[1]{\Dotfill\quad\anncirc{#1}\qquad}
-\newcommand{\reducevia}[1]{\Dotfill\quad\via{#1}\qquad}
-\newcommand{\via}[1]{(via \lawname{#1})}
-\newcommand{\lawname}[1]{"#1"\normalfont}
-% \newcommand{\lawname}[1]{\fontspec{Lobster}[Scale=0.80]"#1"\normalfont}
-\newcommand{\deflaw}[1]{\Dotfill\quad\lawname{#1}\qquad}
 
 \makeatletter{}
 \newcommand{\Dotfill}{\leavevmode \cleaders \hb@xt@.85em{\ensuremath{\hss
@@ -618,7 +633,7 @@ $if(toc-title)$
 \renewcommand*\contentsname{$toc-title$}
 $endif$
 $if(beamer)$
-\begin{frame}
+\begin{frame}[allowframebreaks]
 $if(toc-title)$
   \frametitle{$toc-title$}
 $endif$
@@ -634,11 +649,11 @@ $endif$
 }
 $endif$
 $endif$
-$if(lot)$
-\listoftables
-$endif$
 $if(lof)$
 \listoffigures
+$endif$
+$if(lot)$
+\listoftables
 $endif$
 $if(linestretch)$
 \setstretch{$linestretch$}
@@ -686,5 +701,4 @@ $for(include-after)$
 $include-after$
 
 $endfor$
-
 \end{document}

@@ -246,10 +246,7 @@ with a function aptly named `suc-injective`:
 ```
 
 
-
-
-
-
+```agda
 module mod-dec (n : ℕ) where
   import setoids
   open setoids.mod-base n
@@ -259,7 +256,4 @@ module mod-dec (n : ℕ) where
   _≟_ : (x y : ℕ) → Dec (x ≈ y ⟨mod n ⟩)
   _≟_ x y with ∣ x - y ∣
   ... | yo = ?
-
-
-
 ```

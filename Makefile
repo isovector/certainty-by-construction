@@ -4,6 +4,8 @@ CONTENT := book
 PANDOC_OPTS := --citeproc \
                --from markdown+fancy_lists \
                -t latex+lagda \
+               --tab-stop=100 \
+               --no-highlight \
                --top-level-division=part
 
 PANDOC_PDF_OPTS := --from latex+raw_tex \
@@ -18,6 +20,9 @@ ALL_LAGDA := $(patsubst src/book/%.lagda.md,build/tex/agda/%.lagda.tex,$(wildcar
 ALL_AGDA := $(patsubst src/book/%,build/tex/agda/%,$(wildcard src/book/*.agda))
 ALL_TEX := $(patsubst src/book/%.lagda.md,build/tex/book/%.tex,$(wildcard src/book/*.lagda.md))
 
+# $(RULES): %: build/%.pdf
+all : build/pdf.pdf
+
 # Transpile markdown to latex
 build/tex/agda/%.lagda.tex : src/book/%.lagda.md
 	pandoc $(PANDOC_OPTS) -o $@ $^
@@ -27,7 +32,7 @@ build/tex/agda/%.agda : src/book/%.agda
 	cp $^ $@
 
 # Run the agda processor
-build/tex/agda/latex/%.tex : build/tex/agda/%.lagda.tex $(ALL_LAGDA) $(ALL_AGDA)
+build/tex/agda/latex/%.tex : build/tex/agda/%.lagda.tex
 	(cd build/tex/agda && agda --latex $*.lagda.tex)
 
 # Copy the resulting latex document
@@ -36,21 +41,17 @@ build/tex/book/%.tex : build/tex/agda/latex/%.tex
 
 # Compile all the resulting latex documents together
 build/tex/pdf.tex : $(ALL_TEX) format/tex/template.tex
-	pandoc $(PANDOC_PDF_OPTS) -o $@ $^
+	pandoc $(PANDOC_PDF_OPTS) -o $@ $(ALL_TEX)
 
 # Copy the agda style
 build/tex/agda.sty : format/tex/agda.sty
 	cp $^ $@
 
 # Build the pdf!
-build/pdf.pdf : build/tex/pdf.tex build/tex/agda.sty
+build/pdf.pdf :  $(ALL_LAGDA) $(ALL_AGDA) build/tex/pdf.tex build/tex/agda.sty
 	make -C build pdf.pdf
 
 
-
-
-# $(RULES): %: build/%.pdf
-all : build/pdf.pdf
 
 
 
@@ -67,6 +68,8 @@ all : build/pdf.pdf
 #		sed -i 's/\CommentTok{{-}{-} ! \([0-9]\)}/annotate{\1}/g' $@
 #		sed -i 's/\CommentTok{{-}{-} .via \([^}]\+\)}/reducevia{\1}/g' $@
 #		sed -i 's/\(\\KeywordTok{law} \\StringTok\){"\([^"]\+\)"}/\1{\\lawname{\2}}/g' $@
+
+.NOTINTERMEDIATE: build/tex/agda/%.lagda.tex $(ALL_LAGDA) $(ALL_AGDA)
 
 .PHONY: clean all $(RULES)
 

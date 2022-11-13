@@ -49,13 +49,13 @@ data Bool : Set where
   ff : Bool
 ```
 
-This definition asserts the existence of three things; a new `Set`{.Agda} of
-things called `Bool`{.Agda}, as well as two elements of `Bool`{.Agda}, namely
-`tt`{.Agda} and `ff`{.Agda}. We use the colon (`:`) notation to state a *typing
-judgment*, namely that `Bool`{.Agda} has type `Set`{.Agda}, and both `tt`{.Agda}
-and `ff`{.Agda} have type `Bool`{.Agda}.
+This definition asserts the existence of three things; a new `Set` of
+things called `Bool`, as well as two elements of `Bool`, namely
+`tt` and `ff`. We use the colon (`:`) notation to state a *typing
+judgment*, namely that `Bool` has type `Set`, and both `tt`
+and `ff` have type `Bool`.
 
-The names `tt`{.Agda} and `ff`{.Agda} are meant to be evocative of "true" and
+The names `tt` and `ff` are meant to be evocative of "true" and
 "false" respectively, but we don't use those names because the concepts of
 truth and falsity are more developed in Agda than in most programming languages.
 
@@ -66,32 +66,32 @@ typing judgment:
 not : Bool → Bool
 ```
 
-which states that `not`{.Agda} is a function that takes a `Bool`{.Agda} as input
-and produces another `Bool`{.Agda} as an output. We can define `not`{.Agda} by
-cases --- that is, by saying what happens if the input is `tt`{.Agda} and what
-happens if it is `ff`{.Agda}:
+which states that `not` is a function that takes a `Bool` as input
+and produces another `Bool` as an output. We can define `not` by
+cases --- that is, by saying what happens if the input is `tt` and what
+happens if it is `ff`:
 
 ```agda
 not tt = ff
 not ff = tt
 ```
 
-Notice that these are *equations.* We are saying literally that `not tt`{.Agda}
-is *equal to* `ff`{.Agda} for all intents and purposes. That means you (and
-Agda) can replace `not tt`{.Agda} with `ff`{.Agda} anywhere you'd like. Despite
+Notice that these are *equations.* We are saying literally that `not tt`
+is *equal to* `ff` for all intents and purposes. That means you (and
+Agda) can replace `not tt` with `ff` anywhere you'd like. Despite
 this, Agda is strongly normalizing, and will *reduce* the left-hand side to the
 right-hand side whenever possible. It is syntactically invalid to write this
 equation as
 
-```wrong
+```haskell
 ff = not tt
 ```
 
 even though logically it's fine to do so. As a quirk of Agda, you must put the
 side which defines the function on the left side of the equals sign.
 
-We can write (slightly) more interesting functions, for example, `and`{.Agda}
-which computes the logical AND of two `Bool`{.Agda}s:
+We can write (slightly) more interesting functions, for example, `and`
+which computes the logical AND of two `Bool`s:
 
 ```agda
 and : Bool → Bool → Bool
@@ -101,14 +101,14 @@ and ff tt = ff
 and ff ff = ff
 ```
 
-Notice how `and`{.Agda} *pattern matches* on every possible case of its two
+Notice how `and` *pattern matches* on every possible case of its two
 arguments.
 
 
 Exercise
 
-:   Implement `or : Bool → Bool → Bool`{.Agda}, computing the logical OR of two
-    `Bool`{.Agda}s
+:   Implement `or : Bool → Bool → Bool`, computing the logical OR of two
+    `Bool`s
 
 
 Solution
@@ -122,7 +122,7 @@ or ff ff = ff
 ```
 
 
-### Propositional Equality
+### Propositional Equality OLD
 
 So far, Agda looks like a pretty normal programming language, albeit with odd
 syntax if you are coming from a traditional, procedural background. Where things
@@ -138,22 +138,22 @@ module _ where
   open import Relation.Binary.PropositionalEquality
 ```
 
-We can now assert, for example, that `not (not tt)`{.Agda} is equal to
-`tt`{.Agda}:
+We can now assert, for example, that `not (not tt)` is equal to
+`tt`:
 
 ```agda
   not-not-tt-is-tt : not (not tt) ≡ tt
 ```
 
-Here we use the triple equals (`_≡_`{.Agda}), not to define the equality of two
-things, but to ensure it holds. Notice that `not (not tt) ≡ tt`{.Agda} comes on
+Here we use the triple equals (`_≡_`), not to define the equality of two
+things, but to ensure it holds. Notice that `not (not tt) ≡ tt` comes on
 the *right side* of a colon, which is to say that this thing is a *type.* This
 is a very strange notion if you are coming from a language that thinks of types
 as a means of laying out bits in memory, or one which eschews types altogether.
 We will explore the notion of equalities as types more deeply in a little bit,
 but for now, please suspend your disbelief.
 
-Equalities are the domain of mathematics, and thus `not-not-tt-is-tt`{.Agda} is
+Equalities are the domain of mathematics, and thus `not-not-tt-is-tt` is
 making a mathematical claim. Mathematical claims require proofs, and thus we
 must give one. Thankfully, the proof is extraordinarily easy:
 
@@ -161,17 +161,17 @@ must give one. Thankfully, the proof is extraordinarily easy:
   not-not-tt-is-tt = refl
 ```
 
-The term `refl`{.Agda} is short for *reflexivity,* which is the mathematical
+The term `refl` is short for *reflexivity,* which is the mathematical
 property that all things are equal to themselves. What's happening behind the
-scenes here is that Agda is normalizing `not (not tt)`{.Agda} to `not ff`{.Agda}
-and finally to `tt`{.Agda} by following the equations we wrote down earlier.
-After doing that, it sees that `tt`{.Agda} is on both sides of the `_≡_`{.Agda},
-which is to say that `tt`{.Agda} is equal to itself, and thus that we are
+scenes here is that Agda is normalizing `not (not tt)` to `not ff`
+and finally to `tt` by following the equations we wrote down earlier.
+After doing that, it sees that `tt` is on both sides of the `_≡_`,
+which is to say that `tt` is equal to itself, and thus that we are
 justified in saying this proposition holds by reflexivity.
 
 If you were to try to write a falsity, perhaps that:
 
-```wrong
+```haskell
   not-tt-is-tt : not tt ≡ tt
   not-tt-is-tt = refl
 ```
@@ -186,42 +186,42 @@ when checking that the expression refl has type not tt ≡ tt
 Behind the scenes, Agda really is checking your proofs, and it will holler
 loudly if they do not hold.
 
-An interesting fact about `not`{.Agda} is that it goes away if you do it twice,
-as we saw above with `not-not-tt-is-tt`{.Agda}. We can make this proof more
-reusable by saying that for *any* `Bool`{.Agda} `x`, it is the case that `not
-(not x) ≡ x`{.Agda}. As usual, we begin with a typing judgment:
+An interesting fact about `not` is that it goes away if you do it twice,
+as we saw above with `not-not-tt-is-tt`. We can make this proof more
+reusable by saying that for *any* `Bool` `x`, it is the case that `not
+(not x) ≡ x`. As usual, we begin with a typing judgment:
 
 ```agda
   not-not : (x : Bool) → not (not x) ≡ x
 ```
 
-which is a very strange type indeed. Here we're saying `not-not`{.Agda} is a
-function which takes a `Bool`{.Agda} argument, names it `x`, and then produces
+which is a very strange type indeed. Here we're saying `not-not` is a
+function which takes a `Bool` argument, names it `x`, and then produces
 an equality proof for that same `x`! This is our first example of a *dependent
 type,* which we will get significantly more practice with in due time.
 
 You might expect that we can write this as simply
 
-```wrong
+```haskell
 not-not x = refl
 ```
 
 but such a thing doesn't work. You see, we have rules for how to reduce `not
-tt`{.Agda} and `not ff`{.Agda}, but nothing of the form `not x`{.Agda}. Because
-we don't know which constructor of `Bool`{.Agda} `x`, we are unable to make
+tt` and `not ff`, but nothing of the form `not x`. Because
+we don't know which constructor of `Bool` `x`, we are unable to make
 progress in the reduction. Such terms are said to be *stuck.*
 
 The way we can unstick our computation is by pattern matching on `x`, and then
-giving a proof for the case when `x` is `tt`{.Agda}, and another for when it is
-`ff`{.Agda}. In both of these cases, pattern matching unsticks the computation
-and reveals that the proof for each is merely `refl`{.Agda}:
+giving a proof for the case when `x` is `tt`, and another for when it is
+`ff`. In both of these cases, pattern matching unsticks the computation
+and reveals that the proof for each is merely `refl`:
 
 ```agda
   not-not tt = refl
   not-not ff = refl
 ```
 
-This style of proof --- pattern match on every input, and return `refl`{.Agda}
+This style of proof --- pattern match on every input, and return `refl`
 for each --- is known as a *proof by exhaustion,* or, more colloquially, as a
 *case bash.*
 
@@ -242,9 +242,9 @@ which is trivially proven by exhaustion:
 ```
 
 Let's introduce one more lemma before doing something a little more interesting.
-Notice that when the first argument of `and`{.Agda} is `tt`{.Agda}, `and`{.Agda}
-returns its second argument unchanged. In the lingo, we say that `tt`{.Agda} is
-a *left-unit* of `and`{.Agda}, and we can prove it again by case bash:
+Notice that when the first argument of `and` is `tt`, `and`
+returns its second argument unchanged. In the lingo, we say that `tt` is
+a *left-unit* of `and`, and we can prove it again by case bash:
 
 ```agda
   and-unit : (x : Bool) → and tt x ≡ x
@@ -252,8 +252,8 @@ a *left-unit* of `and`{.Agda}, and we can prove it again by case bash:
   and-unit ff = refl
 ```
 
-As it happens, `or`{.Agda} also has a left-unit, but this time it is
-`ff`{.Agda}. Let's prove the following:
+As it happens, `or` also has a left-unit, but this time it is
+`ff`. Let's prove the following:
 
 ```agda
 module _ where
@@ -271,18 +271,18 @@ argument "by hand" before writing it in Agda to get a feel for the idea.
 
 Proof
 
-:   We begin with `or ff x`{.Agda} which we know, by De Morgan's laws, is equal
-    to `not (and (not ff) (not x))`{.Agda}. The definition of `not ff`{.Agda} is
-    `tt`{.Agda}, so we can replace that, resulting in `not (and tt (not x))`. We
-    know now that `tt`{.Agda} is a left unit for `and`, so this reduces to `not
-    (not x)`{.Agda}, which then by the `not-not`{.Agda} rule reduces to `x`.
+:   We begin with `or ff x` which we know, by De Morgan's laws, is equal
+    to `not (and (not ff) (not x))`. The definition of `not ff` is
+    `tt`, so we can replace that, resulting in `not (and tt (not x))`. We
+    know now that `tt` is a left unit for `and`, so this reduces to `not
+    (not x)`, which then by the `not-not` rule reduces to `x`.
     We've now shown what we set out to, so we are done.
 
 
 Our proof in Agda will follow exactly the same steps. At each step, we write the
 expression as it currently stands, and then write a justification for why we can
 transform it into the next step. These justifications are written inside of
-`≡⟨_⟩`{.Agda} brackets. Our proof begins with the word `begin_`{.Agda}:
+`≡⟨_⟩` brackets. Our proof begins with the word `begin_`:
 
 ```agda
   or-unit x =
@@ -310,9 +310,9 @@ This is definitionally equal to the following, so we require no justification:
       not (and tt (not x))
 ```
 
-We'd now like to invoke the `and-unit`{.Agda} law, but Agda requires us to
+We'd now like to invoke the `and-unit` law, but Agda requires us to
 "target" it in the expression. We need to apply it *inside* of the call to
-`not`{.Agda}, which we can do via the `cong not`{.Agda} function (discussed
+`not`, which we can do via the `cong not` function (discussed
 soon):
 
 ```agda
@@ -320,7 +320,7 @@ soon):
       not (not x)
 ```
 
-All that's left is to use `not-not`{.Agda}:
+All that's left is to use `not-not`:
 
 ```agda
     ≡⟨ not-not x ⟩
@@ -335,9 +335,9 @@ The proof is now finished, which mathematicians indicate with a black square:
 
 Don't ask why. I don't know. Tradition is a weird thing.
 
-Perhaps having written `or-unit`{.Agda} has given you a taste of what
+Perhaps having written `or-unit` has given you a taste of what
 constitutes a mathematical proof. Here we didn't do any silly
-proof-by-exhaustion stuff; `or-unit`{.Agda} is unquestionably a mathematical
+proof-by-exhaustion stuff; `or-unit` is unquestionably a mathematical
 proof --- and a very explicit one at that. As our mathematical vocabulary grows
 larger (and our software library of proofs), we'll find ourselves capable of
 proving more for less. But just like in software, math is built one layer of

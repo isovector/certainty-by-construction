@@ -1,8 +1,8 @@
-\beginhidden
+\hidestart
 ```agda
 module intro where
 ```
-\endhidden
+\hideend
 
 This book is ostensibly about math for programmers, but one of the major
 takeaways is that the two fields are not nearly as distance as they might
@@ -200,11 +200,11 @@ x = ff
 Let us now construct the type of natural numbers. We will proceed in steps.
 First, the type definition itself:
 
-\beginhidden
+\hidestart
 ```agda
 module nats where
 ```
-\endhidden
+\hideend
 
 
 ```agda
@@ -225,11 +225,11 @@ which we shorten to `suc`{.Agda}:
     suc  : ℕ → ℕ
 ```
 
-\beginhidden
+\hidestart
 ```agda
 open import Data.Nat using (ℕ; zero; suc)
 ```
-\endhidden
+\hideend
 
 While the type of `zero`{.Agda} is `ℕ`{.Agda}, the type of `suc`{.Agda} is `ℕ →
 ℕ`{.Agda}. The arrow represents a function, taking the type on the left side as
