@@ -1,4 +1,4 @@
-## Algebraic Structures
+# Algebraic Structures
 
 ```agda
 open import Relation.Binary using (Setoid)
@@ -348,7 +348,7 @@ will sometimes hear `_∙_` pronounced as "multiplication" or "times", and `ε`
 called the "unit."
 
 
-### More Monoids
+## More Monoids
 
 There are infinitely many monoids out there than the ones we've seen. In fact,
 most data structures admit at least one monoid; often many. Whenever you design
@@ -358,7 +358,7 @@ provide it!
 TODO(sandy): awful. talk about writing your own instances and what not
 
 
-### Monoid Homomorphisms
+## Monoid Homomorphisms
 
 Where things start getting interesting, however, is when we have several
 different monoids in play simultaneously. It's fun to think about the monoidal
@@ -767,7 +767,7 @@ that we did not in fact want a *monoid* homomorphism for `set`. But since the
 `_∙_` law is desirable, is there something weaker we can require of `set`?
 
 
-### Semigroups
+## Semigroups
 
 As a matter of fact, there is. We can weaken the `Monoid` structure by dropping
 the `ε` element and relevant laws. We're left with just the associative binary

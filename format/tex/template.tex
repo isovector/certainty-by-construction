@@ -27,7 +27,7 @@ $endif$
 $for(classoption)$
   $classoption$$sep$,
 $endfor$
-]{$documentclass$}
+]{book}
 $if(beamer)$
 $if(background-image)$
 \usebackgroundtemplate{%
@@ -445,12 +445,14 @@ $endif$
 
 % NOTE(sandy): here is where my stuff lives
 
+\usepackage{titlesec}
+
 \newcommand{\hidestart}{}
 \newcommand{\hideend}{}
 
 \usepackage{tex/agda}
 \usepackage{unicode-math}
-\setsansfont[Scale=MatchLowercase]{DejaVuSansMono.ttf}
+\setsansfont[Scale=MatchLowercase]{Noto Sans Mono}
 \setmathfont{XITS Math}
 \setmonofont{Noto Sans Mono}
 

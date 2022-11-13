@@ -1,8 +1,8 @@
+# Data and Types
+
 ```agda
 module types where
 ```
-
-## Data and Types
 
 Because this is a book about mathematics for programmers, it bears discussing a
 great deal around *data* --- that of the utmost importance to programmers. On a
@@ -215,7 +215,7 @@ hope of making progress is to reason about simple structures and optimize only
 at the end. But this is getting ahead of ourselves; we will see this technique
 fleshed out in overwhelming amounts of detail in @sec:denotations.
 
-### Data Structures
+## Data Structures
 
 Closely related to the natural numbers are (rather surprisingly) a common data
 structure: linked lists. The exact nature of this relationship we will not

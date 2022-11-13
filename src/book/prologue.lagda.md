@@ -1,3 +1,5 @@
+# Prologue
+
 It was almost ten years ago when I stumbled across the idea that, in order to
 truly understand something, one should write themselves a textbook to really
 flesh out the concepts. The reasoning, it goes, is that when you're just forced

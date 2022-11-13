@@ -1,4 +1,4 @@
-## Decidability
+# Decidability
 
 ```agda
 module decidability where
@@ -253,7 +253,7 @@ module mod-dec (n : ℕ) where
   import Data.Nat.Properties as Nat
   open import Relation.Binary
 
-  _≟_ : (x y : ℕ) → Dec (x ≈ y ⟨mod n ⟩)
-  _≟_ x y with ∣ x - y ∣
-  ... | yo = ?
+  -- _≟_ : (x y : ℕ) → Dec (x ≈ y ⟨mod n ⟩)
+  -- _≟_ x y with ∣ x - y ∣
+  -- ... | yo = ?
 ```

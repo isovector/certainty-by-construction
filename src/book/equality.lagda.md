@@ -1,4 +1,4 @@
-## Equality
+# Equality
 
 ```agda
 module equality where
@@ -44,7 +44,7 @@ conflation; this is not a *notion* of equality, it is a query *testing* for
 equality. Related, certainly, but two very different things.
 
 
-### Boolean Blindness
+## Boolean Blindness
 
 If testing for equality is all you have ever known, it might be hard to
 appreciate its shortcomings. The biggest problem here is that the result is just
@@ -133,7 +133,7 @@ and so we can simply use the one we already have if we've made the check
 earlier.
 
 
-### Propositional Equality
+## Propositional Equality
 
 Now that you're convinced there is value in representing equality as a type, how
 do we actually go about doing that? While there are many notions of equality
@@ -234,7 +234,7 @@ Solution
     ```
 
 
-### Unit Testing
+## Unit Testing
 
 Armed with the `_≡_` type (pronounced "propositional equality"), we are
 immediately endowed with the ability to write unit tests for our programs. But
@@ -311,7 +311,7 @@ when checking that the expression refl has type 2 + 2 ≡ 5
 Couldn't be clearer.
 
 
-### Simple Proofs
+## Simple Proofs
 
 Equipped with our new equality types, we are capable of writing some simple
 proofs. For now we will limit ourselves to facts about natural numbers, which
@@ -508,7 +508,7 @@ Solution
   m+suc (suc m) n = cong suc (m+suc m n)
     ```
 
-### Equational Reasoning
+## Equational Reasoning
 
 ```agda
 module Y where
@@ -636,7 +636,7 @@ goal, rather than coming up with it fully-fledged. Not all mathematical domains
 support this style of reasoning, but it's a godsend for those which do.
 
 
-### Associativity of Addition
+## Associativity of Addition
 
 One beloved fact about addition is that it is *associative* --- that is to say,
 for any numbers $m, n, k$ we have the fact that $m + (n + k) = (m + n) + k$.
@@ -667,7 +667,7 @@ Solution
     ```
 
 
-### Commutativity of Addition
+## Commutativity of Addition
 
 When you're ready for a challenge, try the following exercise proving the
 so-called *commutativity* property of addition. We will discuss commutativity
@@ -740,7 +740,7 @@ words? Because the technique simply doesn't work for non-commutative or
 non-associative operations. Pretty sneaky!
 
 
-### Multiplication
+## Multiplication
 
 Enough about addition. Let's briefly discuss multiplication, but will leave the
 proof burden to you to show all of our desired properties about this beloved
@@ -850,7 +850,7 @@ Following the process
 ```
 
 
-### Intentional vs Extensional Equality
+## Intentional vs Extensional Equality
 
 Based on the above examples, equality might seem like the clearest thing in the
 world. This is not entirely the case, however. For numbers and booleans and

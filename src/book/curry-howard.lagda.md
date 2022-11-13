@@ -1,4 +1,4 @@
-## Propositions as Types
+# Propositions as Types
 
 ```agda
 module curry-howard where

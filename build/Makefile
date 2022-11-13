@@ -3,8 +3,8 @@ rules = pdf print
 targets = $(addsuffix .pdf,$(rules))
 
 $(targets): %.pdf: tex/%.tex .current-revision
-	xelatex tex/$*.tex
-	xelatex tex/$*.tex
+	echo q | xelatex tex/$*.tex || echo 0
+	echo q | xelatex tex/$*.tex || echo 0
 
 missing-from-sample.pdf: ../format/missing-from-sample.tex
 	xelatex ../format/missing-from-sample.tex

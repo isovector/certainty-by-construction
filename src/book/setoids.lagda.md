@@ -1,4 +1,4 @@
-## Quotients
+# Quotients
 
 ```agda
 module setoids where
@@ -203,7 +203,7 @@ simplify our workload?
 The answer, is setoids.
 
 
-### Setoids
+## Setoids
 
 While it may seem like we've taken a long detour from our original goal of
 talking about equality, we are now ready to tackle *setoids* in their full
@@ -528,7 +528,7 @@ actually *means.* The setoid approach can be paraphrased as "whenever you define
 a set, you must also define what equality means over it."
 
 
-### Constructions on Setoids
+## Constructions on Setoids
 
 By virtue of being first-class objects, setoids are *values* that we can pass
 as parameters, and return from functions. That means there's an entire set of

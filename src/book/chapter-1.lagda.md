@@ -1,4 +1,4 @@
-## Proofs
+# Proofs
 
 What constitutes a mathematical proof? How do you know when you are done? This
 was always the hardest part in my math education. The course notes from my first
@@ -36,7 +36,7 @@ software you write: both in terms of deconstructing problems, and in proving
 your solutions are correct.
 
 
-### Axioms
+## Axioms
 
 In any formal system like mathematics of programming, we are required to state
 the objects of study. A huge amount of mathematics, as opposed to programming,
@@ -122,7 +122,7 @@ or ff ff = ff
 ```
 
 
-### Propositional Equality OLD
+## Propositional Equality OLD
 
 So far, Agda looks like a pretty normal programming language, albeit with odd
 syntax if you are coming from a traditional, procedural background. Where things
@@ -344,7 +344,7 @@ proving more for less. But just like in software, math is built one layer of
 abstraction at a time.
 
 
-### Equivalence Relationships
+## Equivalence Relationships
 
 ```agda
 module Example where

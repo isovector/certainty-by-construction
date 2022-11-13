@@ -10,7 +10,9 @@ PANDOC_OPTS := --citeproc \
 
 PANDOC_PDF_OPTS := --from latex+raw_tex \
                    --template format/tex/template.tex \
+                   --toc \
                    -s \
+                   --top-level-division=chapter \
                    -t latex+lagda
 
 

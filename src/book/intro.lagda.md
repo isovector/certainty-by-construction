@@ -1,3 +1,5 @@
+# Intro
+
 \hidestart
 ```agda
 module intro where
