@@ -76,6 +76,8 @@ both. Thus, we also add the following laws to our `Monoid` record:
 ```agda
       ε-unitˡ : (a : A) → ε ∙ a ≡ a
       ε-unitʳ : (a : A) → a ∙ ε ≡ a
+
+      ∙-cong₂ : {a b c d : A} → a ≡ b → c ≡ d → a ∙ c ≡ b ∙ d
 ```
 
 The first step to building intuition as to what a mathematical idea *is* is to
@@ -105,6 +107,7 @@ As you might expect, this thing follows the laws, but in a very trivial manner:
   ∙-assoc ⊤-monoid a b c = refl
   ε-unitˡ ⊤-monoid a = refl
   ε-unitʳ ⊤-monoid a = refl
+  ∙-cong₂ ⊤-monoid _ _ = refl
 ```
 
 Well, we managed to create a trivial monoid. But it wasn't very informative as
@@ -130,6 +133,7 @@ module _ where
   ∙-assoc true-and-monoid = ∧-assoc
   ε-unitˡ true-and-monoid = ∧-identityˡ
   ε-unitʳ true-and-monoid = ∧-identityʳ
+  ∙-cong₂ true-and-monoid refl refl = refl
 ```
 
 Exercise
@@ -146,6 +150,7 @@ Solution
   ∙-assoc false-or-monoid = ∨-assoc
   ε-unitˡ false-or-monoid = ∨-identityˡ
   ε-unitʳ false-or-monoid = ∨-identityʳ
+  ∙-cong₂ false-or-monoid refl refl = refl
     ```
 
     ```agda
@@ -159,6 +164,7 @@ Solution
   ε-unitˡ false-xor-monoid a = refl
   ε-unitʳ false-xor-monoid false = refl
   ε-unitʳ false-xor-monoid true = refl
+  ∙-cong₂ false-xor-monoid refl refl = refl
     ```
 
 Let's now turn our attention to the natural numbers. Do any monoids exist there?
@@ -186,6 +192,7 @@ module _ where
   ∙-assoc 0-+-monoid = +-assoc
   ε-unitˡ 0-+-monoid = +-identityˡ
   ε-unitʳ 0-+-monoid = +-identityʳ
+  ∙-cong₂ 0-+-monoid refl refl = refl
     ```
 
     ```agda
@@ -195,6 +202,7 @@ module _ where
   ∙-assoc 1-*-monoid = *-assoc
   ε-unitˡ 1-*-monoid = *-identityˡ
   ε-unitʳ 1-*-monoid = *-identityʳ
+  ∙-cong₂ 1-*-monoid refl refl = refl
     ```
 
 Exercise
@@ -218,6 +226,7 @@ module _ {A : Set} where
   ∙-assoc []-++-monoid = ++-assoc
   ε-unitˡ []-++-monoid = ++-identityˡ
   ε-unitʳ []-++-monoid = ++-identityʳ
+  ∙-cong₂ []-++-monoid refl refl = refl
     ```
 
 Armed with a few examples of monoids, we can now take some time to analyze the
@@ -739,6 +748,7 @@ module _ {A : Set} where
   ε-unitˡ last-monoid (just x) = refl
   ε-unitˡ last-monoid nothing = refl
   ε-unitʳ last-monoid a = refl
+  ∙-cong₂ last-monoid refl refl = refl
 ```
 
 The `last-wins` gives us the traditional behavior of data structures: that
@@ -822,6 +832,7 @@ module _ where
   ∙-assoc max-monoid = ⊔-assoc
   ε-unitˡ max-monoid = ⊔-identityˡ
   ε-unitʳ max-monoid = ⊔-identityʳ
+  ∙-cong₂ max-monoid refl refl = refl
 ```
 
 which uses 0 as the identity element, since it's the smallest possible natural
