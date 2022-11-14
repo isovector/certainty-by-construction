@@ -87,6 +87,9 @@ In Agda, our limitation is not in the type system, but in our ability to
 transform thoughts into types. As we will see, as our agility manipulating types
 improves, so too will our ability to grapple with the mathematical ideas.
 
+
+## Product Types
+
 Let's take another example. Consider the *pair type,* which allows us to package
 two values together:
 
@@ -209,4 +212,138 @@ debugging (because we need only look at the types of things to see if they could
 go wrong.) Good mathematical habits make for good programming habits, and vice
 versa.
 
+
+## Sum Types
+
+Mathematically *dual* in a very deep way that we will discuss in @sec:categories
+to the product types are the so-called *sum* or *coproduct* types. Under the
+Curry--Howard isomorphism, product types correspond with multiplication of
+number of inhabitants, while coproducts instead correspond to *addition* of
+inhabitants.
+
+The canonical sum type exists in the Agda standard library under `Data.Sum`,
+with the following definition:
+
+```agda
+data _⊎_ (A B : Set) : Set where
+  inj₁ : A → A ⊎ B
+  inj₂ : B → A ⊎ B
+```
+
+A value of type `A ⊎ B` might be an `A`, but it could also be a `B`. But
+whatever it is, it's definitely one of the two. It can't be neither, nor can it
+be both. Why might this be valuable?
+
+Sum types in this form are mysteriously absent from most traditional programming
+languages, so the majority of programmers don't have the same rich intuition
+from years of experience that they do with product types. But nevertheless, sum
+types are everywhere when you know where to look.
+
+The most famous coproduct is `⊤ ⊎ ⊤`, where `⊤` is given by:
+
+```agda
+data ⊤ : Set where
+  tt : ⊤
+```
+
+The `⊤` type is devoid of any information whatsoever. It has exactly one
+inhabitant, and so it must therefore carry zero bits of information --- since
+you already know what the inhabitant must be. `⊤` is sometimes called the unit
+type, or "top," or, much to the dismay of programming language people, "void" in
+C-like languages. Whenever you don't have anything better to return from a
+function, you can have it return `⊤.`
+
+Returning to our most famous coproduct, something interesting happens when we
+pair two copies of `⊤` together via `_⊎_`. The coproduct adds together the
+number of inhabitants of its arguments, and thus `⊤ ⊎ ⊤` has two inhabitants.
+There is a type distinguished from all other types by having only two
+inhabitants, namely `Bool`. Somehow by combining two zero-bit pieces of
+information, we found a bit somewhere!
+
+Where did this bit come from? Curiously, it comes from the selection of whether
+we built `⊤ ⊎ ⊤` via `inj₁` or `inj₂` --- our two data constructors for the
+type. Even though we stuck nothing in, we somehow got something out, almost as
+if by magic.
+
+
+## Pi Types
+
+Product and coproduct types appear anywhere you have so-called *algebraic data
+types,* that is, types on which you can perform algebra like addition and
+multiplication. Most programming languages that descend from the ML family come
+with good support for these types, and their usage is (relatively) widespread in
+software engineering.
+
+This is not so for the *pi* types, which are what differentiate
+*dependently-typed* programming languages from other varieties of programming
+languages and their respective type systems. Pi types are where most of the
+magic comes from, in allowing us to model mathematics. A pi type allows us to
+bind a function argument to a name, and subsequently refer to that argument
+*later on in the type.*
+
+```agda
+open import Data.Nat
+
+Π : (A : Set) → (A → Set) → Set
+Π A f = (a : A) → f a
+
+infix 2 _≠_ _≡_
+postulate
+  A : Set
+  F : A → Set
+
+  _≡_ : ℕ → ℕ → Set
+  _≠_ : ℕ → ℕ → Set
+```
+
+Given some type family `F : A → Set`, a pi type lets us construct the type `(a :
+A) → F a`, where we can *call a function* inside of a type to produce another
+type. Importantly, this function call depends on the specific value given as the
+first parameter.
+
+For example, given some suitable type construction `_≠_ : ℕ → ℕ → Set`, pi types
+let us encode the mathematical fact that "for any number $n$, $n$ is not equal
+to $n + 1$" as:
+
+```agda
+Ex : Set
+Ex = Π ℕ λ n → n ≠ n + 1
+
+Ex₂ : Set
+Ex₂ = (n : ℕ) → n ≠ n + 1
+```
+
+where our function `F` is `λ n → n ≠ n + 1`.
+
+I like to think of pi types as "giving names to arguments" so that they can be
+referred to later. Pi types correspond to any usage of the mathematical term
+"for all."
+
+
+## Sigma Types
+
+Closely related to product types, but with an added "dependent type" pizzazz are
+the *sigma* types, which correspond to the mathematical expression "there exists
+... such that." We encode this as a "dependent pair," where the first element of
+the pair is the thing that exists, while the second element is the property it
+holds. In Agda we write this:
+
+```agda
+record Σ (A : Set) (f : A → Set) : Set where
+  constructor _,_
+  field
+    fst : A
+    snd : f fst
+```
+
+For example, we can state "there exists a number $n$ such that $n * n = 49$":
+
+```agda
+Ex₃ : Set
+Ex₃ = Σ ℕ λ n → n * n ≡ 49
+```
+
+We use the first argument to `Σ` to state what type of thing we'd like to
+contain, and the second argument to describe what else should relate to the
+first argument.
 
