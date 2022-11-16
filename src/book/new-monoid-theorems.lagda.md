@@ -1,4 +1,4 @@
-## Theorems about Monoids
+# Theorems about Monoids
 
 ```agda
 module new-monoid-theorems where
@@ -12,7 +12,7 @@ what holds over them. We can begin with a little bit of Agda module management
 to help wrangle our monoids into a more usable format:
 
 ```agda
-open import Agda.Primitive using (Level)
+open import Agda.Primitive using (Level; _⊔_; lzero; lsuc)
 open import Relation.Binary using (Setoid)
 open import Data.Product
 
@@ -113,7 +113,15 @@ module _ where
   sym (isEquivalence (A ⇨ x)) p a = sym x (p a)
   trans (isEquivalence (A ⇨ x)) p1 p2 a = trans x (p1 a) (p2 a)
 
-module _ {X : Set} {s : Setoid _ _} (m : Monoid s) where
+  Σ-setoid : {c l l₂ : Level} → (s : Setoid c l) → (s .Carrier → Set l₂) → Setoid (c ⊔ l₂) l
+  Carrier (Σ-setoid s f) = Σ (s .Carrier) f
+  _≈_ (Σ-setoid s f) a b = s ._≈_ (proj₁ a) (proj₁ b)
+  refl (isEquivalence (Σ-setoid s f)) = s .refl
+  sym (isEquivalence (Σ-setoid s f)) x = sym s x
+  trans (isEquivalence (Σ-setoid s f)) x y = trans s x y
+
+
+module _ {c l : Level} {X : Set} {s : Setoid c l} (m : Monoid s) where
   open monoid-hom ([]-++-monoid {X}) m
   open use-monoid m
   open import Relation.Binary.Reasoning.Setoid s
@@ -147,17 +155,40 @@ module _ {X : Set} {s : Setoid _ _} (m : Monoid s) where
     fold f a  ≡⟨ PropEq.cong (fold f) x ⟩
     fold f b  ∎
 
-  open import iso
+  open import 8-iso
   open _↔_
 
-  Really-free : (X ⇨ s) ↔ PropEq.setoid (Σ (List X → A) IsMonoidHom)
+  instance
+    a-equiv : Equivalent l A
+    Equivalent._≋_ a-equiv = _≈_
+    Equivalent.equiv a-equiv = s .Setoid.isEquivalence
+
+    lift→-equiv : {ℓ₂ c₁ c₂ : Level} → {A : Set c₁} {B : Set c₂} → {{Equivalent ℓ₂ B}} → Equivalent (c₁ ⊔ ℓ₂) (A → B)
+    Equivalent._≋_ (lift→-equiv {A = A} {B}) f g = (a : A) → f a ≋ g a
+    IsEquivalence.refl (Equivalent.equiv lift→-equiv) a = equiv .IsEquivalence.refl
+    IsEquivalence.sym (Equivalent.equiv lift→-equiv) x a = equiv .IsEquivalence.sym (x a)
+    IsEquivalence.trans (Equivalent.equiv lift→-equiv) x y a = equiv .IsEquivalence.trans (x a) (y a)
+
+    Σ-equiv : {ℓ : Level} → {{Equivalent ℓ A}} → Equivalent ℓ (Σ (List X → A) IsMonoidHom)
+    Equivalent._≋_ Σ-equiv a b = proj₁ a ≋ proj₁ b
+    IsEquivalence.refl (Equivalent.equiv (Σ-equiv {_} ⦃ e ⦄)) a = equiv .IsEquivalence.refl
+    IsEquivalence.sym (Equivalent.equiv (Σ-equiv {_} ⦃ e ⦄)) x a = equiv .IsEquivalence.sym (x a)
+    IsEquivalence.trans (Equivalent.equiv (Σ-equiv {_} ⦃ e ⦄)) x y a = equiv .IsEquivalence.trans (x a) (y a)
+
+  Really-free : (X → A) ↔ Σ (List X → A) IsMonoidHom
   to Really-free f = fold f , list-is-free f
   from Really-free (f , hom) x = f [ x ]
   left-inverse-of Really-free f x = begin
     f x ∙ ε  ≈⟨ ε-unitʳ (f x) ⟩
     f x      ∎
-  right-inverse-of Really-free = {! !}
-
-
-
+  right-inverse-of Really-free (f , hom) [] = sym (hom .preserves-ε)
+  right-inverse-of Really-free (f , hom) (a ∷ as) = begin
+    fold (λ y → f [ y ]) (a ∷ as)      ≡⟨⟩
+    f [ a ] ∙ fold (λ y → f [ y ]) as
+             ≈⟨ ∙-cong₂ refl (right-inverse-of Really-free (f , hom) as) ⟩
+    f [ a ] ∙ f as                     ≈⟨ sym (preserves-∙ hom [ a ] as) ⟩
+    f (a ∷ as)                         ∎
+  to-cong Really-free f [] = refl
+  to-cong Really-free f (x ∷ a) = ∙-cong₂ (f x) (to-cong Really-free f a)
+  from-cong Really-free f a = f [ a ]
 ```

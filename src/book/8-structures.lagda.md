@@ -447,8 +447,9 @@ Because we'll need the two monoids in scope first, we can parameterize our
 module over them:
 
 ```agda
-module monoid-hom {c l : Level}
-            {s1 s2 : Setoid c l}
+module monoid-hom {c₁ l₁ c₂ l₂ : Level}
+            {s1 : Setoid c₁ l₁}
+            {s2 : Setoid c₂ l₂}
             (m1 : monoid.Monoid s1)
             (m2 : monoid.Monoid s2) where
   open monoid
@@ -476,7 +477,7 @@ type. We still have to tie the homomorphic function into the mix, so we can
 parameterize the record by the function in question:
 
 ```agda
-  record IsMonoidHom (f : A → B) : Set (lsuc (c ⊔l l)) where
+  record IsMonoidHom (f : A → B) : Set (c₁ ⊔l c₂ ⊔l l₁ ⊔l l₂) where
 ```
 
 And then we can write our desired laws down verbatim:
