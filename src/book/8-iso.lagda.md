@@ -1,6 +1,8 @@
 # Isomorphism
 
 ```agda
+{-# OPTIONS --allow-unsolved-metas #-}
+
 module 8-iso where
 
 open import Relation.Binary using (Setoid; _Preserves_⟶_)
@@ -415,7 +417,7 @@ build such a thing. This is our first taste of how mathematics as it's practiced
 doesn't line up with what we'd desire in a more rigorous setting, like the
 necessity of actual computation.
 
-```
+```agda
   inj-sur-↔ : {f : A → B} → Injective f → Surjective f → A ↔ B
   to           (inj-sur-↔ {f} inj sur) = f
   from         (inj-sur-↔ {f} inj sur) x = proj₁ (sur x)
