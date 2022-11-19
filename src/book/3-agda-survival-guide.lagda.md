@@ -226,7 +226,8 @@ left, and then your program will be complete.
 
 Let's take an example. Suppose we want to implement the `factorial` program from
 above. We begin by writing out the type of `factorial`, and then giving its
-definition as a hole (indicated in Agda code via a question mark):
+definition as a hole (indicated in Agda code via a question mark, and in the
+following code samples via a green background):
 
 ```agda
 factorial⅋ : ℕ → ℕ
@@ -336,4 +337,163 @@ Every step of the way, I was responsible only for "navigating" where the code
 went, but Agda did the hard work of typing it out for me. It is almost as if we
 were collaborating in a pair programming session. Indeed, this is what it often
 feels like.
+
+
+### Navigating the Agda Standard Library
+
+Much more so than any other programming language I have ever encountered, Agda
+code does not lend itself to being read outside of a code editor. The irony of
+this statement in a book presenting Agda code is not lost on the author, but he
+will do his best to keep the cognitive load to a minimum. The motivated reader
+is highly encouraged to follow along in their text editor.
+
+Inside the editor, your best friend is [GotoDefinition](AgdaCmd), which unlike
+many compiled languages, will take you to definitions in any package you have
+installed, not just those in the same package you're currently working on.
+[GotoDefinition](AgdaCmd) is *necessary* for getting any real work done,
+especially in the beginning of your Agda experience when you don't have the
+standard library's idioms paged into your head.
+
+The standard library itself is laid out hierarchically, into a few main
+categories, with relatively consistent structure. As we are just getting
+started, we will limit ourselves to the following top-levels of the module
+hierarchy:
+
+- `Data.*`
+- `Function`
+- `Relation.Binary.*`
+
+The `Data` hierarchy contains all the data types you'll ever need, things like
+numbers, booleans, strings, lists, optional values, tuples, trees, that sort of
+thing. In particular, we will use (in descending order of relative queerness):
+
+- `Data.Nat` --- natural numbers
+- `Data.Bool` --- booleans
+- `Data.Product` --- tuples
+- `Data.Fin` --- bounded numbers
+- `Data.List` --- lists
+- `Data.Vec` --- lists with an exact size
+- `Data.Unit` --- the type with only one value
+- `Data.Sum` --- either/or types
+- `Data.Empty` --- the type with no values
+
+Each of these modules contains the core data types and their most usual
+operations. This book, and Agda as well, is primarily about *proving things,*
+and to that extent, Agda already comes with a great deal of proofs. This work
+exists inside the `.Properties` sub-module of each of the above. That is, if
+you're looking for a proof about lists, you would do well to look inside of
+`Data.List.Properties`. Don't forget to use [GotoDefinition](AgdaCmd) to explore
+around when you get there.
+
+The `Function` module contains a lot of the common machinery you'd expect from a
+functional programming language, things like the `id`entity function, the
+`const`ant function, and function composition (via `_∘_`.) If this means nothing
+to you yet, don't fret, we'll get there. Otherwise, this is the place to look if
+you're unsure of where to find any particular function combinator.
+
+Finally, we come to the `Relation.Binary` hierarchy, which contains tools for
+*proving* equality (rather than *testing for equality* like most languages do),
+as well as discussing different sorts of equality. As a beginner, the most
+important module in this hierarchy is `Relation.Binary.PropositionalEquality`
+which has everything we'll need to begin thinking about proofs in chapter
+@sec:proofs.
+
+
+## Normalization
+
+Unfortunately, huge swathes of the standard library are completely
+incomprehensible. Worse, it seems like someone must be playing an elaborate joke
+on us. Something you'll run across sooner than later is `_Preserves_⟶_`, which
+states that some function preserves equality, for example. The details are not
+important right now. We can look at the definition of `_Preserves_⟶_` hoping to
+gain some insight, but all we are given is this:
+
+```wtf
+_Preserves_⟶_ : (A → B) → Rel A ℓ₁ → Rel B ℓ₂ → Set _
+f Preserves P ⟶ Q = P =[ f ]⇒ Q
+```
+
+Clearly the definition here depends on `_=[_]⇒_`, so we can follow its
+definition via [GotoDefinition](AgdaCmd). Unfortunately, this doesn't really
+clarify anything:
+
+```wtf
+_=[_]⇒_ : Rel A ℓ₁ → (A → B) → Rel B ℓ₂ → Set _
+P =[ f ]⇒ Q = P ⇒ (Q on f)
+```
+
+Where we once had one puzzle, now we have two: `_⇒_` and `_on_`. Let's proceed
+cautiously:
+
+```wtf
+_⇒_ : REL A B ℓ₁ → REL A B ℓ₂ → Set _
+P ⇒ Q = ∀ {x y} → P x y → Q x y
+```
+
+Thankfully the buck stops at `_⇒_`, cashing out into merely being the type of a
+function applying two variables pairwise. Again, the purpose here and now is not
+necessarily to understand this code, merely to ward off the eventual terror and
+despair one might feel if discovering this for themselves. We look into the
+pleasantly named `_on_` function, and this is when things begin to really go
+wrong:
+
+
+```wtf
+_on_ : (B → B → C) → (A → B) → (A → A → C)
+_*_ on f = f -⟨ _*_ ⟩- f
+```
+
+Uh oh. Now we need to investigate `_-⟨_⟩-_`? Surely we must be getting close to
+the end. One more [GotoDefinition](AgdaCmd), and, oh, god no:
+
+```wtf
+_-⟨_⟩-_ : (A → C) → (C → D → E) → (B → D) → (A → B → E)
+f -⟨ _*_ ⟩- g = f -⟨ const ∣ -⟪ _*_ ⟫- ∣ constᵣ ⟩- g
+```
+
+Surely someone must be pulling our leg here. What in tarnation is all of this
+syntax? The unfortunate truth is that this is all library defined, and that Agda
+is flexible enough to allow it. We can continue following definitions, but at
+this point, personally, my eyes have glazed over and there is no possible way
+I'm going to be able to reconstitute all of these definitions back up to
+`_Preserves_⟶_` to answer my original question. Just to take the visual gag a
+little further, let's look at a few more functions in this call stack:
+
+```wtf
+_-⟨_∣ : (A → C) → (C → B → D) → (A → B → D)
+f -⟨ _*_ ∣ = f ∘₂ const -⟪ _*_ ∣
+
+_-⟪_∣ : (A → B → C) → (C → B → D) → (A → B → D)
+f -⟪ _*_ ∣ = f -⟪ _*_ ⟫- constᵣ
+
+_-⟪_⟫-_ : (A → B → C) → (C → D → E) → (A → B → D) → (A → B → E)
+f -⟪ _*_ ⟫- g = λ x y → f x y * g x y
+```
+
+You can't make this stuff up. I'm not sure how these definitions got here, but I
+do know this is someone who has gone mad with power.
+
+So, playing the [GotoDefinition](AgdaCmd) game clearly hasn't worked for us. Is
+there something else we can try to get an understanding of `_Preserves_⟶_`?
+Indeed there is --- the [Normalise](AgdaCmd) command, which asks Agda to
+evaluate an expression as far as possible. After running [Normalise](AgdaCmd),
+we are prompted for what we'd like to evaluate, and we can simply enter
+`_Preserves_⟶_`. Our efforts are immediately rewarded with a response from Agda:
+
+```repl
+λ f P Q → {x y : z} → P x y → Q (f x) (f y)
+```
+
+What's happened here is that we've asked Agda to automate the reasoning chain of
+playing [GotoDefinition](AgdaCmd) and attempting to reconstitute an
+understanding of the insane choices made in the standard library. While we might
+not yet understand Agda's response, we will in a few chapters.
+
+The takeaway here is Agda is extremely good at chasing definitions; feel free to
+ask it for help whenever you're feeling overwhelmed.
+
+
+## Dealing with Unicode
+
+
 

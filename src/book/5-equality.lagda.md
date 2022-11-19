@@ -528,11 +528,11 @@ into some other shape. Consider, for example, how we might evaluate $(2 \times
 $$
 \begin{aligned}
 & (2 \times 3) \times (4 + 3) \div (1 + 1) \\
-=& 6 \times (4 + 3) \div (1 + 1) \\
-=& 6 \times 7 \div (1 + 1) \\
-=& 6 \times 7 \div 2 \\
-=& 42 \div 2 \\
-=& 41
+&= 6 \times (4 + 3) \div (1 + 1) \\
+&= 6 \times 7 \div (1 + 1) \\
+&= 6 \times 7 \div 2 \\
+&= 42 \div 2 \\
+&= 41
 \end{aligned}
 $$
 
