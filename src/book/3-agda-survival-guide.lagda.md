@@ -495,5 +495,145 @@ ask it for help whenever you're feeling overwhelmed.
 
 ## Dealing with Unicode
 
+Personally, my biggest challenge coming to Agda was learning to wrangle all of
+the unicode characters. The field of programming has a peculiar affinity for the
+standard ASCII character set, which is somewhat odd when you think about it.
+What symbol is `==` supposed to be, anyway? Is it *merely* a standard equals
+sign? If so, why not just use `=`? Is it supposed to be an elongated equals
+sign? In the case we really wanted to stick with ASCII, surely `=?` would be a
+better choice, since this operator *tests* for equality. Agda follows this path,
+but decides that, since we have a perfectly good unicode symbol anyway, why not
+use `≟`?
 
+There are two primary arguments here to make here against the usage of unicode.
+
+The first, is unfamiliarity with symbols when *reading* code. For example, when
+I was getting started, I was often flummoxed by `⊎` and `⨄`, which are easy to
+distinguish when placed beside one another, but much harder when they're in the
+wild. When you're reading code, how do you know which symbol is which? And how
+do you assign names to them?
+
+Agda provides [DescribeChar](AgdaCmd) to help with this problem, which when run
+with the cursor over `⊎` will produce the following output:
+
+```verbatim
+            character: ⊎ (displayed as ⊎) (codepoint 8846, #o21216, #x228e)
+              charset: unicode (Unicode (ISO10646))
+code point in charset: 0x228E
+               script: symbol
+               syntax: w    which means: word
+             category: .:Base
+             to input: type "\u+" with Agda input method
+
+Character code properties: customize what to show
+  name: MULTISET UNION
+  general-category: Sm (Symbol, Math)
+  decomposition: (8846) ('⊎')
+```
+
+In particular, we see the name of this symbol is *multiset union*, which is
+significantly more pronounceable than `⊎`.
+
+The second problem that beginners have with unicode is the problem of how the
+heck do you actually type these strange characters? As you can see in the
+response from [DescribeChar](AgdaCmd) above, there's a little section labeled
+"to input."
+
+When writing Agda, you can input unicode characters by typing a backslash, and
+then a mnemonic for the character you'd like. There are a few different naming
+schemes used by Agda, but for abstract symbols like `⊎` a good bet is to try to
+press a series of characters that together build the one you want. For example,
+`≈` is input by typing `\~~`, and `≋` is similarly just `\~~~`. We can write `≗`
+via `\=o`, and `≟` via `\=?`. Some characters require only one additional
+keypress. We can write `∙` by typing `\.` and `∘` with `\o`.
+
+One common binding you'll need is that for function arrows, `→`. This is typed
+in the obvious way, `\->`, but can also be written in fewer keystrokes as `\to`.
+As it happens, this is the same mnemonic that LaTeX uses to type the arrow
+symbol. If you're familiar with LaTeX, most bindings you know from there will
+also work in Agda.
+
+Similarly to LaTeX, we can prefix bindings with `_` or `^` to make subscript or
+superscript versions of characters. That means we can get `₁` via `\_1`, and get
+a squared symbol `²` via `\^2`. All numbers have sub- and superscript versions,
+but only some letters do. This is not Agda's fault; address your complaints to
+the Unicode Consortium regarding the lack of subscript `f`.
+
+Mathematicians, and thus Agda-users, are also particularly fond of Greek
+letters. You can type Greek letters by prefixing the Latin-equivalent letter
+with `\G`. That is, if you'd like a `λ` (and what good functional programmer
+wouldn't?) you'd type `\Gl`, because `λ` is the Greek version of the Latin
+letter `l`. And if you want an uppercase lambda `Λ`, well, that one is just
+`\GL`. As you can see, the system is quite well organized when you wrap your
+head around it.
+
+The other block of symbols you'll probably need at first are the so-called
+*blackboard bold* letters, which are often used in mathematics to describe sets
+of numbers --- the natural numbers being `ℕ`, the reals being `ℝ`, the rationals
+being `ℚ` (short for "quotients"), and so on. You can type blackboard bold
+numbers with the `\b` prefix.
+
+Suspend your disbelief; programming in unicode really is quite delightful if you
+can push through the first few hours. Having orders of magnitude more symbols
+under your fingers is remarkably powerful, meaning you can shorten your
+identifiers without throwing away information. And as a bonus, especially when
+transcribing mathematics, your program can look exceptionally close to the
+source material --- nice to minimize the cognitive load. You're already dealing
+with big ideas, without having to add a layer of naming indirection into the
+mix.
+
+
+## A Note on Identifiers
+
+As we saw earlier when we defined `if_then_else_`, a so-called *mixfix
+operator,* Agda's syntax is extremely permissive. But this is really just the
+beginning. Most programming languages have strong restrictions on what letters
+can occur in identifiers. Agda takes the opposite approach, and says only that
+identifiers may not contain any of `.;(){}@`. That's it. Anything else is fair
+game.
+
+Oh, and also, because of the mixfix parsing above, you can't use `_` as a
+literal character; it always means "a hole for other syntax goes here." If you'd
+like an alternative to the `snake_case` you write in other languages, consider
+instead using `kebab-case`.
+
+Aside from a few keywords, any other identifier is OK. Do you want to name your
+proof that $m = n$ something like `m=n`? Agda isn't going to complain. As we saw
+above, the standard library itself makes some very strange choices for its names
+as well.
+
+One consideration of the mixfix rules above is that all binary operators are
+thus named with a leading and a trailing underscore. Thus, the addition
+operator's name is `_+_`, because it leaves syntactical holes on either side to
+fill in. This means you can define any binary operator you'd like, with any
+name, including a name consisting wholly of ASCII characters. The standard
+library does more of this than is my personal preference, but your mileage will
+vary.
+
+Because Agda is so permissive when it comes to identifiers, spaces are extremely
+significant. That is, the expression `5+6` is *a single identifier*, while `5 +
+6` is actually parsed as `_+_ 5 6` --- that is, apply the addition operator to
+two arguments, 5 and 6. Be very particular with spaces; a good rule of thumb is
+to separate everything with a space, with the exception of anything that abuts
+against any of the reserved letters `.;(){}@`.
+
+Over your first few hours, you'll probably get a flurry of strange parse errors
+and unknown identifiers. The solution is almost always to just insert more
+spaces.
+
+
+## Syntax Highlighting in Agda
+
+Unlike most programming languages, syntax highlighting in Agda is performed *by
+the compiler,* rather than just some hodgepodge set of regular expressions that
+hope to do a reasonably good job of parsing the program. Since Agda's parser is
+so flexible, getting trustworthy highlighting information from the compiler is a
+necessity for quickly parsing what's going on. This, along with
+[GotoDefinition](AgdaCmd), is another reason Agda is challenging to read
+outside of a text editor.
+
+This book is a literate Agda document, which means the entire thing is a
+working, typechecking Agda program with prose written around it. All of the
+syntax highlighting you see in this book was produced by the Agda compiler,
+which is the most help I can give to you reading this book in hard copy.
 
