@@ -1,10 +1,11 @@
 # Ring Solving
 
 ```agda
+{-# OPTIONS --allow-unsolved-metas #-}
+
 module 6-ring-solving where
 
-open import Relation.Binary.PropositionalEquality
-open import Data.Nat
+open import Data.Nat using (ℕ)
 ```
 
 As you might have noticed, solving lemmas about simple mathematical facts can be
@@ -64,8 +65,8 @@ solver.*
 The ring solver is a general purpose tool for automatically reasoning about
 rings. Rings are algebraic structures which generalize the relationships between
 addition and multiplication. A ring has an associative, commutative binary
-operation called "addition" and an associative --- but not necessarily
-commutative --- binary operation called "multiplication." We also have
+operation called "addition" and an associative, commutative binary operation
+called "multiplication." We also have
 distinguished elements 0 and 1 that behave like you'd expect. Additionally, if
 you'll excuse the pun, we require an additive inverse operation analogous to
 unary negation, with the property that for any $a$ we have $a + -a = 0$.
@@ -79,6 +80,8 @@ machinery again to describe the problem:
 
 ```agda
 module _ (n : ℕ) where
+  open import Relation.Binary.PropositionalEquality
+  open import Data.Nat
   open import 6-setoids
   open mod-def
 
@@ -268,4 +271,269 @@ Rings admit a *normal*, or *canonical,* form. That is to say, we have a
 well-defined, unique notion of what terms in a ring should look like. That
 means, two terms are equal if they have the same normal form, the proverbial
 "middle" of the maze.
+
+Polynomials are the best examples of the canonical form of rings. While we can
+express polynomials in any number of ways, by far the most common is in the "sum
+of descending powers." To jog your memory, most polynomials look like the
+following:
+
+$$
+x^3 + 3x^2 - 9x - 17
+$$
+
+It's perfectly acceptable, if weird, to write the above as:
+
+$$
+(x - 9 + x^2 + 2x)x - 17
+$$
+
+which is equivalent, but the mere fact that it doesn't "look like a polynomial"
+is a strong indication that you have internalized the polynomial canonical form
+whether or not you were aware of it.
+
+Given the existence of canonical forms, we can now reduce the problem of proving
+ring equality to be:
+
+1. Prove both terms are equal to their canonical form.
+2. Compare the canonical forms.
+3. If the canonical forms match, compose the earlier proofs.
+
+This is a powerful, widely-useful technique, and you would do well to add it to
+your toolbox.
+
+The notion of polynomial generalizes to arbitrary rings. Why is that? We have
+addition and multiplication, both are associative and commutative, and
+multiplication distributes over addition. Because of the distributivity, we can
+always produce a *sum of products* structure, that is, to distribute all
+multiplications over every addition. That is, we can always reduce expressions
+of the form:
+
+$$
+x(5 + y)
+$$
+
+with
+
+$$
+5x + xy
+$$
+
+which is to say, moving the additions to be the outermost nodes in the
+expression tree.
+
+Because multiplication is commutative, we can freely group together all of the
+same elements of the group. So, we can happily combine the two $x$s in
+
+$$
+xyx = xxy = x^2y
+$$
+
+Finally, the commutativity of addition means we can reorder the addition nodes.
+For a single variable, we'd like to sort it into decreasing powers of that
+variable. For the multi-variable case, we can instead use a "list of
+lists"-style approach, and treat other variables as coefficients of another
+variable. That is, if we'd like to group the terms
+
+$$
+x^2y + x^2y^2 + xy^3 + 3xy^2 - 7yx + 10
+$$
+
+we can first group it by descending powers of $x$, and then by powers of $y$,
+thus:
+
+$$
+(y^2 + y)x^2 + (y^3)x + (3y^2 - 7y)x + 10
+$$
+
+This approach clearly generalizes to an arbitrary number of variables, and thus,
+given any ordering of variables (perhaps "order mentioned in the call to the
+solver"), we can find a canonical form for any expression over rings.
+
+Describing this canonical form also gives us an insight into why we have ring
+solvers but not semigroup solvers. Semigroups, having only a single, associative
+binary operator, simply don't have enough algebraic structure to require
+interesting proofs. If your semigroup is commutative ("Abelian," in the jargon)
+then you can simply reorder all the terms so they appear in a row. It's exactly
+the interplay between addition and multiplication that makes the problem at all
+interesting.
+
+
+## Sketching Out a Ring Solver
+
+While we will not implement a ring solver in this book, we can certainly explore
+the high-level ideas necessary to implement one, and give enough of a sketch for
+the motivated reader to follow through on. We will take our inspiration from the
+ring solver presented in the introduction to this chapter, looking for a similar
+interface.
+
+To simplify the problem, our sketch will only solve over one variable. If
+you're curious about generalizing the approach, the standard library is full of
+insightful approaches to this problem.
+
+We begin with a little ceremony. We will use the standard library's
+`CommutativeSemiring`, which is a record containing `_+_`, `_*_`, `0#` and `1#`.
+We then parameterize a new module over a commutative semiring:
+
+```agda
+open import Level using (Level)
+open import Algebra.Bundles using (CommutativeSemiring)
+
+module RingSolver {c ℓ : Level} (ring : CommutativeSemiring c ℓ) where
+```
+
+By opening the `CommutativeSemiring` record, we can pull the semigroup
+operations into scope.
+
+```agda
+  open CommutativeSemiring ring renaming (Carrier to A)
+```
+
+Next we will define the syntax for dealing with rings:
+
+```agda
+  infixr 5 _:+_
+  infixr 6 _:*_
+
+  data Syn : Set c where
+    var : Syn
+    con : A → Syn
+    _:+_ : Syn → Syn → Syn
+    _:*_ : Syn → Syn → Syn
+```
+
+And, just to show that this really is the syntax for our language, we can give
+it semantics via `⟦_⟧`, which simply interprets the syntax as the actual ring
+operations:
+
+```agda
+  ⟦_⟧ : Syn → A → A
+  ⟦ var ⟧    v = v
+  ⟦ con c ⟧  v = c
+  ⟦ x :+ y ⟧ v = ⟦ x ⟧ v + ⟦ y ⟧ v
+  ⟦ x :* y ⟧ v = ⟦ x ⟧ v * ⟦ y ⟧ v
+```
+
+So that covers the syntax. But now we'd like to be able to build a normal form.
+The most obvious way of constructing such a thing is via *Horner normal form*,
+which is unlike our standard polynomial notation, but instead encodes
+polynomials out of the following building blocks:
+
+```agda
+  data HNF : Set c where
+    ⊘ : HNF
+    _*x+_ : HNF → A → HNF
+```
+
+You might have encountered HNF in an algorithms class at some point. The
+observation comes from the fact that computing the value of a polynomial in
+standard form requires $O(n^2)$ multiplications in the largest degree of the
+polynomial. Instead if we make the following transformation:
+
+$$
+x^2 + 5x + 6 = ((0 + 1)x + 5)x + 6
+$$
+
+we require only $O(n)$ multiplications, which is a significant improvement in
+asymptotics. Horner normal form doesn't buy us any asymptotic improvements in
+this case, but it saves us needing to reshuffle everything around.
+
+Our next step is simply to give the semantics for `HNF`, completely analogously
+to what we did for `Syn`:
+
+```agda
+  ⟦_⟧H : HNF → A → A
+  ⟦ ⊘ ⟧H _ = 0#
+  ⟦ a *x+ b ⟧H x = ⟦ a ⟧H x * x + b
+```
+
+We'd like to define a transformation from `Syn` into `HNF`, but that is going to
+require addition and multiplication over `HNF`. Addition is straightforward:
+
+```agda
+  _+H_ : HNF → HNF → HNF
+  ⊘ +H y = y
+  (a *x+ b) +H ⊘ = a *x+ b
+  (a *x+ b) +H (c *x+ d) = (a +H c) *x+ (b + d)
+```
+
+and multiplication isn't much more work, after we take advantage of the
+algebraic fact that:
+
+$$
+(ax + b)(cx + d) = acx^2 + (bc + ad)x + bd
+$$
+
+> TODO(sandy): this is in fact a stupid amount of work. We need a better
+> definition of HNF
+
+```agda
+  _*H_ : HNF → HNF → HNF
+  ⊘ *H _ = ⊘
+  (a *x+ b) *H ⊘ = ⊘
+  (a *x+ b) *H (c *x+ d) = (? *x+ {! _+H_ !}) *x+ (b * d)
+```
+
+With all of this machinery out of the way, we can implement `normalize`, which
+transforms a `Syn` into an `HNF`:
+
+```agda
+  normalize : Syn → HNF
+  normalize var = (⊘ *x+ 1#) *x+ 0#
+  normalize (con x) = ⊘ *x+ x
+  normalize (x :+ y) = normalize x +H normalize y
+  normalize (x :* y) = normalize x *H normalize y
+```
+
+Believe it or not, that's most of the work to write a ring solver. We have one
+more function to write, showing that evaluating the syntactic term is equal to
+evaluating its normal form --- that is, that the normal form truly is a merely a
+different representation of the same expression. This function has type:
+
+```agda
+  open import Relation.Binary.Reasoning.Setoid setoid
+
+  sems : (s : Syn) → (v : A) → ⟦ s ⟧ v ≈ ⟦ normalize s ⟧H v
+```
+
+and is sketched out:
+
+```agda
+  sems var v = begin
+    v                       ≈⟨ ? ⟩
+    (0# * v + 1#) * v + 0#  ∎
+  sems (con c) v = begin
+    c           ≡⟨ ? ⟩
+    0# * v + c  ∎
+  sems (x :+ y) v = begin
+    ⟦ x ⟧ v + ⟦ y ⟧ v                        ≈⟨ +-cong (sems x v) (sems y v) ⟩
+    ⟦ normalize x ⟧H v + ⟦ normalize y ⟧H v  ≈⟨ {! +H-+-hom !} ⟩
+    ⟦ normalize x +H normalize y ⟧H v        ∎
+  sems (x :* y) v = begin
+    ⟦ x ⟧ v * ⟦ y ⟧ v                        ≈⟨ *-cong (sems x v) (sems y v) ⟩
+    ⟦ normalize x ⟧H v * ⟦ normalize y ⟧H v  ≈⟨ {! *H-*-hom !} ⟩
+    ⟦ normalize x *H normalize y ⟧H v        ∎
+```
+
+Implementing `sems` will probably be the most work if you attempt this at home;
+showing the homomorphisms between `_+H_` and `_+_` are not trivial, nor are
+those for multiplication.
+
+Finally, we can put everything together, solving proofs of the evaluation of two
+pieces of syntax given a proof of their normalized forms:
+
+```agda
+  solve
+      : (s t : Syn)
+      → (v : A)
+      → ⟦ normalize s ⟧H v ≈ ⟦ normalize t ⟧H v
+      → ⟦ s ⟧ v ≈ ⟦ t ⟧ v
+  solve s t v x = begin
+    ⟦ s ⟧ v             ≈⟨ sems s v ⟩
+    ⟦ normalize s ⟧H v  ≈⟨ x ⟩
+    ⟦ normalize t ⟧H v  ≈⟨ sym (sems t v) ⟩
+    ⟦ t ⟧ v             ∎
+```
+
+The proof argument required by this function is an informative clue as to why we
+always needed to pass `refl` to the official ring solver `solve` function.
 
