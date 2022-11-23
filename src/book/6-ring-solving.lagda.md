@@ -232,4 +232,40 @@ ourselves, which we will explore now.
 
 ## Canonical Forms
 
+An interesting insight into how to solve this problem is to use the analogy of
+solving a maze. Not not the corn-maze sort, but the variety that comes on the
+back of cereal boxes. Solving a maze is often a two-sided approach; you explore
+from the beginning of the maze, and you simultaneously explore from the end. The
+goal is to meet somewhere in the middle. If you can get to the same place from
+both sides, you can compose the two half-solutions into a final path to escape
+the maze.
+
+Why does this work? In some sense, it's because the first moves you can take
+from either direction are relatively constrained. The number of possibilities
+are few, and there is an obvious decision procedure in the form of "is this
+going roughly the right direction?" As you move further from your starting
+point, the number of possibilities increase exponentially; after all, there's
+always the chance that you took the wrong direction on your first step.
+
+By exploring from both sides at once, we are minimizing the effects of these
+exponential blow-ups. Furthermore, your notion of "the right direction to head"
+increases as you have more familiarity with the other side of the maze. Now that
+you have a path, you don't need necessarily to find the *end* of the path, you
+just need to intersect it. As a result, we have more "targets" to aim our search
+at.
+
+All of this applies to proofs as well. We have well-defined starting and
+stopping points, and are tasked with bridging the distance between them. Here
+too we have exponential blow-ups in complexity, so we can cover the most space
+by searching from the top and bottom at the same time.
+
+Of course, this heuristic doesn't always work. But what if we had a well-defined
+"middle" to path find to? The reason the ring solver is a *ring* solver, as
+opposed to just a *solver*, is that rings give us a healthy balance between
+expressiveness and solvability. Why is that?
+
+Rings admit a *normal*, or *canonical,* form. That is to say, we have a
+well-defined, unique notion of what terms in a ring should look like. That
+means, two terms are equal if they have the same normal form, the proverbial
+"middle" of the maze.
 
