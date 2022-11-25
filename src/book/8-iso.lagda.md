@@ -444,13 +444,16 @@ necessity of actual computation.
 
 module _ where
   open import Data.Nat hiding (_⊔_)
+  open import Data.Bool
   open import Relation.Binary.PropositionalEquality using (_≡_; refl)
   open import Relation.Binary.PropositionalEquality.Properties
 
+  ≡-equiv : (A : Set) → Equivalent lzero A
+  ≡-equiv _ = record { equiv = isEquivalence }
 
-  private instance
-    _ : Equivalent lzero ℕ
-    _ = record { equiv = isEquivalence }
+  instance
+    ℕ-equiv = ≡-equiv ℕ
+    Bool-equiv = ≡-equiv Bool
 
   suc-injective : Injective suc
   suc-injective x .x refl = refl
