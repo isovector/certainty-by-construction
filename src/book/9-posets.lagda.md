@@ -451,3 +451,63 @@ contradictions.
   ... | ()
 ```
 
+
+## Meets and Joins
+
+Some, but not all, posets have *joins,* also known as a *least upper bound.*
+That is, given elements `x` and `y` in the poset, can we find a unique element
+`z` which is the smallest element that's "at least as big" as `x` and `y`? In
+the family tree, two cousin's join is their grandparent (assuming they have only
+one --- if they have two grandparents, the join is not unique and thus doesn't
+exist!)
+
+A *meet* is the exact same idea, except it reverses the directions of all the
+`≤` signs! A meet is the *greatest lower bound.* In the family tree, a couple's
+meet is their single child.
+
+Doing some module rites to set up the problem again:
+
+```agda
+
+module _ {A : Set c}
+         ⦃ _ : Equivalent ℓ A ⦄
+         (_≤_ : A → A → Set ℓ)
+         (poset : Poset _≤_)
+         where
+
+  open import Data.Product
+```
+
+We can formalize the notion of a join with a record to hold all of the necessary
+proofs together. `IsJoin x y a` is a proof that the join of `x` and `y` is `a`:
+
+```agda
+  record IsJoin (x y : A) (a : A) : Set (c ⊔ ℓ) where
+    field
+```
+
+Our definition requires us to show that `a` is bigger than both `x` and `y`:
+
+```agda
+      x≤a : x ≤ a
+      y≤a : y ≤ a
+```
+
+and also that `a` is the least it can be. That is, for any other element `z`
+which is also less than `x` and `y`, we also have `a ≤ z`.
+
+```agda
+      a-is-least : (z : A) → x ≤ z → y ≤ z → a ≤ z
+```
+
+`IsJoin` is a proof that a join exists for any particular pair of elements. For
+a poset at large, we might want to say it *has all joins*, which is to say, that
+for any pair of elements, they have a join:
+
+```agda
+  HasJoins : Set (c ⊔ ℓ)
+  HasJoins = (x y : A) → Σ A (IsJoin x y)
+```
+
+To wet our whistle
+
