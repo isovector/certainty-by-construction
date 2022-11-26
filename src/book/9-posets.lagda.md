@@ -242,7 +242,7 @@ We begin with a module to parameterize the contents of our lists, assert an
 later.
 
 ```agda
-module _ (A : Set) where
+module Substrings (A : Set) where
   open import Data.List
 
   private instance
@@ -469,7 +469,8 @@ Doing some module rites to set up the problem again:
 
 ```agda
 
-module _ {A : Set c}
+module MeetsAndJoins
+         {A : Set c}
          ⦃ _ : Equivalent ℓ A ⦄
          (_≤_ : A → A → Set ℓ)
          (poset : Poset _≤_)
@@ -509,5 +510,185 @@ for any pair of elements, they have a join:
   HasJoins = (x y : A) → Σ A (IsJoin x y)
 ```
 
-To wet our whistle
+Dually, we can define meets by swapping which element occurs on either side of
+the `_≤_`. Duality serves a very important role in posets, which we will explore
+in the next section.
+
+```agda
+  record IsMeet (x y : A) (a : A) : Set (c ⊔ ℓ) where
+    field
+      a≤x : a ≤ x
+      a≤y : a ≤ y
+      a-is-most : (z : A) → z ≤ x → z ≤ y → z ≤ a
+
+  HasMeets : Set (c ⊔ ℓ)
+  HasMeets = (x y : A) → Σ A (IsMeet x y)
+```
+
+Returning to our example of the substring poset, let's attempt to find the meet
+of two lists. As usual, we set up the environment, this time with an operation
+`_≟_` witnessing the decidability of the equality of two elements of `A`. We
+will need this to determine whether we can use `match` to construct equality
+proofs.
+
+```agda
+open import Relation.Nullary
+
+module _ (A : Set) (_≟_ : (x y : A) → Dec (x PropEq.≡ y)) where
+  open import Data.List
+  open Substrings A
+
+  private instance
+    ListA-equiv = ≡-equiv (List A)
+
+  private variable
+    a : A
+    l l₁ l₂ : List A
+```
+
+What would a meet be in this poset? We require that the meet be less than either
+argument, which is to say, it must be a subset of both arguments. We could
+always return `[]`, which is certainly less than both arguments, but it is not
+the largest thing that is smaller than both arguments.
+
+Uh oh. I don't think this problem is well defined. It is not. Damn. The problem:
+
+```wat
+kernel "ab" "b" = "b"
+kernel "cat" "scathe" = "cat"
+kernel "a" "the" = ""
+kernel "catdog" "dogcat" COULD BE EITHER "cat" OR "dog". Not unique and
+therefore not a meet.
+```
+
+The rest of this example is therefore worthless, which is annoying because it's
+a great example. Maybe I can use it for something else?
+
+```agda
+  kernel : (x y : List A) → List A
+  kernel [] _ = []
+  kernel (x ∷ xs) [] = []
+  kernel (x ∷ xs) (y ∷ ys) with x ≟ y
+  ... | yes z = x ∷ kernel xs ys
+  ... | no z  = kernel xs ys
+
+
+  open import Algebra.Definitions
+  open import Data.Empty
+
+  kernel≤ : (x y : List A) → kernel x y SubstrOf x
+  kernel≤ [] _ = []≤
+  kernel≤ (x ∷ xs) [] = []≤
+  kernel≤ (x ∷ xs) (y ∷ ys) with x ≟ y
+  ... | yes z = match (kernel≤ xs ys)
+  ... | no z = insert (kernel≤ xs ys)
+
+  kernel-comm : Commutative _≋_ kernel
+  kernel-comm [] [] = PropEq.refl
+  kernel-comm [] (y ∷ ys) = PropEq.refl
+  kernel-comm (x ∷ xs) [] = PropEq.refl
+  kernel-comm (x ∷ xs) (y ∷ ys) with x ≟ y | y ≟ x
+  ... | yes PropEq.refl | yes w = cong (x ∷_) (kernel-comm xs ys)
+  ... | yes z | no w = ⊥-elim (w (PropEq.sym z))
+  ... | no z | no w = kernel-comm xs ys
+  ... | no z | yes w = ⊥-elim (z (PropEq.sym w))
+
+  open MeetsAndJoins _SubstrOf_ substr-pos
+
+  is-meet : (x y : List A) → IsMeet x y (kernel x y)
+  IsMeet.a≤x (is-meet x y) = kernel≤ x y
+  IsMeet.a≤y (is-meet x y) = ?
+  IsMeet.a-is-most (is-meet x y) [] z≤x z≤y = []≤
+  IsMeet.a-is-most (is-meet (x ∷ xs) (.x ∷ ys)) (.x ∷ zs) (match z≤x) (match z≤y) with x ≟ x
+  ... | yes p = match (IsMeet.a-is-most (is-meet xs ys) zs z≤x z≤y)
+  ... | no p = ⊥-elim (p PropEq.refl)
+  IsMeet.a-is-most (is-meet (x ∷ xs) (y ∷ ys)) (.x ∷ zs) (match z≤x) (insert z≤y) with x ≟ y
+  ... | yes PropEq.refl = {! !}
+  ... | no p = {! !}
+  IsMeet.a-is-most (is-meet (x ∷ xs) (y ∷ ys)) (.y ∷ zs) (insert z≤x) (match z≤y) with x ≟ y
+  ... | yes PropEq.refl = {! !}
+  ... | no p = {! !}
+  IsMeet.a-is-most (is-meet (x ∷ xs) (y ∷ ys)) (z ∷ zs) (insert z≤x) (insert z≤y) = {! !}
+```
+
+```agda
+module _ where
+  open import Data.Nat
+  open import Data.Nat.Properties
+
+  record _Divides_ (a b : ℕ) : Set where
+    constructor divides
+    field
+      n : ℕ
+      0<n : 0 < n
+      proof : a * n ≋ b
+
+  div-poset : Poset _Divides_
+  _Divides_.n (refl div-poset) = 1
+  _Divides_.0<n (refl div-poset) = s≤s z≤n
+  _Divides_.proof (refl div-poset) = *-identityʳ _
+  antisym div-poset {i} {j} (divides m 0<m pm) (divides n 0<n pn) =
+    ≤-antisym
+        ( begin
+          i      ≡⟨ Equiv.sym (*-identityʳ i) ⟩
+          i * 1  ≤⟨ *-mono-≤ (≤-refl {i}) 0<m ⟩
+          i * m  ≡⟨ pm ⟩
+          j      ∎
+        )
+        ( begin
+          j      ≡⟨ Equiv.sym (*-identityʳ j) ⟩
+          j * 1  ≤⟨ *-mono-≤ (≤-refl {j}) 0<n ⟩
+          j * n  ≡⟨ pn ⟩
+          i      ∎
+        )
+    where open ≤-Reasoning
+  _Divides_.n (trans div-poset (divides m 0<m pm) (divides n 0<n pn)) = m * n
+  _Divides_.0<n (trans div-poset (divides m 0<m pm) (divides n 0<n pn)) =
+    begin
+      1      ≡⟨⟩
+      1 * 1  ≤⟨ *-mono-≤ 0<m 0<n ⟩
+      m * n  ∎
+    where open ≤-Reasoning
+  _Divides_.proof (trans div-poset {i} {j} {k}
+                    (divides m 0<m pm)
+                    (divides n 0<n pn)) = begin
+      i * (m * n)  ≈⟨ Equiv.sym (*-assoc i m n) ⟩
+      i * m * n    ≈⟨ cong (_* n) pm ⟩
+      j * n        ≡⟨ pn ⟩
+      k            ∎
+    where open ≋-Reasoning
+```
+
+## Duality
+
+For any poset, we can generate another poset for free. How is this possible? In
+the most trivial way, unexciting way: simply by switching which direction is
+"up" and which is "down". This is known as the *opposite* or *dual* poset, and
+is trivial to construct.
+
+First, we must make a new module to bind the existing `_≤_` relation:
+
+```agda
+module Op {A : Set c} ⦃ _ : Equivalent ℓ A ⦄ {_≤_ : A → A → Set ℓ} where
+```
+
+We can now construct a new relation, `_≥_` by swapping which argument is on the
+left and which is on the right:
+
+```agda
+  _≥_ : A → A → Set ℓ
+  x ≥ y = y ≤ x
+```
+
+And now we can show that `_≥_` forms a poset, given a poset on `_≤_`. The trick
+is just to delegate our work to the same operation in the other poset, but only
+after flipping the arguments. This poset is known as $P^{op}$ in the literature,
+which we can emulate in Agda by naming this operation `_ᵒᵖ`.
+
+```agda
+  _ᵒᵖ : Poset _≤_ → Poset _≥_
+  refl (poset ᵒᵖ) = poset .refl
+  antisym (poset ᵒᵖ) x y = poset .antisym y x
+  trans (poset ᵒᵖ) x≥y y≥z = poset .trans y≥z x≥y
+```
 
