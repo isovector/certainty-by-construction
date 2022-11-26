@@ -1,6 +1,7 @@
 # Partially Ordered Sets
 
 ```agda
+{-# OPTIONS --allow-unsolved-metas #-}
 module 9-posets where
 
 open import Agda.Primitive
@@ -304,14 +305,15 @@ to cut our teeth on.
 Exercise
 
 :   Show
-    ```agda
+
+      ```agda
   substr-cong-length : length Preserves _SubstrOf_ ⟶ _≤_
-    ```
+      ```
 
 
 Solution
 
-:   ```agda
+:       ```agda
   substr-cong-length []≤ = z≤n
   substr-cong-length (match x) =
     s≤s (substr-cong-length x)
@@ -323,7 +325,7 @@ Solution
     1 + length l₂     ≡⟨⟩
     length (a ∷ l₂)   ∎
     where open ≤-Reasoning
-    ```
+        ```
 
 We will need two more lemmas in order to show our poset on substrings. The first
 is that it is not the case that $1 + n ≤ 1$. It's easy to show by a simple

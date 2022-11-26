@@ -84,14 +84,6 @@ private instance
   Equivalent._≋_ Fin-equiv = _≡_
   Equivalent.equiv (Fin-equiv {n}) = isEquivalence
 
-  ℕ-equiv : Equivalent lzero ℕ
-  Equivalent._≋_ ℕ-equiv = _≡_
-  Equivalent.equiv ℕ-equiv = isEquivalence
-
-  Bool-equiv : Equivalent lzero Bool
-  Equivalent._≋_ Bool-equiv = _≡_
-  Equivalent.equiv Bool-equiv = isEquivalence
-
   ⊎-equiv
       : {c₁ c₂ ℓ₁ ℓ₂ : Level}
         {A : Set c₁} ⦃ _ : Equivalent ℓ₁ A ⦄

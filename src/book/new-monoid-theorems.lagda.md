@@ -178,14 +178,14 @@ module _ {c l : Level} {X : Set} {s : Setoid c l} (m : Monoid s) where
   Really-free : (X → A) ↔ Σ (List X → A) IsMonoidHom
   to Really-free f = fold f , list-is-free f
   from Really-free (f , hom) x = f [ x ]
-  left-inverse-of Really-free f x = begin
+  left-inv-of Really-free f x = begin
     f x ∙ ε  ≈⟨ ε-unitʳ (f x) ⟩
     f x      ∎
-  right-inverse-of Really-free (f , hom) [] = sym (hom .preserves-ε)
-  right-inverse-of Really-free (f , hom) (a ∷ as) = begin
+  right-inv-of Really-free (f , hom) [] = sym (hom .preserves-ε)
+  right-inv-of Really-free (f , hom) (a ∷ as) = begin
     fold (λ y → f [ y ]) (a ∷ as)      ≡⟨⟩
     f [ a ] ∙ fold (λ y → f [ y ]) as
-             ≈⟨ ∙-cong₂ refl (right-inverse-of Really-free (f , hom) as) ⟩
+             ≈⟨ ∙-cong₂ refl (right-inv-of Really-free (f , hom) as) ⟩
     f [ a ] ∙ f as                     ≈⟨ sym (preserves-∙ hom [ a ] as) ⟩
     f (a ∷ as)                         ∎
   to-cong Really-free f [] = refl
