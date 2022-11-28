@@ -133,25 +133,182 @@ suc-mono-≤ z≤n = s≤s z≤n
 suc-mono-≤ (s≤s x) = s≤s (suc-mono-≤ x)
 ```
 
-
-
-
+Preservation also comes in the form of pointwise binary preservation; that is,
+if you have two relations as input, you can compose them pointwise in the
+output. Namely:
 
 ```agda
 _Preserves₂_⟶_⟶_ : (A → B → C) → Rel A ℓ₁ → Rel B ℓ₂ → Rel C ℓ₃ → Set _
 _∙_ Preserves₂ P ⟶ Q ⟶ R = ∀ {x y u v} → P x y → Q u v → R (x ∙ u) (y ∙ v)
-
-Reflexive : Rel A ℓ → Set _
-Reflexive {A = A} _≈_ = ∀ {x} → x ≈ x
 ```
 
 
-In fact, we have a `cong` like rule for every possible output relation:
+### Reflexivity
+
+For some relation `_~_`, we say `_~_` is reflexive if it has the property that
+every `x` is in relation with itself. That is:
 
 ```agda
-kong : {_≈_ : Rel B ℓ} → (f : A → B) → f Preserves _≡_ ⟶ _≈_
-kong f refl = {! !}
+Reflexive : Rel A ℓ → Set _
+Reflexive _~_ = ∀ {x} → x ~ x
 ```
 
+Reflexivity is an important part of many mathematical structures, including
+equivalence relations, partially ordered sets, (semi-)lattices, and, in
+a slightly different form, categories. We will discuss all of these structures
+later in this book.
 
+Reasoning about relations is significantly easier when reflexivity is involved.
+You can say much more about `_≤_` (a reflexive relation) than you can about
+`_<_` (a non-reflexive relation), and this seems to hold for all humans. For
+whatever reason, it appears that humans are hard-wired to reason with respect to
+self-identity. Thus, if you find yourself in a position where you are defining
+a relation (which happens much more frequently than you might expect), you will
+be well-served to fit in reflexivity if at all possible. Sometimes this will
+require finagling some of the fine details, but it will pay for itself
+immediately when you begin to work with the structure.
+
+
+### Symmetry
+
+*Symmetry* is a property of relations that if `a` is in relation with `b`, then
+`b ` is also in relation with `a`. That is, a relation `_~_` is symmetric if it
+is agnostic to its argument order. In Agda, we write `Symmetric` thusly:
+
+```agda
+Symmetric : Rel A ℓ → Set _
+Symmetric _∼_ = ∀ {x y} → x ∼ y → y ∼ x
+```
+
+Equality is a symmetric relation, but `_≤_` is not, since the latter has
+explicit "smaller" and "larger" sides.
+
+Symmetry is much like being ambidextrous; it rarely allows you to do things you
+wouldn't otherwise be able to, but it sure comes in handy. We're much more
+comfortable with asymmetric relations than we are with irreflexive ones as
+asymmetry is something we see constantly in everyday life. From one-way streets
+to the eventual heat-death of the universe, most things in life do not go both
+ways.
+
+
+### Antisymmetry
+
+We have one other important property regarding the position of a relation's
+arguments --- *antisymmetry.* Antisymmetry is a property that transforms one
+relation into another; namely, it espouses the notion of *ordering.* That is, if
+we know `a ~ b` and `b ~ a` for some relation `_~_`, we learn that `a ≈ b` for
+some other relation `_≈_`. The most well-known example of antisymmetry is the
+antisymmetry between `_≤_` and `_≡_`. If we know simultaneously that `a ≤ b` and
+also that `b ≤ a`, our only possible conclusion is that `a ≡ b`.
+
+In code, we write:
+
+```agda
+Antisymmetric : Rel A ℓ₁ → Rel A ℓ₂ → Set _
+Antisymmetric _≈_ _≤_ = ∀ {x y} → x ≤ y → y ≤ x → x ≈ y
+```
+
+In practice, antisymmetry always results in an equivalence between the two
+terms, but this is not strictly necessary given the definition.
+
+Antisymmetry is really a statement about the symmetry of a relation; stating
+that the only symmetry that can occur is reflexivity.
+
+
+### Transitivity
+
+If a relation `_~_` is *transitive*, that means we can glue its ends together
+like dominoes, building bigger terms of the relation from smaller ones. In code:
+
+```agda
+Transitive : Rel A ℓ → Set _
+Transitive _∼_ = ∀ {x y z} → x ∼ y → y ∼ z → x ∼ z
+```
+
+> TODO(sandy): omg there is a great idea here; a set of 5 relations that the
+> reader is encouraged to work out whether each property holds
+>
+> dominoes, what else?
+
+Transitivity is the great workhorse of mathematics, allowing practitioners to
+subdivide problems into smaller pieces, solve those individually, and then
+compose the results together in service of the whole. Transitivity is the rule
+you (perhaps unwittingly) invoke when you perform arithmetic:
+
+$$
+\begin{aligned}
+& 42 * 7 + 15 / 3 \\
+&= 42 * 7 + 5 \\
+&= 294 + 5 \\
+&= 299
+\end{aligned}
+$$
+
+Each line of this computation is an "obvious" step, performing one step of
+reasoning to transform one expression into the next. But transitivity is what
+allows us to glue each individual step together, eventually asserting the
+conclusion, $299$ from merely the premise $42 * 7 + 15 / 3$, eliminating all of
+the intermediary work.
+
+Transitivity and reflexivity are in fact such important concepts that category
+theory, a branch of mathematics, uses them as the starting point, and derives an
+alternative foundation to math than the usual set-theoretic notions.
+
+
+### Totality
+
+A relation `_~_` is said to be *total* if and only if we can always derive one
+of `a ~ b` or `b ~ a` for any elements `a` and `b`. This is true of the ordering
+on numbers, such that we can always determine whether `m ≤ n` or `n ≤ m`, but
+not true of family trees, where two members in the same family tree might have
+no genetic relation whatsoever.
+
+```agda
+open import Data.Sum
+
+Total : Rel A ℓ → Set _
+Total _∼_ = ∀ x y → (x ∼ y) ⊎ (y ∼ x)
+```
+
+### Trichotomy
+
+### stuff for later
+
+```agda
+module Dominos where
+
+  data Face : Set where
+    ∙ ⠢ ⋱ ⠭ ⁙ ⠿ : Face
+
+  data Domino : Face → Face → Set where
+    _∣_ : (m n : Face) → Domino m n
+
+  dom-refl : Reflexive Domino
+  dom-refl {x} = x ∣ x
+
+  dom-sym : Symmetric Domino
+  dom-sym (m ∣ n) = n ∣ m
+
+  dom-trans : Transitive Domino
+  dom-trans (m ∣ n) (.n ∣ o) = m ∣ o
+
+  open import 8-iso
+
+  instance
+    face-equiv : Equivalent lzero Face
+    Equivalent._≋_ face-equiv = Domino
+    IsEquivalence.refl (Equivalent.equiv face-equiv) = dom-refl
+    IsEquivalence.sym (Equivalent.equiv face-equiv) = dom-sym
+    IsEquivalence.trans (Equivalent.equiv face-equiv) = dom-trans
+
+  open ≋-Reasoning
+
+  _ : Domino ⠢ ⠿
+  _ = begin
+      ⠢  ≈⟨ ⠢ ∣ ⠢ ⟩
+      _  ≈⟨ ⠢ ∣ ∙ ⟩
+      _  ≈⟨ ∙ ∣ ⋱ ⟩
+      _  ≈⟨ ⋱ ∣ ⠿ ⟩
+      ⠿  ∎
+```
 
