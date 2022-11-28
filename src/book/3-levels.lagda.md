@@ -4,6 +4,10 @@ from https://nextjournal.com/zampino/russell-paradox
 
 ```agda
 module 3-levels where
+
+open import Level
+postulate
+  unimportant : {ℓ : Level} {A : Set ℓ} → A
 ```
 
 Perhaps you have heard of Bertrand Russell's "barber paradox" --- if there is a
@@ -136,7 +140,7 @@ _ : {c ℓ : Level}
   → (A : Set c)
   → (_≈_ : A → A → Set ℓ)
   → Set (suc c ⊔ ℓ)
-_ = ?
+_ = unimportant
 ```
 
 which binds two levels, `c` and `ℓ` (the latter symbol is commonly used for
