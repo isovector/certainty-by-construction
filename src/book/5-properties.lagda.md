@@ -270,45 +270,129 @@ Total : Rel A ℓ → Set _
 Total _∼_ = ∀ x y → (x ∼ y) ⊎ (y ∼ x)
 ```
 
-### Trichotomy
 
-### stuff for later
+### Dominoes
+
+To illustrate some of the above properties, let's build our own relation, and
+see what we can discover about it. We'll take a particularly simple domain:
+domino tiles. If you're unfamiliar, dominoes are rectangular tiles with markings
+on either end of their long side. The markings are a number of dots, between
+zero and six, inclusive. Each end may have a different number of dots.
+
+We can model this in Agda rather cutely. First we define the markings that can
+be on a domino tile, that is some number of dots between zero and six. Because
+Agda has unicode support, we can dig deep for adequate symbols to properly
+capture the domain, coming up with the following:
 
 ```agda
-module Dominos where
+module Dominoes where
 
-  data Face : Set where
-    ∙ ⠢ ⋱ ⠭ ⁙ ⠿ : Face
+  data Marking : Set where
+    □ ∙ ⠢ ⋱ ⠭ ⁙ ⠿ : Marking
+```
 
-  data Domino : Face → Face → Set where
-    _∣_ : (m n : Face) → Domino m n
+The `Marking` set is the carrier of our relation. The relation itself is
+a `Chain` (for reasons we will articulate later), indexed by two `Marking`s
 
-  dom-refl : Reflexive Domino
+```agda
+  data Chain : Rel Marking lzero where
+```
+
+the constructor for which is to put two markings on either end of a "tile,"
+indicated in our domain-syntax as a vertical bar:
+
+```agda
+    _∣_ : (m n : Marking) → Chain m n
+```
+
+Such a notation is amazingly close to how real dominoes look. Unicode has
+codepoints for every possible domino tile, which means we can give more
+canonical names to our tiles if we'd like, for example:
+
+```agda
+  🁐 : Chain ⠭ ⋱
+  🁐 = ⠭ ∣ ⋱
+```
+
+We will not pursue this idea any further, as the unicode codepoints are not
+particularly composable, and operating over these symbols will require a great
+deal of work on our part. Instead we will be content with the `_∣_` syntax for
+building domino tiles.
+
+The question now is, what properties does our `Chain` relation admit? This is
+a meaningless question without knowledge of the game of dominoes. The first rule
+we need to know is that every possible combination of `Marking`s exists as
+a domino tile. The markings on opposite ends of the tile do not need to be
+distinct, therefore we are justified in saying `Path`s are reflexive; for any
+desired marking, we can find a tile with that marking on either end.
+
+```agda
+  dom-refl : Reflexive Chain
   dom-refl {x} = x ∣ x
+```
 
-  dom-sym : Symmetric Domino
+Furthermore, note that domino tiles are, in real life, actual physical objects,
+which can be rotated arbitrarily in three-dimensional space. The two ends of the
+tile are not differentiated in any way, and therefore, we have no justification
+to say that one end is definitely on the left and the other definitely on the
+right. Therefore, we can swap which end is where, and thus `Path`s are symmetric:
+
+```agda
+  dom-sym : Symmetric Chain
   dom-sym (m ∣ n) = n ∣ m
+```
 
-  dom-trans : Transitive Domino
+These last two "rules" have been more facts about the physical dominoes
+themselves, rather than any rules about the game. Playing the game however,
+players take turn putting down tiles according to certain constraints. The
+constraint in question is that you must play a domino on the end of a chain,
+ensuring your played domino has the same marking as the one on the table. That
+is, if the chain of dominoes currently on the table is `Chain ⁙ ∙`, you can play
+any domino that has one end as a `⁙`, or any domino that has a `∙` on one side.
+Any domino which has neither a `⁙` nor a `∙` may not be played. When playing the
+domino, you must ensure the matching end is played beside the end of the chain.
+That is, dominoes must be aligned, therefore if the chain is `⁙ ∣ ∙`, you can
+extend it by playing your `⋱ ∣ ∙` domino as `⁙ ∣ ∙ ∙ ∣ ⋱`, such that the two
+`∙`-sides are adjacent to one another.
+
+Therefore, we have a notion of transitivity for dominoes; if we have two chains
+whose ends line up, we can glue the two together like so:
+
+```agda
+  dom-trans : Transitive Chain
   dom-trans (m ∣ n) (.n ∣ o) = m ∣ o
+```
 
+It is for this reason that we called our relation `Chain` rather than `Tile`; of
+course, it might be more proper to explicitly model the series of tiles existing
+in a chain, and the motivated reader is encouraged to flesh out such
+a definition of `Chain`.
+
+Pulling in a bit of machinery from other chapters, we can construct some
+compelling syntax for showing chains of dominoes. After a bit of ceremony,
+
+```agda
   open import 8-iso
 
   instance
-    face-equiv : Equivalent lzero Face
-    Equivalent._≋_ face-equiv = Domino
+    face-equiv : Equivalent lzero Marking
+    Equivalent._≋_ face-equiv = Chain
     IsEquivalence.refl (Equivalent.equiv face-equiv) = dom-refl
     IsEquivalence.sym (Equivalent.equiv face-equiv) = dom-sym
     IsEquivalence.trans (Equivalent.equiv face-equiv) = dom-trans
+```
 
-  open ≋-Reasoning
+we can construct chains of dominoes by showing which tiles were glued together,
+and what the intermediate game state looked like:
 
-  _ : Domino ⠢ ⠿
+```agda
+  _ : Chain ⠢ ⠿
   _ = begin
       ⠢  ≈⟨ ⠢ ∣ ⠢ ⟩
-      _  ≈⟨ ⠢ ∣ ∙ ⟩
-      _  ≈⟨ ∙ ∣ ⋱ ⟩
-      _  ≈⟨ ⋱ ∣ ⠿ ⟩
+      ⠢  ≈⟨ ⠢ ∣ ∙ ⟩
+      ∙  ≈⟨ ∙ ∣ ⋱ ⟩
+      ⋱  ≈⟨ ⋱ ∣ ⠿ ⟩
       ⠿  ∎
+    where open ≋-Reasoning
 ```
 
