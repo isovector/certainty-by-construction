@@ -7,6 +7,7 @@ module 3-agda-survival-guide where
 
 open import Level using (Level)
 open import Data.Bool using (Bool; true; false)
+open import Relation.Binary.PropositionalEquality
 open import Data.String
 open import Data.Nat
 
@@ -636,4 +637,46 @@ This book is a literate Agda document, which means the entire thing is a
 working, typechecking Agda program with prose written around it. All of the
 syntax highlighting you see in this book was produced by the Agda compiler,
 which is the most help I can give to you reading this book in hard copy.
+
+
+## Generalized Variables
+
+One of Agda's nicer features is its support for implicit parameters, which are
+parameters that you'd like the compiler to fill in automatically for you.
+Implicit parameters are a god-send in dependently typed languages where you need
+a level in scope before you introduce your type, and you need to introduce your
+type before you can get a value of that type. And so in order to get a single
+polymorphic value as a function argument, you also need to pass in both a
+`Level` and a `Set`! Passing these two arguments in as implicits means that Agda
+will automatically determine them from the value you pass in, dramatically
+improving the story at call-sites.
+
+However, in highly-polymorphic code, the definition sites begin to get unwieldy.
+If you are writing a module that provides a large surface area of operation,
+it's likely that you will need similar implicit parameters in each definition.
+Writing them all out by hand can be extremely time-consuming and tedious.
+Thankfully, there's a better way: *generalized variables.*
+
+Generalized variables are variables we can define once, which automatically get
+added as implicit parameters whenever they're used. For example, if we had the
+following program:
+
+```agda
+example : {x y : ℕ} → x + suc y ≢ 0
+example = ?
+```
+
+we could instead modify it to get rid of those pesky `x` and `y` implicits:
+
+
+```agda
+private variable
+  x y : ℕ
+
+example⅋ : x + suc y ≢ 0
+example⅋ = ?
+```
+
+Now, whenever `x` and `y` are mentioned in types, Agda automatically elaborates
+out their definitions as implicits, saving you a great deal of effort.
 
