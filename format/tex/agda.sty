@@ -127,7 +127,7 @@
 }
 \newcommand{\AgdaStringFontStyle}[1]{\texttt{#1}}
 \newcommand{\AgdaCommentFontStyle}[1]{\texttt{#1}}
-\newcommand{\AgdaBoundFontStyle}[1]{\textit{#1}}
+\newcommand{\AgdaBoundFontStyle}[1]{\texttt{#1}}
 
 % ----------------------------------------------------------------------
 % Colours.
@@ -361,10 +361,10 @@
 \newcommand{\AgdaCodeStyle}{}
 % \newcommand{\AgdaCodeStyle}{\tiny}
 
-\ifdefined\mathindent
+\ifdefined\agdaindent
   {}
 \else
-  \newdimen\mathindent\mathindent\leftmargini
+  \newdimen\agdaindent\agdaindent\leftmargini
 \fi
 
 % Adds the given amount of vertical space and starts a new line.
@@ -641,7 +641,7 @@
             \AgdaFormatCodeNumber{\theAgdaCodeNumber}}}}{}%
     %
     % Indent the entire code block.
-    \advance\leftskip\mathindent%
+    \advance\leftskip\agdaindent%
     %
     % The code's style can be customised.
     \AgdaCodeStyle%
@@ -651,6 +651,7 @@
     %
     % The environment used to handle indentation (of individual lines)
     % and alignment.
+        \begin{tcolorbox}[breakable]%
     \begin{pboxed}%
       %
       % Conditionally preserve alignment between code blocks.
@@ -662,6 +663,7 @@
       % The code.
       \BODY%
     \end{pboxed}%
+    \end{tcolorbox}%
     %
     \ifthenelse{\boolean{Agda@Number}}{%
       % Equation numbers have been requested.
