@@ -44,6 +44,7 @@ build/tex/book/%.tex : build/tex/agda/latex/%.tex
 # Compile all the resulting latex documents together
 build/tex/pdf.tex : $(ALL_TEX) format/tex/template.tex
 	pandoc $(PANDOC_PDF_OPTS) -o $@ $(ALL_TEX)
+	sed -i 's/\AgdaComment{--\\ !\\ \([0-9]\)}/annotate{\1}/g' $@
 	sed -i 's/⅋//g' $@
 
 # Copy the agda style

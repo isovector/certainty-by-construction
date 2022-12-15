@@ -359,7 +359,6 @@ Solution
       impl acc [] = []
       impl acc (xs ←∷ x) = impl (x ∷→ acc) xs
       ```
-\end{AgdaAlign}
 
 
 ## Introduction to Dependent Types
@@ -478,7 +477,6 @@ side of the equals sign, we know we are now trying to build a `List A (not
 false)` --- also known as `List A true`. Agda learns the opposite fact in the
 `_←∷_` case.
 
-\end{AgdaAlign}
 
 
 ## More Dependent Types
