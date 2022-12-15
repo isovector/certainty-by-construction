@@ -495,14 +495,7 @@ module Trees where
   leaf : {A : Set} → A → Tree A 1
   leaf x = ⊘ ◁ x ▷ ⊘
 
-
-  open import Data.Nat
-
   _ : Tree ℕ 3
   _ = (⊘ ◁ 3 ▷ (leaf 4)) ◁ 5 ▷ (leaf 6 ◁ 9 ▷ leaf 11)
-
-  swapl : {A : Set} {n : ℕ} → Tree A n → Tree A n
-  swapl ((ll ◁ l ▷ lr) ◁ a ▷ r) = (ll ◁ a ▷ lr) ◁ l ▷ r
-  swapl t = t
 ```
 
