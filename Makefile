@@ -2,7 +2,7 @@ RULES := pdf
 CONTENT := book
 
 PANDOC_OPTS := --citeproc \
-               --from markdown+fancy_lists \
+               --from markdown+fancy_lists+raw_tex \
                -t latex+lagda \
                --tab-stop=100 \
                --no-highlight \
