@@ -175,7 +175,7 @@ Booleans probably aren't the first thing that comes to mind when you think about
 number systems. So let's instead build something a little more representative of
 numbers: the *natural numbers.* The natural numbers are those non-negative whole
 numbers that we use for counting: $0, 1, 2, 3, \dots$. Mathematicians describe
-this set of numbers by the "blackbord bolded" symbol `ℕ`, which is the notation
+this set of numbers by the "blackboard bolded" symbol `ℕ`, which is the notation
 we too will use.
 
 The natural numbers are sometimes known as Peano numbers, named after Giuseppe
@@ -294,42 +294,195 @@ saying it should nest to the left with precedence 5:
   infixl 5 _+_
 ```
 
+The natural numbers don't support subtraction, because we might try to take too
+much away and be forced to go negative, but there are no negative natural
+numbers. However, we have a closely related operation, subtraction with
+*truncation* at zero --- that is, if the result should be negative, it is
+instead zero. We call this operation "monus", and use the symbol `_∸_`.
 
 
-```agda
-  infixl 5 _∸_
+Exercise
+
+: Define `_∸_ : ℕ → ℕ → ℕ`
+
+
+Solution
+
+:   ```agda
   _∸_ : ℕ → ℕ → ℕ
   x     ∸ zero  = x
   zero  ∸ suc y = zero
   suc x ∸ suc y = x ∸ y
+    ```
 
+The last operation we will implement for natural numbers is multiplication,
+which sounds like it might be hard until you remember that multiplication is
+just repeated addition, which we define as follows:
+
+```agda
   infixl 6 _*_
   _*_ : ℕ → ℕ → ℕ
-  x * zero = zero
-  x * suc y = (x * y) + x
+  zero  * y = zero
+  suc x * y = (x * y) + y
+```
 
+Just to convince ourselves everything works, let's write a few unit tests:
+
+```agda
   module Tests where
     open import Relation.Binary.PropositionalEquality
 
-    _ : one + one ≡ two
+    _ : one + two ≡ three
+    _ = refl
+
+    _ : three ∸ one ≡ two
+    _ = refl
+
+    _ : one ∸ three ≡ zero
     _ = refl
 
     _ : two * two ≡ four
     _ = refl
-
-    suc-is-one+ : (x : ℕ) → one + x ≡ suc x
-    suc-is-one+ x = refl
 ```
 
+You can find all of these goodies, and significantly more, in the standard
+library's `Data.Nat` module. Additionally, you also get support for natural
+literals, that is, you get digital representations for every number. No more
+`four : ℕ`; just use `4 : ℕ`!
+
+By this point, you should be starting to get a good handle on the basics of Agda
+--- both syntactically, as well as how we think about modeling and solving
+problems. In the next section we will tackle the integers, which have much more
+interesting mathematical structure, and subsequently, present many more
+challenges.
+
+
+## Integers
+
+The integers extend the natural numbers by reflecting them onto the negative
+side of the axis as well. Our number line now goes off to infinity in two
+directions, towards infinity and towards negative infinity. Some of the
+integers then, are $\dots, -3, -2, -1, 0, 1, \dots$. We use the blackboard bold
+notation `ℤ` to represent the set of integers, which might seem like a strange
+choice until you learn the German word for "number" is *Zahl.*
+
+Mathematically, we say the integers are an *extension* of the natural numbers.
+That is, every natural number can be thought of as an integer, but there are
+some (infinitely many) integers that do not correspond to any natural. When
+modeling this problem in Agda, it would be nice if we could reuse the machinery
+we just built for natural numbers, rather than needing to build everything again
+from scratch. Before building integers the right way, we will first take an
+intentional wrong turn, to clarify some issues around data modeling in Agda.
+
+Let's put our misstep in a new module so as to not confuse ourselves when we
+"rollback" the idea. By analogy with `ℕ`, which contains `zero` and `suc`,
+perhaps `ℤ` also has a constructor `pred` which we interpret as "subtracting
+one:"
+
 ```agda
-module Integers where
+module Naive-Integers₁ where
+  data ℤ : Set where
+    zero : ℤ
+    suc  : ℤ → ℤ
+    pred : ℤ → ℤ
+```
+
+The problem with this approach, is that numbers no longer have a unique
+representation. For example, there are now infinitely many ways of representing
+`zero`, the first three of which are:
+
+* `zero`
+* `pred (suc zero)`
+* `suc (pred zero)`
+
+Recall that constructors are always distinct from one another, and furthermore,
+that they never compute to anything other than themselves. We could plausibly
+try to fix this problem by writing a function `normalize`:
+
+```agda
+  normalize : ℤ → ℤ
+  normalize zero = zero
+  normalize (suc zero) = suc zero
+  normalize (suc (suc x)) = suc (normalize (suc x))
+  normalize (suc (pred x)) = normalize x
+  normalize (pred zero) = pred zero
+  normalize (pred (suc x)) = normalize x
+  normalize (pred (pred x)) = pred (normalize x)
+```
+
+which attempts to recursively "cancel out" subsequent applications of `pred` and
+`suc`. However, it's unclear prima facie whether this function correctly
+normalizes all integers (it doesn't,) and, even if it did, the resulting
+ergonomics would be too atrocious to use in the real world. The important
+takeaway from this wrong turn is to strive for unique representations of data
+whenever possible.
+
+Our first attempt doesn't work. Let's take another misstep to see what else can
+go wrong when trying to build the integers. Maybe this time we can reuse the
+natural numbers, and build integers merely by determining whether the natural is
+postive or negative:
+
+```agda
+module Naive-Integers₂ where
+  open import Data.Nat
+
+  data ℤ : Set where
+    +_ : ℕ → ℤ
+    -_ : ℕ → ℤ
+```
+
+This approach is much more satisfying than our previous attempt; it allows us to
+reuse the machinery we wrote for natural numbers, and requires us only to wrap
+them with a tag. The syntax is a little weird, but recall that the underscores
+correspond to syntactic "holes," meaning the following are all acceptable
+integers:
+
+```agda
+  _ : ℤ
+  _ = - 2
+
+  _ : ℤ
+  _ = + 6
+```
+
+Note that the spaces separating `-` from `2`, and `+` from `6` are *necessary.*
+Agda will complain very loudly, and rather incoherently, if you forget them.
+
+While our second approach dramatically improves on the syntax of integers and
+eliminates most problems from `Naive-Integers₁`, there is still one small issue
+--- there are now two (and exactly two) representations of zero:
+
+```agda
+  _ : ℤ
+  _ = + 0
+
+  _ : ℤ
+  _ = - 0
+```
+
+Perhaps there are some number systems in which it's desirable to have (distinct)
+positive and negative zeroes, but this is not one of them. Unfortunately, our
+second attempt at defining the integers is also flawed, but it points us in the
+right direction. Really, the only problem here is our *interpretation of the
+syntax.* This brings us to our third, and final implementation for the integers:
+
+```agda
+module Sandbox-Integers where
   import Data.Nat as ℕ
   open ℕ using (ℕ)
 
   data ℤ : Set where
-    +_ : ℕ → ℤ
+    +_     : ℕ → ℤ
     -[1+_] : ℕ → ℤ
+```
 
+You'll notice this definition of `ℤ` is identical to the one from
+`Naive-Integers₂`; the only difference is that we've renamed `-_` to `-[1+_]`.
+This new name suggests the numbers are one "more negative" than the wrapped
+natural would otherwise indicate. We can then name three particularly
+interesting integers:
+
+```agda
   0ℤ : ℤ
   0ℤ = + 0
 
@@ -338,54 +491,176 @@ module Integers where
 
   -1ℤ : ℤ
   -1ℤ = -[1+ 0 ]
+```
 
+The constructed form of `-1ℤ` is a little wordy, but successfully eliminates the
+"double zero" problem we had before. Of course, we'd still like our `suc` and
+`pred` functions that we postulated our first time around, and we can now
+articulate these as computations:
+
+```agda
   suc : ℤ → ℤ
-  suc (+ x) = + ℕ.suc x
-  suc -[1+ ℕ.zero ] = 0ℤ
+  suc (+ x)          = + ℕ.suc x
+  suc -[1+ ℕ.zero  ] = 0ℤ
   suc -[1+ ℕ.suc x ] = -[1+ x ]
+```
 
+If `suc`'s argument is positive, it makes it more positive. If it's negative, it
+makes it less negative, possibly producing zero in the process. Dually, we can
+define `pred` which makes its argument more negative:
+
+```agda
   pred : ℤ → ℤ
   pred (+ ℕ.zero) = -1ℤ
   pred (+ ℕ.suc x) = + x
   pred -[1+ x ] = -[1+ ℕ.suc x ]
+```
 
+It might be desirable to negate an integer; turning it negative if it's
+positive, and vice versa. `-_` is a natural name for this operation, but its
+implementation is not particularly natural:
+
+```agda
+  ⅋-_ : ℤ → ℤ
+  ⅋- (+ ℕ.zero)  = 0ℤ
+  ⅋- (+ ℕ.suc x) = -[1+ x ]
+  ⅋- -[1+ x ]    = + ℕ.suc x
+```
+
+When converting back and forth from positive to negative, there's this annoying
+`ℕ.suc` that we need to be careful to not forget about. This annoyance is an
+artifact of the encoding we chose; which has the benefit of having unique
+representations of all numbers, at the cost of not being *symmetric* in how it
+treats positive and negative numbers. To work around this problem, Agda has
+support for writing custom patterns, that is, other ways of deconstructing data.
+
+We can define these pattern synonyms via the `pattern` keyword, and give a
+rewrite rule with the desired name of the pattern on the left, and what it
+should expand to on the right:
+
+```agda
   pattern +0 = + 0
   pattern +[1+_] n = + (ℕ.suc n)
+```
 
+These two patterns give us symmetry when working with integers. While before we
+had to pattern match into two cases, `+_` and `-[1+_]`, we can now instead
+choose to match into *three* cases: `+0`, `+[1+_]` and `-[1+_]`. We can rewrite
+the `-_` function with this new capability, which provides a significantly more
+elegant implementation:
+
+```agda
   -_ : ℤ → ℤ
-  - (+0) = +0
+  - +0       = +0
   - +[1+ x ] = -[1+ x ]
   - -[1+ x ] = +[1+ x ]
+```
 
+Finally, the moment we've all been waiting for; it's time to implement addition
+over integers. Doing so is a particularly finicky thing --- there are lots of
+ways in which positive and negative integers can interact! Fortunately, a lot of
+the work is duplicated by virtue of addition being commutative, that is, the
+answer is the same regardless of whether we write $a + b$ or $b + a$. Therefore,
+we present addition of integers in pairs that are easy to check the equivalence
+of.
 
+First, additing zero to anything doesn't change the result:
+
+```agda
   infixl 5 _+_
   _+_ : ℤ → ℤ → ℤ
   +0             + y              = y
   +[1+ x       ] + +0             = +[1+ x ]
   -[1+ x       ] + +0             = -[1+ x ]
+```
+
+These last two cases would be more naturally written as `x + +0 = x`, but we are
+forced to expand out `x` for technical reasons. Continuing on, we come across
+the case in which we're adding negative one to positive one:
+
+```agda
   +[1+ ℕ.zero  ] + -[1+ ℕ.zero  ] = +0
   -[1+ ℕ.zero  ] + +[1+ ℕ.zero  ] = +0
+```
+
+Otherwise, both arguments are positive or both negative, in which case we just
+add their underlying naturals (being careful to `ℕ.suc` the result, since we
+have two `1+`s on the left side!)
+
+```agda
   +[1+ x       ] + +[1+ y       ] = +[1+ ℕ.suc (x ℕ.+ y) ]
   -[1+ x       ] + -[1+ y       ] = -[1+ ℕ.suc (x ℕ.+ y) ]
+```
+
+The next pair of cases is what happens if we are adding a negative one, in which
+case it must cancel out a positive `ℕ.suc`:
+
+```agda
   +[1+ ℕ.suc x ] + -[1+ ℕ.zero  ] = +[1+ x ]
   -[1+ ℕ.zero  ] + +[1+ ℕ.suc y ] = +[1+ y ]
+```
+
+Analogously, if we're adding a positive one:
+
+```agda
   +[1+ ℕ.zero  ] + -[1+ ℕ.suc y ] = -[1+ y ]
   -[1+ ℕ.suc x ] + +[1+ ℕ.zero  ] = -[1+ x ]
+```
+
+The final case, is if we are adding a positive `ℕ.suc` to a negative `ℕ.suc`, in
+which case the two cancel each other out and we add the remaining terms:
+
+```agda
   +[1+ ℕ.suc x ] + -[1+ ℕ.suc y ] = +[1+ x ] + -[1+ y ]
   -[1+ ℕ.suc x ] + +[1+ ℕ.suc y ] = -[1+ x ] + +[1+ y ]
+```
 
+What a headache! Who knew addition could be this hard? The good news is that I
+didn't have to figure this all out on my own; Agda was extremely helpful. I
+simply wrote the first line, and then thought to myself whether I could solve
+the problem from there. If I could, great! If I couldn't, I asked Agda to split
+one of the variables for me, which generated some new, more specific cases.
+Rinse and repeat until all the holes are filled and everyone is happy.
+
+Addition is the hard part. We can implement subtraction trivially, via addition
+of the negative:
+
+```agda
   infixl 5 _-_
   _-_ : ℤ → ℤ → ℤ
   x - y = x + (- y)
+```
 
+Last but not least, we can define multiplication, again as repeated addition.
+It's a little trickier this time around, since we need to recurse on positive
+and negative multiplicands, but the cases are rather simple. Multiplication by
+zero is zero:
+
+
+```agda
   infixl 6 _*_
   _*_ : ℤ → ℤ → ℤ
   x * +0             = +0
+```
+
+Multiplication by positive or negative one transfers the sign:
+
+```agda
   x * +[1+ ℕ.zero  ] = x
   x * -[1+ ℕ.zero  ] = - x
+```
+
+and finally, we can perform repeated addition or subtraction:
+
+```agda
   x * +[1+ ℕ.suc y ] = (+[1+ y ] * x) + x
   x * -[1+ ℕ.suc y ] = (-[1+ y ] * x) - x
+```
 
+Thankfully, our hard work is rewarded when the unit tests agree that we got the
+right answers:
+
+```agda
   module Tests where
     open import Relation.Binary.PropositionalEquality
 
@@ -394,8 +669,12 @@ module Integers where
 
     _ : (+ 3) - (+ 10) ≡ - (+ 7)
     _ = refl
-
-
-
 ```
+
+This is quite a marvelous achievement. In this chapter we've defined three
+number systems, in order of increasing complexity and challenge. While there are
+many more number systems we could build: the rationals, the reals, the complex
+numbers, to name some famous ones, we will leave it here. Instead, we will turn
+our attention in the next chapter to the notion of proof, and learn how to do
+better than unit tests to show our code works as expected.
 
