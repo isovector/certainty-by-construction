@@ -247,7 +247,7 @@ direction and with which precedence it should parse repeated applications of
 a precedence, and then the operator we'd like to change the parse rules of:
 
 ```agda
-  infixr 3 _∷→_
+  infixr 5 _∷→_
 ```
 
 After informing Agda of how we'd like repeated applications of `_∷→_` to parse,
@@ -267,14 +267,24 @@ list,* this time presented without further commentary:
     [] : RevList A
     _←∷_ : RevList A → A → RevList A
 
-  infixl 3 _←∷_
+  infixl 5 _←∷_
 ```
 
 which we can use to show the reversed Fibonacci series:
 
 ```agda
   _ : RevList ℕ
-  _ = [] ←∷ 8 ←∷ 5 ←∷ 3 ←∷ 2 ←∷ 1 ←∷ 1
+  _ = [] ←∷ 1 ←∷ 1 ←∷ 2 ←∷ 3 ←∷ 5 ←∷ 8
+```
+
+This `RevList` doesn't immediately appear to be reversed, but that's an artifact
+of our simplified notation. Writing it out with full parentheses illustrates
+that in fact, the first thing we can get our hands on is indeed the `8`:
+
+
+```agda
+  _ : RevList ℕ
+  _ = ((((([] ←∷ 1) ←∷ 1) ←∷ 2) ←∷ 3) ←∷ 5) ←∷ 8
 ```
 
 As this example shows, we can reuse the names of constructors; both `List` and
@@ -421,8 +431,8 @@ Since we started a new module with completely new definitions, we need to teach
 Agda how to parse repeated applications of these operators again:
 
 ```agda
-  infixl 3 _←∷_
-  infixr 3 _∷→_
+  infixl 5 _←∷_
+  infixr 5 _∷→_
 ```
 
 Our new definition of `List` is quite a peculiar thing; we can now choose
@@ -430,11 +440,11 @@ which constructors are allowed to be used, simply by changing the type. For
 example:
 
 ```agda
-  _ : List ℕ false
-  _ = 1 ∷→ 1 ∷→ 2 ∷→ 3 ∷→ 5 ∷→ 8 ∷→ []
+  ex₁ : List ℕ false
+  ex₁ = 1 ∷→ 1 ∷→ 2 ∷→ 3 ∷→ 5 ∷→ 8 ∷→ []
 
-  _ : List ℕ true
-  _ = [] ←∷ 8 ←∷ 5 ←∷ 3 ←∷ 2 ←∷ 1 ←∷ 1
+  ex₂ : List ℕ true
+  ex₂ = [] ←∷ 1 ←∷ 1 ←∷ 2 ←∷ 3 ←∷ 5 ←∷ 8
 ```
 
 Attempting to use `_∷→_` in a `List ℕ true`, or `_←∷_` in a `List ℕ false` will
@@ -481,19 +491,88 @@ false)` --- also known as `List A true`. Agda learns the opposite fact in the
 
 ## More Dependent Types
 
+Continuing our whirlwind tour of what differentiates Agda from other programming
+languages, we come to the strange fact that most Agda programs never get run.
+What is this blasphemy? A programming language that never gets run? What's the
+point?
+
+The truth is that for many programming tasks outside of industry, the only
+reason we run our programs is to see if they work. Consider how often you run
+your code; dollars to donuts, you run code for the purposes of testing it
+several orders of magnitude more often than you run it in production. Agda has
+an integrated story around testing, which is that tests should be inlined into
+the module that they are testing, and that successful compilation of the module
+requires the tests to pass.
+
+This approach turns tests from something you *run* into something more
+integrated; tests become automatically-checked examples, demonstrating inline
+aspects of your code. As we progress deeper into the mathematical side of Agda,
+our tests will be subsumed by *proofs* that our code works --- not just on the
+inputs we thought to test, but for *every possible* input.
+
+Let's demonstrate the technique quickly, just to give you a flavor of what to
+expect. Don't worry, you're not required to understand all the details here,
+just to see what's possible with Agda and to get your subconscious thinking
+about new ways of internalizing computation. We are required to import some of
+Agda's proof machinery:
+
 ```agda
-
-module Trees where
-  open import Data.Nat
-
-  data Tree (A : Set) : ℕ → Set where
-    ⊘ : Tree A 0
-    _◁_▷_ : {i j : ℕ} → Tree A i → A → Tree A j → Tree A (1 + (i ⊔ j))
-
-  leaf : {A : Set} → A → Tree A 1
-  leaf x = ⊘ ◁ x ▷ ⊘
-
-  _ : Tree ℕ 3
-  _ = (⊘ ◁ 3 ▷ (leaf 4)) ◁ 5 ▷ (leaf 6 ◁ 9 ▷ leaf 11)
+  open import Relation.Binary.PropositionalEquality
 ```
+
+and then can write a test showing that `ex₁` is equal to `reverse ex₂`:
+
+```agda
+  _ : ex₁ ≡ reverse ex₂
+  _ = refl
+```
+
+likewise, that `ex₂` is equal to `reverse ex₁`:
+
+```agda
+  _ : ex₂ ≡ reverse ex₁
+  _ = refl
+```
+
+The general principle here is to write the expected equality in the *type*,
+using `_≡_` as the equals sign, and then to give the value as `refl`. This
+pattern is Agda's solution to writing unit tests. We can also inline some
+definitions, instead of referring to past examples like `ex₁` and `ex₂`:
+
+```agda
+  _ : 10      ∷→ 5        ∷→ 16     ∷→ []
+    ≡ (2 * 5) ∷→ (4 + 1) ∷→ (4 * 4) ∷→ []
+  _ = refl
+```
+As you can see, Agda is perfectly happy to expand out expressions when
+determining these equalities. If you're playing along at home, try writing a
+unit test that would fail; for example, maybe:
+
+```wrong-agda
+  _ : 0 ∷→ [] ≡ []
+  _ = refl
+```
+
+Attempting to reload the file will result in an angry response from Agda,
+telling us that `0 ∷→ []` is *not,* in fact, equal to `[]`:
+
+```error
+1-agda.lagda.md:553,7-11
+0 ∷→ [] != [] of type List ℕ false
+when checking that the expression refl has type 0 ∷→ [] ≡ []
+```
+
+Of course, for any list `xs`, it's the case that `xs ≡ reverse (reverse xs)`.
+Such a statement is expressable (and provable) in Agda, but it's rather more
+involved than we'd like to showcase here and now.
+
+By now you have seen enough of Agda to get a sense of how it differs from other
+programming languages. Hopefully you are also convinced that, despite being
+weird, Agda is still capable of computation. Getting fluent in pure functional
+programming languages like Agda is a long journey, requiring a significant
+mindshift compared to more procedural languages, but as you will see, comes with
+quite the payoff. Purely functional programs are much more straightforward,
+concise, and subsequently, maintainable than their procedural counterparts. And
+best of all, they do not obfuscate the connection between programming and
+mathematics, as we will explore in the next chapter.
 
