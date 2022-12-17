@@ -127,21 +127,80 @@ have instead gotten away by writing `not-involutive x = refl`? Unfortunately
 not. We require the pattern match to get Agda "unstuck" and able to reduce the
 definition of `not`.
 
+One common idiom in Agda's standard library are the `-identityˡ` and
+`-identityʳ` functions, which are properties stating a binary operation has
+left- and right- identities, respectively. An *identity* is any value which
+doesn't change the result. As shown in the previous chapter, `false` is an
+identity for logical OR, but we can prove this fact more formally now. Behold:
+
 ```agda
   ∨-identityˡ : (x : Bool) → false ∨ x ≡ x
   ∨-identityˡ x = refl
+```
 
+What's going on here? How can the right hand side be `refl` without having
+pattern matched on the left? Didn't we just have a length discussion about
+exactly this? The answer comes from the definition of `_∨_`, which as you will
+recall is:
+
+```agda
+  _∨⅋_ : Bool → Bool → Bool
+  false ∨⅋ other = other
+  true  ∨⅋ other = true
+```
+
+The first equation here states that anything of the form `false ∨ other` gets
+immediately rewritten to `other`, which is exactly what's happening in
+`∨-identityʳ`. Agda doesn't need us to pattern match on `x` because the
+definition of `_∨_` doesn't need inspect it in order to reduce.
+
+Contrast `∨-identityˡ` to its mirror image:
+
+```agda
   ∨-identityʳ : (x : Bool) → x ∨ false ≡ x
   ∨-identityʳ false = refl
   ∨-identityʳ true  = refl
+```
 
+Here we are required to pattern match on `x` because `_∨_` pattern matches on
+its first argument, and thus this is the only way to get Agda unstuck. This
+kind of asymmetry is intrinsic to Agda's evaluation model, and thus we must be
+conscious of it. As a general rule, anything you pattern match on in the
+implementation is something you'll need to pattern match on in a proof. As you
+become more proficient in Agda, you will start to get an eye for how to write
+definitions that are optimized for ease-of-proof. For any particular function,
+many definitions are possible, but they will all compute the answer differently,
+and thus will have impact upon how we go about proving things.
+
+
+Exercise
+
+: State and prove `∧-identityˡ`.
+
+
+Solution
+
+:   ```agda
   ∧-identityˡ : (x : Bool) → true ∧ x ≡ x
   ∧-identityˡ x = refl
+    ```
 
+
+Exercise
+
+: State and prove `∧-identityʳ`.
+
+
+Solution
+
+:   ```agda
   ∧-identityʳ : (x : Bool) → x ∧ true ≡ x
   ∧-identityʳ false = refl
   ∧-identityʳ true  = refl
+    ```
 
+
+```agda
   ∨-assoc : (a b c : Bool) → (a ∨ b) ∨ c ≡ a ∨ (b ∨ c)
   ∨-assoc false b c = refl
   ∨-assoc true  b c = refl
