@@ -200,30 +200,268 @@ Solution
     ```
 
 
+Identities are especially nice properties to find when designing mathematical
+objects; they act like the number 1 does when multiplying (thus the name
+"identity".) Identities are useful "placeholders" in algorithms when you need a
+default value, but don't have an obvious choice. We will discuss the important
+roles of identities further in @sec:objects.
+
+Another useful property for a binary operator is the notion of *associativity,*
+which is a familiar fact most commonly known about arithmetic, namely:
+
+$$
+(a + b) + c = a + (b + c)
+$$
+
+That is to say, the exact placement of parentheses is unimportant for
+associative operators, and for that reason, we are justified in leaving them
+out, as in:
+
+$$
+a + b + c
+$$
+
+Technically such a statement is ambiguous, but the great thing about
+associativity is it means the two possible parses are equal. As it happens,
+`_∨_` is associative, as we can show:
+
 ```agda
   ∨-assoc : (a b c : Bool) → (a ∨ b) ∨ c ≡ a ∨ (b ∨ c)
   ∨-assoc false b c = refl
   ∨-assoc true  b c = refl
+```
 
+
+Exercise
+
+: Is `_∧_` also associative? If so, prove it. If not, explain why.
+
+
+Solution
+
+:   ```agda
+  ∧-assoc : (a b c : Bool) → (a ∧ b) ∧ c ≡ a ∧ (b ∧ c)
+  ∧-assoc false b c = refl
+  ∧-assoc true  b c = refl
+    ```
+
+We have two final properties we'd like to prove about our binary number system,
+which is the fact that `_∨_` and `_∧_` are *commutative.* Commutative operators
+are ones which are symmetric about their arguments. Again, this property is best
+known as a fact about addition:
+
+$$
+a + b = b + a
+$$
+
+In general, a binary operator is commutative if we can swap its arguments
+without changing the result. We can prove this about `_∨_` by pattern matching
+on every argument:
+
+```agda
   ∨-comm : (x y : Bool) → x ∨ y ≡ y ∨ x
   ∨-comm false false = refl
   ∨-comm false true  = refl
   ∨-comm true  false = refl
   ∨-comm true  true  = refl
+```
 
-  ∧-assoc : (a b c : Bool) → (a ∧ b) ∧ c ≡ a ∧ (b ∧ c)
-  ∧-assoc false b c = refl
-  ∧-assoc true  b c = refl
+While such a thing works, this is clearly a very tedious proof. The amount of
+effort grows exponentially with the number of arguments, which feels especially
+silly when the right hand side is always just `refl`. Thankfully, Agda has a
+tactic for this. A *tactic* is a generic algorithm for producing a proof term;
+and in this case, we're looking for the `case-bash!` tactic. Using `case-bash!`,
+we can rewrite `∨-comm` as:
+
+```agda
+  ∨-comm⅋ : (x y : Bool) → x ∨ y ≡ y ∨ x
+  ∨-comm⅋ = case-bash!
+    -- TODO(sandy): find the right module
+    where open import case-bash
+```
+
+Similarly, we can case bash our way through `∧-comm`, though if we'd like, we
+can import `case-bash` into the global scope:
+
+```agda
+  open import case-bash
 
   ∧-comm : (x y : Bool) → x ∧ y ≡ y ∧ x
-  ∧-comm false false = refl
-  ∧-comm false true  = refl
-  ∧-comm true  false = refl
-  ∧-comm true  true  = refl
+  ∧-comm = case-bash!
+```
 
+We've now had some experience proving theorems about our code. Of course, the
+finiteness of the booleans has dramatically simplified the problem, requiring no
+creativity in finding the proofs; indeed the fact that the computer can write
+them for us via `case-bash!` is a little disheartening. Nevertheless, it's a
+great opportunity to get a feel for proving in a safe environment. We'll have to
+learn some new tricks if we'd like to succeed in proving things about the
+natural numbers.
+
+In the future, if you need any properties about the booleans, you don't need to
+prove them for yourself; most things you could possibly want are already proven
+for you under `Data.Bool.Properties`.
+
+
+## Facts About Natural Numbers
+
+```agda
 module Nat-Properties where
   open import Data.Nat
+```
 
+In this section, our goal is to prove associativity and commutativity of both
+addition and multiplication of natural numbers. Now that we are working in an
+infinite universe, with more naturals than we can enumerate, we find ourselves
+lost in the dark. Our proof knowledge learned from boolean exposure is simply
+not powerful to help us here. We are going to need to learn some new tricks.
+
+The first and most important new technique we will need is `cong`, which you
+already have available to you via `PropositionalEquality`. Nevertheless, its
+definition is the rather overwhelming:
+
+```agda
+  cong⅋
+      : {A B : Set} {x y : A}
+      → (f : A → B)
+      → x ≡ y
+      → f x ≡ f y
+  cong⅋ f refl = refl
+```
+
+This peculiar function's name is short for *congruence,* which is the property
+that functions preserve equality. That is, given some function `f`, we know that
+if `x ≡ y`, then it is surely the case that `f x ≡ f y`. It has to be, because
+`x` and `y` are the same thing, so the function must map the one thing to one
+place. Congruence is a real workhorse in proving, as it allows us to "move" a
+proof of a smaller claim into the right place in a larger theorem. We will see
+an example of it shortly.
+
+Proving associativity of multiplication over the natural numbers is a very tall
+order; this is not a fact that comes lightly to us. In fact, we will need to
+prove nine smaller theorems first, gradually working our way up to the eventual
+goal. This is not unlike software, where we decompose hard problems into easier
+problems, solve them, and then recombine the solutions. A small theorem, proven
+along the way of a bigger theorem, is often called a *lemma.*
+
+Our first lemma is `+-identityʳ`, which is to say, that 0 acts as a right
+identity to addition. That is, we're looking to show the following:
+
+```agda
+  +-identityʳ : (x : ℕ) → x + 0 ≡ x
+```
+
+We begin as we did for booleans; pattern matching on the argument. If it's zero,
+we're already done:
+
+```agda
+  +-identityʳ zero = refl
+```
+
+If our parameter isn't zero, then it must be `suc x` for some `x`. In this case,
+our goal is refined as `suc (x + 0) ≡ suc x`, which you will notice is very
+close to `x + 0 ≡ x` --- that is, the thing we're trying to prove in the first
+place! Recursion is almost certainly the answer, but it's not quite the right
+shape; somehow we need to pin a `suc` on both sides.
+
+Fortunately, this is exactly what `cong` does. Recursion will give us a proof of
+`x + 0 ≡ x`, which we need to somehow massage into a proof that `suc (x + 0) ≡
+suc x`. Therefore, our lemma is completed as:
+
+```agda
+  +-identityʳ (suc x) = cong suc (+-identityʳ x)
+```
+
+
+Exercise
+
+: Use a similar technique to prove `+-suc : (x y : ℕ) → x + suc y ≡ suc (x + y)`.
+
+
+Solution
+
+:   ```agda
+  +-suc : (x y : ℕ) → x + suc y ≡ suc (x + y)
+  +-suc zero y = refl
+  +-suc (suc x) y = cong suc (+-suc x y)
+    ```
+
+
+```agda
+  +-comm : (x y : ℕ) → x + y ≡ y + x
+  +-comm zero y = sym (+-identityʳ y)
+  +-comm (suc x) y = begin
+    suc x + y    ≡⟨⟩
+    suc (x + y)  ≡⟨ cong suc (+-comm x y) ⟩
+    suc (y + x)  ≡⟨ sym (+-suc y x) ⟩
+    y + suc x    ∎
+    where open ≡-Reasoning
+
+  +-assoc : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
+  +-assoc zero y z = refl
+  +-assoc (suc x) y z = begin
+    (suc x + y) + z    ≡⟨⟩
+    suc (x + y) + z    ≡⟨⟩
+    suc ((x + y) + z)  ≡⟨ cong suc (+-assoc x y z) ⟩
+    suc (x + (y + z))  ≡⟨⟩
+    suc x + (y + z)    ∎
+    where open ≡-Reasoning
+
+  *-identityʳ : (x : ℕ) → x * 1 ≡ x
+  *-identityʳ zero = refl
+  *-identityʳ (suc x) = cong suc (*-identityʳ x)
+
+  *-zeroʳ : (x : ℕ) → x * 0 ≡ 0
+  *-zeroʳ zero = refl
+  *-zeroʳ (suc x) = *-zeroʳ x
+
+  *-suc : (x y : ℕ) → x * suc y ≡ x + x * y
+  *-suc zero y = refl
+  *-suc (suc x) y = begin
+    suc x * suc y          ≡⟨⟩
+    suc y + x * suc y      ≡⟨ cong (λ φ → suc y + φ) (*-suc x y) ⟩
+    suc y + (x + x * y)    ≡⟨⟩
+    suc (y + (x + x * y))
+                         ≡⟨ cong suc (sym (+-assoc y x (x * y))) ⟩
+    suc ((y + x) + x * y)
+                ≡⟨ cong (λ φ → suc (φ + x * y)) (+-comm y x) ⟩
+    suc ((x + y) + x * y)  ≡⟨ cong suc (+-assoc x y (x * y)) ⟩
+    suc (x + (y + x * y))  ≡⟨⟩
+    suc x + (y + x * y)    ≡⟨⟩
+    suc x + (suc x * y)    ∎
+    where open ≡-Reasoning
+
+  *-comm : (x y : ℕ) → x * y ≡ y * x
+  *-comm zero y = sym (*-zeroʳ y)
+  *-comm (suc x) y = begin
+    suc x * y  ≡⟨⟩
+    y + x * y  ≡⟨ cong (y +_) (*-comm x y) ⟩
+    y + y * x  ≡⟨ sym (*-suc y x) ⟩
+    y * suc x  ∎
+    where open ≡-Reasoning
+
+  *-distribʳ-+ : (x y z : ℕ) → (y + z) * x ≡ y * x + z * x
+  *-distribʳ-+ x zero z = refl
+  *-distribʳ-+ x (suc y) z = begin
+    (suc y + z) * x      ≡⟨⟩
+    x + (y + z) * x      ≡⟨ cong (x +_) (*-distribʳ-+ x y z) ⟩
+    x + (y * x + z * x)  ≡⟨ sym (+-assoc x (y * x) (z * x)) ⟩
+    (x + y * x) + z * x  ≡⟨⟩
+    suc y * x + z * x    ∎
+    where open ≡-Reasoning
+
+  *-assoc : (x y z : ℕ) → (x * y) * z ≡ x * (y * z)
+  *-assoc zero y z = refl
+  *-assoc (suc x) y z = begin
+    suc x * y * z        ≡⟨⟩
+    (y + x * y) * z      ≡⟨ *-distribʳ-+ z y (x * y) ⟩
+    y * z + (x * y) * z  ≡⟨ cong (λ φ → y * z + φ) (*-assoc x y z) ⟩
+    y * z + x * (y * z)  ≡⟨⟩
+    suc x * (y * z)      ∎
+    where open ≡-Reasoning
+```
+
+```agda
 module Integer-Properties where
   import Data.Nat as ℕ
   import Data.Nat.Properties as ℕ
