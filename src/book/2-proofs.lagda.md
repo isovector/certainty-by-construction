@@ -481,6 +481,22 @@ module Integer-Properties where
   +-identityʳ +[1+ x ] = refl
   +-identityʳ -[1+ x ] = refl
 
+  *-zeroˡ : (m : ℤ) → +0 * m ≡ +0
+  *-zeroˡ (+ ℕ.zero) = refl
+  *-zeroˡ +[1+ ℕ.zero ] = refl
+  *-zeroˡ +[1+ ℕ.suc x ] = refl
+  *-zeroˡ -[1+ ℕ.zero ] = refl
+  *-zeroˡ -[1+ ℕ.suc x ] = refl
+
+  *-identityˡ : (m : ℤ) → 1ℤ * m ≡ m
+  *-identityˡ (+ ℕ.zero) = refl
+  *-identityˡ +[1+ ℕ.zero ] = refl
+  *-identityˡ +[1+ ℕ.suc x ] =
+    cong (λ φ → +[1+ ℕ.suc φ ]) (Nat-Properties.+-identityʳ x)
+  *-identityˡ -[1+ ℕ.zero ] = refl
+  *-identityˡ -[1+ ℕ.suc x ] =
+    cong (λ φ → -[1+ ℕ.suc φ ]) (Nat-Properties.+-identityʳ x)
+
   open ≡-Reasoning
 
   +-comm : (x y : ℤ) → x + y ≡ y + x
@@ -497,6 +513,74 @@ module Integer-Properties where
   +-comm -[1+ ℕ.zero ] +[1+ ℕ.zero ] = refl
   +-comm -[1+ ℕ.zero ] +[1+ ℕ.suc y ] = refl
   +-comm -[1+ ℕ.suc x ] +[1+ ℕ.zero ] = refl
+
+  postulate
+    *-comm : (m n : ℤ) → m * n ≡ n * m
+    +-assoc : (x y z : ℤ) → (x + y) + z ≡  x + (y + z)
+
+  open import Data.Product
+
+  +‿-‿zero : (m : ℕ.ℕ) → +[1+ m ] + -[1+ m ] ≡ +0
+  +‿-‿zero ℕ.zero = refl
+  +‿-‿zero (ℕ.suc m) = +‿-‿zero m
+
+  -‿-‿+‿suc : (m n : ℕ.ℕ) → -[1+ ℕ.suc m ] + -[1+ n ] ≡ -[1+ m ] + -[1+ ℕ.suc n ]
+  -‿-‿+‿suc ℕ.zero ℕ.zero = refl
+  -‿-‿+‿suc ℕ.zero (ℕ.suc n) = refl
+  -‿-‿+‿suc (ℕ.suc m) n =
+    cong (λ φ → -[1+ ℕ.suc (ℕ.suc φ) ]) (sym (Nat-Properties.+-suc m n))
+    where open ≡-Reasoning
+
+  *-pos-neg : (m n : ℕ.ℕ) → +[1+ m ] * -[1+ n ] ≡ +[1+ n ] * -[1+ m ]
+  *-pos-neg m ℕ.zero = sym (*-identityˡ -[1+ m ])
+  *-pos-neg ℕ.zero (ℕ.suc n) =
+    begin
+      -[1+ ℕ.suc (n ℕ.+ 0) ]
+    ≡⟨ cong (λ φ → -[1+ ℕ.suc φ ]) (Nat-Properties.+-identityʳ n) ⟩
+      -[1+ ℕ.suc n ]
+    ∎
+    where open ≡-Reasoning
+  *-pos-neg (ℕ.suc m) (ℕ.suc n) =
+    begin
+      +[1+ m ] * -[1+ n ] + -[1+ n ] + -[1+ ℕ.suc m ]
+    ≡⟨ cong (λ φ → φ + -[1+ n ] + -[1+ ℕ.suc m ]) (*-pos-neg m n) ⟩
+      +[1+ n ] * -[1+ m ] + -[1+ n ] + -[1+ ℕ.suc m ]
+    ≡⟨ +-assoc (+[1+ n ] * -[1+ m ]) -[1+ n ] -[1+ ℕ.suc m ] ⟩
+      +[1+ n ] * -[1+ m ] + (-[1+ n ] + -[1+ ℕ.suc m ])
+    ≡⟨ cong (λ φ → +[1+ n ] * -[1+ m ] + φ) (+-comm -[1+ n ] -[1+ ℕ.suc m ]) ⟩
+      +[1+ n ] * -[1+ m ] + (-[1+ ℕ.suc m ] + -[1+ n ])
+    ≡⟨ cong (λ φ → +[1+ n ] * -[1+ m ] + φ) (-‿-‿+‿suc m n) ⟩
+      +[1+ n ] * -[1+ m ] + (-[1+ m ] + -[1+ ℕ.suc n ])
+    ≡⟨ sym (+-assoc (+[1+ n ] * -[1+ m ]) -[1+ m ] -[1+ ℕ.suc n ]) ⟩
+      +[1+ n ] * -[1+ m ] + -[1+ m ] + -[1+ ℕ.suc n ]
+    ∎
+    where open ≡-Reasoning
+
+  *-neg-neg : (m n : ℕ.ℕ) → -[1+ m ] * -[1+ n ] ≡ +[1+ m ] * +[1+ n ]
+  *-neg-neg m ℕ.zero = refl
+  *-neg-neg ℕ.zero (ℕ.suc n) = refl
+  *-neg-neg (ℕ.suc m) (ℕ.suc n) =
+    cong (λ φ → φ + +[1+ n ] + +[1+ ℕ.suc m ]) (*-neg-neg m n)
+
+  -‿hom : (m n : ℕ.ℕ) → -[1+ m ] + -[1+ n ] ≡ -[1+ m ℕ.+ ℕ.suc n ]
+  -‿hom ℕ.zero n = refl
+  -‿hom (ℕ.suc m) n = cong (λ φ → -[1+ ℕ.suc φ ]) (sym (Nat-Properties.+-suc m n))
+
+  *‿-‿neg : (m n : ℕ.ℕ) → ∃[ x ] +[1+ m ] * -[1+ n ] ≡ -[1+ x ]
+  *‿-‿neg m ℕ.zero = m , refl
+  *‿-‿neg m (ℕ.suc n) with *‿-‿neg m n
+  ... | fst , snd = (fst ℕ.+ ℕ.suc m) ,
+    ( begin
+      -[1+ n ] * +[1+ m ] + -[1+ m ]
+    ≡⟨ cong (_+ -[1+ m ]) (*-comm -[1+ n ] +[1+ m ]) ⟩
+      +[1+ m ] * -[1+ n ] + -[1+ m ]
+    ≡⟨ cong (_+ -[1+ m ]) snd ⟩
+      -[1+ fst ] + -[1+ m ]
+    ≡⟨ -‿hom fst m ⟩
+      -[1+ fst ℕ.+ ℕ.suc m ]
+    ∎
+    )
+    where open ≡-Reasoning
 
 --   +-assoc : (x y z : ℤ) → (x + y) + z ≡  x + (y + z)
 --   +-assoc +0 y z = refl
