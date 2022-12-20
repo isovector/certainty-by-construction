@@ -375,6 +375,20 @@ suc x`. Therefore, our lemma is completed as:
 
 Exercise
 
+: Determine the appropriate type of `*-identityʳ` and prove it.
+
+
+Solution
+
+:   ```agda
+  *-identityʳ : (x : ℕ) → x * 1 ≡ x
+  *-identityʳ zero = refl
+  *-identityʳ (suc x) = cong suc (*-identityʳ x)
+    ```
+
+
+Exercise
+
 : Use a similar technique to prove `+-suc : (x y : ℕ) → x + suc y ≡ suc (x + y)`.
 
 
@@ -387,7 +401,49 @@ Solution
     ```
 
 
+Believe it or not, but we now have enough lemmas in place to successfully be
+able to prove the associativity and commutativity of `_+_`. We will do
+associativity together, because the approach comes with a new proof technique:
+*equational reasoning.* Whenever you are proving facts about `_≡_, you can `open
+≡-Reasoning`, which brings some nice syntax for reasoning into scope. Consider
+`+-assoc`:
+
 ```agda
+  +-assoc : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
+  +-assoc zero y z = refl
+  +-assoc (suc x) y z = begin
+    (suc x + y) + z    ≡⟨⟩
+    suc (x + y) + z    ≡⟨⟩
+    suc ((x + y) + z)  ≡⟨ cong suc (+-assoc x y z) ⟩  -- ! 1
+    suc (x + (y + z))  ≡⟨⟩
+    suc x + (y + z)    ∎
+    where open ≡-Reasoning
+```
+
+In the second clause of `+-assoc`, we did `where open ≡-Reasoning`, which allows
+us to write the series of equations above. Equational reasoning is an essential
+technique for proofs; our human brains simply aren't sophisticated enough to
+hold all the relevant details in mind. Instead, we can start with the left-
+and right- hand sides of what we're trying to prove, and try to meet in the
+middle. An equational reasoning block is started via `begin`, ended with the
+"tombstone" character `∎`, and inside allows us to separate values via the
+`_≡⟨⟩_` operator. If you look closely, you'll notice two separators here:
+`_≡⟨⟩_` which helps the reader follow Agda's computational rewriting (but does
+nothing to help Agda.) The other separator is `_≡⟨_⟩_` as used at [1](Ann),
+which allows us to put a *justification* for the rewrite in between the
+brackets. This form is necessary whenever you'd like to invoke a lemma to help
+prove the goal.
+
+
+Exercise
+
+: Prove `+-comm : (x y : ℕ) → x + y ≡ y + x` using the equational reasoning
+  style.
+
+
+Solution
+
+:   ```agda
   +-comm : (x y : ℕ) → x + y ≡ y + x
   +-comm zero y = sym (+-identityʳ y)
   +-comm (suc x) y = begin
@@ -396,25 +452,14 @@ Solution
     suc (y + x)  ≡⟨ sym (+-suc y x) ⟩
     y + suc x    ∎
     where open ≡-Reasoning
+    ```
 
-  +-assoc : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
-  +-assoc zero y z = refl
-  +-assoc (suc x) y z = begin
-    (suc x + y) + z    ≡⟨⟩
-    suc (x + y) + z    ≡⟨⟩
-    suc ((x + y) + z)  ≡⟨ cong suc (+-assoc x y z) ⟩
-    suc (x + (y + z))  ≡⟨⟩
-    suc x + (y + z)    ∎
-    where open ≡-Reasoning
+Often, a huge amount of the work to prove something is simply in manipulating
+the expression to be of the right form so that you can apply the relevant lemma.
+This is the case in `*-suc`, which allows us to expand a `suc` on the right side
+of a multiplication term:
 
-  *-identityʳ : (x : ℕ) → x * 1 ≡ x
-  *-identityʳ zero = refl
-  *-identityʳ (suc x) = cong suc (*-identityʳ x)
-
-  *-zeroʳ : (x : ℕ) → x * 0 ≡ 0
-  *-zeroʳ zero = refl
-  *-zeroʳ (suc x) = *-zeroʳ x
-
+```agda
   *-suc : (x y : ℕ) → x * suc y ≡ x + x * y
   *-suc zero y = refl
   *-suc (suc x) y = begin
@@ -430,7 +475,29 @@ Solution
     suc x + (y + x * y)    ≡⟨⟩
     suc x + (suc x * y)    ∎
     where open ≡-Reasoning
+```
 
+We're now on the homestretch. As a simple lemma, we can show that `_* zero` is
+equal to zero:
+
+```agda
+  *-zeroʳ : (x : ℕ) → x * 0 ≡ 0
+  *-zeroʳ zero = refl
+  *-zeroʳ (suc x) = *-zeroʳ x
+```
+
+and we are now ready to prove `*-comm`, one of our major results in this
+chapter.
+
+
+Exercise
+
+: Prove the commutativity of multiplication of the natural numbers.
+
+
+Solution
+
+  : ```agda
   *-comm : (x y : ℕ) → x * y ≡ y * x
   *-comm zero y = sym (*-zeroʳ y)
   *-comm (suc x) y = begin
@@ -439,7 +506,9 @@ Solution
     y + y * x  ≡⟨ sym (*-suc y x) ⟩
     y * suc x  ∎
     where open ≡-Reasoning
+    ```
 
+```agda
   *-distribʳ-+ : (x y z : ℕ) → (y + z) * x ≡ y * x + z * x
   *-distribʳ-+ x zero z = refl
   *-distribʳ-+ x (suc y) z = begin
@@ -459,153 +528,4 @@ Solution
     y * z + x * (y * z)  ≡⟨⟩
     suc x * (y * z)      ∎
     where open ≡-Reasoning
-```
-
-```agda
-module Integer-Properties where
-  import Data.Nat as ℕ
-  import Data.Nat.Properties as ℕ
-  import 2-numbers
-  open 2-numbers.Sandbox-Integers
-
-  neg-involutive : (x : ℤ) → - (- x) ≡ x
-  neg-involutive +0 = refl
-  neg-involutive +[1+ n ] = refl
-  neg-involutive -[1+ n ] = refl
-
-  +-identityˡ : (x : ℤ) → 0ℤ + x ≡ x
-  +-identityˡ x = refl
-
-  +-identityʳ : (x : ℤ) → x + 0ℤ ≡ x
-  +-identityʳ (+ ℕ.zero) = refl
-  +-identityʳ +[1+ x ] = refl
-  +-identityʳ -[1+ x ] = refl
-
-  *-zeroˡ : (m : ℤ) → +0 * m ≡ +0
-  *-zeroˡ (+ ℕ.zero) = refl
-  *-zeroˡ +[1+ ℕ.zero ] = refl
-  *-zeroˡ +[1+ ℕ.suc x ] = refl
-  *-zeroˡ -[1+ ℕ.zero ] = refl
-  *-zeroˡ -[1+ ℕ.suc x ] = refl
-
-  *-identityˡ : (m : ℤ) → 1ℤ * m ≡ m
-  *-identityˡ (+ ℕ.zero) = refl
-  *-identityˡ +[1+ ℕ.zero ] = refl
-  *-identityˡ +[1+ ℕ.suc x ] =
-    cong (λ φ → +[1+ ℕ.suc φ ]) (Nat-Properties.+-identityʳ x)
-  *-identityˡ -[1+ ℕ.zero ] = refl
-  *-identityˡ -[1+ ℕ.suc x ] =
-    cong (λ φ → -[1+ ℕ.suc φ ]) (Nat-Properties.+-identityʳ x)
-
-  open ≡-Reasoning
-
-  +-comm : (x y : ℤ) → x + y ≡ y + x
-  +-comm +0 y = sym (+-identityʳ _)
-  +-comm +[1+ x ] +0 = refl
-  +-comm -[1+ x ] +0 = refl
-  +-comm +[1+ ℕ.suc x ] -[1+ ℕ.suc y ] = +-comm +[1+ x ] -[1+ y ]
-  +-comm -[1+ ℕ.suc x ] +[1+ ℕ.suc y ] = +-comm -[1+ x ] +[1+ y ]
-  +-comm +[1+ x ] +[1+ y ] = cong (λ φ → +[1+ ℕ.suc φ ]) (ℕ.+-comm x y)
-  +-comm -[1+ x ] -[1+ y ] = cong (λ φ → -[1+ ℕ.suc φ ]) (ℕ.+-comm x y)
-  +-comm +[1+ ℕ.zero ] -[1+ ℕ.zero ] = refl
-  +-comm +[1+ ℕ.zero ] -[1+ ℕ.suc y ] = refl
-  +-comm +[1+ ℕ.suc x ] -[1+ ℕ.zero ] = refl
-  +-comm -[1+ ℕ.zero ] +[1+ ℕ.zero ] = refl
-  +-comm -[1+ ℕ.zero ] +[1+ ℕ.suc y ] = refl
-  +-comm -[1+ ℕ.suc x ] +[1+ ℕ.zero ] = refl
-
-  postulate
-    *-comm : (m n : ℤ) → m * n ≡ n * m
-    +-assoc : (x y z : ℤ) → (x + y) + z ≡  x + (y + z)
-
-  open import Data.Product
-
-  +‿-‿zero : (m : ℕ.ℕ) → +[1+ m ] + -[1+ m ] ≡ +0
-  +‿-‿zero ℕ.zero = refl
-  +‿-‿zero (ℕ.suc m) = +‿-‿zero m
-
-  -‿-‿+‿suc : (m n : ℕ.ℕ) → -[1+ ℕ.suc m ] + -[1+ n ] ≡ -[1+ m ] + -[1+ ℕ.suc n ]
-  -‿-‿+‿suc ℕ.zero ℕ.zero = refl
-  -‿-‿+‿suc ℕ.zero (ℕ.suc n) = refl
-  -‿-‿+‿suc (ℕ.suc m) n =
-    cong (λ φ → -[1+ ℕ.suc (ℕ.suc φ) ]) (sym (Nat-Properties.+-suc m n))
-    where open ≡-Reasoning
-
-  *-pos-neg : (m n : ℕ.ℕ) → +[1+ m ] * -[1+ n ] ≡ +[1+ n ] * -[1+ m ]
-  *-pos-neg m ℕ.zero = sym (*-identityˡ -[1+ m ])
-  *-pos-neg ℕ.zero (ℕ.suc n) =
-    begin
-      -[1+ ℕ.suc (n ℕ.+ 0) ]
-    ≡⟨ cong (λ φ → -[1+ ℕ.suc φ ]) (Nat-Properties.+-identityʳ n) ⟩
-      -[1+ ℕ.suc n ]
-    ∎
-    where open ≡-Reasoning
-  *-pos-neg (ℕ.suc m) (ℕ.suc n) =
-    begin
-      +[1+ m ] * -[1+ n ] + -[1+ n ] + -[1+ ℕ.suc m ]
-    ≡⟨ cong (λ φ → φ + -[1+ n ] + -[1+ ℕ.suc m ]) (*-pos-neg m n) ⟩
-      +[1+ n ] * -[1+ m ] + -[1+ n ] + -[1+ ℕ.suc m ]
-    ≡⟨ +-assoc (+[1+ n ] * -[1+ m ]) -[1+ n ] -[1+ ℕ.suc m ] ⟩
-      +[1+ n ] * -[1+ m ] + (-[1+ n ] + -[1+ ℕ.suc m ])
-    ≡⟨ cong (λ φ → +[1+ n ] * -[1+ m ] + φ) (+-comm -[1+ n ] -[1+ ℕ.suc m ]) ⟩
-      +[1+ n ] * -[1+ m ] + (-[1+ ℕ.suc m ] + -[1+ n ])
-    ≡⟨ cong (λ φ → +[1+ n ] * -[1+ m ] + φ) (-‿-‿+‿suc m n) ⟩
-      +[1+ n ] * -[1+ m ] + (-[1+ m ] + -[1+ ℕ.suc n ])
-    ≡⟨ sym (+-assoc (+[1+ n ] * -[1+ m ]) -[1+ m ] -[1+ ℕ.suc n ]) ⟩
-      +[1+ n ] * -[1+ m ] + -[1+ m ] + -[1+ ℕ.suc n ]
-    ∎
-    where open ≡-Reasoning
-
-  *-neg-neg : (m n : ℕ.ℕ) → -[1+ m ] * -[1+ n ] ≡ +[1+ m ] * +[1+ n ]
-  *-neg-neg m ℕ.zero = refl
-  *-neg-neg ℕ.zero (ℕ.suc n) = refl
-  *-neg-neg (ℕ.suc m) (ℕ.suc n) =
-    cong (λ φ → φ + +[1+ n ] + +[1+ ℕ.suc m ]) (*-neg-neg m n)
-
-  -‿hom : (m n : ℕ.ℕ) → -[1+ m ] + -[1+ n ] ≡ -[1+ m ℕ.+ ℕ.suc n ]
-  -‿hom ℕ.zero n = refl
-  -‿hom (ℕ.suc m) n = cong (λ φ → -[1+ ℕ.suc φ ]) (sym (Nat-Properties.+-suc m n))
-
-  *‿-‿neg : (m n : ℕ.ℕ) → ∃[ x ] +[1+ m ] * -[1+ n ] ≡ -[1+ x ]
-  *‿-‿neg m ℕ.zero = m , refl
-  *‿-‿neg m (ℕ.suc n) with *‿-‿neg m n
-  ... | fst , snd = (fst ℕ.+ ℕ.suc m) ,
-    ( begin
-      -[1+ n ] * +[1+ m ] + -[1+ m ]
-    ≡⟨ cong (_+ -[1+ m ]) (*-comm -[1+ n ] +[1+ m ]) ⟩
-      +[1+ m ] * -[1+ n ] + -[1+ m ]
-    ≡⟨ cong (_+ -[1+ m ]) snd ⟩
-      -[1+ fst ] + -[1+ m ]
-    ≡⟨ -‿hom fst m ⟩
-      -[1+ fst ℕ.+ ℕ.suc m ]
-    ∎
-    )
-    where open ≡-Reasoning
-
---   +-assoc : (x y z : ℤ) → (x + y) + z ≡  x + (y + z)
---   +-assoc +0 y z = refl
---   +-assoc +[1+ x ] +0 z = refl
---   +-assoc +[1+ x ] +[1+ y ] +0 = refl
---   +-assoc +[1+ x ] +[1+ y ] +[1+ z ] =
---     begin
---       +[1+ ℕ.suc (ℕ.suc ((x ℕ.+ y) ℕ.+ z)) ]
---     ≡⟨ cong (λ φ → +[1+ ℕ.suc φ ]) (sym (ℕ.+-suc (x ℕ.+ y) z)) ⟩
---       +[1+ ℕ.suc (x ℕ.+ y ℕ.+ ℕ.suc z) ]
---     ≡⟨ ? ⟩
---       +[1+ ℕ.suc (x ℕ.+ ℕ.suc (y ℕ.+ z)) ]
---     ∎
---   +-assoc +[1+ x ] +[1+ y ] -[1+ z ] = {! !}
---   +-assoc +[1+ x ] -[1+ y ] +0 = +-identityʳ _
---   +-assoc +[1+ x ] -[1+ y ] +[1+ z ] = {! !}
---   +-assoc +[1+ x ] -[1+ y ] -[1+ z ] = {! !}
---   +-assoc -[1+ x ] (+ ℕ.zero) (+ ℕ.zero) = {! !}
---   +-assoc -[1+ x ] (+ ℕ.zero) +[1+ z ] = {! !}
---   +-assoc -[1+ x ] (+ ℕ.zero) -[1+ z ] = {! !}
---   +-assoc -[1+ x ] +[1+ y ] +0 = +-identityʳ _
---   +-assoc -[1+ x ] +[1+ y ] +[1+ z ] = {! !}
---   +-assoc -[1+ x ] +[1+ y ] -[1+ z ] = {! !}
---   +-assoc -[1+ x ] -[1+ y ] +0 = +-identityʳ _
---   +-assoc -[1+ x ] -[1+ y ] +[1+ z ] = {! !}
---   +-assoc -[1+ x ] -[1+ y ] -[1+ z ] = {! !}
-
 ```
