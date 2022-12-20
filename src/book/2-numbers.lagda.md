@@ -567,11 +567,11 @@ of.
 First, additing zero to anything doesn't change the result:
 
 ```agda
-  infixl 5 _+_
-  _+_ : ℤ → ℤ → ℤ
-  +0             + y              = y
-  +[1+ x       ] + +0             = +[1+ x ]
-  -[1+ x       ] + +0             = -[1+ x ]
+  infixl 5 _+⅋_
+  _+⅋_ : ℤ → ℤ → ℤ
+  +0             +⅋ y              = y
+  +[1+ x       ] +⅋ +0             = +[1+ x ]
+  -[1+ x       ] +⅋ +0             = -[1+ x ]
 ```
 
 These last two cases would be more naturally written as `x + +0 = x`, but we are
@@ -579,8 +579,8 @@ forced to expand out `x` for technical reasons. Continuing on, we come across
 the case in which we're adding negative one to positive one:
 
 ```agda
-  +[1+ ℕ.zero  ] + -[1+ ℕ.zero  ] = +0
-  -[1+ ℕ.zero  ] + +[1+ ℕ.zero  ] = +0
+  +[1+ ℕ.zero  ] +⅋ -[1+ ℕ.zero  ] = +0
+  -[1+ ℕ.zero  ] +⅋ +[1+ ℕ.zero  ] = +0
 ```
 
 Otherwise, both arguments are positive or both negative, in which case we just
@@ -588,31 +588,31 @@ add their underlying naturals (being careful to `ℕ.suc` the result, since we
 have two `1+`s on the left side!)
 
 ```agda
-  +[1+ x       ] + +[1+ y       ] = +[1+ ℕ.suc (x ℕ.+ y) ]
-  -[1+ x       ] + -[1+ y       ] = -[1+ ℕ.suc (x ℕ.+ y) ]
+  +[1+ x       ] +⅋ +[1+ y       ] = +[1+ ℕ.suc (x ℕ.+ y) ]
+  -[1+ x       ] +⅋ -[1+ y       ] = -[1+ ℕ.suc (x ℕ.+ y) ]
 ```
 
 The next pair of cases is what happens if we are adding a negative one, in which
 case it must cancel out a positive `ℕ.suc`:
 
 ```agda
-  +[1+ ℕ.suc x ] + -[1+ ℕ.zero  ] = +[1+ x ]
-  -[1+ ℕ.zero  ] + +[1+ ℕ.suc y ] = +[1+ y ]
+  +[1+ ℕ.suc x ] +⅋ -[1+ ℕ.zero  ] = +[1+ x ]
+  -[1+ ℕ.zero  ] +⅋ +[1+ ℕ.suc y ] = +[1+ y ]
 ```
 
 Analogously, if we're adding a positive one:
 
 ```agda
-  +[1+ ℕ.zero  ] + -[1+ ℕ.suc y ] = -[1+ y ]
-  -[1+ ℕ.suc x ] + +[1+ ℕ.zero  ] = -[1+ x ]
+  +[1+ ℕ.zero  ] +⅋ -[1+ ℕ.suc y ] = -[1+ y ]
+  -[1+ ℕ.suc x ] +⅋ +[1+ ℕ.zero  ] = -[1+ x ]
 ```
 
 The final case, is if we are adding a positive `ℕ.suc` to a negative `ℕ.suc`, in
 which case the two cancel each other out and we add the remaining terms:
 
 ```agda
-  +[1+ ℕ.suc x ] + -[1+ ℕ.suc y ] = +[1+ x ] + -[1+ y ]
-  -[1+ ℕ.suc x ] + +[1+ ℕ.suc y ] = -[1+ x ] + +[1+ y ]
+  +[1+ ℕ.suc x ] +⅋ -[1+ ℕ.suc y ] = +[1+ x ] +⅋ -[1+ y ]
+  -[1+ ℕ.suc x ] +⅋ +[1+ ℕ.suc y ] = -[1+ x ] +⅋ +[1+ y ]
 ```
 
 What a headache! Who knew addition could be this hard? The good news is that I
@@ -622,8 +622,42 @@ the problem from there. If I could, great! If I couldn't, I asked Agda to split
 one of the variables for me, which generated some new, more specific cases.
 Rinse and repeat until all the holes are filled and everyone is happy.
 
-Addition is the hard part. We can implement subtraction trivially, via addition
-of the negative:
+While this is the most straightforward way to write `_+_` it falls somewhat
+flat. The problem is that `_+_`, as written, needs to perform significant
+inspection of its arguments in order to compute the result. As a general
+principle, significant inspection is an antipattern, as it will require
+duplicating all of that same effort in every subsequent proof. A better
+technique is to separate out the logic for subtraction of natural numbers into
+its own function:
+
+```agda
+  _⊝_ : ℕ.ℕ → ℕ.ℕ → ℤ
+  _⊝_ ℕ.zero ℕ.zero = +0
+  _⊝_ ℕ.zero (ℕ.suc n) = -[1+ n ]
+  _⊝_ (ℕ.suc m) ℕ.zero = +[1+ m ]
+  _⊝_ (ℕ.suc m) (ℕ.suc n) = m ⊝ n
+```
+
+By implementing `_+_` in terms of `_⊝_`, we can factor out a significant portion
+of the logic:
+
+```agda
+  infixl 5 _+_
+
+  _+_ : ℤ → ℤ → ℤ
+  (+ x)    + (+ y)    = + (x ℕ.+ y)
+  (+ x)    + -[1+ y ] = x ⊝ ℕ.suc y
+  -[1+ x ] + (+ y)    = y ⊝ ℕ.suc x
+  -[1+ x ] + -[1+ y ] = -[1+ x ℕ.+ ℕ.suc y ]
+```
+
+This new definition of `_+_` is significantly shorter and more regular. As a
+bonus, it shows the addition of positive and negative cases are both calls to
+`_⊝_`, albeit with the order of the arguments flipped. This will make our lives
+significantly easier when we go to prove facts about `_+_` in the next chapter.
+
+Having implemented addition is the hard part. We can implement subtraction
+trivially, via addition of the negative:
 
 ```agda
   infixl 5 _-_
