@@ -1,231 +1,349 @@
 # Constructivism
 
+It is worth noting that the mathematics we will be doing in this book are not
+the "whole story" of mathematics. You see, there are two big camps in the
+mathematics worlds: the *classicists* and the *constructivists.* Much like
+many religious sects, these two groups have much more in common than they have
+distinct. In fact, the only distinction between these two groups of
+truth-seekers is their opinion on the nature of falsities.
+
+The classicists believe all mathematical statements are divided into the ones
+which are *true* and the ones which are *false.* There is no middle ground, and
+thus the ones which are not true must certainly be false, and vice versa. It is
+very probable that you, gentle reader, fall into this camp, likely without
+knowing it. Most of the world does.
+
+Contrasting with the classicists are the constructivists, who trust their nose
+more than they trust logical arguments. Constructivists aren't happy knowing
+something merely *doesn't not exist;* they'd like to see that thing with their
+own eyes.
+
+In general, there are two ways to mathematically show something exists. The
+first way is to just build the thing, in sense "proof by doing." The other is to
+show that a world without the thing would be meaningless, and thus show its
+existence --- in some sense --- by sheer force of will, because we really
+*don't* want to believe our world is meaningless.
+
+To illustrate this difference, suppose we'd like to prove the existence of a
+number that is divisible by 2, and 5. Under a classical worldview, a perfectly
+acceptable (although silly) proof would go something like this:
+
+-- TODO(sandy): gross
+
+* Suppose there does not exist a number $n$ that is divisible by 2 and 5.
+* The factorial function $m!$ has divisors for every $x \le m$.
+* $2 \le 5$
+* The factorial function is monotonically increasing.
+* Therefore, there exists some number $k$ such that $k!$ has divisors 2 and 5.
+* But we said there is no such number. This is a contradiction.
+* Therefore there does exist a number $n$ that is divisible by 2 and 5.
+
+The constructivists instead, are required to just give you some multiple of 10.
+
+This perspective suggests that the difference between the two camps is one more
+of philosophy than it is necessarily of technique. In fact, the classical proof
+above gives a hint as to what this philosophical difference really is. The
+classicists view contradiction as anathema, and thus that anything which leads
+to it must be false. The constructivists, on the other hand, *define refutation
+of a claim* as being a proof that it would result in contradiction.
+
+Symbolically, we write the refutation of a proposition `P` as `¬ P`, and the
+entire disagreement descends into a question of whether the following function
+should exist:
+
+```notagda
+¬-elim : ¬ (¬ P) → P
+```
+
+that is, do two negations cancel one another? In essence, this really boils down
+to a question of "what type does `P` have?" The classicists say `P : Bool`,
+while the constructivists say `P : Set`. Under `P : Bool`, it's clear that `¬ =
+not`, and thus, that `¬-elim` is inhabited.
+
+However, this is less clearly true under the constructivist perspective that `P
+: Set`. Instead, we begin by defining the `Set` of falsity. Since both camps
+agree that there should never be a proof of false, this `Set` is defined by
+having no inhabitants:
+
 ```agda
 module constructivism where
 
-open import Data.Empty
-open import Relation.Nullary
-open import Relation.Nullary.Decidable as Dec
-open import Relation.Unary
-open import 9-posets
-open import Relation.Binary.PropositionalEquality
-open import Data.Sum
-open import Data.Product
-open import Data.Nat
-open import Data.Nat.Properties
-open import Function.Base using (case_of_)
-
-record _IsPrime (n : ℕ) : Set where
-  constructor is-prime
-  field
-    1<n : 1 < n
-    primal : (x : ℕ) → 1 < x → x < n → ¬ x Divides n
-
-open _IsPrime
-
-open import 6-setoids
-open mod-base
-
-lemma₁ : (a b x y n : ℕ) → a < n → b < n → a + x * n ≡ b + y * n → a ≡ b
-lemma₁ = ?
-
-mod-eq? : (a b n : ℕ) → a < n → b < n → Dec (a ≈ b ⟨mod n ⟩)
-mod-eq? a b n a<n b<n with a ≟ b
-... | yes a=b = yes (≈-mod 0 0 (cong (_+ 0) a=b))
-... | no a≠b = no λ { (≈-mod x y p) → a≠b (lemma₁ a b x y n a<n b<n p) }
-
-open import Relation.Binary.Definitions
-
-lemma₂ : {a n : ℕ} → a ≈ n ⟨mod n ⟩ → a ≈ 0 ⟨mod n ⟩
-lemma₂ {a} {n} a=n =
-  begin
-    a
-  ≈⟨ a=n ⟩
-    n
-  ≈⟨ mod-sym n (mod-properties.0≈n n) ⟩
-    0
-  ∎
-  where open mod-reasoning n
-
-lemma₃ : {a n : ℕ} → a ≈ 0 ⟨mod n ⟩ → a ≈ n ⟨mod n ⟩
-lemma₃ {a} {n} a=0 =
-  begin
-    a
-  ≈⟨ a=0 ⟩
-    0
-  ≈⟨ mod-properties.0≈n n ⟩
-    n
-  ∎
-  where open mod-reasoning n
-
-mod-helper : ℕ → ℕ → ℕ → ℕ → ℕ
-mod-helper k m zero j = k
-mod-helper k m (suc n) zero = mod-helper 0 m n m
-mod-helper k m (suc n) (suc j) = mod-helper (suc k) m n j
-
-_mod_ : (a n : ℕ) → .{{ _ : NonZero n }} → ℕ
-a mod (suc n) = mod-helper 0 n a n
-
-zero-mod-n : (n : ℕ) → .{{ _ : NonZero n }} → 0 mod n ≡ 0
-zero-mod-n (suc n) = refl
-
-ok : (a n : ℕ) → suc (mod-helper 0 n a n) ≈ mod-helper 0 n (suc a) n ⟨mod (suc n) ⟩
-ok zero zero = mod-sym 1 (mod-properties.0≈n 1)
-ok zero (suc n) = mod-refl (suc (suc n))
-ok (suc a) zero = ok a zero
-ok (suc a) (suc n) = {! !}
-
-suc-hom-n : (a n : ℕ) → .⦃ _ : NonZero n ⦄ → suc (a mod n) ≈ suc a mod n ⟨mod n ⟩
-suc-hom-n zero (suc n) = {! mod-properties.mod-suc-cong (suc n)  !}
-suc-hom-n (suc a) n@(suc x) with suc-hom-n a n | >-nonZero⁻¹ n
-... | z | (s≤s z≤n) =
-  begin
-    suc (suc a mod n)
-  ≡⟨⟩
-    suc (mod-helper 0 x (suc a) x)
-  ≈⟨ ? ⟩
-    mod-helper 0 x (suc (suc a)) x
-  ≡⟨⟩
-    (suc (suc a)) mod n
-  ∎
-  where open mod-reasoning n
-
-mod-is-mod : (a n : ℕ) → .{{ _ : NonZero n }} → a ≈ (a mod n) ⟨mod n ⟩
-mod-is-mod zero n =
-  begin
-    0
-  ≡⟨ sym (zero-mod-n n) ⟩
-    0 mod n
-  ∎
-  where open mod-reasoning n
-mod-is-mod (suc a) n =
-  begin
-    suc a
-  ≈⟨ mod-properties.mod-suc-cong n (mod-is-mod a n) ⟩
-    suc (a mod n)
-  ≈⟨ ? ⟩
-    (suc a) mod n
-  ∎
-  where open mod-reasoning n
-
-{-
---
-
-mod-helper-< : (k m n j : ℕ) → k ≤ m → mod-helper k m n j ≤ m
-mod-helper-< k m zero j k≤m = k≤m
-mod-helper-< k m (suc n) zero k≤m = mod-helper-< 0 m n m z≤n
-mod-helper-< k m (suc n) (suc j) k≤m = mod-helper-< (suc k) m n j {! !}
-
-mod-< : (a n : ℕ) → .⦃ _ : NonZero n ⦄ → a mod n < n
-mod-< a (suc n) = s≤s (mod-helper-< 0 n a n z≤n)
-
-mod-eq?2 : (a b n : ℕ) → .⦃ _ : NonZero n ⦄ → Dec (a ≈ b ⟨mod n ⟩)
-mod-eq?2 a b n with mod-eq? (a mod n) (b mod n) n (mod-< a n) (mod-< b n)
-... | yes z = yes (
-  begin
-    a
-  ≈⟨ mod-is-mod a n ⟩
-    a mod n
-  ≈⟨ z ⟩
-    b mod n
-  ≈⟨ mod-sym n (mod-is-mod b n) ⟩
-    b
-  ∎
-  )
-  where open mod-reasoning n
-... | no z = ?
-
-
-
--- mod-eq?3 : (a b n : ℕ) → a < n → Dec (a ≈ b ⟨mod n ⟩)
--- mod-eq?3 a b n x with anyUpTo? = {! !}
-
--- mod-eq?2 : (a b n : ℕ) → Dec (a ≈ b ⟨mod n ⟩)
--- mod-eq?2 a b n with <-cmp a n
--- mod-eq?2 a b n | tri< a<n ¬b ¬c with <-cmp b n
--- ... | tri< b<n _ _ = mod-eq? a b n a<n b<n
--- ... | tri≈ _ b=n _ rewrite b=n = Dec.map′ lemma₃ lemma₂ (mod-eq? a 0 n a<n ?)
--- ... | tri> _ _ n<b = Dec.map′ ? ? (mod-eq?2 a (b ∸ n) n)
--- mod-eq?2 a b n | tri≈ _ a=n _ with <-cmp b n
--- ... | tri< b<n _ _ = {! !}
--- ... | tri≈ _ b=n _ = {! !}
--- ... | tri> _ _ n<b = {! !}
--- mod-eq?2 a b n | tri> ¬a ¬b c = {! !}
-
-∸-zero : (m : ℕ) → m ∸ m ≡ 0
-∸-zero zero = refl
-∸-zero (suc m) = ∸-zero m
-
-mod-to-div : {a n : ℕ} → a ≈ 0 ⟨mod n ⟩ → n Divides a
-mod-to-div {a} {n} (≈-mod x y p) = divides (y ∸ x) 0<y∸x (begin
-  n * (y ∸ x)          ≡⟨ *-comm n (y ∸ x) ⟩
-  (y ∸ x) * n          ≡⟨ *-distribʳ-∸ n y x ⟩
-  y * n ∸ x * n        ≡⟨ cong (_∸ x * n) (sym p) ⟩
-  (a + x * n) ∸ x * n  ≡⟨ +-∸-assoc a (≤-refl {x * n}) ⟩
-  a + (x * n ∸ x * n)  ≡⟨ cong (a +_) (∸-zero (x * n)) ⟩
-  a + 0                ≡⟨ +-identityʳ a ⟩
-  a                    ∎)
-  where
-    open ≡-Reasoning
-    postulate
-      0<y∸x : 0 < y ∸ x
-
-div-to-mod : {a n : ℕ} → n Divides a → a ≈ 0 ⟨mod n ⟩
-div-to-mod {a} {n} (divides x 0<x proof) = ≈-mod 0 x ( begin
-  a + 0  ≡⟨ +-identityʳ a ⟩
-  a      ≡⟨ sym proof ⟩
-  n * x  ≡⟨ *-comm n x ⟩
-  x * n  ∎)
-  where open ≡-Reasoning
-
--- _Divides?_ : (a b : ℕ) → Dec (a Divides b)
--- zero Divides? zero = yes (divides 1 (s≤s z≤n) refl)
--- zero Divides? suc b = no λ { () }
--- -- suc a Divides? zero = no λ { (divides zero () proof₁)
--- --                            ; (divides (suc n) 0<n ())
--- --                            }
--- suc a Divides? b = Dec.map′ mod-to-div div-to-mod (mod-eq? b 0 (suc a))
-
-lemma : (a b n : ℕ) → b < a → a * suc n ≡ b → ⊥
-lemma .(suc _) zero n (s≤s b<a) ()
-lemma (suc a) (suc b) n (s≤s b<a) p = ?
-
-<-does-not-divide : (a b : ℕ) → b < a → ¬ a Divides b
-<-does-not-divide a b b<a (divides (suc n) (s≤s 0<n) p) = lemma a b n b<a p
-
--- 2-is-prime : 2 IsPrime
--- 2-is-prime (suc zero) x₁ x₂ = inj₁ refl
--- 2-is-prime (suc (suc .zero)) (s≤s (s≤s z≤n)) x₂ = inj₂ refl
-
-0-is-not-prime : ¬ 0 IsPrime
-0-is-not-prime ()
-
-1-is-not-prime : ¬ 1 IsPrime
-1-is-not-prime (is-prime (s≤s ()) primal)
-
-2-is-prime : 2 IsPrime
-1<n 2-is-prime = s≤s (s≤s z≤n)
-primal 2-is-prime (suc zero) (s≤s ()) x<2 (divides (suc n) 0<n proof₁)
-primal 2-is-prime (suc (suc x)) 1<x (s≤s (s≤s ())) (divides (suc n) 0<n proof₁)
-
--- is-prime : (n : ℕ) → ((x : ℕ) → x ≢ 1 → x < n → ¬ x Divides n) → n IsPrime
--- is-prime n f x = {! !}
-
--- dec-prime : Decidable _IsPrime
--- dec-prime zero = no λ 0-prime → case 0-prime 1 of λ { x → {! !} }
--- dec-prime (suc x) = {! !}
-
-postulate
-  excluded-middle : {A : Set} → ¬ ¬ A → A
-
-infinitude-of-primes : (x : ℕ) → ∃[ n ] n IsPrime × x < n
-infinitude-of-primes x = {! !}
-
-infinitude-of-primes₂ : (x : ℕ) → ∃[ n ] n IsPrime × x < n
-infinitude-of-primes₂ x = excluded-middle λ { no-bigger → no-bigger (? , {! !}) }
-
--}
-
+module introduction where
+  data ⊥ : Set where
+    -- intentionally left empty
 ```
 
+Mathematicians hate the idea of having a proof of false, because of the
+principle of *reductio ad absurdum* --- that is, from false, you can prove
+anything. We can show this in Agda:
+
+```agda
+  private variable
+    P : Set
+
+  ⊥-elim : ⊥ → P
+  ⊥-elim ()
+```
+
+This funny `()` pattern is Agda's acknowledgment that this function is vacuously
+true. That is, it's a bit of a bluff: `⊥-elim` can return any `A` you want
+because you can't actually call it in the first place ---- there are no `⊥`s
+around to use as an argument to call the thing!
+
+And this is the necessary trick the constructivists use to encode a false
+statement; from it, you could conclude anything, including `⊥` which we have
+intentionally constructed as something un-concludable. That is, we can define
+the refutation of `P` as a function that, given a `P`, would result in `⊥`:
+
+```agda
+  ¬ : Set → Set
+  ¬ P = P → ⊥
+```
+
+We can use `¬` to construct more traditional sorts of "negative propositions",
+like the fact that two things are *not* equal:
+
+```agda
+  open import Relation.Binary.PropositionalEquality using (_≡_)
+
+  _≢_ : P → P → Set
+  x ≢ y = ¬ (x ≡ y)
+```
+
+Returning to the idea of `¬-elim : {A : Set} → ¬ (¬ A) → A`, it's clear that
+this simply isn't true given our encoding of `¬`. We would like to produce an
+`A`, but all we have is a function `(A → ⊥) → ⊥`. There's nowhere to get an `A`
+from, but maybe we could cheat and try `⊥-elim` on the result of our function.
+
+Following this line of thought through, we can get as far as the following:
+
+```agda
+  ¬-elim : ¬ (¬ P) → P
+  ¬-elim ¬p→⊥ = ⊥-elim (¬p→⊥ (λ p → {! !}))
+```
+
+where we now have `a : A` in scope, but simply have no way to exfiltrate it.
+Alas.
+
+You might have heard of the *law of the excluded middle,* or LEM for short,
+which is exactly the classical claim that any proposition is either true or it
+is false. That is, `lem : {P : Set} → P ⊎ ¬ P`. Traditionally, it is the
+existence of LEM which differentiates classical from constructive mathematics,
+so why are we talking about `¬-elim` instead? As it happens, the LEM is
+equivalent to `¬-elim`, which we can prove by implementing one in terms of the
+other.
+
+Assuming we have `¬-elim`, we can use it to provide the law of excluded middle,
+as per `¬-elim→lem`. The trick is to use `¬-elim` to get into scope a proof that
+the LEM doesn't hold, with the intention to derive a contradiction from this
+fact:
+
+```agda
+  open import Data.Sum
+
+  ¬-elim→lem : P ⊎ ¬ P
+  ¬-elim→lem = ¬-elim λ ¬lem →
+    ¬lem ?
+```
+
+In order to show the contradiction, we must fill the hole with a `P ⊎ ¬ P`. But
+that was our original goal, which you might think means we haven't accomplished
+anything. But in fact, we have. We've gained the ability to bluff. Now, we can
+say "no, `P` certainly isn't true:"
+
+```agda
+  ¬-elim→lem⅋ : P ⊎ ¬ P
+  ¬-elim→lem⅋ = ¬-elim λ ¬lem →
+    ¬lem (inj₂ λ p → ?)
+```
+
+In order to show `P` isn't so, we must be able to turn a proof of `P` into `⊥`,
+which we can do by reneging on our early promise that `P` wasn't true, since we
+now have evidence that it is!
+
+```agda
+  ¬-elim→lem⅋⅋ : P ⊎ ¬ P
+  ¬-elim→lem⅋⅋ = ¬-elim λ ¬lem →
+    ¬lem (inj₂ λ p →
+      ¬lem (inj₁ p))
+```
+
+What a weaselly sort of way to something --- pretend it isn't, and change your
+mind if someone calls your bluff. Nevertheless, the typechecker is happy, and
+therefore, we are too.
+
+Recall that Agda is a programming language, and thus that there must be some
+sort of computational intepretation of the programs we can write in it. The
+computational interpretation of the LEM is to say "no," but if anyone ever
+refutes that, you just rewind back to where you said "no" and say "yes" instead,
+using your new evidence. In this light, `¬-elim` captures the current
+continuation of the remainder of the program, and calling that function will
+rewind all of your progress, jumping back to whatever instruction was next when
+you called `¬-elim`.
+
+The harm here is the existence of this non-determinism. You can go your whole
+life, proving things that transitively depend on `¬ P`. But then, two hundred
+years later, it turns out `P` was true all along, which means that none of your
+life's work still holds! Better to be safe, and admit our ignorance that we
+simply don't know which of `P` or `¬ P` is true, rather than pretending and
+hoping we got it right.
+
+Returning to the problem at hand, it's thankfully much simplier to go the other
+direction, from the LEM to `¬`-elimination. We just ask which one is true. If
+it's `P`, then we're already done. Otherwise, we can use `¬ P` to get a `⊥` and
+then `⊥`-eliminate it away.
+
+```agda
+  lem→¬-elim : ¬ (¬ P) → P
+  lem→¬-elim ¬p→⊥ with ¬-elim→lem
+  ... | inj₁ p = p
+  ... | inj₂ ¬p = ⊥-elim (¬p→⊥ ¬p)
+```
+
+For the remainder of this book, we will ignore the possibility of the existence
+of the law of the excluded middle, and by equivalence, the possibility of
+`¬-elim`. We will focus our efforts henceforth entirely on constructivist
+mathematics, but that is not to say that classical mathematics can't be done in
+Agda! You can merely `postulate` the LEM and be on your merry way.
+
+
+## Decidability
+
+Of course, just because the law of excluded middle isn't constructively true
+*in general* doesn't mean it's *never true.* For example, I can show that any
+natural number is, or is not, 0:
+
+```agda
+open import Data.Nat using (ℕ; zero; suc)
+open import Relation.Binary.PropositionalEquality
+open import Relation.Nullary using (¬_)
+open import Data.Sum
+
+is-zero?⅋ : (n : ℕ) → (n ≡ 0) ⊎ (¬ (n ≡ 0))
+is-zero?⅋ zero    = inj₁ refl
+is-zero?⅋ (suc n) = inj₂ λ ()   -- ! 1
+```
+
+The first case here is easy enough to understand, but the second might require a
+little explanation. At [1](Ann), we have pattern matched on the argument and
+know that it is a `suc`, not a `zero`. Thus, we are required to show `suc n ≡
+zero`, which is clearly not the case, because in Agda, data constructors are
+always apart. In order to show this is false, we must provide a function `(suc n
+≡ zero) → ⊥`. Simply pattern matching on the argument is enough for Agda to
+figure out we're clearly talking nonsense, and it replaces our lambda pattern
+with `()` showing there is no such proof.
+
+So, what differentiates our ability to determine whether `n ≡ 0`, but not some
+arbitrary proposition `P`? We call the difference *decidability* --- a property
+`P` is decidable if and only if it's possible to determine whether `P` or `¬ P`
+holds. Rather than overload poor `_⊎_` to satisfy this property for us, we will
+instead define a new type:
+
+```agda
+module Hypothetical where
+  data Dec (P : Set) : Set where
+    yes :  P → Dec P
+    no : ¬ P → Dec P
+```
+
+Rather than use the clumsy names `inj₁` and `inj₂`, we instead say `yes` if the
+proposition holds, and `no` if it doesn't. We can rewrite `is-zero?` in terms of
+our new machinery:
+
+```agda
+  is-zero? : (n : ℕ) → Dec (n ≡ 0)
+  is-zero? zero    = yes refl
+  is-zero? (suc n) = no λ ()
+```
+
+Besides the simplified type and the new constructor names, nothing has changed
+here. But what does decidability really mean? It means there is a *decision
+procedure* (an algorithm) which we can run to tell us the answer. For example,
+there's a decision procedure that will tell us if two natural numbers are equal
+--- namely, keep making them smaller and see if they both get to `zero` at the
+time:
+
+```agda
+  _≟_ : (x y : ℕ) → Dec (x ≡ y)
+  zero  ≟ zero  = yes refl
+  zero  ≟ suc y = no λ ()
+  suc x ≟ zero  = no λ ()
+```
+
+This definition of `_≟_` is not quite complete; we still need to show the
+`suc`/`suc` case is decidable. But the trick, as always, is to recurse,
+using the decidability of if the smaller numbers are equal, and if so, lifting
+the proof to one of the successed numbers.
+
+```agda
+  suc x ≟ suc y
+    with x ≟ y
+  ... | yes x=y = yes (cong suc x=y)  -- ! 1
+  ... | no  x≠y = no λ sx=sy → x≠y (suc-injective sx=sy)  -- ! 2
+    where
+      open import Data.Nat.Properties using (suc-injective)
+```
+
+In the `yes` case at [1](Ann), we are required to turn a proof of `x ≡ y` into a
+proof that `suc x ≡ suc y`, which is an obvious application of `cong suc`.
+However, due to the way we've constructed propositional refutation, at
+`[2](Ann)` we need to go the other direction --- turning a proof of `suc x ≡ suc
+y` into a proof that `x ≡ y` (that is, so we can refute that fact via `x≠y`.)
+There is clearly some sort of "backwardness" going on here in the `no` case. We
+will explore this further in a moment.
+
+Maybe you are wondering why decidability is an important property to have.
+Perhaps its most salient feature is that it is helpful in connecting the messy
+outside world to the crisp, inner logic of a dependently typed programming
+language.
+
+```
+open Data.Nat using (_≤_; z≤n; s≤s)
+
+data BST : ℕ → ℕ → Set where
+  ⊘ : {b t : ℕ} → ⦃ b ≤ t ⦄ → BST b t
+  branch' : {lb rt : ℕ}
+         → (n : ℕ)
+         → (l : BST lb n)
+         → (r : BST n rt)
+         → BST lb rt
+
+pattern _◁_▷_ l n r = branch' n l r
+pattern leaf n = ⊘ ◁ n ▷ ⊘
+
+open import Data.Nat.Properties
+open import Relation.Binary.Definitions
+
+insert
+    : {lo hi : ℕ} → (n : ℕ)
+    → ⦃ lo ≤ n ⦄ → ⦃ n≤h : n ≤ hi ⦄
+    → BST lo hi
+    → BST lo hi
+insert n ⊘ = leaf n
+insert n (l ◁ i ▷ r)
+  with <-cmp n i
+... | tri< n<i _ _ =
+  insert n ⦃ n≤h = ≤-trans (n≤1+n n) n<i ⦄ l ◁ i ▷ r
+... | tri≈ _ n=i _ = l ◁ i ▷ r
+... | tri> _ _ i<n =
+  l ◁ i ▷ insert n ⦃ (≤-trans (n≤1+n i) i<n) ⦄ r
+
+
+
+private instance
+  z≤ : {n : ℕ} → 0 ≤ n
+  z≤ = z≤n
+
+  s≤ : {a b : ℕ} → ⦃ a ≤ b ⦄ → suc a ≤ suc b
+  s≤ ⦃ a≤b ⦄ = s≤s a≤b
+
+b : BST 0 100
+b = ⊘
+
+_ : insert 3 (insert 5 (insert 10 (insert 12 (insert 5 (insert 42 b))))) ≡
+    (leaf 3 ◁ 5 ▷ (leaf 10 ◁ 12 ▷ ⊘)) ◁ 42 ▷ ⊘
+_ = refl
+
+
+```
 
