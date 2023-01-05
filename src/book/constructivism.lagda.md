@@ -1,4 +1,4 @@
-# Constructivism
+# Constructivism and Computation
 
 It is worth noting that the mathematics we will be doing in this book are not
 the "whole story" of mathematics. You see, there are two big camps in the
@@ -454,6 +454,10 @@ _ : insert 3
     ≡ (leaf 3 ◁ 5 ▷ (leaf 10 ◁ 12 ▷ ⊘)) ◁ 42 ▷ ⊘
 _ = refl
 ```
+
+Inspecting the results, you can see that, read left-to-right, all numbers are in
+ascending order. Furthermore, the duplicated `5` element only made it into the
+resultant tree once.
 
 Decidability (and its related forms, like trichotomy) is an important feature of
 *computation,* and is the primary means of differentiating mathematics from
