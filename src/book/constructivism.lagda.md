@@ -66,6 +66,8 @@ agree that there should never be a proof of false, this `Set` is defined by
 having no inhabitants:
 
 ```agda
+{-# OPTIONS --allow-unsolved-metas #-}
+
 module constructivism where
 
 module introduction where
@@ -295,55 +297,165 @@ will explore this further in a moment.
 Maybe you are wondering why decidability is an important property to have.
 Perhaps its most salient feature is that it is helpful in connecting the messy
 outside world to the crisp, inner logic of a dependently typed programming
-language.
+language. Data that comes from the outside world is subject to the whims of
+users, and is unlikely to be well-typed, let alone *dependently-typed.*
 
+The notion of decidability generalizes to any sort of decision procedure which
+results in a proof one way or another. One common form of decidability you're
+likely familiar with is the *trichotomy* of `_<_`; that is, the fact that for
+any `x y : ℕ`, exactly one of the following propositions holds: `x < y`, `x ≡
+y`, or `x > y`. We can define trichotomy:
+
+```agda
+open import Data.Nat using (_<_; _>_; _≤_; z≤n; s≤s)
+
+data <-Trichotomy (x y : ℕ) : Set where
+  tri< : x < y → <-Trichotomy x y
+  tri≈ : x ≡ y → <-Trichotomy x y
+  tri> : x > y → <-Trichotomy x y
 ```
+
+and then witness the trichotomy of `_<_` via `<-cmp`:
+
+```agda
+<-cmp : (x y : ℕ) → <-Trichotomy x y
+<-cmp zero zero = tri≈ refl
+<-cmp zero (suc y) = tri< (s≤s z≤n)
+<-cmp (suc x) zero = tri> (s≤s z≤n)
+<-cmp (suc x) (suc y) with <-cmp x y
+... | tri< x<y = tri< (s≤s x<y)
+... | tri≈ x≈y = tri≈ (cong suc x≈y)
+... | tri> x>y = tri> (s≤s x>y)
+```
+
+The `<-cmp` is a decision procedure fully capable of not only determining which
+of two numbers is bigger, but also of *proving* why it's so. We will use this
+trichotomy immediately in our next example of decidability.
+
+Let's consider the case of a *binary search tree* (BST) of natural numbers. A
+BST has the property that every value in the left sub-tree of a branch is
+smaller than the node at the branch, and likewise, every value on the right is
+larger. We can encode such a thing in Agda by tracking the smallest and largest
+elements in the tree as indices on the type.
+
+Under this framing, a BST is either empty with arbitrary bounds (albeit with the
+constraint that the lower bound is smaller than the higher bound):
+
+```agda
 open Data.Nat using (_≤_; z≤n; s≤s)
 
 data BST : ℕ → ℕ → Set where
-  ⊘ : {b t : ℕ} → ⦃ b ≤ t ⦄ → BST b t
-  branch' : {lb rt : ℕ}
+  ⊘ : {lo hi : ℕ} → ⦃ lo ≤ hi ⦄ → BST lo hi
+```
+
+or alternatively, that we have a branch that satisfies the BST invariant stating
+sub-trees are well-organized with respect to the root node:
+
+```agda
+  branch' : {lo hi : ℕ}
          → (n : ℕ)
-         → (l : BST lb n)
-         → (r : BST n rt)
-         → BST lb rt
+         → (l : BST lo n)
+         → (r : BST n hi)
+         → BST lo hi
+```
 
+When we visualize binary search trees, we prefer to put the left sub-tree on the
+left of the root node, but `branch'` doesn't allow us to do this, since `l`
+depends on `n`. We can use a little syntactic sugar in the form of a pattern to
+alleviate this problem:
+
+
+```agda
 pattern _◁_▷_ l n r = branch' n l r
-pattern leaf n = ⊘ ◁ n ▷ ⊘
+```
 
-open import Data.Nat.Properties
-open import Relation.Binary.Definitions
+Furthermore, it's tedious to need to write `⊘ ◁ n ▷ ⊘` whenever we want a leaf,
+so we can add a pattern for that too.
+
+```agda
+pattern leaf n = ⊘ ◁ n ▷ ⊘
+```
+
+The goal is now that we'd like to insert a value guaranteed to be in bounds
+into an existing `BST`. This latter constraint simplifies the problem, meaning
+we don't need to determine new bounds for the `BST`, which would be an exercise
+in patience. We begin with the type of `insert`:
+
+```agda
+open import Data.Nat.Properties using (≤-trans; n≤1+n)
 
 insert
     : {lo hi : ℕ} → (n : ℕ)
     → ⦃ lo ≤ n ⦄ → ⦃ n≤h : n ≤ hi ⦄
     → BST lo hi
     → BST lo hi
+```
+
+If we are trying to insert into the empty tree, we can just leave a `leaf`
+behind:
+
+```agda
 insert n ⊘ = leaf n
+```
+
+However, the branch case is much more interesting. We will need to recursively
+insert our value into the sub-trees, but doing so requires us to have a proof
+that our value is inside the bounds of the sub-tree. All we know, however, is
+that the value is contained by the bounds of the entire tree. It's clear that
+for an arbitrary value, this is going to require a runtime check, which is to
+say, a decidable test of how `n` relates to `i`. The attentive reader will
+notice that this is a perfect use-case for `<-cmp`.
+
+By inspecting how `n` relates to `i`, we can refine our proofs of how `n` sits
+in the bounds of the sub-trees.
+
+```agda
 insert n (l ◁ i ▷ r)
   with <-cmp n i
-... | tri< n<i _ _ =
+... | tri≈ n=i = l ◁ i ▷ r
+... | tri< n<i =
   insert n ⦃ n≤h = ≤-trans (n≤1+n n) n<i ⦄ l ◁ i ▷ r
-... | tri≈ _ n=i _ = l ◁ i ▷ r
-... | tri> _ _ i<n =
+... | tri> i<n =
   l ◁ i ▷ insert n ⦃ (≤-trans (n≤1+n i) i<n) ⦄ r
+```
 
+You might be puzzled by the instance arguments used by `⊘` and `insert`; these
+exist so that we can ask Agda to automatically solve the necessary bounds
+proofs. By giving instances for both constructors of the irrelevant `_≤_`, Agda
+will happily construct `x ≤ y` proofs whenever `x` and `y` are known statically:
 
-
+```agda
 private instance
   z≤ : {n : ℕ} → 0 ≤ n
   z≤ = z≤n
 
   s≤ : {a b : ℕ} → ⦃ a ≤ b ⦄ → suc a ≤ suc b
   s≤ ⦃ a≤b ⦄ = s≤s a≤b
+```
 
+We can now test our handiwork. By constructing an empty `BST` with explicit
+bounds:
+
+```agda
 b : BST 0 100
 b = ⊘
-
-_ : insert 3 (insert 5 (insert 10 (insert 12 (insert 5 (insert 42 b))))) ≡
-    (leaf 3 ◁ 5 ▷ (leaf 10 ◁ 12 ▷ ⊘)) ◁ 42 ▷ ⊘
-_ = refl
-
-
 ```
+
+we are able to `insert` several values into it, and inspect the resulting value
+in all of its glory:
+
+```agda
+_ : insert 3
+      (insert 5
+        (insert 10
+          (insert 12
+            (insert 5
+              (insert 42 b)))))
+    ≡ (leaf 3 ◁ 5 ▷ (leaf 10 ◁ 12 ▷ ⊘)) ◁ 42 ▷ ⊘
+_ = refl
+```
+
+Decidability (and its related forms, like trichotomy) is an important feature of
+*computation,* and is the primary means of differentiating mathematics from
+computation. Math requires no decidability, computation is useless without it.
 
