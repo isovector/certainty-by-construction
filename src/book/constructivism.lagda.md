@@ -289,7 +289,7 @@ the proof to one of the successed numbers.
 In the `yes` case at [1](Ann), we are required to turn a proof of `x ≡ y` into a
 proof that `suc x ≡ suc y`, which is an obvious application of `cong suc`.
 However, due to the way we've constructed propositional refutation, at
-`[2](Ann)` we need to go the other direction --- turning a proof of `suc x ≡ suc
+[2](Ann) we need to go the other direction --- turning a proof of `suc x ≡ suc
 y` into a proof that `x ≡ y` (that is, so we can refute that fact via `x≠y`.)
 There is clearly some sort of "backwardness" going on here in the `no` case. We
 will explore this further in a moment.
