@@ -1,7 +1,7 @@
 module sets where
 
 open import Function using (_∘_)
-open import Book.Iso
+-- open import Book.Iso
 open import Data.Sum renaming (_⊎_ to infixr 80 _⊎_)
 open import Data.Nat
 open import Data.Fin using (Fin)
