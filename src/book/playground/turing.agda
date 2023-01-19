@@ -1,6 +1,6 @@
 module playground.turing where
 
-open import Data.Nat
+open import Data.Nat hiding (_⊔_)
 open import Data.List hiding (last; head; lookup; or; and)
 open import Data.Maybe
 open import Data.Sum hiding (map₁; map₂)
@@ -17,12 +17,11 @@ open import Relation.Nullary
 open import Relation.Unary
 
 
-record TuringMachine {Q : Set} (Γ : Set) (F : Q → Set) : Set where
+record TuringMachine (Γ : Set) (Q : Set) (F : Set) : Set where
   field
-    F-dec : Decidable F
     blank : Γ
     initial-state : Q
-    transition : Q → Γ → Q × Γ × MoveDirection
+    transition : Q → Γ → F ⊎ (Q × Γ × MoveDirection)
 
 record Tape (B : Set) : Set where
   constructor tape
@@ -42,9 +41,15 @@ buildTape _ (x ∷ xs) = tape [] x xs
 write : {E : Set} → E → Tape E → Tape E
 write a (tape l _ r) = tape l a r
 
-module _ {Γ : Set} {Q : Set} {F : Q → Set} where
+open import Agda.Primitive
 
-  module _ (tm : TuringMachine Γ F) where
+ExactlyOne : {ℓ₁ ℓ₂ : Level} {A : Set ℓ₁} → (P Q : A → Set ℓ₂) → Set (ℓ₁ ⊔ ℓ₂)
+ExactlyOne P Q = ∀ x → (P x × ¬ Q x) ⊎ (¬ P x × Q x)
+
+
+module _ {Γ : Set} {Q : Set} {F : Set} where
+
+  module _ (tm : TuringMachine Γ Q F) where
     open TuringMachine tm
 
     move : MoveDirection → Tape Γ → Tape Γ
@@ -60,57 +65,23 @@ module _ {Γ : Set} {Q : Set} {F : Q → Set} where
     moveWrite : MoveDirection → Γ → Tape Γ → Tape Γ
     moveWrite dir sym t = move dir (write sym t)
 
-    step : Q → Tape Γ → Q × Tape Γ
+    step : Q → Tape Γ → F ⊎ (Q × Tape Γ)
     step q t =
-      (×.map₂′ λ { (sym , dir) → moveWrite dir sym t })
-          (transition q (head t))
+      ⊎.map₂
+        (×.map₂′ (λ { (sym , dir) → moveWrite dir sym t }))
+        (transition q (head t))
 
 
-    runHelper : ℕ → Q → Tape Γ → Σ Q F ⊎ (Q × Tape Γ)
+    runHelper : ℕ → Q → Tape Γ → F ⊎ (Q × Tape Γ)
     runHelper zero q t = inj₂ (q , t)
-    runHelper (suc gas) q t with step q t
-    runHelper (suc gas) q t | q' , t' with F-dec q'
-    ... | yes f = inj₁ (q' , f)
-    ... | no _ = runHelper gas q' t'
+    runHelper (suc gas) q t =
+      [ inj₁ , uncurry (runHelper gas) ]′
+        (step q t)
 
-    run : ℕ → List Γ → Maybe (Σ Q F)
+    run : ℕ → List Γ → Maybe F
     run gas t
       = [ just , const nothing ]′
           (runHelper gas initial-state (buildTape blank t))
-
-  module Stepping (tm : TuringMachine Γ F) where
-    open TuringMachine tm
-
-    private variable
-     q q₁ q₂ q₃ : Q
-     t t₁ t₂ t₃ : Tape Γ
-     n n₁ n₂ n₃ : ℕ
-     qt₁ qt₂ : Q × Tape Γ
-
-    data _-⟨_⟩→_ : Q × Tape Γ → ℕ → Q × Tape Γ → Set where
-      step-refl : (q , t) -⟨ 0 ⟩→ (q , t)
-      step-trans : (q₁ , t₁) -⟨ n₁ ⟩→ (q₂ , t₂)
-                 → (q₂ , t₂) -⟨ n₂ ⟩→ (q₃ , t₃)
-                 → (q₁ , t₁) -⟨ n₁ + n₂ ⟩→ (q₃ , t₃)
-      step-via : (q , t) -⟨ 1 ⟩→ step tm q t
-
-    data HaltsIn : Q × Tape Γ → ℕ → Set where
-      halts
-          : (q : Q)
-          → (t : Tape Γ)
-          → F q
-          → qt₁ -⟨ n ⟩→ (q , t)
-          → HaltsIn qt₁ n
-
-    glue : qt₁ -⟨ n₁ ⟩→ qt₂ → HaltsIn qt₂ n₂ → HaltsIn qt₁ (n₁ + n₂)
-    glue x (halts q t f arr) = halts q t f (step-trans x arr)
-
-    glue₁ : qt₁ -⟨ 1 ⟩→ qt₂ → HaltsIn qt₂ n₂ → HaltsIn qt₁ (suc n₂)
-    glue₁ = glue
-
---     module ⟶-Reasoning where
---       open import Relation.Binary.Reasoning.Base.Single _-⟨_⟩→_ step-refl step-trans public
-
 
 
 
@@ -118,29 +89,20 @@ module BusyBeaver where
   open TuringMachine
 
   data State : Set where
-    A B C HALT : State
+    A B C : State
 
-  data HaltState : State → Set where
-    halt : HaltState HALT
+  data Final : Set where
+    HALT : Final
 
   open import Data.Bool
 
-  busy-beaver : TuringMachine Bool HaltState
-  F-dec busy-beaver A = no λ ()
-  F-dec busy-beaver B = no λ ()
-  F-dec busy-beaver C = no λ ()
-  F-dec busy-beaver HALT = yes halt
+  busy-beaver : TuringMachine Bool State Final
   blank busy-beaver = false
   initial-state busy-beaver = A
-  transition busy-beaver A false = B , true , R
-  transition busy-beaver B false = A , true , L
-  transition busy-beaver C false = B , true , L
-  transition busy-beaver A true  = C , true , L
-  transition busy-beaver B true  = B , true , R
-  transition busy-beaver C true  = HALT , true , R
-  transition busy-beaver HALT x  = HALT , x , R
-
-  open Stepping busy-beaver
-  _ : (A , tape [] false []) -⟨ 3 ⟩→ (C , tape [] false (true ∷ true ∷ [])) -- (A , tape [] true [ true ])
-  _ = step-trans step-via (step-trans step-via step-via)
+  transition busy-beaver A false = inj₂ (B , true , R)
+  transition busy-beaver B false = inj₂ (A , true , L)
+  transition busy-beaver C false = inj₂ (B , true , L)
+  transition busy-beaver A true  = inj₂ (C , true , L)
+  transition busy-beaver B true  = inj₂ (B , true , R)
+  transition busy-beaver C true  = inj₁ HALT
 

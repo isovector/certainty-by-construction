@@ -1,6 +1,6 @@
 open import Data.Nat
 
-module playground.SAT (n : ℕ) where
+module playground.SAT (A : Set) where
 
 open import Data.Bool renaming (_∨_ to or; _∧_ to and) hiding (_≤_; _<_)
 open import Data.Fin using (Fin; zero; suc)
@@ -15,8 +15,8 @@ open import Relation.Binary.PropositionalEquality hiding ([_])
 open import Data.Empty
 
 data Lit : Set where
-  ↪ : Fin n → Lit
-  ¬ : Fin n → Lit
+  ↪ : A → Lit
+  ¬ : A → Lit
 
 data Clause : Set where
   last : Lit → Clause
@@ -54,11 +54,11 @@ private variable
   l l₁ : Lit
   c c₁ : Clause
 
-module Stepping (bs : Vec Bool n) where
+module Stepping (bs : A → Bool) where
 
   evaluateLit : Lit → Bool
-  evaluateLit (↪ x) = lookup bs x
-  evaluateLit (¬ x) = not (lookup bs x)
+  evaluateLit (↪ x) = bs x
+  evaluateLit (¬ x) = not (bs x)
 
   evaluateClause : Clause → Bool
   evaluateClause (last x) = evaluateLit x
@@ -73,6 +73,9 @@ module Stepping (bs : Vec Bool n) where
   data _⟶_ : Instr × State → State → Set where
     ⟶pop : pop , lo , hi ⟶ and lo hi , false
     ⟶val : {x : Lit} → val x , lo , hi ⟶ lo , or hi (evaluateLit x)
+
+  tr : (i , q₁) ⟶ q₂ → State
+  tr {q₂ = q} _ = q
 
   data _-⟨_⟩→_ : State → List Instr → State → Set where
     nil : q -⟨ [] ⟩→ q
@@ -114,4 +117,54 @@ module Stepping (bs : Vec Bool n) where
   step-comp {lo = lo} (cnflast x) = step-comp₂ {lo = lo} {hi = false} x
   step-comp {lo = lo} (cnf∧ {c = c} {cnf = cnf} x x₁) = step-comp₂ {lo = lo} {hi = false} x -⟨++⟩→ subst-arr (cong (_, _) (lemma lo c cnf)) (step-comp {lo = and lo (evaluateClause c)} x₁)
 
+  open import playground.turing renaming (step to steptm)
+  open TuringMachine
 
+  open import Relation.Nullary
+
+  sat : TuringMachine Instr State Bool
+  blank sat = halt
+  initial-state sat = true , false
+  transition sat q halt = inj₁ (proj₁ q)
+  transition sat (lo , hi) pop = inj₂ (tr (⟶pop {lo = lo} {hi = hi}) , pop , R)
+  transition sat (lo , hi) (val x) = inj₂ (tr (⟶val {lo = lo} {hi = hi} {x = x}) , (val x) , R)
+
+  step-to-step : (i , q₁) ⟶ q₂ → transition sat q₁ i ≡ inj₂ (q₂ , i , R)
+  step-to-step ⟶pop = refl
+  step-to-step ⟶val = refl
+
+  arr-to-run
+      : q₁ -⟨ i ∷ is ⟩→ q₂
+      → runHelper sat (suc (length is)) q₁ (tape [] i is) ≡ inj₂ (q₂ , tape (reverse (i ∷ is)) halt [])
+  arr-to-run {q₁} {i} {is} {q₂} (_-⟨_⟩→_.step x x₁) =
+    begin
+      runHelper sat (suc (length is)) q₁ (tape [] i is)
+    ≡⟨⟩
+      [ inj₁ , uncurry (runHelper sat (length is)) ]′
+        (steptm sat q₁ (tape [] i is))
+    ≡⟨⟩
+      let stuff x =
+            [ inj₁ , uncurry (runHelper sat (length is)) ]′
+              (⊎.map₂
+                (×.map₂′ (λ { (sym , dir) → moveWrite sat dir sym (tape [] i is) }))
+                x) in
+
+      stuff (transition sat q₁ i)
+    ≡⟨ cong stuff (step-to-step x) ⟩
+      [ inj₁ , uncurry (runHelper sat (length is)) ]′ (⊎.map₂ (map₂′ (λ { (sym , dir) → moveWrite sat dir sym (tape [] i is) })) (inj₂ (_ , i , R)))
+    ≡⟨⟩
+      [ inj₁ , uncurry (runHelper sat (length is)) ]′
+        (inj₂ ((map₂′ (λ { (sym , dir) → moveWrite sat dir sym (tape [] i is) })) (_ , i , R)))
+    ≡⟨⟩
+      uncurry
+        (runHelper sat (length is))
+        (_ , moveWrite sat R i (tape [] i is) )
+    ≡⟨⟩
+      runHelper sat (length is) _ (moveWrite sat R i (tape [] i is))
+    ≡⟨ arr-to-run x₁ ⟩
+      ?
+    ≡⟨ ? ⟩
+      inj₂ (q₂ , tape (reverse (i ∷ is)) halt [])
+    ∎
+    where
+      open ≡-Reasoning
