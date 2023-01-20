@@ -133,11 +133,47 @@ module Stepping (bs : A → Bool) where
   step-to-step ⟶pop = refl
   step-to-step ⟶val = refl
 
-  arr-to-run
-      : q₁ -⟨ i ∷ is ⟩→ q₂
-      → runHelper sat (suc (length is)) q₁ (tape [] i is) ≡ inj₂ (q₂ , tape (reverse (i ∷ is)) halt [])
-  arr-to-run {q₁} {i} {is} {q₂} (_-⟨_⟩→_.step x x₁) =
+  postulate
+    l-irrel : (is₁ is₂ : List Instr) → tape is₁ i is₂ ≡ tape [] i is₂
+
+  lemma₁ : ∀ i is q₃ q₂
+         → runHelper sat (length is) q₃ (buildTape halt is)         ≡ inj₂ (q₂ , tape (reverse is) halt [])
+         → runHelper sat (length is) q₃ (move sat R (tape [] i is)) ≡ inj₂ (q₂ , tape (reverse (i ∷ is)) halt [])
+  lemma₁ i [] q₃ q₂ x =
     begin
+      inj₂ (q₃ , tape (i ∷ []) halt [])
+    ≡⟨ cong inj₂ (cong (q₃ ,_) (l-irrel (i ∷ []) [])) ⟩
+      inj₂ (q₃ , tape [] halt [])
+    ≡⟨ x ⟩
+      inj₂ (q₂ , tape [] halt [])
+    ≡⟨ cong inj₂ (cong (q₂ ,_) (sym (l-irrel (i ∷ []) []))) ⟩
+      inj₂ (q₂ , tape (i ∷ []) halt [])
+    ∎
+    where open ≡-Reasoning
+  lemma₁ i (h ∷ is) q₃ q₂ x =
+    begin
+      runHelper sat (length (h ∷ is)) q₃ (move sat R (tape [] i (h ∷ is)))
+    ≡⟨⟩
+      runHelper sat (length (h ∷ is)) q₃ (tape [ i ] h is)
+    ≡⟨ cong (λ φ → runHelper sat (length (h ∷ is)) q₃ φ) (l-irrel {i = h} [ i ] is) ⟩
+      runHelper sat (length (h ∷ is)) q₃ (tape [] h is)
+    ≡⟨ x ⟩
+      inj₂ (q₂ , tape (reverse (h ∷ is)) halt [])
+    ≡⟨ cong inj₂ (cong (q₂ ,_) (l-irrel (reverse (h ∷ is)) [])) ⟩
+      inj₂ (q₂ , tape [] halt [])
+    ≡⟨ cong inj₂ (cong (q₂ ,_) (sym (l-irrel (reverse (i ∷ h ∷ is)) []))) ⟩
+      inj₂ (q₂ , tape (reverse (i ∷ h ∷ is)) halt [])
+    ∎
+    where open ≡-Reasoning
+
+  arr-to-run
+      : q₁ -⟨ is ⟩→ q₂
+      → runHelper sat (length is) q₁ (mkTape sat is) ≡ inj₂ (q₂ , tape (reverse is) halt [])
+  arr-to-run {q₁} nil = refl
+  arr-to-run {q₁} {i ∷ is} {q₂} (step x x₁) =
+    begin
+      runHelper sat (length (i ∷ is)) q₁ (mkTape sat (i ∷ is))
+    ≡⟨⟩
       runHelper sat (suc (length is)) q₁ (tape [] i is)
     ≡⟨⟩
       [ inj₁ , uncurry (runHelper sat (length is)) ]′
@@ -151,20 +187,18 @@ module Stepping (bs : A → Bool) where
 
       stuff (transition sat q₁ i)
     ≡⟨ cong stuff (step-to-step x) ⟩
-      [ inj₁ , uncurry (runHelper sat (length is)) ]′ (⊎.map₂ (map₂′ (λ { (sym , dir) → moveWrite sat dir sym (tape [] i is) })) (inj₂ (_ , i , R)))
-    ≡⟨⟩
       [ inj₁ , uncurry (runHelper sat (length is)) ]′
-        (inj₂ ((map₂′ (λ { (sym , dir) → moveWrite sat dir sym (tape [] i is) })) (_ , i , R)))
-    ≡⟨⟩
-      uncurry
-        (runHelper sat (length is))
-        (_ , moveWrite sat R i (tape [] i is) )
+          (⊎.map₂
+            (map₂′ (λ { (sym , dir) → moveWrite sat dir sym (tape [] i is) }))
+            (inj₂ (_ , i , R)))
     ≡⟨⟩
       runHelper sat (length is) _ (moveWrite sat R i (tape [] i is))
-    ≡⟨ arr-to-run x₁ ⟩
-      ?
-    ≡⟨ ? ⟩
+    ≡⟨⟩
+      runHelper sat (length is) _ (move sat R (write i (tape [] i is)))
+    ≡⟨⟩
+      runHelper sat (length is) _ (move sat R (tape [] i is))
+    ≡⟨ lemma₁ i is _ q₂ (arr-to-run x₁) ⟩
       inj₂ (q₂ , tape (reverse (i ∷ is)) halt [])
     ∎
-    where
-      open ≡-Reasoning
+    where open ≡-Reasoning
+

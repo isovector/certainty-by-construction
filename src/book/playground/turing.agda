@@ -52,6 +52,9 @@ module _ {Γ : Set} {Q : Set} {F : Set} where
   module _ (tm : TuringMachine Γ Q F) where
     open TuringMachine tm
 
+    mkTape : List Γ → Tape Γ
+    mkTape = buildTape blank
+
     move : MoveDirection → Tape Γ → Tape Γ
     move L (tape [] h r)
       = tape [] blank (h ∷ r)
