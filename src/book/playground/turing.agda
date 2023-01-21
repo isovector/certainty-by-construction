@@ -1,3 +1,5 @@
+{-# OPTIONS --allow-unsolved-metas #-}
+
 module playground.turing where
 
 open import Data.Nat hiding (_⊔_)
@@ -68,23 +70,22 @@ module _ {Γ : Set} {Q : Set} {F : Set} where
     moveWrite : MoveDirection → Γ → Tape Γ → Tape Γ
     moveWrite dir sym t = move dir (write sym t)
 
-    step : Q → Tape Γ → F ⊎ (Q × Tape Γ)
+    step : Q → Tape Γ → (F ⊎ Q) × Tape Γ
     step q t =
-      ⊎.map₂
-        (×.map₂′ (λ { (sym , dir) → moveWrite dir sym t }))
+      [ (_, t) ∘ inj₁
+      , ×.map inj₂ (λ { (sym , dir) → moveWrite dir sym t })
+      ]′
         (transition q (head t))
 
-
-    runHelper : ℕ → Q → Tape Γ → F ⊎ (Q × Tape Γ)
-    runHelper zero q t = inj₂ (q , t)
+    runHelper : ℕ → Q → Tape Γ → (F ⊎ Q) × Tape Γ
+    runHelper zero q t = inj₂ q , t
     runHelper (suc gas) q t =
-      [ inj₁ , uncurry (runHelper gas) ]′
-        (step q t)
+      {! (step q t) !}
 
-    run : ℕ → List Γ → Maybe F
-    run gas t
-      = [ just , const nothing ]′
-          (runHelper gas initial-state (buildTape blank t))
+--     run : ℕ → List Γ → Maybe F
+--     run gas t
+--       = [ just , const nothing ]′
+--           (proj₁ (runHelper gas initial-state (buildTape blank t)))
 
 
 

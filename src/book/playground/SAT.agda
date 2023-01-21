@@ -48,7 +48,7 @@ State = Bool × Bool
 private variable
   lo hi : Bool
   q q₁ q₂ q₃ : State
-  i : Instr
+  i i₁ i₂ : Instr
   is is₁ is₂ : List Instr
   cnf : CNF
   l l₁ : Lit
@@ -118,6 +118,35 @@ module Stepping (bs : A → Bool) where
   step-comp {lo = lo} (cnf∧ {c = c} {cnf = cnf} x x₁) = step-comp₂ {lo = lo} {hi = false} x -⟨++⟩→ subst-arr (cong (_, _) (lemma lo c cnf)) (step-comp {lo = and lo (evaluateClause c)} x₁)
 
   open import playground.turing renaming (step to steptm)
+
+  private variable
+    t t₁ t₂ t₃ : Tape Instr
+
+  data _≈_ : Tape Instr → Tape Instr → Set where
+    ≈refl : t ≈ t
+    ≈sym : t₁ ≈ t₂ → t₂ ≈ t₁
+    ≈trans : t₁ ≈ t₂ → t₂ ≈ t₃ → t₁ ≈ t₃
+    ≈rtail : tape is i [ halt ] ≈ tape is i []
+    ≈ltail : tape [ halt ] i is ≈ tape [] i is
+    ≈move : tape is₁ i₁ (i₂ ∷ is₂) ≈ tape (i₁ ∷ is₁) i₂ is₂
+
+  open import Relation.Binary.Structures
+  ≈equiv : IsEquivalence _≈_
+  IsEquivalence.refl ≈equiv = ≈refl
+  IsEquivalence.sym ≈equiv = ≈sym
+  IsEquivalence.trans ≈equiv = ≈trans
+
+  module ≈-Reasoning where
+    open import Relation.Binary
+    open import Agda.Primitive
+
+    ≈setoid : Setoid lzero lzero
+    Setoid.Carrier ≈setoid = Tape Instr
+    Setoid._≈_ ≈setoid = _≈_
+    Setoid.isEquivalence ≈setoid = ≈equiv
+
+    open import Relation.Binary.Reasoning.Setoid ≈setoid public
+
   open TuringMachine
 
   open import Relation.Nullary
@@ -133,72 +162,71 @@ module Stepping (bs : A → Bool) where
   step-to-step ⟶pop = refl
   step-to-step ⟶val = refl
 
-  postulate
-    l-irrel : (is₁ is₂ : List Instr) → tape is₁ i is₂ ≡ tape [] i is₂
+  step-preserve : (i , q₁) ⟶ q₂ → proj₂ (steptm sat q₁ t) ≡ []
 
-  lemma₁ : ∀ i is q₃ q₂
-         → runHelper sat (length is) q₃ (buildTape halt is)         ≡ inj₂ (q₂ , tape (reverse is) halt [])
-         → runHelper sat (length is) q₃ (move sat R (tape [] i is)) ≡ inj₂ (q₂ , tape (reverse (i ∷ is)) halt [])
-  lemma₁ i [] q₃ q₂ x =
-    begin
-      inj₂ (q₃ , tape (i ∷ []) halt [])
-    ≡⟨ cong inj₂ (cong (q₃ ,_) (l-irrel (i ∷ []) [])) ⟩
-      inj₂ (q₃ , tape [] halt [])
-    ≡⟨ x ⟩
-      inj₂ (q₂ , tape [] halt [])
-    ≡⟨ cong inj₂ (cong (q₂ ,_) (sym (l-irrel (i ∷ []) []))) ⟩
-      inj₂ (q₂ , tape (i ∷ []) halt [])
-    ∎
-    where open ≡-Reasoning
-  lemma₁ i (h ∷ is) q₃ q₂ x =
-    begin
-      runHelper sat (length (h ∷ is)) q₃ (move sat R (tape [] i (h ∷ is)))
-    ≡⟨⟩
-      runHelper sat (length (h ∷ is)) q₃ (tape [ i ] h is)
-    ≡⟨ cong (λ φ → runHelper sat (length (h ∷ is)) q₃ φ) (l-irrel {i = h} [ i ] is) ⟩
-      runHelper sat (length (h ∷ is)) q₃ (tape [] h is)
-    ≡⟨ x ⟩
-      inj₂ (q₂ , tape (reverse (h ∷ is)) halt [])
-    ≡⟨ cong inj₂ (cong (q₂ ,_) (l-irrel (reverse (h ∷ is)) [])) ⟩
-      inj₂ (q₂ , tape [] halt [])
-    ≡⟨ cong inj₂ (cong (q₂ ,_) (sym (l-irrel (reverse (i ∷ h ∷ is)) []))) ⟩
-      inj₂ (q₂ , tape (reverse (i ∷ h ∷ is)) halt [])
-    ∎
-    where open ≡-Reasoning
+--   lemma₁ : ∀ i is q₃ q₂
+--          → runHelper sat (length is) q₃ (buildTape halt is)         ≡ (inj₂ q₂ , tape (reverse is) halt [])
+--          → runHelper sat (length is) q₃ (move sat R (tape [] i is)) ≡ (inj₂ q₂ , tape (reverse (i ∷ is)) halt [])
+--   lemma₁ i [] q₃ q₂ x =
+--     beginj₂ in
+--       (inj₂ q₃ , tape (i ∷ []) halt [])
+--     ≡⟨ cong inj₂ (cong (q₃ ,_) (l-irrel (i ∷ []) [])) ⟩
+--       (inj₂ q₃ , tape [] halt [])
+--     ≡⟨ x ⟩
+--       (q₂ , tape [] halt [])
+--     ≡⟨ cong inj₂ (cong (q₂ ,_) (sym (l-irrel (i ∷ []) []))) ⟩
+--       (inj₂ q₂ , tape (i ∷ []) halt [])
+--     ∎
+--     where open ≡-Reasoning
+--   lemma₁ i (h ∷ is) q₃ q₂ x =
+--     begin
+--       runHelper sat (length (h ∷ is)) q₃ (move sat R (tape [] i (h ∷ is)))
+--     ≡⟨⟩
+--       runHelper sat (length (h ∷ is)) q₃ (tape [ i ] h is)
+--     ≡⟨ cong (λ φ → runHelper sat (length (h ∷ is)) q₃ φ) (l-irrel {i = h} [ i ] is) ⟩
+--       runHelper sat (length (h ∷ is)) q₃ (tape [] h is)
+--     ≡⟨ x ⟩
+--       inj₂ (q₂ , tape (reverse (h ∷ is)) halt [])
+--     ≡⟨ cong inj₂ (cong (q₂ ,_) (l-irrel (reverse (h ∷ is)) [])) ⟩
+--       inj₂ (q₂ , tape [] halt [])
+--     ≡⟨ cong inj₂ (cong (q₂ ,_) (sym (l-irrel (reverse (i ∷ h ∷ is)) []))) ⟩
+--       inj₂ (q₂ , tape (reverse (i ∷ h ∷ is)) halt [])
+--     ∎
+--     where open ≡-Reasoning
 
-  arr-to-run
-      : q₁ -⟨ is ⟩→ q₂
-      → runHelper sat (length is) q₁ (mkTape sat is) ≡ inj₂ (q₂ , tape (reverse is) halt [])
-  arr-to-run {q₁} nil = refl
-  arr-to-run {q₁} {i ∷ is} {q₂} (step x x₁) =
-    begin
-      runHelper sat (length (i ∷ is)) q₁ (mkTape sat (i ∷ is))
-    ≡⟨⟩
-      runHelper sat (suc (length is)) q₁ (tape [] i is)
-    ≡⟨⟩
-      [ inj₁ , uncurry (runHelper sat (length is)) ]′
-        (steptm sat q₁ (tape [] i is))
-    ≡⟨⟩
-      let stuff x =
-            [ inj₁ , uncurry (runHelper sat (length is)) ]′
-              (⊎.map₂
-                (×.map₂′ (λ { (sym , dir) → moveWrite sat dir sym (tape [] i is) }))
-                x) in
+--   arr-to-run
+--       : q₁ -⟨ is ⟩→ q₂
+--       → runHelper sat (length is) q₁ (mkTape sat is) ≡ inj₂ (q₂ , tape (reverse is) halt [])
+--   arr-to-run {q₁} nil = refl
+--   arr-to-run {q₁} {i ∷ is} {q₂} (step x x₁) =
+--     begin
+--       runHelper sat (length (i ∷ is)) q₁ (mkTape sat (i ∷ is))
+--     ≡⟨⟩
+--       runHelper sat (suc (length is)) q₁ (tape [] i is)
+--     ≡⟨⟩
+--       [ inj₁ , uncurry (runHelper sat (length is)) ]′
+--         (steptm sat q₁ (tape [] i is))
+--     ≡⟨⟩
+--       let stuff x =
+--             [ inj₁ , uncurry (runHelper sat (length is)) ]′
+--               (⊎.map₂
+--                 (×.map₂′ (λ { (sym , dir) → moveWrite sat dir sym (tape [] i is) }))
+--                 x) in
 
-      stuff (transition sat q₁ i)
-    ≡⟨ cong stuff (step-to-step x) ⟩
-      [ inj₁ , uncurry (runHelper sat (length is)) ]′
-          (⊎.map₂
-            (map₂′ (λ { (sym , dir) → moveWrite sat dir sym (tape [] i is) }))
-            (inj₂ (_ , i , R)))
-    ≡⟨⟩
-      runHelper sat (length is) _ (moveWrite sat R i (tape [] i is))
-    ≡⟨⟩
-      runHelper sat (length is) _ (move sat R (write i (tape [] i is)))
-    ≡⟨⟩
-      runHelper sat (length is) _ (move sat R (tape [] i is))
-    ≡⟨ lemma₁ i is _ q₂ (arr-to-run x₁) ⟩
-      inj₂ (q₂ , tape (reverse (i ∷ is)) halt [])
-    ∎
-    where open ≡-Reasoning
+--       stuff (transition sat q₁ i)
+--     ≡⟨ cong stuff (step-to-step x) ⟩
+--       [ inj₁ , uncurry (runHelper sat (length is)) ]′
+--           (⊎.map₂
+--             (map₂′ (λ { (sym , dir) → moveWrite sat dir sym (tape [] i is) }))
+--             (inj₂ (_ , i , R)))
+--     ≡⟨⟩
+--       runHelper sat (length is) _ (moveWrite sat R i (tape [] i is))
+--     ≡⟨⟩
+--       runHelper sat (length is) _ (move sat R (write i (tape [] i is)))
+--     ≡⟨⟩
+--       runHelper sat (length is) _ (move sat R (tape [] i is))
+--     ≡⟨ lemma₁ i is _ q₂ (arr-to-run x₁) ⟩
+--       inj₂ (q₂ , tape (reverse (i ∷ is)) halt [])
+--     ∎
+--     where open ≡-Reasoning
 
