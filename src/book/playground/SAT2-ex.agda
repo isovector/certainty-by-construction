@@ -31,19 +31,15 @@ t = mkTape ( val (↪ x₁)
 open import Data.Product
 open import Data.Nat using (ℕ; zero; suc)
 
-moveR : ℕ → Tape Instr → Tape Instr
-moveR zero t = t
-moveR (suc n) t = move R (moveR n t)
-
-ex : ((true , false) , t) ⟶ ((false , false) , moveR 6 t)
+ex : ((true , false) , t) ⟶ ((false , false) , _)
 ex = begin
-  (true , false)  , moveR 0 t  ≈⟨ step ⟶val ⟩
-  (true , true)   , moveR 1 t  ≈⟨ step ⟶val ⟩
-  (true , true)   , moveR 2 t  ≈⟨ step ⟶pop ⟩
-  (true , false)  , moveR 3 t  ≈⟨ step ⟶val ⟩
-  (true , false)  , moveR 4 t  ≈⟨ step ⟶val ⟩
-  (true , false)  , moveR 5 t  ≈⟨ step ⟶pop ⟩
-  (false , false) , moveR 6 t  ∎
+  (true , false)  , _  ≈⟨ step ⟶val ⟩
+  (true , true)   , _  ≈⟨ step ⟶val ⟩
+  (true , true)   , _  ≈⟨ step ⟶pop ⟩
+  (true , false)  , _  ≈⟨ step ⟶val ⟩
+  (true , false)  , _  ≈⟨ step ⟶val ⟩
+  (true , false)  , _  ≈⟨ step ⟶pop ⟩
+  (false , false) , _  ∎
 
 ex-halts : HaltsWith ((true , false) , t) (false , false)
 ex-halts = halts-with ex halted

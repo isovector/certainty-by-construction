@@ -42,14 +42,6 @@ evaluate : Vec Bool n → CNF n → Bool
 evaluate bs (last x) = evaluateClause bs x
 evaluate bs (x ∧ y) = and (evaluateClause bs x) (evaluate bs y)
 
-sizeClause : Clause n → ℕ
-sizeClause (last x) = 1
-sizeClause (x ∨ xs) = 1 + sizeClause xs
-
-size : CNF n → ℕ
-size (last x) = sizeClause x
-size (x ∧ xs) = sizeClause x + size xs
-
 infixr 3 _∧_
 infixr 4 _∨_
 
@@ -84,9 +76,6 @@ data Instr (n : ℕ) : Set where
   pop halt : Instr n
   val : Lit n → Instr n
 
--- compile : Vec Bool n → CNF n → TuringMachine (StackInstr ⊎ Bool) (Bool × Bool) Bool × List (StackInstr ⊎ Bool)
-
-
 
 compileClause : Clause n → List (Instr n)
 compileClause (last x) = [ val x ]
@@ -96,72 +85,3 @@ compile : CNF n → List (Instr n)
 compile (last x) = (compileClause x ++ [ pop ])
 compile (x ∧ cnf) = (compileClause x ++ (pop ∷ compile cnf))
 
-open import Relation.Nullary
-
-module _ (bs : Vec Bool n) where
-
-  satTM : TuringMachine (Instr n) Final
-  blank satTM = halt
-  F-dec satTM (done lo hi) = yes done
-  F-dec satTM (have _ _) = no λ ()
-  initial-state satTM = have true false
-  transition satTM (done lo hi) i = done lo hi , i , R
-  transition satTM (have lo hi) pop = have (and lo hi) false , halt , R
-  transition satTM (have lo hi) halt = done lo hi , halt , R
-  transition satTM (have lo hi) (val x) = have lo (or hi (evaluateLit bs x)) , halt , R
-
-  open Stepping satTM
-
-  postulate
-    always-r : ∀ q h → proj₂ (proj₂ (transition satTM q h)) ≡ R
-    always-halt : ∀ q h → proj₁ (proj₂ (transition satTM q h)) ≡ halt
-
-  open import Data.Product.Properties
-
-  {-# TERMINATING #-}
-  yo : (q : State) → (t : Tape (Instr n)) → HaltsIn (q , t) (finite-sizeʳ t)
-  yo q t@(tape _ h []) = Stepping.halts ? (moveWrite satTM R halt t) done {! !}
-  yo q t@(tape l h (x ∷ r)) with step satTM q t in eq
-  yo q t@(tape l h (x ∷ r)) | z = ?
-  -- ... | h = glue₁ {! Stepping.step-via !} h
-  -- ... | Stepping.halts q₁ t x₄ x₅
-  --     rewrite always-r q h
-  --     rewrite always-halt q h
-  --     = Stepping.halts q₁ t x₄ (Stepping.step-trans (Stepping.step-via (
-  --       begin
-  --         step satTM q (tape l h (x ∷ r))
-  --       ≡⟨⟩
-  --         proj₁ (transition satTM q h) , move satTM (proj₂ (proj₂ (transition satTM q h))) (tape l (proj₁ (proj₂ (transition satTM q h))) (x ∷ r))
-  --       ≡⟨ ? ⟩
-  --         proj₁ (transition satTM q h) , move satTM R (tape l (proj₁ (proj₂ (transition satTM q h))) (x ∷ r))
-  --       ≡⟨ ? ⟩
-  --         proj₁ (transition satTM q h) , move satTM R (tape l halt (x ∷ r))
-  --       ≡⟨⟩
-  --         proj₁ (transition satTM q h) , tape (halt ∷ l) x r
-  --       ≡⟨ ? ⟩
-  --         q , tape (halt ∷ l) x r
-  --       ∎
-  --     )) x₅)
-      where open ≡-Reasoning
-
-
-Q : Set
-Q = Bool × Bool
-
-
-
-
---   step : Q → Tape Γ → F ⊎ (Q × Tape Γ)
-
-
-testTM : _
-testTM = run (satTM assignments) 100 (compile test)
-
-compiled-size : CNF n → ℕ
-compiled-size cnf = length (compile cnf)
-
-remaining-size : Tape (Instr n) → ℕ
-remaining-size (tape _ _ r) = suc (length r)
-
-postulate
-  impossible : {A : Set} → A

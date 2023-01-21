@@ -1,8 +1,10 @@
-open import playground.turing using (MoveDirection; L; R; Tape; tape; write)
+```agda
+open import np-complete1
 open import Data.Product
 open import Relation.Nullary using (¬_)
 
-module playground.turing2
+-- turing-machines
+module np-complete2
   (Γ Q : Set)
   (δ : Q × Γ → Q × Γ × MoveDirection → Set)
   (H : Q × Γ → Set)
@@ -10,21 +12,8 @@ module playground.turing2
   (b : Γ)
   where
 
-open import Data.List using ([]; _∷_)
-
-move : MoveDirection → Tape Γ → Tape Γ
-move L (tape [] h r)
-  = tape [] b (h ∷ r)
-move L (tape (x ∷ l) h r)
-  = tape l x (h ∷ r)
-move R (tape l h [])
-  = tape (h ∷ l) b []
-move R (tape l h (x ∷ r))
-  = tape (h ∷ l) x r
-
-
 moveWrite : MoveDirection → Γ → Tape Γ → Tape Γ
-moveWrite dir sym t = move dir (write sym t)
+moveWrite d i t = move b d (write i t)
 
 
 data _⟶_ : Q × Tape Γ → Q × Tape Γ → Set where
@@ -42,8 +31,13 @@ data _⟶_ : Q × Tape Γ → Q × Tape Γ → Set where
           (q₂ , i , d)
       → (q₁ , t) ⟶ (q₂ , moveWrite d i t)
 
+
 data HaltsWith (qt : Q × Tape Γ) (q : Q) : Set where
-  halts-with : {t : Tape Γ} → qt ⟶ (q , t) → H (q , Tape.head t) → HaltsWith qt q
+  halts-with
+      : {t : Tape Γ}
+      → qt ⟶ (q , t)
+      → H (q , Tape.head t)
+      → HaltsWith qt q
 
 
 module ⟶-Reasoning where
@@ -54,4 +48,6 @@ module ⟶-Reasoning where
 
   step-≈ = Base.step-∼
   syntax step-≈ x y≈z x≈y = x ≈⟨ x≈y ⟩ y≈z
+```
+
 
