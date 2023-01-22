@@ -31,6 +31,15 @@ data _⟶_ : Q × Tape Γ → Q × Tape Γ → Set where
           (q₂ , i , d)
       → (q₁ , t) ⟶ (q₂ , moveWrite d i t)
 
+open import Relation.Binary.PropositionalEquality using (_≡_; refl)
+
+⟶-subst
+    : {qt₁ qt₁' qt₂ qt₂' : Q × Tape Γ}
+    → qt₁ ≡ qt₁'
+    → qt₂ ≡ qt₂'
+    → qt₁ ⟶ qt₂
+    → qt₁' ⟶ qt₂'
+⟶-subst refl refl x = x
 
 data HaltsWith (qt : Q × Tape Γ) (q : Q) : Set where
   halts-with
@@ -39,6 +48,21 @@ data HaltsWith (qt : Q × Tape Γ) (q : Q) : Set where
       → H (q , Tape.head t)
       → HaltsWith qt q
 
+halts-glue
+  : {qt₁ qt₂ : Q × Tape Γ} {q : Q}
+  → qt₁ ⟶ qt₂
+  → HaltsWith qt₂ q
+  → HaltsWith qt₁ q
+halts-glue x₁ (halts-with x₂ h) =
+  halts-with (_⟶_.trans x₁ x₂) h
+
+subst-halts
+  : {qt qt' : Q × Tape Γ} {q q' : Q}
+  → qt ≡ qt'
+  → q ≡ q'
+  → HaltsWith qt q
+  → HaltsWith qt' q'
+subst-halts refl refl x = x
 
 module ⟶-Reasoning where
   open import Relation.Binary.Reasoning.Base.Single _⟶_ refl trans as Base public
