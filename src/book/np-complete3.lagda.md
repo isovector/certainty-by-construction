@@ -91,33 +91,31 @@ equivClause
       )
 equivClause lo hi rs (last x) =
   begin
-    (lo , hi) , tape _ (val x) (pop ∷ rs)
+    (lo , hi) , _
   ≈⟨ step ⟶val ⟩
-    let t' = tape _ pop rs in
-    (lo , or hi (evaluateLit bs x)) , t'
+    (lo , or hi (evaluateLit bs x)) , _
   ≈⟨ step ⟶pop ⟩
-    (and lo (or hi (evaluateLit bs x)) , false)
-      , _
-  ≡⟨ cong (λ φ → (and lo (or hi (evaluateLit bs x)) , false) , φ) (lemma pop rs) ⟩
-    (and lo (or hi (evaluateLit bs x)) , false)
-      , mkTape rs
+    _ , moveWrite R nop (tape [] pop rs)
+  ≡⟨ cong (_ ,_) (lemma pop rs) ⟩
+    _ , mkTape rs
   ∎
   where open ⟶-Reasoning
 equivClause lo hi rs (x ∨ cl) =
   begin
-    (lo , hi) , tape [] (val x) (compileClause cl ++ rs)
+    (lo , hi) , _
   ≈⟨ step ⟶val ⟩
     (lo , or hi (evaluateLit bs x)) , _
-  ≡⟨ cong (λ φ → (lo , or hi (evaluateLit bs x)) , φ) (lemma (val x) (compileClause cl ++ rs)) ⟩
-    (lo , or hi (evaluateLit bs x)) , _
+  ≡⟨⟩
+    _ , moveWrite R nop (tape [] (val x) (compileClause cl ++ rs))
+  ≡⟨ cong (_ ,_) (lemma (val x) (compileClause cl ++ rs)) ⟩
+    _ , mkTape (compileClause cl ++ rs)
   ≈⟨ equivClause lo (or hi (evaluateLit bs x)) rs cl ⟩
-    let t = mkTape rs in
     (and lo (or (or hi (evaluateLit bs x)) (evaluateClause bs cl)) , false)
       , mkTape rs
-  ≡⟨ cong (λ φ → (and lo φ , false) , t) (∨-assoc hi (evaluateLit bs x) (evaluateClause bs cl)) ⟩
-    let q = (and lo (or hi (evaluateClause bs (x ∨ cl))) , false) in
-    q
-      , mkTape rs
+  ≡⟨ cong (λ φ → (and lo φ , false) , _)
+          (∨-assoc hi (evaluateLit bs x) (evaluateClause bs cl)) ⟩
+    (and lo (or hi (evaluateClause bs (x ∨ cl))) , false)
+      , _
   ∎
   where open ⟶-Reasoning
 
@@ -140,8 +138,6 @@ equiv lo (last x) = halts-with (
 equiv lo (x ∧ cnf) = halts-glue
   (
     begin
-      (lo , false) , mkTape (compile (x ∧ cnf))
-    ≡⟨⟩
       (lo , false) , mkTape (compileClause x ++ compile cnf)
     ≈⟨ equivClause lo false (compile cnf) x ⟩
       (and lo (evaluateClause bs x) , false) , mkTape (compile cnf)
@@ -156,12 +152,6 @@ DONE : (cnf : CNF n)
      → HaltsWith ((true , false) , mkTape (compile cnf))
                  (evaluate bs cnf , false)
 DONE = equiv true
-
---
--- postulate
---   DONE' : (cnf : List (List (Lit n)))
---         → HaltsWith ((true , false) , mkTape [] (compile' cnf))
---                     (evaluate' bs cnf , false)
 
 ```
 
