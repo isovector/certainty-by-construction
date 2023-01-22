@@ -8,7 +8,7 @@ open import Data.Fin
 open import Data.Vec
   using (Vec; lookup; _∷_; [])
 open import Data.Bool
-  renaming (_∨_ to or; _∧_ to and)
+open import Data.List using (List)
 
 
 module _ (n : ℕ) where
@@ -16,22 +16,16 @@ module _ (n : ℕ) where
     ↪ : Fin n → Lit
     ! : Fin n → Lit
 
-  data Clause  : Set where
-    last : Lit → Clause
-    _∨_ : Lit → Clause → Clause
-
-
-  data CNF : Set where
-    last : Clause → CNF
-    _∧_ : Clause → CNF → CNF
-
-  infixr 3 _∧_
-  infixr 4 _∨_
-
   data Instr : Set where
     pop : Instr
     val : Lit → Instr
     nop : Instr
+
+  Clause : Set
+  Clause = List Lit
+
+  CNF : Set
+  CNF = List Clause
 
 private variable
   n : ℕ
@@ -40,22 +34,13 @@ evaluateLit : Vec Bool n → Lit n → Bool
 evaluateLit bs (↪ x) = lookup bs x
 evaluateLit bs (! x) = not (lookup bs x)
 
-evaluateClause : Vec Bool n → Clause n → Bool
-evaluateClause bs (last x) = evaluateLit bs x
-evaluateClause bs (x ∨ y) = or (evaluateLit bs x) (evaluateClause bs y)
-
-
-evaluate : Vec Bool n → CNF n → Bool
-evaluate bs (last x) = evaluateClause bs x
-evaluate bs (x ∧ y) = and (evaluateClause bs x) (evaluate bs y)
-
 open import Data.List using (List; _∷_; []; foldr)
 
-evaluateClause' : Vec Bool n → List (Lit n) → Bool
-evaluateClause' bs = foldr (λ l lo → or (evaluateLit bs l) lo) false
+evaluateClause : Vec Bool n → List (Lit n) → Bool
+evaluateClause bs = foldr (λ l lo → evaluateLit bs l ∨ lo) false
 
-evaluate' : Vec Bool n → List (List (Lit n)) → Bool
-evaluate' bs = foldr (λ cl hi → and (evaluateClause' bs cl) hi) true
+evaluate : Vec Bool n → List (List (Lit n)) → Bool
+evaluate bs = foldr (λ cl hi → evaluateClause bs cl ∧ hi) true
 
 
 module Example where
@@ -65,9 +50,10 @@ module Example where
   x₃ = suc (suc zero)
 
   test : CNF 3
-  test = (↪ x₁ ∨ last (! x₂))
-      ∧ (! x₁ ∨ ↪ x₂ ∨ last (↪ x₃))
-      ∧ last (last (! x₁))
+  test = (↪ x₁ ∷ ! x₂ ∷ [])
+      ∷ (! x₁ ∷ ↪ x₂ ∷ ↪ x₃ ∷ [])
+      ∷ (! x₁ ∷ [])
+      ∷ []
 
   open import Relation.Binary.PropositionalEquality
 
