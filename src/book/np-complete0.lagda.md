@@ -30,17 +30,17 @@ module _ (n : ℕ) where
 private variable
   n : ℕ
 
-evaluateLit : Vec Bool n → Lit n → Bool
-evaluateLit bs (↪ x) = lookup bs x
-evaluateLit bs (! x) = not (lookup bs x)
+_↓ˡ_ : Lit n → Vec Bool n → Bool
+_↓ˡ_ (↪ x) bs = lookup bs x
+_↓ˡ_ (! x) bs = not (lookup bs x)
 
 open import Data.List using (List; _∷_; []; foldr)
 
-evaluateClause : Vec Bool n → List (Lit n) → Bool
-evaluateClause bs = foldr (λ l lo → evaluateLit bs l ∨ lo) false
+_↓ᶜ_ : List (Lit n) → Vec Bool n → Bool
+_↓ᶜ_ cl bs = foldr (λ l lo → (l ↓ˡ bs) ∨ lo) false cl
 
-evaluate : Vec Bool n → List (List (Lit n)) → Bool
-evaluate bs = foldr (λ cl hi → evaluateClause bs cl ∧ hi) true
+_↓_ : List (List (Lit n)) → Vec Bool n → Bool
+_↓_ cnf bs = foldr (λ cl hi → (cl ↓ᶜ bs) ∧ hi) true cnf
 
 
 module Example where
@@ -57,6 +57,6 @@ module Example where
 
   open import Relation.Binary.PropositionalEquality
 
-  _ : evaluate (false ∷ false ∷ true ∷ []) test ≡ true
+  _ : test ↓ (false ∷ false ∷ true ∷ []) ≡ true
   _ = refl
 ```

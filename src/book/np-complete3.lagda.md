@@ -31,16 +31,16 @@ data δ : State × Instr n → State × Instr n × MoveDirection → Set where
   ⟶val
       : {x : Lit n} {lo hi : Bool}
       → δ ((lo , hi)                       , val x)
-          ((lo , hi ∨ evaluateLit bs x) , nop , R)
+          ((lo , hi ∨ (x ↓ˡ bs)) , nop , R)
 
 data Halted : State × Instr n → Set where
   halted : {q : State} → Halted (q , nop)
 
-compileClause : Clause n → List (Instr n)
-compileClause ls = map val ls ∷ʳ pop
+⌊_⌋ᶜ : Clause n → List (Instr n)
+⌊_⌋ᶜ ls = map val ls ∷ʳ pop
 
-compile : CNF n → List (Instr n)
-compile = concatMap compileClause
+⌊_⌋ : CNF n → List (Instr n)
+⌊_⌋ = concatMap ⌊_⌋ᶜ
 
 
 open import Relation.Nullary using (¬_)
@@ -72,8 +72,8 @@ equivClause
     : (lo hi : Bool)
     → (rs : List (Instr n))
     → (cl : Clause n)
-    → ((lo , hi) , mkTape (compileClause cl ++ rs)) ⟶
-      ( (lo ∧ (hi ∨ evaluateClause bs cl) , false)
+    → ((lo , hi) , mkTape (⌊ cl ⌋ᶜ ++ rs)) ⟶
+      ( (lo ∧ (hi ∨ (cl ↓ᶜ bs)) , false)
       , mkTape rs
       )
 equivClause lo hi rs [] =
@@ -89,17 +89,17 @@ equivClause lo hi rs [] =
   where open ⟶-Reasoning
 equivClause lo hi rs (x ∷ xs) =
   begin
-    (lo , hi) , mkTape (compileClause (x ∷ xs) ++ rs)
+    (lo , hi) , mkTape (⌊ x ∷ xs ⌋ᶜ ++ rs)
   ≡⟨⟩
     (lo , hi) , tape [] (val x) ((map val xs ++ (pop ∷ [])) ++ rs)
   ≈⟨ step ⟶val ⟩
-    (lo , hi ∨ evaluateLit bs x) , move R (tape [] nop (compileClause xs ++ rs))
-  ≡⟨ cong (_ ,_) (lemma₁ (compileClause xs ++ rs)) ⟩
-    (lo , hi ∨ evaluateLit bs x) , mkTape (compileClause xs ++ rs)
-  ≈⟨ equivClause lo (hi ∨ evaluateLit bs x) rs xs ⟩
-    (lo ∧ ((hi ∨ evaluateLit bs x) ∨ evaluateClause bs xs) , false) , mkTape rs
-  ≡⟨ cong (λ φ → (lo ∧ φ , false) , mkTape rs) (∨-assoc hi (evaluateLit bs x) (evaluateClause bs xs)) ⟩
-    (lo ∧ (hi ∨ evaluateClause bs (x ∷ xs)) , false) , mkTape rs
+    (lo , hi ∨ (x ↓ˡ bs)) , move R (tape [] nop (⌊ xs ⌋ᶜ ++ rs))
+  ≡⟨ cong (_ ,_) (lemma₁ (⌊ xs ⌋ᶜ ++ rs)) ⟩
+    (lo , hi ∨ (x ↓ˡ bs)) , mkTape (⌊ xs ⌋ᶜ ++ rs)
+  ≈⟨ equivClause lo (hi ∨ (x ↓ˡ bs)) rs xs ⟩
+    (lo ∧ ((hi ∨ (x ↓ˡ bs)) ∨ (xs ↓ᶜ bs)) , false) , mkTape rs
+  ≡⟨ cong (λ φ → (lo ∧ φ , false) , mkTape rs) (∨-assoc hi (x ↓ˡ bs) (xs ↓ᶜ bs)) ⟩
+    (lo ∧ (hi ∨ ((x ∷ xs) ↓ᶜ bs)) , false) , mkTape rs
   ∎
   where open ⟶-Reasoning
 
@@ -108,34 +108,34 @@ open import Function using (flip; _$_)
 equiv
     : (lo : Bool)
     → (cnf : CNF n)
-    → HaltsWith ((lo , false) , mkTape (compile cnf))
-                ((lo ∧ evaluate bs cnf) , false)
+    → HaltsWith ((lo , false) , mkTape ⌊ cnf ⌋)
+                ((lo ∧ (cnf ↓ bs)) , false)
 equiv lo [] = flip halts-with halted $
   begin
-    (lo , false) , mkTape (compile [])
+    (lo , false) , mkTape ⌊ [] ⌋
   ≡⟨ cong (λ φ → (φ , _) , _) (sym (∧-identityʳ lo)) ⟩
-    (lo ∧ true , false) , mkTape (compile [])
+    (lo ∧ true , false) , mkTape ⌊ [] ⌋
   ∎
   where open ⟶-Reasoning
 equiv lo (x ∷ cnf) =
   halts-glue
     ( begin
-        (lo , false) , mkTape (compile (x ∷ cnf))
+        (lo , false) , mkTape ⌊ x ∷ cnf ⌋
       ≡⟨⟩
-        (lo , false) , mkTape (compileClause x ++ compile cnf)
-      ≈⟨ equivClause lo false (compile cnf) x ⟩
-        (lo ∧ evaluateClause bs x , false) , mkTape (compile cnf)
+        (lo , false) , mkTape (⌊ x ⌋ᶜ ++ ⌊ cnf ⌋)
+      ≈⟨ equivClause lo false ⌊ cnf ⌋ x ⟩
+        (lo ∧ (x ↓ᶜ bs) , false) , mkTape ⌊ cnf ⌋
       ∎
     )
     (subst-halts refl (cong (_, false)
-      (∧-assoc lo (evaluateClause bs x) (evaluate bs cnf)))
-      (equiv (lo ∧ evaluateClause bs x) cnf)
+      (∧-assoc lo ((x ↓ᶜ bs)) ((cnf ↓ bs))))
+      (equiv (lo ∧ (x ↓ᶜ bs)) cnf)
     )
   where open ⟶-Reasoning
 
 DONE : (cnf : CNF n)
-     → HaltsWith ((true , false) , mkTape (compile cnf))
-                 (evaluate bs cnf , false)
+     → HaltsWith ((true , false) , mkTape ⌊ cnf ⌋)
+                 ((cnf ↓ bs) , false)
 DONE = equiv true
 
 ```
