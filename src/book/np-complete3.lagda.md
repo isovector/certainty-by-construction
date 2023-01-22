@@ -1,7 +1,7 @@
 ```agda
 open import Data.Bool
   using (Bool; true; false; not; _∨_; _∧_)
-open import Data.Nat using (ℕ; _+_)
+open import Data.Nat using (ℕ; _+_; _∸_)
 open import Data.Vec using (Vec)
 
 -- SAT
@@ -143,6 +143,37 @@ DONE : (cnf : CNF n)
      → HaltsWith ((true , false) , mkTape ⌊ cnf ⌋)
                  ((cnf ↓ bs) , false)
 DONE = equiv true
+
+open import Relation.Binary.PropositionalEquality as PropEq
+open import Data.List.Relation.Unary.All using (All)
+open import Data.Empty
+
+yo
+  : (l₁ l₂ : _)
+  → All (_≢ nop) l₁
+  → All (_≢ nop) l₂
+  → mkTape l₁ ≡ mkTape l₂
+  → length l₁ ≡ length l₂
+yo [] [] x x₁ x₂ = refl
+yo [] (.nop ∷ .[]) _ (px All.∷ x₁) refl = ⊥-elim (px refl)
+yo (.nop ∷ .[]) [] (px All.∷ x) _ refl = ⊥-elim (px refl)
+yo (x₃ ∷ l₁) (.x₃ ∷ .l₁) _ _ refl = refl
+
+linear-time
+  : {q₁ q₂ : State}
+    {t₁ t₂ : Tape}
+    {m : ℕ}
+  → (l₁ l₂ : List (Instr n))
+  → t₁ ≡ mkTape l₁
+  → t₂ ≡ mkTape l₂
+  → All (_≢ nop) l₁
+  → All (_≢ nop) l₂
+  → (q₁ , t₁) -⟨ m ⟩→ (q₂ , t₂)
+  → m + length l₂ ≡ length l₁
+linear-time l₁ l₂ refl x₁ x₂ x₃ refl = yo l₂ l₁ x₃ x₂ (sym x₁)
+linear-time l₁ l₂ refl x₁ x₂ x₃ (trans x₄ x₅) = {! !}
+linear-time (x ∷ l₁) l₂ refl x₁ (px All.∷ x₂) x₃ (step x₄)
+  rewrite yo l₂ l₁ x₃ x₂ ? = {! !}
 
 ```
 
