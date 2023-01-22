@@ -31,7 +31,7 @@ module _ (n : ℕ) where
   data Instr : Set where
     pop : Instr
     val : Lit → Instr
-    halt : Instr
+    nop : Instr
 
 private variable
   n : ℕ
@@ -44,9 +44,18 @@ evaluateClause : Vec Bool n → Clause n → Bool
 evaluateClause bs (last x) = evaluateLit bs x
 evaluateClause bs (x ∨ y) = or (evaluateLit bs x) (evaluateClause bs y)
 
+
 evaluate : Vec Bool n → CNF n → Bool
 evaluate bs (last x) = evaluateClause bs x
 evaluate bs (x ∧ y) = and (evaluateClause bs x) (evaluate bs y)
+
+open import Data.List using (List; _∷_; []; foldr)
+
+evaluateClause' : Vec Bool n → List (Lit n) → Bool
+evaluateClause' bs = foldr (λ l lo → or (evaluateLit bs l) lo) false
+
+evaluate' : Vec Bool n → List (List (Lit n)) → Bool
+evaluate' bs = foldr (λ cl hi → and (evaluateClause' bs cl) hi) true
 
 
 module Example where
