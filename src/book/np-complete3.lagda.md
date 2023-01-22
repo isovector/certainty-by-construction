@@ -1,7 +1,7 @@
 ```agda
 open import Data.Bool
   using (Bool; true; false; not; _∨_; _∧_)
-open import Data.Nat using (ℕ)
+open import Data.Nat using (ℕ; _+_)
 open import Data.Vec using (Vec)
 
 -- SAT
@@ -68,11 +68,15 @@ lemma₁ : (rs : List (Instr n)) → move R (tape [] nop rs) ≡ mkTape rs
 lemma₁ [] = refl
 lemma₁ (x ∷ rs) = refl
 
+open import Data.Nat.Properties
+open import Data.List.Properties
+import Relation.Binary.PropositionalEquality as PropEq
+
 equivClause
     : (lo hi : Bool)
     → (rs : List (Instr n))
     → (cl : Clause n)
-    → ((lo , hi) , mkTape (⌊ cl ⌋ᶜ ++ rs)) ⟶
+    → ((lo , hi) , mkTape (⌊ cl ⌋ᶜ ++ rs)) -⟨ length ⌊ cl ⌋ᶜ ⟩→
       ( (lo ∧ (hi ∨ (cl ↓ᶜ bs)) , false)
       , mkTape rs
       )
@@ -92,6 +96,8 @@ equivClause lo hi rs (x ∷ xs) =
     (lo , hi) , mkTape (⌊ x ∷ xs ⌋ᶜ ++ rs)
   ≡⟨⟩
     (lo , hi) , tape [] (val x) ((map val xs ++ (pop ∷ [])) ++ rs)
+  ≡ᵀ⟨ +-comm (length ⌊ xs ⌋ᶜ) 1 ⟩
+    _
   ≈⟨ step ⟶val ⟩
     (lo , hi ∨ (x ↓ˡ bs)) , move R (tape [] nop (⌊ xs ⌋ᶜ ++ rs))
   ≡⟨ cong (_ ,_) (lemma₁ (⌊ xs ⌋ᶜ ++ rs)) ⟩
