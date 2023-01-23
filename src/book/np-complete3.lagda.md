@@ -145,7 +145,7 @@ DONE : (cnf : CNF n)
 DONE = equiv true
 
 open import Relation.Binary.PropositionalEquality as PropEq
-open import Data.List.Relation.Unary.All using (All)
+open import Data.List.Relation.Unary.All using (All; []; _∷_)
 open import Data.Empty
 
 
@@ -158,27 +158,49 @@ linear-time
   → (q₁ , mkTape l₁) -⟨ m ⟩→ (q₂ , mkTape l₂)
   → m + length l₂ ≡ length l₁
 linear-time [] [] _ _ refl = refl
-linear-time [] (_ ∷ .[]) _ (nop≠nop All.∷ _) refl = ⊥-elim (nop≠nop refl)
-linear-time _ [] (nop≠nop All.∷ _) _ refl = ⊥-elim (nop≠nop refl)
-linear-time (_ ∷ l₁) [] (_ All.∷ nop∌l₁) _ (step-with ⟶pop x₄)
-  = cong suc (linear-time l₁ [] nop∌l₁ All.[] (⟶-subst (cong (_ ,_) (lemma₁ l₁)) refl refl x₄))
-linear-time (_ ∷ l₁) [] (_ All.∷ nop∌l₁) _ (step-with ⟶val x₄)
-  = cong suc (linear-time l₁ [] nop∌l₁ All.[] (⟶-subst (cong (_ ,_) (lemma₁ l₁)) refl refl x₄))
+linear-time [] (_ ∷ .[]) _ (nop≠nop ∷ _) refl = ⊥-elim (nop≠nop refl)
+linear-time _ [] (nop≠nop ∷ _) _ refl = ⊥-elim (nop≠nop refl)
+linear-time (_ ∷ l₁) [] (_ ∷ nop∌l₁) _ (step-with ⟶pop x₄)
+  = cong suc
+  $ linear-time l₁ [] nop∌l₁ []
+  $ ⟶-subst (cong (_ ,_) (lemma₁ l₁)) refl refl x₄
+linear-time (_ ∷ l₁) [] (_ ∷ nop∌l₁) _ (step-with ⟶val x₄)
+  = cong suc
+  $ linear-time l₁ [] nop∌l₁ []
+  $ ⟶-subst (cong (_ ,_) (lemma₁ l₁)) refl refl x₄
 linear-time (x₃ ∷ l₁) (.x₃ ∷ .l₁) _ _ refl = refl
-linear-time (_ ∷ l₁) l₂@(_ ∷ _) (_ All.∷ nop∌l₁) nops (step-with ⟶pop x₅) =
+linear-time (_ ∷ l₁) l₂@(_ ∷ _) (_ ∷ nop∌l₁) nops (step-with ⟶pop x₅) =
   begin
     suc _ + length l₂
-  ≡⟨ cong suc (linear-time l₁ l₂ nop∌l₁ nops (⟶-subst (cong (_ ,_) (lemma₁ l₁)) refl refl x₅)) ⟩
+  ≡⟨ cong suc $ linear-time l₁ l₂ nop∌l₁ nops
+              $ ⟶-subst (cong (_ ,_) (lemma₁ l₁)) refl refl x₅ ⟩
     length (pop ∷ l₁)
   ∎
   where open ≡-Reasoning
-linear-time (_ ∷ l₁) l₂@(_ ∷ _) (_ All.∷ nop∌l₁) nops (step-with (⟶val {x = x}) x₅) =
+linear-time (_ ∷ l₁) l₂@(_ ∷ _) (_ ∷ nop∌l₁) nops (step-with (⟶val {x = x}) x₅) =
   begin
     suc _ + length l₂
-  ≡⟨ cong suc (linear-time l₁ l₂ nop∌l₁ nops (⟶-subst (cong (_ ,_) (lemma₁ l₁)) refl refl x₅)) ⟩
+  ≡⟨ cong suc $ linear-time l₁ l₂ nop∌l₁ nops
+              $ ⟶-subst (cong (_ ,_) (lemma₁ l₁)) refl refl x₅ ⟩
     length (val x ∷ l₁)
   ∎
   where open ≡-Reasoning
+
+nop∌⌊⌋ᶜ : ∀ x → All (_≢ nop) ⌊ x ⌋ᶜ
+nop∌⌊⌋ᶜ [] = (λ ()) ∷ []
+nop∌⌊⌋ᶜ (x ∷ x₁) = (λ ()) ∷ nop∌⌊⌋ᶜ x₁
+
+All++
+    : {l₁ l₂ : List (Instr n)}
+    → All (_≢ nop) l₁
+    → All (_≢ nop) l₂
+    → All (_≢ nop) (l₁ ++ l₂)
+All++ [] x₁ = x₁
+All++ (px ∷ x) x₁ = px ∷ All++ x x₁
+
+nop∌⌊⌋ : ∀ x → All (_≢ nop) ⌊ x ⌋
+nop∌⌊⌋ [] = []
+nop∌⌊⌋ (x ∷ x₁) = All++ (nop∌⌊⌋ᶜ x) (nop∌⌊⌋ x₁)
 
 
 ```
