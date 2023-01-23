@@ -5,7 +5,7 @@ open import Data.Nat using (ℕ; _+_; suc)
 open import Data.Vec using (Vec)
 
 -- SAT
-module np-complete3 (n : ℕ) (bs : Vec Bool n) where
+module np-complete3 (Name : Set) (bs : Name → Bool) where
 
 open import np-complete0
 open import Data.Fin using (Fin)
@@ -23,23 +23,23 @@ State = Bool × Bool
 
 open import np-complete1 using (MoveDirection; L; R)
 
-data δ : State × Instr n → State × Instr n × MoveDirection → Set where
+data δ : State × Instr Name → State × Instr Name × MoveDirection → Set where
   ⟶pop
       : {lo hi : Bool}
       → δ ((lo , hi)           , pop)
           ((lo ∧ hi , false) , nop , R)
   ⟶val
-      : {x : Lit n} {lo hi : Bool}
+      : {x : Lit Name} {lo hi : Bool}
       → δ ((lo , hi)                       , val x)
           ((lo , hi ∨ (x ↓ˡ bs)) , nop , R)
 
-data Halted : State × Instr n → Set where
+data Halted : State × Instr Name → Set where
   halted : {q : State} → Halted (q , nop)
 
-⌊_⌋ᶜ : Clause n → List (Instr n)
+⌊_⌋ᶜ : Clause Name → List (Instr Name)
 ⌊_⌋ᶜ ls = map val ls ∷ʳ pop
 
-⌊_⌋ : CNF n → List (Instr n)
+⌊_⌋ : CNF Name → List (Instr Name)
 ⌊_⌋ = concatMap ⌊_⌋ᶜ
 
 
@@ -48,15 +48,15 @@ open import Relation.Nullary using (¬_)
 is-halted : ∀ {qi} → Halted qi → ∀ qir → ¬ δ qi qir
 is-halted halted _ ()
 
-b-dec : Decidable (_≡ nop {n = n})
+b-dec : Decidable (_≡ nop {Name = Name})
 b-dec pop = no λ ()
 b-dec (val x) = no λ ()
 b-dec nop = yes refl
 
-open import np-complete2 (Instr n) State δ Halted is-halted nop b-dec public
+open import np-complete2 (Instr Name) State δ Halted is-halted nop b-dec public
 
 
-mkTape : List (Instr n) → Tape
+mkTape : List (Instr Name) → Tape
 mkTape [] = tape [] nop []
 mkTape (r ∷ rs)  = tape [] r rs
 
@@ -64,7 +64,7 @@ mkTape (r ∷ rs)  = tape [] r rs
 open import Relation.Binary.PropositionalEquality using (cong; sym)
 open import Data.Bool.Properties using (∨-assoc; ∧-assoc; ∨-identityʳ; ∧-identityʳ)
 
-lemma₁ : (rs : List (Instr n)) → move R (tape [] nop rs) ≡ mkTape rs
+lemma₁ : (rs : List (Instr Name)) → move R (tape [] nop rs) ≡ mkTape rs
 lemma₁ [] = refl
 lemma₁ (x ∷ rs) = refl
 
@@ -73,8 +73,8 @@ open import Data.List.Properties
 
 equivClause
     : (lo hi : Bool)
-    → (rs : List (Instr n))
-    → (cl : Clause n)
+    → (rs : List (Instr Name))
+    → (cl : Clause Name)
     → ((lo , hi) , mkTape (⌊ cl ⌋ᶜ ++ rs)) -⟨ length ⌊ cl ⌋ᶜ ⟩→
       ( (lo ∧ (hi ∨ (cl ↓ᶜ bs)) , false)
       , mkTape rs
@@ -112,11 +112,11 @@ open import Function using (flip; _$_; _∘_)
 
 equiv
     : (lo : Bool)
-    → (cnf : CNF n)
+    → (cnf : CNF Name)
     → HaltsWith ((lo , false) , mkTape ⌊ cnf ⌋)
                 ((lo ∧ (cnf ↓ bs)) , false)
                 (length ⌊ cnf ⌋)
-equiv lo [] = flip halts-with halted $
+equiv lo [] = flip (halts-with _) halted $
   begin
     (lo , false) , mkTape ⌊ [] ⌋
   ≡⟨ cong (λ φ → (φ , _) , _) (sym (∧-identityʳ lo)) ⟩
@@ -141,7 +141,7 @@ equiv lo (x ∷ cnf)
       (equiv (lo ∧ (x ↓ᶜ bs)) cnf)
   where open ⟶-Reasoning
 
-DONE : (cnf : CNF n)
+DONE : (cnf : CNF Name)
      → HaltsWith ((true , false) , mkTape ⌊ cnf ⌋)
                  ((cnf ↓ bs)     , false)
                  (length ⌊ cnf ⌋)
@@ -155,7 +155,7 @@ open import Data.Empty
 linear-time
   : {q₁ q₂ : State}
     {m : ℕ}
-  → (l₁ l₂ : List (Instr n))
+  → (l₁ l₂ : List (Instr Name))
   → All (_≢ nop) l₁
   → All (_≢ nop) l₂
   → (q₁ , mkTape l₁) -⟨ m ⟩→ (q₂ , mkTape l₂)
@@ -194,7 +194,7 @@ nop∌⌊⌋ᶜ [] = (λ ()) ∷ []
 nop∌⌊⌋ᶜ (x ∷ x₁) = (λ ()) ∷ nop∌⌊⌋ᶜ x₁
 
 All++
-    : {l₁ l₂ : List (Instr n)}
+    : {l₁ l₂ : List (Instr Name)}
     → All (_≢ nop) l₁
     → All (_≢ nop) l₂
     → All (_≢ nop) (l₁ ++ l₂)

@@ -11,10 +11,10 @@ open import Data.Bool
 open import Data.List using (List)
 
 
-module _ (n : ℕ) where
+module _ (Name : Set) where
   data Lit  : Set where
-    ↪ : Fin n → Lit
-    ! : Fin n → Lit
+    ↪ : Name → Lit
+    ! : Name → Lit
 
   data Instr : Set where
     pop : Instr
@@ -28,18 +28,18 @@ module _ (n : ℕ) where
   CNF = List Clause
 
 private variable
-  n : ℕ
+  Name : Set
 
-_↓ˡ_ : Lit n → Vec Bool n → Bool
-_↓ˡ_ (↪ x) bs = lookup bs x
-_↓ˡ_ (! x) bs = not (lookup bs x)
+_↓ˡ_ : Lit Name → (Name → Bool) → Bool
+_↓ˡ_ (↪ x) bs = bs x
+_↓ˡ_ (! x) bs = not (bs x)
 
 open import Data.List using (List; _∷_; []; foldr)
 
-_↓ᶜ_ : List (Lit n) → Vec Bool n → Bool
+_↓ᶜ_ : List (Lit Name) → (Name → Bool) → Bool
 _↓ᶜ_ cl bs = foldr (λ l lo → (l ↓ˡ bs) ∨ lo) false cl
 
-_↓_ : List (List (Lit n)) → Vec Bool n → Bool
+_↓_ : List (List (Lit Name)) → (Name → Bool) → Bool
 _↓_ cnf bs = foldr (λ cl hi → (cl ↓ᶜ bs) ∧ hi) true cnf
 
 
@@ -49,7 +49,7 @@ module Example where
   x₂ = suc zero
   x₃ = suc (suc zero)
 
-  test : CNF 3
+  test : CNF (Fin 3)
   test = (↪ x₁ ∷ ! x₂ ∷ [])
       ∷ (! x₁ ∷ ↪ x₂ ∷ ↪ x₃ ∷ [])
       ∷ (! x₁ ∷ [])
@@ -57,6 +57,6 @@ module Example where
 
   open import Relation.Binary.PropositionalEquality
 
-  _ : test ↓ (false ∷ false ∷ true ∷ []) ≡ true
+  _ : test ↓ (lookup (false ∷ false ∷ true ∷ [])) ≡ true
   _ = refl
 ```

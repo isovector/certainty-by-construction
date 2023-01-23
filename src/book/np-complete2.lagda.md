@@ -65,12 +65,12 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl)
     → qt₁' -⟨ n' ⟩→ qt₂'
 ⟶-subst refl refl refl x = x
 
-data HaltsWith (qt : Q × Tape) (q : Q) (n : ℕ)  : Set where
-  halts-with
-      : {t : Tape}
-      → qt -⟨ n ⟩→ (q , t)
-      → H (q , Tape.head t)
-      → HaltsWith qt q n
+record HaltsWith (qt : Q × Tape) (q : Q) (n : ℕ) : Set where
+  constructor halts-with
+  field
+    final-tape : Tape
+    arr : qt -⟨ n ⟩→ (q , final-tape)
+    is-halted : H (q , Tape.head final-tape)
 
 subst-halts
   : {qt qt' : Q × Tape} {q q' : Q} {n n' : ℕ}
@@ -86,9 +86,9 @@ halts-glue
   → qt₁ -⟨ n₁ ⟩→ qt₂
   → HaltsWith qt₂ q n₂
   → HaltsWith qt₁ q (n₁ + n₂)
-halts-glue {n₁ = n₁} {n₂} x₁ (halts-with x₂ h)
+halts-glue {n₁ = n₁} {n₂} x₁ (halts-with t x₂ h)
   = subst-halts refl refl (+-comm n₂ n₁)
-   (halts-with (trans x₁ x₂) h)
+   (halts-with t (trans x₁ x₂) h)
 
 module ⟶-Reasoning where
   begin_ : ∀ {qt₁ qt₂ n}

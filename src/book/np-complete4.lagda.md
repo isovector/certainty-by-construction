@@ -10,6 +10,7 @@ open import Relation.Binary.PropositionalEquality using (_≡_)
 open import sets
 open import 8-iso using (Equivalent)
 open import Agda.Primitive using (Level; lzero; lsuc)
+open import Data.Nat
 
 record TuringMachine (Γ Q : Set) : Set₁ where
   field
@@ -25,9 +26,23 @@ module TmToSat {Γ Q : Set} (tm : TuringMachine Γ Q) where
   open TuringMachine tm
   open import np-complete2 Γ Q δ H halted b b-dec
 
-  -- module _ (arr :
+  module _ {qt : Q × Tape} {q : Q} {n : ℕ} (hw : HaltsWith qt q n) where
 
-  open import np-complete3
+    arr : qt -⟨ n ⟩→ (q , HaltsWith.final-tape hw)
+    arr = HaltsWith.arr hw
+
+    TapeCell : Set
+    TapeCell = ℕ
+
+    TimeCell : Set
+    TimeCell = ℕ
+
+    data SLit : Set where
+      tape-contents : TapeCell → Γ → TimeCell → SLit
+      tape-position : TapeCell → TimeCell → SLit
+      state-at-time : TimeCell → Q → SLit
+
+    open import np-complete3 SLit
 
 
 ```
