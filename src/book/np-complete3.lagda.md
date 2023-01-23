@@ -115,6 +115,7 @@ equiv
     → (cnf : CNF n)
     → HaltsWith ((lo , false) , mkTape ⌊ cnf ⌋)
                 ((lo ∧ (cnf ↓ bs)) , false)
+                (length ⌊ cnf ⌋)
 equiv lo [] = flip halts-with halted $
   begin
     (lo , false) , mkTape ⌊ [] ⌋
@@ -122,28 +123,31 @@ equiv lo [] = flip halts-with halted $
     (lo ∧ true , false) , mkTape ⌊ [] ⌋
   ∎
   where open ⟶-Reasoning
-equiv lo (x ∷ cnf) =
-  halts-glue
-    ( begin
-        (lo , false) , mkTape ⌊ x ∷ cnf ⌋
-      ≡⟨⟩
-        (lo , false) , mkTape (⌊ x ⌋ᶜ ++ ⌊ cnf ⌋)
-      ≈⟨ equivClause lo false ⌊ cnf ⌋ x ⟩
-        (lo ∧ (x ↓ᶜ bs) , false) , mkTape ⌊ cnf ⌋
-      ∎
-    )
-    (subst-halts refl (cong (_, false)
-      (∧-assoc lo ((x ↓ᶜ bs)) ((cnf ↓ bs))))
+equiv lo (x ∷ cnf)
+  = subst-halts refl refl (sym (length-++ ⌊ x ⌋ᶜ))
+  $ halts-glue
+      ( begin
+          (lo , false) , mkTape ⌊ x ∷ cnf ⌋
+        ≡⟨⟩
+          (lo , false) , mkTape (⌊ x ⌋ᶜ ++ ⌊ cnf ⌋)
+        ≈⟨ equivClause lo false ⌊ cnf ⌋ x ⟩
+          (lo ∧ (x ↓ᶜ bs) , false) , mkTape ⌊ cnf ⌋
+        ∎
+      )
+  $ subst-halts
+      refl
+      (cong (_, false) (∧-assoc lo ((x ↓ᶜ bs)) ((cnf ↓ bs))))
+      refl
       (equiv (lo ∧ (x ↓ᶜ bs)) cnf)
-    )
   where open ⟶-Reasoning
 
 DONE : (cnf : CNF n)
      → HaltsWith ((true , false) , mkTape ⌊ cnf ⌋)
-                 ((cnf ↓ bs) , false)
+                 ((cnf ↓ bs)     , false)
+                 (length ⌊ cnf ⌋)
 DONE = equiv true
 
-open import Relation.Binary.PropositionalEquality as PropEq
+open import Relation.Binary.PropositionalEquality
 open import Data.List.Relation.Unary.All using (All; []; _∷_)
 open import Data.Empty
 

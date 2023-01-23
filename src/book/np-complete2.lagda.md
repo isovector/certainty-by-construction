@@ -65,28 +65,30 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl)
     → qt₁' -⟨ n' ⟩→ qt₂'
 ⟶-subst refl refl refl x = x
 
-data HaltsWith (qt : Q × Tape) (q : Q) : Set where
+data HaltsWith (qt : Q × Tape) (q : Q) (n : ℕ)  : Set where
   halts-with
-      : {t : Tape} {n : ℕ}
+      : {t : Tape}
       → qt -⟨ n ⟩→ (q , t)
       → H (q , Tape.head t)
-      → HaltsWith qt q
-
-halts-glue
-  : {qt₁ qt₂ : Q × Tape} {q : Q} {n : ℕ}
-  → qt₁ -⟨ n ⟩→ qt₂
-  → HaltsWith qt₂ q
-  → HaltsWith qt₁ q
-halts-glue x₁ (halts-with x₂ h) =
-  halts-with (trans x₁ x₂) h
+      → HaltsWith qt q n
 
 subst-halts
-  : {qt qt' : Q × Tape} {q q' : Q}
+  : {qt qt' : Q × Tape} {q q' : Q} {n n' : ℕ}
   → qt ≡ qt'
   → q ≡ q'
-  → HaltsWith qt q
-  → HaltsWith qt' q'
-subst-halts refl refl x = x
+  → n ≡ n'
+  → HaltsWith qt q n
+  → HaltsWith qt' q' n'
+subst-halts refl refl refl x = x
+
+halts-glue
+  : {qt₁ qt₂ : Q × Tape} {q : Q} {n₁ n₂ : ℕ}
+  → qt₁ -⟨ n₁ ⟩→ qt₂
+  → HaltsWith qt₂ q n₂
+  → HaltsWith qt₁ q (n₁ + n₂)
+halts-glue {n₁ = n₁} {n₂} x₁ (halts-with x₂ h)
+  = subst-halts refl refl (+-comm n₂ n₁)
+   (halts-with (trans x₁ x₂) h)
 
 module ⟶-Reasoning where
   begin_ : ∀ {qt₁ qt₂ n}
