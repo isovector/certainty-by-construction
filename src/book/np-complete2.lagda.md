@@ -21,23 +21,33 @@ moveWrite : MoveDirection → Γ → Tape → Tape
 moveWrite d i t = move d (write i t)
 
 
-open import Data.Nat using (ℕ; _+_)
+open import Data.Nat using (ℕ; _+_; suc)
 
 data _-⟨_⟩→_ : Q × Tape → ℕ → Q × Tape → Set where
   refl
       : {qt : Q × Tape}
       → qt -⟨ 0 ⟩→ qt
-  trans
-      : {qt₁ qt₂ qt₃ : Q × Tape}
-        {n₁ n₂ : ℕ }
+  step-with
+      : {i : Γ} {d : MoveDirection} {q₁ q₂ : Q} {t : Tape} {n : ℕ} {qt₃ : Q × Tape}
+      → δ (q₁ , Tape.head t) (q₂ , i , d)
+      → (q₂ , moveWrite d i t) -⟨ n ⟩→ qt₃
+      → (q₁ , t) -⟨ suc n ⟩→ qt₃
+open _-⟨_⟩→_
+
+open import Data.Nat.Properties
+
+trans : {qt₁ qt₂ qt₃ : Q × Tape} {n₁ n₂ : ℕ}
       → qt₁ -⟨ n₁ ⟩→ qt₂
       → qt₂ -⟨ n₂ ⟩→ qt₃
       → qt₁ -⟨ n₂ + n₁ ⟩→ qt₃
-  step
-      : {i : Γ} {d : MoveDirection} {q₁ q₂ : Q} {t : Tape}
+trans {n₂ = n₂} refl a₂ rewrite +-identityʳ n₂ = a₂
+trans {n₂ = n₂} (step-with {n = n} x a₁) a₂ rewrite +-suc n₂ n =
+  step-with x (trans a₁ a₂)
+
+step : {i : Γ} {d : MoveDirection} {q₁ q₂ : Q} {t : Tape}
       → δ (q₁ , Tape.head t) (q₂ , i , d)
       → (q₁ , t) -⟨ 1 ⟩→ (q₂ , moveWrite d i t)
-open _-⟨_⟩→_
+step x = step-with x refl
 
 _⟶_ : Q × Tape → Q × Tape → Set
 _⟶_ qt₁ qt₂ = ∀ {n : ℕ} → qt₁ -⟨ n ⟩→ qt₂
@@ -47,11 +57,13 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 
 ⟶-subst
     : {qt₁ qt₁' qt₂ qt₂' : Q × Tape}
+    → {n n' : ℕ}
     → qt₁ ≡ qt₁'
+    → n ≡ n'
     → qt₂ ≡ qt₂'
-    → qt₁ ⟶ qt₂
-    → qt₁' ⟶ qt₂'
-⟶-subst refl refl x = x
+    → qt₁ -⟨ n ⟩→ qt₂
+    → qt₁' -⟨ n' ⟩→ qt₂'
+⟶-subst refl refl refl x = x
 
 data HaltsWith (qt : Q × Tape) (q : Q) : Set where
   halts-with
@@ -60,20 +72,13 @@ data HaltsWith (qt : Q × Tape) (q : Q) : Set where
       → H (q , Tape.head t)
       → HaltsWith qt q
 
-data HaltsIn (qt : Q × Tape) (q : Q) (n : ℕ) : Set where
-  halts-in
-      : {t : Tape}
-      → qt -⟨ n ⟩→ (q , t)
-      → H (q , Tape.head t)
-      → HaltsIn qt q n
-
 halts-glue
   : {qt₁ qt₂ : Q × Tape} {q : Q} {n : ℕ}
   → qt₁ -⟨ n ⟩→ qt₂
   → HaltsWith qt₂ q
   → HaltsWith qt₁ q
 halts-glue x₁ (halts-with x₂ h) =
-  halts-with (_-⟨_⟩→_.trans x₁ x₂) h
+  halts-with (trans x₁ x₂) h
 
 subst-halts
   : {qt qt' : Q × Tape} {q q' : Q}

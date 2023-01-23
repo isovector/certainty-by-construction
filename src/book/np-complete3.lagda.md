@@ -1,7 +1,7 @@
 ```agda
 open import Data.Bool
   using (Bool; true; false; not; _∨_; _∧_)
-open import Data.Nat using (ℕ; _+_; _∸_)
+open import Data.Nat using (ℕ; _+_; suc)
 open import Data.Vec using (Vec)
 
 -- SAT
@@ -109,7 +109,7 @@ equivClause lo hi rs (x ∷ xs) =
   ∎
   where open ⟶-Reasoning
 
-open import Function using (flip; _$_)
+open import Function using (flip; _$_; _∘_)
 
 equiv
     : (lo : Bool)
@@ -148,32 +148,38 @@ open import Relation.Binary.PropositionalEquality as PropEq
 open import Data.List.Relation.Unary.All using (All)
 open import Data.Empty
 
-yo
-  : (l₁ l₂ : _)
-  → All (_≢ nop) l₁
-  → All (_≢ nop) l₂
-  → mkTape l₁ ≡ mkTape l₂
-  → length l₁ ≡ length l₂
-yo [] [] x x₁ x₂ = refl
-yo [] (.nop ∷ .[]) _ (px All.∷ x₁) refl = ⊥-elim (px refl)
-yo (.nop ∷ .[]) [] (px All.∷ x) _ refl = ⊥-elim (px refl)
-yo (x₃ ∷ l₁) (.x₃ ∷ .l₁) _ _ refl = refl
 
 linear-time
   : {q₁ q₂ : State}
-    {t₁ t₂ : Tape}
     {m : ℕ}
   → (l₁ l₂ : List (Instr n))
-  → t₁ ≡ mkTape l₁
-  → t₂ ≡ mkTape l₂
   → All (_≢ nop) l₁
   → All (_≢ nop) l₂
-  → (q₁ , t₁) -⟨ m ⟩→ (q₂ , t₂)
+  → (q₁ , mkTape l₁) -⟨ m ⟩→ (q₂ , mkTape l₂)
   → m + length l₂ ≡ length l₁
-linear-time l₁ l₂ refl x₁ x₂ x₃ refl = yo l₂ l₁ x₃ x₂ (sym x₁)
-linear-time l₁ l₂ refl x₁ x₂ x₃ (trans x₄ x₅) = {! !}
-linear-time (x ∷ l₁) l₂ refl x₁ (px All.∷ x₂) x₃ (step x₄)
-  rewrite yo l₂ l₁ x₃ x₂ ? = {! !}
+linear-time [] [] _ _ refl = refl
+linear-time [] (_ ∷ .[]) _ (nop≠nop All.∷ _) refl = ⊥-elim (nop≠nop refl)
+linear-time _ [] (nop≠nop All.∷ _) _ refl = ⊥-elim (nop≠nop refl)
+linear-time (_ ∷ l₁) [] (_ All.∷ nop∌l₁) _ (step-with ⟶pop x₄)
+  = cong suc (linear-time l₁ [] nop∌l₁ All.[] (⟶-subst (cong (_ ,_) (lemma₁ l₁)) refl refl x₄))
+linear-time (_ ∷ l₁) [] (_ All.∷ nop∌l₁) _ (step-with ⟶val x₄)
+  = cong suc (linear-time l₁ [] nop∌l₁ All.[] (⟶-subst (cong (_ ,_) (lemma₁ l₁)) refl refl x₄))
+linear-time (x₃ ∷ l₁) (.x₃ ∷ .l₁) _ _ refl = refl
+linear-time (_ ∷ l₁) l₂@(_ ∷ _) (_ All.∷ nop∌l₁) nops (step-with ⟶pop x₅) =
+  begin
+    suc _ + length l₂
+  ≡⟨ cong suc (linear-time l₁ l₂ nop∌l₁ nops (⟶-subst (cong (_ ,_) (lemma₁ l₁)) refl refl x₅)) ⟩
+    length (pop ∷ l₁)
+  ∎
+  where open ≡-Reasoning
+linear-time (_ ∷ l₁) l₂@(_ ∷ _) (_ All.∷ nop∌l₁) nops (step-with (⟶val {x = x}) x₅) =
+  begin
+    suc _ + length l₂
+  ≡⟨ cong suc (linear-time l₁ l₂ nop∌l₁ nops (⟶-subst (cong (_ ,_) (lemma₁ l₁)) refl refl x₅)) ⟩
+    length (val x ∷ l₁)
+  ∎
+  where open ≡-Reasoning
+
 
 ```
 
