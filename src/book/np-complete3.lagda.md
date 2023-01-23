@@ -16,12 +16,12 @@ open import Relation.Unary using (Decidable)
 open import Relation.Nullary using (yes; no)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 
-open import Data.Product using (_×_; _,_; Σ)
+open import Data.Product using (_×_; _,_)
 
 State : Set
 State = Bool × Bool
 
-open import np-complete1 using (MoveDirection; L; R) -- ; Tape; tape; move)
+open import np-complete1 using (MoveDirection; L; R)
 
 data δ : State × Instr n → State × Instr n × MoveDirection → Set where
   ⟶pop
@@ -70,7 +70,6 @@ lemma₁ (x ∷ rs) = refl
 
 open import Data.Nat.Properties
 open import Data.List.Properties
-import Relation.Binary.PropositionalEquality as PropEq
 
 equivClause
     : (lo hi : Bool)
