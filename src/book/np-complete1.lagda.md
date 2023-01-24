@@ -8,16 +8,47 @@ module np-complete1 where
 
 open import Relation.Nullary
 open import Data.List
-  using (List; _∷_; [])
+  using (List; _∷_; []; drop)
 
 data MoveDirection : Set where
   L R : MoveDirection
 
-module Tapes (Γ : Set) (b : Γ) (is-blank : Decidable (_≡ b)) where
+open import 8-iso using (Equivalent)
+open import Data.Product using (_×_; ∃)
+open import Data.Sum using (_⊎_)
+open import Agda.Primitive using (Level; lzero; lsuc)
+open import sets using (IsFinite)
+open import Relation.Binary.Definitions using (DecidableEquality)
+
+record TuringMachine (Γ Q : Set) : Set₁ where
+  field
+    _≟Γ_ : DecidableEquality Γ
+    _≟Q_ : DecidableEquality Q
+    δ : Q × Γ → Q × Γ × MoveDirection → Set
+    δ-deterministic
+      : (qt : Q × Γ)
+      → {o₁ o₂ : Q × Γ × MoveDirection}
+      → δ qt o₁ → δ qt o₂
+      → o₁ ≡ o₂
+    H : Q × Γ → Set
+    H-dec : Decidable H
+    step-or-halt
+      : (qi : Q × Γ)
+      → ∃ (δ qi) ⊎ H qi
+    b : Γ
+    b-dec : Decidable (_≡ b)
+    {{q-equiv}} : Equivalent lzero Q
+    q-finite : IsFinite Q
+
+
+module Tapes {Γ : Set} (b : Γ) (is-blank : Decidable (_≡ b)) where
+
+  open import Data.Integer using (ℤ; _+_; suc; pred)
 
   record Tape : Set where
     constructor tape
     field
+      index : ℤ
       left-of : List Γ
       head : Γ
       right-of : List Γ
@@ -29,11 +60,25 @@ module Tapes (Γ : Set) (b : Γ) (is-blank : Decidable (_≡ b)) where
   push x (y ∷ l) = x ∷ y ∷ l
 
   move : MoveDirection → Tape → Tape
-  move L (tape [] h r) = tape [] b (push h r)
-  move L (tape (x ∷ l) h r) = tape l x (push h r)
-  move R (tape l h []) = tape (push h l) b []
-  move R (tape l h (x ∷ r)) = tape (push h l) x r
+  move L (tape n [] h r)      = tape (pred n) [] b (push h r)
+  move L (tape n (x ∷ l) h r) = tape (pred n) l x (push h r)
+  move R (tape n l h [])      = tape (suc n) (push h l) b []
+  move R (tape n l h (x ∷ r)) = tape (suc n) (push h l) x r
 
   write : Γ → Tape → Tape
-  write a (tape l _ r) = tape l a r
+  write a (tape n l _ r) = tape n l a r
+
+  open import Data.Integer
+  open import Data.Integer.Properties
+  open import Relation.Binary
+  open import Data.Maybe using (fromMaybe)
+
+  read : ℤ → Tape → Γ
+  read m (tape n ls i rs) with <-cmp n m
+  ... | tri< n<m _ _ = fromMaybe b (Data.List.head (drop ∣ m - n ∣ rs))
+  ... | tri≈ _ n=m _ = i
+  ... | tri> _ _ n>m = fromMaybe b (Data.List.head (drop ∣ m - n ∣ ls))
+
+  postulate
+    read-invariant : ∀ m d t → read m t ≡ read m (move d t)
 ```

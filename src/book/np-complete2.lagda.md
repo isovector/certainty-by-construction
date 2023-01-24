@@ -1,30 +1,18 @@
 ```agda
 open import np-complete1
 open import Data.Product
-open import Relation.Nullary using (¬_; yes; no)
+open import Relation.Nullary using (¬_; yes; no; does)
 open import Relation.Unary using (Decidable)
 open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Data.Sum
 
 -- turing-machines
-module np-complete2
-  (Γ Q : Set)
-  (δ : Q × Γ → Q × Γ × MoveDirection → Set)
-  (δ-deterministic
-      : (qt : Q × Γ)
-      → {o₁ o₂ : Q × Γ × MoveDirection}
-      → δ qt o₁ → δ qt o₂
-      → o₁ ≡ o₂)
-  (H : Q × Γ → Set)
-  (H-dec : Decidable H)
-  (step-or-halt
-      : (qi : Q × Γ)
-      → ∃ (δ qi) ⊎ H qi)
-  (b : Γ)
-  (b-dec : Decidable (_≡ b))
-  where
+module np-complete2 {Γ Q : Set} (tm : TuringMachine Γ Q) where
 
-open Tapes Γ b b-dec public
+open TuringMachine tm
+
+open Tapes b b-dec public
+
 
 moveWrite : MoveDirection → Γ → Tape → Tape
 moveWrite d i t = move d (write i t)
@@ -158,6 +146,29 @@ module Properties where
     inj₁ (q0 , suc n' , halts-glue (step delta) hw , s≤s n'≤n)
   ... | inj₂ (y , arr) =
     inj₂ (y , step-with delta arr)
+
+  final-qt
+    : Q × Tape
+    → ℕ
+    → Q × Tape
+  final-qt qt₀ n with n⊃q qt₀ n
+  ... | inj₁ (q , _ , halts-with t _ _ , _) = (q , t)
+  ... | inj₂ (qt , _) = qt
+
+  open import Data.Bool
+
+  q-at-t-is : Q × Tape → ℕ → Q → Bool
+  q-at-t-is qt n q? = does (q? ≟Q proj₁ (final-qt qt n))
+
+  open import Data.Integer as ℤ using (ℤ)
+  import Data.Integer.Properties as ℤ
+
+  pos-at-t-is : Q × Tape → ℕ → ℤ → Bool
+  pos-at-t-is qt n pos? = does (pos? ℤ.≟ Tape.index (proj₂ (final-qt qt n)))
+
+  cell-at-t-is : Q × Tape → ℕ → ℤ → Γ → Bool
+  cell-at-t-is qt n cell i? = does (i? ≟Γ read cell (proj₂ (final-qt qt n)))
+
 
 ```
 
