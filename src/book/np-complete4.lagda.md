@@ -25,6 +25,7 @@ record TuringMachine (Γ Q : Set) : Set₁ where
 module TmToSat {Γ Q : Set} (tm : TuringMachine Γ Q) where
   open TuringMachine tm
   open import np-complete2 Γ Q δ H halted b b-dec
+  open import Data.Fin
 
   module _ {qt : Q × Tape} {q : Q} {n : ℕ} (hw : HaltsWith qt q n) where
 
@@ -32,15 +33,27 @@ module TmToSat {Γ Q : Set} (tm : TuringMachine Γ Q) where
     arr = HaltsWith.arr hw
 
     TapeCell : Set
-    TapeCell = ℕ
+    TapeCell = Fin (2 * n)
 
     TimeCell : Set
-    TimeCell = ℕ
+    TimeCell = Fin n
 
     data SLit : Set where
       tape-contents : TapeCell → Γ → TimeCell → SLit
       tape-position : TapeCell → TimeCell → SLit
       state-at-time : TimeCell → Q → SLit
+
+    open import Relation.Binary using (Setoid)
+    open import Relation.Binary.PropositionalEquality
+
+    instance
+      slit-equiv : Equivalent lzero SLit
+      Equivalent._≋_ slit-equiv = _≡_
+      Equivalent.equiv slit-equiv = Setoid.isEquivalence (setoid SLit)
+
+
+    postulate
+      slit-finite : IsFinite SLit
 
     open import np-complete3 SLit
 

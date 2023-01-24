@@ -1,16 +1,25 @@
 ```agda
 open import np-complete1
 open import Data.Product
-open import Relation.Nullary using (¬_)
+open import Relation.Nullary using (¬_; yes; no)
 open import Relation.Unary using (Decidable)
 open import Relation.Binary.PropositionalEquality using (_≡_)
+open import Data.Sum
 
 -- turing-machines
 module np-complete2
   (Γ Q : Set)
   (δ : Q × Γ → Q × Γ × MoveDirection → Set)
+  (δ-deterministic
+      : (qt : Q × Γ)
+      → {o₁ o₂ : Q × Γ × MoveDirection}
+      → δ qt o₁ → δ qt o₂
+      → o₁ ≡ o₂)
   (H : Q × Γ → Set)
-  (halted : {qi : Q × Γ} → H qi → (qir : Q × Γ × MoveDirection) → ¬ δ qi qir)
+  (H-dec : Decidable H)
+  (step-or-halt
+      : (qi : Q × Γ)
+      → ∃ (δ qi) ⊎ H qi)
   (b : Γ)
   (b-dec : Decidable (_≡ b))
   where
@@ -21,7 +30,7 @@ moveWrite : MoveDirection → Γ → Tape → Tape
 moveWrite d i t = move d (write i t)
 
 
-open import Data.Nat using (ℕ; _+_; suc)
+open import Data.Nat using (ℕ; _+_; suc; _≤_; z≤n; s≤s)
 
 data _-⟨_⟩→_ : Q × Tape → ℕ → Q × Tape → Set where
   refl
@@ -131,19 +140,25 @@ module ⟶-Reasoning where
   infixr 2 _≈⟨_⟩_ _≡⟨⟩_ _≡⟨_⟩_ _≡ᵀ⟨_⟩_
   infix  3 _∎
 
+module Properties where
+  open import Data.Sum
 
+  n⊃q
+    : (qt : Q × Tape)
+    → (n : ℕ)
+    → (∃[ q' ] ∃[ m ] HaltsWith qt q' m × m ≤ n)
+    ⊎ (∃[ qt' ] qt -⟨ n ⟩→ qt')
+  n⊃q (q , t) n with step-or-halt (q , Tape.head t)
+  ... | inj₂ y = inj₁ (q , 0 , halts-with t refl y , z≤n)
+  n⊃q (q , t) ℕ.zero | inj₁ ((q' , i , d) , delta) =
+    inj₂ ((q , t) , refl)
+  n⊃q (q , t) (suc n) | inj₁ ((q' , i , d) , delta)
+    with n⊃q (q' , moveWrite d i t ) n
+  ... | inj₁ (q0 , n' , hw , n'≤n) =
+    inj₁ (q0 , suc n' , halts-glue (step delta) hw , s≤s n'≤n)
+  ... | inj₂ (y , arr) =
+    inj₂ (y , step-with delta arr)
 
-
-  -- open import Relation.Binary.Reasoning.Base.Single _⟶_
-  --     (λ {z} → refl {z})
-  --     ?
-  --     as Base public
-  --   hiding (step-∼)
-
-  -- infixr 2 step-≈
-
-  -- step-≈ = Base.step-∼
-  -- syntax step-≈ x y≈z x≈y = x ≈⟨ x≈y ⟩ y≈z
 ```
 
 

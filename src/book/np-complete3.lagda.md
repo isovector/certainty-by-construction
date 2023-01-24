@@ -13,28 +13,15 @@ open import Data.Fin using (Fin)
 open import Data.List
   using (List; _∷_; []; _++_; [_]; reverse; _∷ʳ_; map; concatMap; length)
 open import Relation.Unary using (Decidable)
-open import Relation.Nullary using (yes; no)
+open import Relation.Nullary using (yes; no; ¬_)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
+open import Data.Empty using (⊥-elim)
 
-open import Data.Product using (_×_; _,_)
+open import Data.Product using (_×_; _,_; ∃)
+open import Data.Sum using (_⊎_; inj₁; inj₂)
 
 State : Set
 State = Bool × Bool
-
-open import np-complete1 using (MoveDirection; L; R)
-
-data δ : State × Instr Name → State × Instr Name × MoveDirection → Set where
-  ⟶pop
-      : {lo hi : Bool}
-      → δ ((lo , hi)           , pop)
-          ((lo ∧ hi , false) , nop , R)
-  ⟶val
-      : {x : Lit Name} {lo hi : Bool}
-      → δ ((lo , hi)                       , val x)
-          ((lo , hi ∨ (x ↓ˡ bs)) , nop , R)
-
-data Halted : State × Instr Name → Set where
-  halted : {q : State} → Halted (q , nop)
 
 ⌊_⌋ᶜ : Clause Name → List (Instr Name)
 ⌊_⌋ᶜ ls = map val ls ∷ʳ pop
@@ -42,18 +29,61 @@ data Halted : State × Instr Name → Set where
 ⌊_⌋ : CNF Name → List (Instr Name)
 ⌊_⌋ = concatMap ⌊_⌋ᶜ
 
+open import np-complete1 using (MoveDirection; L; R)
+
+data δ : State × Instr Name → State × Instr Name × MoveDirection → Set where
+  ⟶pop
+      : {lo hi : Bool}
+      → δ ((lo , hi)         , pop)
+          ((lo ∧ hi , false) , nop , R)
+  ⟶val
+      : {x : Lit Name} {lo hi : Bool}
+      → δ ((lo , hi)             , val x)
+          ((lo , hi ∨ (x ↓ˡ bs)) , nop , R)
+
+no-nops : ∀ q o → ¬ δ (q , nop) o
+no-nops q o ()
+
+δ-deterministic
+    : (qt : State × Instr Name)
+    → {o₁ o₂ : State × Instr Name × MoveDirection}
+    → δ qt o₁ → δ qt o₂
+    → o₁ ≡ o₂
+δ-deterministic (_ , pop) ⟶pop ⟶pop = refl
+δ-deterministic (_ , val _) ⟶val ⟶val = refl
+
+data Halted : State × Instr Name → Set where
+  halted : {q : State} → Halted (q , nop)
+
+Halted-dec : Decidable Halted
+Halted-dec (_ , pop) = no λ ()
+Halted-dec (_ , val x) = no λ ()
+Halted-dec (_ , nop) = yes halted
+
 
 open import Relation.Nullary using (¬_)
+
+step-or-halt : (qi : State × Instr Name) →  ∃ (δ qi) ⊎ Halted qi
+step-or-halt (q , pop) = inj₁ (_ , ⟶pop)
+step-or-halt (q , val x) = inj₁ (_ , ⟶val)
+step-or-halt (q , nop) = inj₂ halted
 
 is-halted : ∀ {qi} → Halted qi → ∀ qir → ¬ δ qi qir
 is-halted halted _ ()
 
-b-dec : Decidable (_≡ nop {Name = Name})
-b-dec pop = no λ ()
-b-dec (val x) = no λ ()
-b-dec nop = yes refl
+nop-dec : Decidable (_≡ nop {Name = Name})
+nop-dec pop = no λ ()
+nop-dec (val x) = no λ ()
+nop-dec nop = yes refl
 
-open import np-complete2 (Instr Name) State δ Halted is-halted nop b-dec public
+open import np-complete2
+    (Instr Name)
+    State
+    δ δ-deterministic
+    Halted Halted-dec
+    step-or-halt
+    nop nop-dec
+  public
 
 
 mkTape : List (Instr Name) → Tape
