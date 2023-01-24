@@ -36,12 +36,11 @@ record TuringMachine (Γ Q : Set) : Set₁ where
       : (qi : Q × Γ)
       → ∃ (δ qi) ⊎ H qi
     b : Γ
-    b-dec : Decidable (_≡ b)
     {{q-equiv}} : Equivalent lzero Q
     q-finite : IsFinite Q
 
 
-module Tapes {Γ : Set} (b : Γ) (is-blank : Decidable (_≡ b)) where
+module Tapes {Γ : Set} (b : Γ) (_≟Γ_ : DecidableEquality Γ) where
 
   open import Data.Integer using (ℤ; _+_; suc; pred)
 
@@ -54,7 +53,7 @@ module Tapes {Γ : Set} (b : Γ) (is-blank : Decidable (_≡ b)) where
       right-of : List Γ
 
   push : Γ → List Γ → List Γ
-  push x [] with is-blank x
+  push x [] with x ≟Γ b
   ... | yes _ = []
   ... | no  _ = x ∷ []
   push x (y ∷ l) = x ∷ y ∷ l

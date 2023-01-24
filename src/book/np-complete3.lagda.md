@@ -4,10 +4,12 @@ open import Data.Bool
 open import Data.Nat using (ℕ; _+_; suc)
 open import Data.Vec using (Vec)
 
--- SAT
-module np-complete3 (Name : Set) (bs : Name → Bool) where
+open import Relation.Binary.Definitions using (DecidableEquality)
 
-open import np-complete0
+-- SAT
+module np-complete3 (Name : Set) (_≟N_ : DecidableEquality Name) (bs : Name → Bool) where
+
+open import np-complete0 Name _≟N_
 open import Data.Fin using (Fin)
 
 open import Data.List
@@ -20,24 +22,26 @@ open import Data.Empty using (⊥-elim)
 open import Data.Product using (_×_; _,_; ∃)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 
+open import Agda.Primitive using (Level)
+
 State : Set
 State = Bool × Bool
 
-⌊_⌋ᶜ : Clause Name → List (Instr Name)
+⌊_⌋ᶜ : Clause → List (Instr)
 ⌊_⌋ᶜ ls = map val ls ∷ʳ pop
 
-⌊_⌋ : CNF Name → List (Instr Name)
+⌊_⌋ : CNF → List (Instr)
 ⌊_⌋ = concatMap ⌊_⌋ᶜ
 
-open import np-complete1 using (MoveDirection; L; R)
+open import np-complete1 using (MoveDirection; L; R; TuringMachine)
 
-data δ : State × Instr Name → State × Instr Name × MoveDirection → Set where
+data δ : State × Instr → State × Instr × MoveDirection → Set where
   ⟶pop
       : {lo hi : Bool}
       → δ ((lo , hi)         , pop)
           ((lo ∧ hi , false) , nop , R)
   ⟶val
-      : {x : Lit Name} {lo hi : Bool}
+      : {x : Lit} {lo hi : Bool}
       → δ ((lo , hi)             , val x)
           ((lo , hi ∨ (x ↓ˡ bs)) , nop , R)
 
@@ -45,14 +49,14 @@ no-nops : ∀ q o → ¬ δ (q , nop) o
 no-nops q o ()
 
 δ-deterministic
-    : (qt : State × Instr Name)
-    → {o₁ o₂ : State × Instr Name × MoveDirection}
+    : (qt : State × Instr)
+    → {o₁ o₂ : State × Instr × MoveDirection}
     → δ qt o₁ → δ qt o₂
     → o₁ ≡ o₂
 δ-deterministic (_ , pop) ⟶pop ⟶pop = refl
 δ-deterministic (_ , val _) ⟶val ⟶val = refl
 
-data Halted : State × Instr Name → Set where
+data Halted : State × Instr → Set where
   halted : {q : State} → Halted (q , nop)
 
 Halted-dec : Decidable Halted
@@ -63,7 +67,7 @@ Halted-dec (_ , nop) = yes halted
 
 open import Relation.Nullary using (¬_)
 
-step-or-halt : (qi : State × Instr Name) →  ∃ (δ qi) ⊎ Halted qi
+step-or-halt : (qi : State × Instr) →  ∃ (δ qi) ⊎ Halted qi
 step-or-halt (q , pop) = inj₁ (_ , ⟶pop)
 step-or-halt (q , val x) = inj₁ (_ , ⟶val)
 step-or-halt (q , nop) = inj₂ halted
@@ -71,23 +75,29 @@ step-or-halt (q , nop) = inj₂ halted
 is-halted : ∀ {qi} → Halted qi → ∀ qir → ¬ δ qi qir
 is-halted halted _ ()
 
-nop-dec : Decidable (_≡ nop {Name = Name})
-nop-dec pop = no λ ()
-nop-dec (val x) = no λ ()
-nop-dec nop = yes refl
+open import Data.Product.Properties using (≡-dec)
+open import Data.Bool.Properties using () renaming (_≟_ to _≟𝔹_)
 
-open import np-complete2
-    (Instr Name)
-    State
-    δ δ-deterministic
-    Halted Halted-dec
-    step-or-halt
-    nop nop-dec
-  public
+sat : TuringMachine (Instr) State
+TuringMachine._≟Γ_ sat = _≟I_
+TuringMachine._≟Q_ sat = ≡-dec _≟𝔹_ _≟𝔹_
+TuringMachine.δ sat = δ
+TuringMachine.δ-deterministic sat = δ-deterministic
+TuringMachine.H sat = Halted
+TuringMachine.H-dec sat = Halted-dec
+TuringMachine.step-or-halt sat = step-or-halt
+TuringMachine.b sat = nop
+TuringMachine.q-equiv sat = todo
+  where postulate todo : {ℓ : Level} {A : Set ℓ} → A
+TuringMachine.q-finite sat = todo
+  where postulate todo : {ℓ : Level} {A : Set ℓ} → A
+
+
+open import np-complete2 sat public
 
 open import Data.Integer as ℤ using (ℤ)
 
-mkTape : ℤ → List (Instr Name) → Tape
+mkTape : ℤ → List (Instr) → Tape
 mkTape n [] = tape n [] nop []
 mkTape n (r ∷ rs)  = tape n [] r rs
 
@@ -95,7 +105,7 @@ mkTape n (r ∷ rs)  = tape n [] r rs
 open import Relation.Binary.PropositionalEquality using (cong; sym)
 open import Data.Bool.Properties using (∨-assoc; ∧-assoc; ∨-identityʳ; ∧-identityʳ)
 
-lemma₁ : {n : ℤ} (rs : List (Instr Name)) → move R (tape n [] nop rs) ≡ mkTape (ℤ.suc n) rs
+lemma₁ : {n : ℤ} (rs : List (Instr)) → move R (tape n [] nop rs) ≡ mkTape (ℤ.suc n) rs
 lemma₁ [] = refl
 lemma₁ (x ∷ rs) = refl
 
@@ -121,8 +131,8 @@ import Data.Integer.Properties as ℤ
 equivClause
     : (n : ℤ)
     → (lo hi : Bool)
-    → (rs : List (Instr Name))
-    → (cl : Clause Name)
+    → (rs : List (Instr))
+    → (cl : Clause)
     → ((lo , hi) , mkTape n (⌊ cl ⌋ᶜ ++ rs)) -⟨ length ⌊ cl ⌋ᶜ ⟩→
       ( (lo ∧ (hi ∨ (cl ↓ᶜ bs)) , false)
       , mkTape (ℤ.+ length ⌊ cl ⌋ᶜ ℤ.+ n) rs
@@ -163,7 +173,7 @@ open import Function using (flip; _$_; _∘_)
 equiv
     : (n : ℤ)
     → (lo : Bool)
-    → (cnf : CNF Name)
+    → (cnf : CNF)
     → HaltsWith ((lo , false) , mkTape n ⌊ cnf ⌋)
                 ((lo ∧ (cnf ↓ bs)) , false)
                 (length ⌊ cnf ⌋)
@@ -192,7 +202,7 @@ equiv n lo (x ∷ cnf)
       (equiv _ (lo ∧ (x ↓ᶜ bs)) cnf)
   where open ⟶-Reasoning
 
-DONE : (cnf : CNF Name)
+DONE : (cnf : CNF)
      → HaltsWith ((true , false) , mkTape ℤ.0ℤ ⌊ cnf ⌋)
                  ((cnf ↓ bs)     , false)
                  (length ⌊ cnf ⌋)
@@ -207,7 +217,7 @@ open import Data.Empty
 --   : {q₁ q₂ : State}
 --     {m : ℕ}
 --   → (n : ℤ)
---   → (l₁ l₂ : List (Instr Name))
+--   → (l₁ l₂ : List (Instr))
 --   → All (_≢ nop) l₁
 --   → All (_≢ nop) l₂
 --   → (q₁ , mkTape n l₁) -⟨ m ⟩→ (q₂ , mkTape (ℤ.+ m ℤ.+ n) l₂)
@@ -246,7 +256,7 @@ nop∌⌊⌋ᶜ [] = (λ ()) ∷ []
 nop∌⌊⌋ᶜ (x ∷ x₁) = (λ ()) ∷ nop∌⌊⌋ᶜ x₁
 
 All++
-    : {l₁ l₂ : List (Instr Name)}
+    : {l₁ l₂ : List (Instr)}
     → All (_≢ nop) l₁
     → All (_≢ nop) l₂
     → All (_≢ nop) (l₁ ++ l₂)

@@ -11,7 +11,7 @@ module np-complete2 {Γ Q : Set} (tm : TuringMachine Γ Q) where
 
 open TuringMachine tm
 
-open Tapes b b-dec public
+open Tapes b _≟Γ_ public
 
 
 moveWrite : MoveDirection → Γ → Tape → Tape
