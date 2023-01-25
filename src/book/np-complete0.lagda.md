@@ -1,10 +1,10 @@
 ```agda
-open import Relation.Binary.Definitions using (DecidableEquality)
+open import sets
 
-module np-complete0 (Name : Set) (_≟N_ : DecidableEquality Name) where
+module np-complete0 (Name : Set) (name-fin : IsFinite Name) where
 
 open import Data.Nat
-  using (ℕ)
+  using (ℕ; _*_; _+_)
 open import Data.Fin
   using (Fin; zero; suc)
 open import Data.Vec
@@ -14,43 +14,53 @@ open import Data.List using (List)
 open import Relation.Nullary using (yes; no; ¬_)
 open import Relation.Binary.PropositionalEquality
 open import Relation.Nullary.Decidable
+open import Relation.Binary.Definitions using (DecidableEquality)
+open import propisos
+open import case-bash
 
+open IsFinite
 
 data Lit : Set where
   ↪ : Name → Lit
   ! : Name → Lit
 
+open import Data.Sum
+open _↔_
 
-↪-injective : ∀ {x y} → ↪ x ≡ ↪ y → x ≡ y
-↪-injective refl = refl
+lit-iso : Lit ↔ (Name ⊎ Name)
+to lit-iso (↪ x) = inj₁ x
+to lit-iso (! x) = inj₂ x
+from lit-iso (inj₁ x) = ↪ x
+from lit-iso (inj₂ x) = ! x
+left-inv-of lit-iso (↪ x) = refl
+left-inv-of lit-iso (! x) = refl
+right-inv-of lit-iso (inj₁ x) = refl
+right-inv-of lit-iso (inj₂ y) = refl
 
-!-injective : ∀ {x y} → ! x ≡ ! y → x ≡ y
-!-injective refl = refl
-
-_≟L_ : DecidableEquality Lit
-↪ x ≟L ↪ y = map′ (cong ↪) ↪-injective (x ≟N y)
-↪ x ≟L ! y = no λ ()
-! x ≟L ↪ y = no λ ()
-! x ≟L ! y = map′ (cong !) !-injective (x ≟N y)
+lit-fin : IsFinite Lit
+card lit-fin = card name-fin + card name-fin
+is-fin lit-fin = ↔-trans lit-iso (is-fin (finite-sum name-fin name-fin))
 
 data Instr : Set where
   pop : Instr
   val : Lit → Instr
   nop : Instr
 
-val-injective : ∀ {x y} → val x ≡ val y → x ≡ y
-val-injective refl = refl
+instr-iso : Instr ↔ (Bool ⊎ Lit)
+to instr-iso pop = inj₁ false
+to instr-iso (val x) = inj₂ x
+to instr-iso nop = inj₁ true
+from instr-iso (inj₁ false) = pop
+from instr-iso (inj₁ true) = nop
+from instr-iso (inj₂ y) = val y
+left-inv-of instr-iso = case-bash!
+right-inv-of instr-iso (inj₁ false) = refl
+right-inv-of instr-iso (inj₁ true) = refl
+right-inv-of instr-iso (inj₂ y) = refl
 
-_≟I_ : DecidableEquality Instr
-pop ≟I pop = yes refl
-pop ≟I val x = no λ ()
-pop ≟I nop = no λ ()
-val x ≟I pop = no λ ()
-val x ≟I val y = map′ (cong val) val-injective (x ≟L y)
-val x ≟I nop = no λ ()
-nop ≟I pop = no λ ()
-nop ≟I val x = no λ ()
-nop ≟I nop = yes refl
+instr-fin : IsFinite Instr
+card instr-fin = 2 + card lit-fin
+is-fin instr-fin = ↔-trans instr-iso (is-fin (finite-sum bool-fin lit-fin))
 
 
 Clause : Set

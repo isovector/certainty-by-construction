@@ -22,8 +22,6 @@ open import Relation.Binary.Definitions using (DecidableEquality)
 
 record TuringMachine (Γ Q : Set) : Set₁ where
   field
-    _≟Γ_ : DecidableEquality Γ
-    _≟Q_ : DecidableEquality Q
     δ : Q × Γ → Q × Γ × MoveDirection → Set
     δ-deterministic
       : (qt : Q × Γ)
@@ -36,8 +34,14 @@ record TuringMachine (Γ Q : Set) : Set₁ where
       : (qi : Q × Γ)
       → ∃ (δ qi) ⊎ H qi
     b : Γ
-    {{q-equiv}} : Equivalent lzero Q
-    q-finite : IsFinite Q
+    Q-finite : IsFinite Q
+    Γ-finite : IsFinite Γ
+
+  _≟Γ_ : DecidableEquality Γ
+  _≟Γ_ = IsFinite.dec-finite Γ-finite
+
+  _≟Q_ : DecidableEquality Q
+  _≟Q_ = IsFinite.dec-finite Q-finite
 
 
 module Tapes {Γ : Set} (b : Γ) (_≟Γ_ : DecidableEquality Γ) where

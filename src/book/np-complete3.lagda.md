@@ -5,11 +5,12 @@ open import Data.Nat using (ℕ; _+_; suc)
 open import Data.Vec using (Vec)
 
 open import Relation.Binary.Definitions using (DecidableEquality)
+open import sets
 
 -- SAT
-module np-complete3 (Name : Set) (_≟N_ : DecidableEquality Name) (bs : Name → Bool) where
+module np-complete3 (Name : Set) (name-fin : IsFinite Name) (bs : Name → Bool) where
 
-open import np-complete0 Name _≟N_
+open import np-complete0 Name name-fin
 open import Data.Fin using (Fin)
 
 open import Data.List
@@ -79,18 +80,14 @@ open import Data.Product.Properties using (≡-dec)
 open import Data.Bool.Properties using () renaming (_≟_ to _≟𝔹_)
 
 sat : TuringMachine (Instr) State
-TuringMachine._≟Γ_ sat = _≟I_
-TuringMachine._≟Q_ sat = ≡-dec _≟𝔹_ _≟𝔹_
 TuringMachine.δ sat = δ
 TuringMachine.δ-deterministic sat = δ-deterministic
 TuringMachine.H sat = Halted
 TuringMachine.H-dec sat = Halted-dec
 TuringMachine.step-or-halt sat = step-or-halt
 TuringMachine.b sat = nop
-TuringMachine.q-equiv sat = todo
-  where postulate todo : {ℓ : Level} {A : Set ℓ} → A
-TuringMachine.q-finite sat = todo
-  where postulate todo : {ℓ : Level} {A : Set ℓ} → A
+TuringMachine.Q-finite sat = finite-prod bool-fin bool-fin
+TuringMachine.Γ-finite sat = instr-fin
 
 
 open import np-complete2 sat public
