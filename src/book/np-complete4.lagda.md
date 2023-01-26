@@ -2,40 +2,52 @@
 -- compile to SAT
 module np-complete4 where
 
-open import np-complete1
-open import Data.Product
+open import np-complete1 using (TuringMachine)
+open import Data.Product using (_×_; _,_; proj₁; proj₂)
 open import Relation.Nullary using (¬_; yes; no)
 open import Relation.Unary using (Decidable)
-open import Relation.Binary.PropositionalEquality using (_≡_)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 open import sets
 open import 8-iso using (Equivalent)
 open import Agda.Primitive using (Level; lzero; lsuc)
 open import Data.Nat
+open import case-bash
 
 module TmToSat {Γ Q : Set} (tm : TuringMachine Γ Q) where
   open TuringMachine tm
   open import np-complete2 tm
-  open import Data.Fin
+  open import Data.Fin using (Fin; toℕ; splitAt; zero; suc)
 
   module _ {qt : Q × Tape} {q : Q} {n : ℕ} (hw : HaltsWith qt q n) where
+    initial-tape : Tape
+    initial-tape = proj₂ qt
+
+    initial-state : Q
+    initial-state = proj₁ qt
 
     arr : qt -⟨ n ⟩→ (q , HaltsWith.final-tape hw)
     arr = HaltsWith.arr hw
 
     TapeCell : Set
-    TapeCell = Fin (2 * n)
+    TapeCell = Fin (suc (2 * n))
+
+    tape-fin : IsFinite TapeCell
+    tape-fin = fin-fin
 
     TimeCell : Set
-    TimeCell = Fin n
+    TimeCell = Fin (suc n)
+
+    time-fin : IsFinite TimeCell
+    time-fin = fin-fin
 
     get-time : TimeCell → ℕ
     get-time = toℕ
 
     open import Data.Integer using (ℤ; +_; -[1+_])
-    open import Data.Sum
+    open import Data.Sum using (_⊎_; inj₁; inj₂)
 
     get-pos : TapeCell → ℤ
-    get-pos tc with splitAt n tc
+    get-pos tc with splitAt (suc n) tc
     ... | inj₁ x = + (toℕ x)
     ... | inj₂ y = -[1+ toℕ y ]
 
@@ -45,18 +57,33 @@ module TmToSat {Γ Q : Set} (tm : TuringMachine Γ Q) where
       state-at-time : (m : TimeCell) → (q : Q) → SLit
 
     open import Relation.Binary.Definitions using (DecidableEquality)
+    open IsFinite
 
-    postulate
-      _≟SL_ : DecidableEquality SLit
-    -- tape-contents tc i m ≟SL tape-contents tc₁ i₁ m₁ = {! !}
-    -- tape-contents _ _ _ ≟SL tape-position _ _ = no λ ()
-    -- tape-contents _ _ _ ≟SL state-at-time _ _ = no λ ()
-    -- tape-position _ _ ≟SL tape-contents _ _ _ = no λ ()
-    -- tape-position tc m ≟SL tape-position tc₁ m₁ = {! !}
-    -- tape-position _ _ ≟SL state-at-time _ _ = no λ ()
-    -- state-at-time _ _ ≟SL tape-contents _ _ _ = no λ ()
-    -- state-at-time _ _ ≟SL tape-position _ _ = no λ ()
-    -- state-at-time m q ≟SL state-at-time m₁ q₁ = {! !}
+    open import propisos
+
+    slit-iso : SLit ↔ ((TapeCell × Γ × TimeCell) ⊎ (TapeCell × TimeCell) ⊎ (TimeCell × Q))
+    _↔_.to slit-iso (tape-contents tc i m) = inj₁ (tc , i , m)
+    _↔_.to slit-iso (tape-position tc m) = inj₂ (inj₁ (tc , m))
+    _↔_.to slit-iso (state-at-time m q) = inj₂ (inj₂ (m , q))
+    _↔_.from slit-iso (inj₁ (fst , fst₁ , snd)) = tape-contents fst fst₁ snd
+    _↔_.from slit-iso (inj₂ (inj₁ (fst , snd))) = tape-position fst snd
+    _↔_.from slit-iso (inj₂ (inj₂ (fst , snd))) = state-at-time fst snd
+    _↔_.left-inv-of slit-iso (tape-contents tc i m) = refl
+    _↔_.left-inv-of slit-iso (tape-position tc m) = refl
+    _↔_.left-inv-of slit-iso (state-at-time m q) = refl
+    _↔_.right-inv-of slit-iso (inj₁ x) = refl
+    _↔_.right-inv-of slit-iso (inj₂ (inj₁ x)) = refl
+    _↔_.right-inv-of slit-iso (inj₂ (inj₂ y)) = refl
+
+    slit-fin : IsFinite SLit
+    IsFinite.card slit-fin
+      = suc (2 * n) * (#∣ Γ-finite ∣ * suc n) + (suc (2 * n) * suc n + suc n * #∣ Q-finite ∣)
+    IsFinite.is-fin slit-fin =
+      ↔-trans slit-iso (is-fin
+        (finite-sum (finite-prod tape-fin (finite-prod Γ-finite time-fin))
+        (finite-sum
+          (finite-prod tape-fin time-fin)
+          (finite-prod time-fin Q-finite))))
 
     open import Data.Bool
     open Properties
@@ -69,16 +96,72 @@ module TmToSat {Γ Q : Set} (tm : TuringMachine Γ Q) where
     open import Relation.Binary using (Setoid)
     open import Relation.Binary.PropositionalEquality
 
-    instance
-      slit-equiv : Equivalent lzero SLit
-      Equivalent._≋_ slit-equiv = _≡_
-      Equivalent.equiv slit-equiv = Setoid.isEquivalence (setoid SLit)
+    open import np-complete3 SLit slit-fin ↓
+    open import Data.Vec
 
+    open import Function using (_$_)
+
+    initial-tape-cnf : Vec SLit #∣ tape-fin ∣
+    initial-tape-cnf
+      = map (λ tc → tape-contents tc (read (get-pos tc) initial-tape) zero )
+      $ elements tape-fin
+
+    initial-state-cnf : Vec Lit 1
+    initial-state-cnf = ↪ (state-at-time zero initial-state) ∷ []
+
+    initial-pos-cnf : Vec Lit 1
+    initial-pos-cnf = ↪ (tape-position zero zero) ∷ []
 
     postulate
-      slit-finite : IsFinite SLit
+      without : {A : Set} {n : ℕ} → A → Vec A (n) → Vec A n
 
-    open import np-complete3 SLit (dec-finite _ slit-finite) ↓
+    no-duplicates : Vec Lit ?
+    no-duplicates = do
+      time <- elements time-fin
+      pos <- elements tape-fin
+      sym <- elements Γ-finite
+      sym' <- without sym (elements Γ-finite)
+      ! (tape-contents pos sym time)
+        ∷ ! (tape-contents pos sym' time)
+        ∷ []
+      where open CartesianBind
+
+    one-holds : Vec Lit (#∣ time-fin ∣ * (#∣ Γ-finite ∣ * 1 + (2 * n) * (#∣ Γ-finite ∣ * 1)))
+    one-holds = subst (Vec Lit) refl $ do
+      time <- elements time-fin
+      pos <- elements tape-fin
+      sym <- elements Γ-finite
+      ↪ (tape-contents pos sym time) ∷ []
+      where open CartesianBind
+
+    head-writes-cnf : Vec Lit ?
+    head-writes-cnf = do
+      time <- init (elements time-fin)
+      pos <- elements tape-fin
+      sym <- elements Γ-finite
+      sym' <- without sym (elements Γ-finite)
+
+      ! (tape-position pos time)
+        ∷ ! (tape-contents pos sym time)
+        ∷ ! (tape-contents pos sym' ?)
+        ∷ []
+
+      -- (tape-contents pos sym time) and
+      -- (tape-contents pos sym' (suc time))
+      -- then
+      -- tape-position pos time
+
+      -- same as
+
+      -- ! (tape-position pos time)
+      -- or ! tape-contents pos sym time
+      -- or ! tape-contents pos sym' (suc time)
+
+
+      where open CartesianBind
+
+
+
 
 
 ```

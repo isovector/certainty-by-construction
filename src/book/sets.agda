@@ -56,6 +56,10 @@ left-inv-of (IsFinite.is-fin bool-fin) true = refl
 right-inv-of (IsFinite.is-fin bool-fin) zero = refl
 right-inv-of (IsFinite.is-fin bool-fin) (suc zero) = refl
 
+fin-fin : {n : ℕ} → IsFinite (Fin n)
+IsFinite.card (fin-fin {n}) = n
+IsFinite.is-fin (fin-fin {n}) = ↔-refl
+
 
 bijection-sum : {A B A' B' : Set} → A ↔ B → A' ↔ B' → A ⊎ A' ↔ B ⊎ B'
 bijection-sum ab a'b' =

@@ -10,7 +10,7 @@ open import sets
 -- SAT
 module np-complete3 (Name : Set) (name-fin : IsFinite Name) (bs : Name → Bool) where
 
-open import np-complete0 Name name-fin
+open import np-complete0 Name name-fin public
 open import Data.Fin using (Fin)
 
 open import Data.List
@@ -90,7 +90,7 @@ TuringMachine.Q-finite sat = finite-prod bool-fin bool-fin
 TuringMachine.Γ-finite sat = instr-fin
 
 
-open import np-complete2 sat public
+open import np-complete2 sat
 
 open import Data.Integer as ℤ using (ℤ)
 
