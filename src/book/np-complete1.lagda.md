@@ -17,12 +17,13 @@ open import 8-iso using (Equivalent)
 open import Data.Product using (_×_; ∃)
 open import Data.Sum using (_⊎_)
 open import Agda.Primitive using (Level; lzero; lsuc)
-open import sets using (IsFinite)
+open import sets using (IsFinite; IsNonemptyFinite)
 open import Relation.Binary.Definitions using (DecidableEquality)
 
 record TuringMachine (Γ Q : Set) : Set₁ where
   field
     δ : Q × Γ → Q × Γ × MoveDirection → Set
+    δ-dec : (qi : Q × Γ) → (qid : Q × Γ × MoveDirection) → Dec (δ qi qid)
     δ-deterministic
       : (qt : Q × Γ)
       → {o₁ o₂ : Q × Γ × MoveDirection}
@@ -34,8 +35,14 @@ record TuringMachine (Γ Q : Set) : Set₁ where
       : (qi : Q × Γ)
       → ∃ (δ qi) ⊎ H qi
     b : Γ
-    Q-finite : IsFinite Q
-    Γ-finite : IsFinite Γ
+    Q-ne-finite : IsNonemptyFinite Q
+    Γ-ne-finite : IsNonemptyFinite Γ
+
+  Q-finite : IsFinite Q
+  Q-finite = IsNonemptyFinite.finite Q-ne-finite
+
+  Γ-finite : IsFinite Γ
+  Γ-finite = IsNonemptyFinite.finite Γ-ne-finite
 
   _≟Γ_ : DecidableEquality Γ
   _≟Γ_ = IsFinite.dec-finite Γ-finite

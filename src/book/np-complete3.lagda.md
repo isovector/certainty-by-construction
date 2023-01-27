@@ -1,6 +1,6 @@
 ```agda
 open import Data.Bool
-  using (Bool; true; false; not; _∨_; _∧_)
+  using (Bool; true; false; not; _∨_; _∧_; _≟_)
 open import Data.Nat using (ℕ; _+_; suc)
 open import Data.Vec using (Vec)
 
@@ -16,7 +16,7 @@ open import Data.Fin using (Fin)
 open import Data.List
   using (List; _∷_; []; _++_; [_]; reverse; _∷ʳ_; map; concatMap; length)
 open import Relation.Unary using (Decidable)
-open import Relation.Nullary using (yes; no; ¬_)
+open import Relation.Nullary using (yes; no; ¬_; Dec)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; module ≡-Reasoning)
 open import Data.Empty using (⊥-elim)
 
@@ -79,15 +79,35 @@ is-halted halted _ ()
 open import Data.Product.Properties using (≡-dec)
 open import Data.Bool.Properties using () renaming (_≟_ to _≟𝔹_)
 
+
+δ-dec : (qi : State × Instr) → (qid : State × Instr × MoveDirection) → Dec (δ qi qid)
+δ-dec _ (_ , _ , L) = no λ ()
+δ-dec _ (_ , pop , _) = no λ ()
+δ-dec _ (_ , (val _) , _) = no λ ()
+δ-dec (_ , pop) ((_ , true) , _ , _) = no λ ()
+δ-dec ((lo , hi) , pop) ((lo' , false) , nop , R)
+  with lo' ≟ lo ∧ hi
+... | yes refl = yes ⟶pop
+... | no z = no λ { ⟶pop → ⊥-elim (z refl) }
+δ-dec ((lo , hi) , val x) ((lo' , hi') , nop , R)
+  with lo ≟ lo'
+... | no z = no λ { ⟶val → ⊥-elim (z refl) }
+... | yes refl with hi' ≟ hi ∨ (x ↓ˡ bs)
+... | no z = no λ { ⟶val → ⊥-elim (z refl) }
+... | yes refl = yes ⟶val
+δ-dec (q , nop) _ = no λ ()
+
+
 sat : TuringMachine (Instr) State
 TuringMachine.δ sat = δ
+TuringMachine.δ-dec sat = δ-dec
 TuringMachine.δ-deterministic sat = δ-deterministic
 TuringMachine.H sat = Halted
 TuringMachine.H-dec sat = Halted-dec
 TuringMachine.step-or-halt sat = step-or-halt
 TuringMachine.b sat = nop
-TuringMachine.Q-finite sat = finite-prod bool-fin bool-fin
-TuringMachine.Γ-finite sat = instr-fin
+TuringMachine.Q-ne-finite sat = nonempty-fin (finite-prod bool-fin bool-fin) 3 refl
+TuringMachine.Γ-ne-finite sat = nonempty-fin instr-fin _ refl
 
 
 open import np-complete2 sat

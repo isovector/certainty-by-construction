@@ -1,10 +1,10 @@
 module sets where
 
-open import Function using (_∘_)
+open import Function using (_∘_; _$_)
 open import propisos
 open import Data.Sum renaming (_⊎_ to infixr 80 _⊎_)
 open import Data.Nat hiding (_≟_)
-open import Data.Fin using (Fin; _≟_; zero; suc)
+open import Data.Fin using (Fin; _≟_; zero; suc; inject₁)
 import Data.Fin.Properties
 open import Function.Equality using (_⟨$⟩_)
 open import Relation.Binary.PropositionalEquality
@@ -41,9 +41,30 @@ record IsFinite {ℓ : Level} (A : Set ℓ) : Set ℓ where
   elements : Vec A card
   elements = tabulate from
 
+record IsNonemptyFinite {ℓ : Level} (A : Set ℓ) : Set ℓ where
+  constructor nonempty-fin
+  field
+    finite : IsFinite A
+    card-pred : ℕ
+    card-is-card :  IsFinite.card finite ≡ suc card-pred
+
+  open IsFinite finite public
+
 open import Data.Bool using (Bool; false; true)
 
 open _↔_
+
+from-pred
+  : {ℓ : Level}
+  → {A : Set ℓ}
+  → (ne : IsNonemptyFinite A)
+  → Fin (IsNonemptyFinite.card-pred ne)
+  → A
+from-pred ne x
+  = from (IsNonemptyFinite.is-fin ne)
+  $ subst Fin (sym (IsNonemptyFinite.card-is-card ne))
+  $ inject₁ x
+
 
 bool-fin : IsFinite Bool
 IsFinite.card bool-fin = 2
