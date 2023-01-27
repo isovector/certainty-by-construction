@@ -1,5 +1,6 @@
 ```agda
 -- compile to SAT
+{-# OPTIONS --allow-unsolved-metas #-}
 module np-complete4 where
 
 open import np-complete1 using (TuringMachine; L; R)
@@ -206,7 +207,7 @@ module TmToSat {Γ Q : Set} (tm : TuringMachine Γ Q) where
 
       case δ-dec (q , sym) (q' , sym' , dir) of λ
         { (yes d) → ?
-        ; (no _) → ?
+        ; (no _) → []
         }
 
       where open CartesianBind
