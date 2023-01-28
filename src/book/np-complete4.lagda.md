@@ -3,7 +3,7 @@
 {-# OPTIONS --allow-unsolved-metas #-}
 module np-complete4 where
 
-open import np-complete1 using (TuringMachine; L; R)
+open import np-complete1 using (TuringMachine; MoveDirection; L; R)
 open import Data.Product using (_×_; _,_; proj₁; proj₂)
 open import Relation.Nullary using (¬_; yes; no)
 open import Relation.Unary using (Decidable)
@@ -108,6 +108,15 @@ module TmToSat {Γ Q : Set} (tm : TuringMachine Γ Q) where
     open import Data.Vec
     open IsNonemptyFinite using (card-pred; card-is-card; finite)
 
+    nQ-1 nQ nΓ-1 nΓ : ℕ
+    nQ-1 = card-pred Q-ne-finite
+
+    nQ = #∣ finite Q-ne-finite ∣
+
+    nΓ-1 = card-pred Γ-ne-finite
+
+    nΓ = #∣ finite Γ-ne-finite ∣
+
     ne-elements : {A : Set} → (ne : IsNonemptyFinite A) → Vec A (suc (card-pred ne))
     ne-elements {A} ne = subst (Vec A) (card-is-card ne) (elements (finite ne))
 
@@ -127,7 +136,7 @@ module TmToSat {Γ Q : Set} (tm : TuringMachine Γ Q) where
     postulate
       without : {A : Set} {n : ℕ} → A → Vec A (suc n) → Vec A n
 
-    no-duplicates : Vec Lit (suc n * (#∣ Γ-finite ∣ * (card-pred Γ-ne-finite * 2) + (2 * n) * (#∣ Γ-finite ∣ * (card-pred Γ-ne-finite * 2))))
+    no-duplicates : Vec Lit (suc n * (nΓ * (nΓ-1 * 2) + (2 * n) * (nΓ * (nΓ-1 * 2))))
     no-duplicates = do
       time <- elements time-fin
       pos <- elements tape-fin
@@ -138,7 +147,7 @@ module TmToSat {Γ Q : Set} (tm : TuringMachine Γ Q) where
         ∷ []
       where open CartesianBind
 
-    one-holds : Vec Lit (suc n * (#∣ Γ-finite ∣ * 1 + (2 * n) * (#∣ Γ-finite ∣ * 1)))
+    one-holds : Vec Lit (suc n * (nΓ * 1 + (2 * n) * (nΓ * 1)))
     one-holds = subst (Vec Lit) refl $ do
       time <- elements time-fin
       pos <- elements tape-fin
@@ -146,7 +155,7 @@ module TmToSat {Γ Q : Set} (tm : TuringMachine Γ Q) where
       ↪ (tape-contents pos sym time) ∷ []
       where open CartesianBind
 
-    head-writes-cnf : Vec Lit (n * (#∣ Γ-finite ∣ * (card-pred Γ-ne-finite * 3) + (2 * n) * (#∣ Γ-finite ∣ * (card-pred Γ-ne-finite * 3))))
+    head-writes-cnf : Vec Lit (n * (nΓ * (nΓ-1 * 3) + (2 * n) * (nΓ * (nΓ-1 * 3))))
     head-writes-cnf = do
       time <- tabulate (from-pred time-ne-fin)
       pos <- elements tape-fin
@@ -172,7 +181,7 @@ module TmToSat {Γ Q : Set} (tm : TuringMachine Γ Q) where
 
       where open CartesianBind
 
-    single-state : Vec Lit (suc n * (#∣ Q-finite ∣ * (card-pred Q-ne-finite * 2)))
+    single-state : Vec Lit (suc n * (nQ * (nQ-1 * 2)))
     single-state = do
       time <- elements time-fin
       q <- elements Q-finite
@@ -192,10 +201,12 @@ module TmToSat {Γ Q : Set} (tm : TuringMachine Γ Q) where
         ∷ []
       where open CartesianBind
 
-
     open import Function.Base using (case_of_)
 
-    can-transition : Vec Lit ?
+    go : MoveDirection → TapeCell → TapeCell
+    go = ?
+
+    can-transition : Vec Lit (suc n * (nQ * (nQ * (nΓ * (nΓ * 8))) + (2 * n) * (nQ * (nQ * (nΓ * (nΓ * 8))))))
     can-transition = do
       time <- elements time-fin
       pos <- elements tape-fin
@@ -206,8 +217,14 @@ module TmToSat {Γ Q : Set} (tm : TuringMachine Γ Q) where
       dir <- L ∷ R ∷ []
 
       case δ-dec (q , sym) (q' , sym' , dir) of λ
-        { (yes d) → ?
-        ; (no _) → []
+        { (yes d) →
+           ! (tape-position pos time)
+             ∷ ! (state-at-time time q)
+             ∷ ! (tape-contents pos sym time)
+             ∷ ↪ (tape-position (go dir pos) {! time !})
+             ∷ []
+
+        ; (no _) → ?
         }
 
       where open CartesianBind
