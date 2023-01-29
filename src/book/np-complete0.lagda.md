@@ -10,7 +10,7 @@ open import Data.Fin
 open import Data.Vec
   using (Vec; lookup; _∷_; [])
 open import Data.Bool
-open import Data.List using (List)
+open import Data.List using (List; _++_)
 open import Relation.Nullary using (yes; no; ¬_)
 open import Relation.Binary.PropositionalEquality
 open import Relation.Nullary.Decidable
@@ -80,6 +80,27 @@ _↓ᶜ_ cl bs = foldr (λ l lo → (l ↓ˡ bs) ∨ lo) false cl
 
 _↓_ : List (List Lit) → (Name → Bool) → Bool
 _↓_ cnf bs = foldr (λ cl hi → (cl ↓ᶜ bs) ∧ hi) true cnf
+
+
+data Expr : Set where
+  lit : Lit → Expr
+  _∨ᵇ_ : Expr → Expr → Expr
+  _∧ᵇ_ : Expr → Expr → Expr
+
+¬ᵇ : Expr → Expr
+¬ᵇ (lit (↪ x)) = lit (! x)
+¬ᵇ (lit (! x)) = lit (↪ x)
+¬ᵇ (x ∨ᵇ y) = ¬ᵇ x ∧ᵇ ¬ᵇ y
+¬ᵇ (x ∧ᵇ y) = ¬ᵇ x ∨ᵇ ¬ᵇ y
+
+_⇒ᵇ_ : Expr → Expr → Expr
+x ⇒ᵇ y = ¬ᵇ x ∨ᵇ y
+
+_↓ᵇ_ : Expr → (Name → Bool) → Bool
+lit x ↓ᵇ bs = x ↓ˡ bs
+(x ∨ᵇ y) ↓ᵇ bs = (x ↓ᵇ bs) ∨ (y ↓ᵇ bs)
+(x ∧ᵇ y) ↓ᵇ bs = (x ↓ᵇ bs) ∧ (y ↓ᵇ bs)
+
 
 
 -- module Example where

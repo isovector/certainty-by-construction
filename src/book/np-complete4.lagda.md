@@ -5,7 +5,7 @@ module np-complete4 where
 
 open import np-complete1 using (TuringMachine; MoveDirection; L; R)
 open import Data.Product using (_×_; _,_; proj₁; proj₂)
-open import Relation.Nullary using (¬_; yes; no)
+open import Relation.Nullary using (¬_; yes; no; does)
 open import Relation.Unary using (Decidable)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl)
 open import sets
@@ -120,12 +120,50 @@ module TmToSat {Γ Q : Set} (tm : TuringMachine Γ Q) where
     ne-elements : {A : Set} → (ne : IsNonemptyFinite A) → Vec A (suc (card-pred ne))
     ne-elements {A} ne = subst (Vec A) (card-is-card ne) (elements (finite ne))
 
-    open import Function using (_$_)
+    open import Function using (_$_; _∘_)
+
+
+    t₀ : TapeCell → SLit
+    t₀ tc = tape-contents tc (read (get-pos tc) initial-tape) zero
 
     initial-tape-cnf : Vec SLit (suc (2 * n))
-    initial-tape-cnf
-      = map (λ tc → tape-contents tc (read (get-pos tc) initial-tape) zero )
-      $ elements tape-fin
+    initial-tape-cnf = map t₀ $ elements tape-fin
+
+    initial-tapeᵇ : Expr
+    initial-tapeᵇ = foldr₁ _∧ᵇ_ (map (lit ∘ ↪) initial-tape-cnf)
+
+    initial-tapeᵖ₁ : (bs : SLit → Bool) → (∀ (tc : TapeCell) → bs (t₀ tc) ≡ ↓ (t₀ tc)) → (initial-tapeᵇ ↓ᵇ bs ≡ true)
+    initial-tapeᵖ₁ bs x with initial-tapeᵇ
+    ... | z ∨ᵇ z₁ = {! !}
+    ... | z ∧ᵇ z₁ = {! !}
+    ... | lit x₁ with x₁ ↓ˡ bs
+    ... | false = {! x zero !}
+    ... | true = refl
+
+    initial-tapeᵖ : (bs : TapeCell → Γ) → (initial-tapeᵇ ↓ᵇ (λ tc → cell-at-t-is qt zero (get-pos tc) (bs tc)) ≡ true) → ?
+    initial-tapeᵖ bs x tc = ?
+
+    -- want to show what?
+    -- for any other finite tape of the same size
+    -- if it returns true on this predicate
+    -- it IS our tape
+    --
+    -- ok great but this is not a predicate
+    --
+    -- oh but it is given some OTHER interpretation???
+
+--     initial-tape-p : ∀ (tape ∷ ) → tape ↓ᵇ ↓ ≡ true
+--     initial-tape-p =
+--       begin
+--         initial-tapeᵇ ↓ᵇ ↓
+--       ≡⟨⟩
+--         (foldr₁ _∧ᵇ_ (map (lit ∘ ↪) initial-tape-cnf)) ↓ᵇ ↓
+--       ≡⟨⟩
+--         foldr₁ _∧ᵇ_ (map (λ x → lit (↪ x)) initial-tape-cnf) ↓ᵇ ↓
+--       ≡⟨ ? ⟩
+--         ?
+--       ∎
+--       where open ≡-Reasoning
 
     initial-state-cnf : Vec Lit 1
     initial-state-cnf = ↪ (state-at-time zero initial-state) ∷ []
