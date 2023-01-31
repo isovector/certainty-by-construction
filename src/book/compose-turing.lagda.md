@@ -1,4 +1,5 @@
 ```agda
+{-# OPTIONS --allow-unsolved-metas #-}
 module compose-turing where
 
 open import np-complete1
