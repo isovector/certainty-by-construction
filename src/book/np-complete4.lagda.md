@@ -106,7 +106,7 @@ module TmToSat {Γ Q : Set} (tm : TuringMachine Γ Q) where
 
     open import np-complete3 slit-fin ↓ hiding (δ-dec)
     open import Data.Vec
-    open IsNonemptyFinite using (card-pred; card-is-card; finite)
+    open IsNonemptyFinite using (card-pred; card-is-card; finite; ne-elements)
 
     nQ-1 nQ nΓ-1 nΓ : ℕ
     nQ-1 = card-pred Q-ne-finite
@@ -117,9 +117,6 @@ module TmToSat {Γ Q : Set} (tm : TuringMachine Γ Q) where
 
     nΓ = #∣ finite Γ-ne-finite ∣
 
-    ne-elements : {A : Set} → (ne : IsNonemptyFinite A) → Vec A (suc (card-pred ne))
-    ne-elements {A} ne = subst (Vec A) (card-is-card ne) (elements (finite ne))
-
     open import Function using (_$_; _∘_)
 
 
@@ -129,57 +126,17 @@ module TmToSat {Γ Q : Set} (tm : TuringMachine Γ Q) where
     initial-tape-cnf : Vec SLit (suc (2 * n))
     initial-tape-cnf = map t₀ $ elements tape-fin
 
-    initial-tapeᵇ : Expr
-    initial-tapeᵇ = foldr₁ _∧ᵇ_ (map (lit ∘ ↪) initial-tape-cnf)
-
-    initial-tapeᵖ₁ : (bs : SLit → Bool) → (∀ (tc : TapeCell) → bs (t₀ tc) ≡ ↓ (t₀ tc)) → (initial-tapeᵇ ↓ᵇ bs ≡ true)
-    initial-tapeᵖ₁ bs x with initial-tapeᵇ
-    ... | z ∨ᵇ z₁ = {! !}
-    ... | z ∧ᵇ z₁ = {! !}
-    ... | lit x₁ with x₁ ↓ˡ bs
-    ... | false = {! x zero !}
-    ... | true = refl
-
---     initial-tapeᵖ : (bs : TapeCell → Γ) → (initial-tapeᵇ ↓ᵇ (λ tc → cell-at-t-is qt zero (get-pos tc) (bs tc)) ≡ true) → ?
---     initial-tapeᵖ bs x tc = ?
-
-    -- want to show what?
-    -- for any other finite tape of the same size
-    -- if it returns true on this predicate
-    -- it IS our tape
-    --
-    -- ok great but this is not a predicate
-    --
-    -- oh but it is given some OTHER interpretation???
-
---     initial-tape-p : ∀ (tape ∷ ) → tape ↓ᵇ ↓ ≡ true
---     initial-tape-p =
---       begin
---         initial-tapeᵇ ↓ᵇ ↓
---       ≡⟨⟩
---         (foldr₁ _∧ᵇ_ (map (lit ∘ ↪) initial-tape-cnf)) ↓ᵇ ↓
---       ≡⟨⟩
---         foldr₁ _∧ᵇ_ (map (λ x → lit (↪ x)) initial-tape-cnf) ↓ᵇ ↓
---       ≡⟨ ? ⟩
---         ?
---       ∎
---       where open ≡-Reasoning
-
     initial-state-cnf : Vec Lit 1
     initial-state-cnf = ↪ (state-at-time zero initial-state) ∷ []
 
     initial-pos-cnf : Vec Lit 1
     initial-pos-cnf = ↪ (tape-position zero zero) ∷ []
 
-    postulate
-      without : {A : Set} {n : ℕ} → A → Vec A (suc n) → Vec A n
-
-    no-duplicates : Vec Lit (suc n * (nΓ * (nΓ-1 * 2) + (2 * n) * (nΓ * (nΓ-1 * 2))))
+    no-duplicates : Vec Lit (card time-fin * (card (finite Γ-ne-finite) * card-pred Γ-ne-finite * 2 + (n + (n + 0)) * (card (finite Γ-ne-finite) * card-pred Γ-ne-finite * 2)))
     no-duplicates = do
       time <- elements time-fin
       pos <- elements tape-fin
-      sym <- elements Γ-finite
-      sym' <- without sym (ne-elements Γ-ne-finite)
+      (sym , sym') <- ne-elements Γ-ne-finite
       ! (tape-contents pos sym time)
         ∷ ! (tape-contents pos sym' time)
         ∷ []
@@ -193,17 +150,16 @@ module TmToSat {Γ Q : Set} (tm : TuringMachine Γ Q) where
       ↪ (tape-contents pos sym time) ∷ []
       where open CartesianBind
 
-    head-writes-cnf : Vec Lit (n * (nΓ * (nΓ-1 * 3) + (2 * n) * (nΓ * (nΓ-1 * 3))))
+    head-writes-cnf : Vec Lit (card-pred time-ne-fin * (card (finite Γ-ne-finite) * card-pred Γ-ne-finite * 3 + (n + (n + 0)) * (card (finite Γ-ne-finite) * card-pred Γ-ne-finite * 3)))
     head-writes-cnf = do
       time <- tabulate (from-pred time-ne-fin)
       pos <- elements tape-fin
-      sym <- elements Γ-finite
-      sym' <- without sym (ne-elements Γ-ne-finite)
-
+      (sym , sym') <- ne-elements Γ-ne-finite
       ! (tape-position pos time)
         ∷ ! (tape-contents pos sym time)
         ∷ ! (tape-contents pos sym' {! Fin.suc time !})
         ∷ []
+      where open CartesianBind
 
       -- (tape-contents pos sym time) and
       -- (tape-contents pos sym' (suc time))
@@ -217,23 +173,19 @@ module TmToSat {Γ Q : Set} (tm : TuringMachine Γ Q) where
       -- or ! tape-contents pos sym' (suc time)
 
 
-      where open CartesianBind
-
-    single-state : Vec Lit (suc n * (nQ * (nQ-1 * 2)))
+    single-state : Vec Lit (suc n * (nQ * nQ-1 * 2))
     single-state = do
       time <- elements time-fin
-      q <- elements Q-finite
-      q' <- without q (ne-elements Q-ne-finite)
+      (q , q') <- ne-elements Q-ne-finite
       ! (state-at-time time q)
         ∷ ! (state-at-time time q')
         ∷ []
       where open CartesianBind
 
-    single-head-pos : Vec Lit (suc n * ((2 * n) * 2 + (2 * n) * ((2 * n) * 2)))
+    single-head-pos : Vec Lit (card time-fin * ((n + (n + 0) + (n + (n + 0)) * (n + (n + 0))) * 2))
     single-head-pos = do
       time <- elements time-fin
-      pos <- elements tape-fin
-      pos' <- without pos (ne-elements tape-ne-fin)
+      (pos , pos') <- ne-elements tape-ne-fin
       ! (tape-position pos time)
         ∷ ! (tape-position pos' time)
         ∷ []
@@ -268,18 +220,18 @@ module TmToSat {Γ Q : Set} (tm : TuringMachine Γ Q) where
       where open CartesianBind
 
 
-open import np-complete5
-open import Data.Bool
+-- open import np-complete5
+-- open import Data.Bool
 
-module _ {Name : Set} (name-fin : IsFinite Name) (bs : Name → Bool) where
-  open import np-complete3 name-fin bs
-  open InNP-Complete
-  open _≤ₚ_
+-- module _ {Name : Set} (name-fin : IsFinite Name) (bs : Name → Bool) where
+--   open import np-complete3 name-fin bs
+--   open InNP-Complete
+--   open _≤ₚ_
 
-  SAT-in-NPC : InNP-Complete SAT-in-NP
-  size (is-complete SAT-in-NPC C'-in-np) = {! !}
-  size-poly (is-complete SAT-in-NPC C'-in-np) = {! !}
-  reduce (is-complete SAT-in-NPC C'-in-np) = {! !}
-  _≤ₚ_.equiv (is-complete SAT-in-NPC C'-in-np) = {! !}
+--   SAT-in-NPC : InNP-Complete SAT-in-NP
+--   size (is-complete SAT-in-NPC C'-in-np) = {! !}
+--   size-poly (is-complete SAT-in-NPC C'-in-np) = {! !}
+--   reduce (is-complete SAT-in-NPC C'-in-np) = {! !}
+--   _≤ₚ_.equiv (is-complete SAT-in-NPC C'-in-np) = {! !}
 
-```
+-- ```
