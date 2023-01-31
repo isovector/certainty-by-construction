@@ -8,7 +8,7 @@ open import Relation.Binary.Definitions using (DecidableEquality)
 open import sets
 
 -- SAT
-module np-complete3 (Name : Set) (name-fin : IsFinite Name) (bs : Name → Bool) where
+module np-complete3 {Name : Set} (name-fin : IsFinite Name) (bs : Name → Bool) where
 
 open import np-complete0 Name name-fin public
 open import Data.Fin using (Fin)
@@ -17,7 +17,7 @@ open import Data.List
   using (List; _∷_; []; _++_; [_]; reverse; _∷ʳ_; map; concatMap; length)
 open import Relation.Unary using (Decidable)
 open import Relation.Nullary using (yes; no; ¬_; Dec)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; module ≡-Reasoning)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; subst; module ≡-Reasoning)
 open import Data.Empty using (⊥-elim)
 
 open import Data.Product using (_×_; _,_; ∃)
@@ -225,65 +225,29 @@ DONE : (cnf : CNF)
                  (length ⌊ cnf ⌋)
 DONE = equiv _ true
 
-open import Relation.Binary.PropositionalEquality
-open import Data.List.Relation.Unary.All using (All; []; _∷_)
-open import Data.Empty
+open import np-complete5
+
+open InNP
 
 
--- linear-time
---   : {q₁ q₂ : State}
---     {m : ℕ}
---   → (n : ℤ)
---   → (l₁ l₂ : List (Instr))
---   → All (_≢ nop) l₁
---   → All (_≢ nop) l₂
---   → (q₁ , mkTape n l₁) -⟨ m ⟩→ (q₂ , mkTape (ℤ.+ m ℤ.+ n) l₂)
---   → m + length l₂ ≡ length l₁
--- linear-time n [] [] _ _ refl = refl
--- linear-time n [] (_ ∷ .[]) _ (nop≠nop ∷ _) refl = ⊥-elim (nop≠nop refl)
--- linear-time n _ [] (nop≠nop ∷ _) _ refl = ⊥-elim (nop≠nop refl)
--- linear-time n (_ ∷ l₁) [] (_ ∷ nop∌l₁) _ (step-with ⟶pop x₄)
---   = cong suc
---   $ linear-time n l₁ [] nop∌l₁ []
---   $ ⟶-subst (cong (_ ,_) (lemma₁ l₁)) refl refl x₄
--- linear-time n (_ ∷ l₁) [] (_ ∷ nop∌l₁) _ (step-with ⟶val x₄)
---   = cong suc
---   $ linear-time n l₁ [] nop∌l₁ []
---   $ ⟶-subst (cong (_ ,_) (lemma₁ l₁)) refl refl x₄
--- linear-time n (x₃ ∷ l₁) (.x₃ ∷ .l₁) _ _ refl = refl
--- linear-time n (_ ∷ l₁) l₂@(_ ∷ _) (_ ∷ nop∌l₁) nops (step-with ⟶pop x₅) =
---   begin
---     suc _ + length l₂
---   ≡⟨ cong suc $ linear-time n l₁ l₂ nop∌l₁ nops
---               $ ⟶-subst (cong (_ ,_) (lemma₁ l₁)) refl refl x₅ ⟩
---     length (pop ∷ l₁)
---   ∎
---   where open ≡-Reasoning
--- linear-time n (_ ∷ l₁) l₂@(_ ∷ _) (_ ∷ nop∌l₁) nops (step-with (⟶val {x = x}) x₅) =
---   begin
---     suc _ + length l₂
---   ≡⟨ cong suc $ linear-time n l₁ l₂ nop∌l₁ nops
---               $ ⟶-subst (cong (_ ,_) (lemma₁ l₁)) refl refl x₅ ⟩
---     length (val x ∷ l₁)
---   ∎
---   where open ≡-Reasoning
+record SAT (n : ℕ) : Set where
+  field
+    cnf : CNF
+    cnf-size : length ⌊ cnf ⌋ ≡ n
 
-nop∌⌊⌋ᶜ : ∀ x → All (_≢ nop) ⌊ x ⌋ᶜ
-nop∌⌊⌋ᶜ [] = (λ ()) ∷ []
-nop∌⌊⌋ᶜ (x ∷ x₁) = (λ ()) ∷ nop∌⌊⌋ᶜ x₁
+open SAT
 
-All++
-    : {l₁ l₂ : List (Instr)}
-    → All (_≢ nop) l₁
-    → All (_≢ nop) l₂
-    → All (_≢ nop) (l₁ ++ l₂)
-All++ [] x₁ = x₁
-All++ (px ∷ x) x₁ = px ∷ All++ x x₁
 
-nop∌⌊⌋ : ∀ x → All (_≢ nop) ⌊ x ⌋
-nop∌⌊⌋ [] = []
-nop∌⌊⌋ (x ∷ x₁) = All++ (nop∌⌊⌋ᶜ x) (nop∌⌊⌋ x₁)
-
+SAT-in-NP : InNP SAT
+Γ SAT-in-NP = _
+Q SAT-in-NP = _
+tm SAT-in-NP = sat
+compile SAT-in-NP ins = (true , false) , mkTape ℤ.0ℤ ⌊ cnf ins ⌋
+runtime SAT-in-NP sz = sz
+runtime-poly SAT-in-NP sz = poly-refl
+verify SAT-in-NP {sz} ins
+  = ((cnf ins ↓ bs) , false)
+  , subst (HaltsWith _ _) (cnf-size ins) (DONE (cnf ins))
 
 ```
 

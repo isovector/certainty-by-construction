@@ -104,7 +104,7 @@ module TmToSat {Γ Q : Set} (tm : TuringMachine Γ Q) where
     open import Relation.Binary using (Setoid)
     open import Relation.Binary.PropositionalEquality
 
-    open import np-complete3 SLit slit-fin ↓ hiding (δ-dec)
+    open import np-complete3 slit-fin ↓ hiding (δ-dec)
     open import Data.Vec
     open IsNonemptyFinite using (card-pred; card-is-card; finite)
 
@@ -140,8 +140,8 @@ module TmToSat {Γ Q : Set} (tm : TuringMachine Γ Q) where
     ... | false = {! x zero !}
     ... | true = refl
 
-    initial-tapeᵖ : (bs : TapeCell → Γ) → (initial-tapeᵇ ↓ᵇ (λ tc → cell-at-t-is qt zero (get-pos tc) (bs tc)) ≡ true) → ?
-    initial-tapeᵖ bs x tc = ?
+--     initial-tapeᵖ : (bs : TapeCell → Γ) → (initial-tapeᵇ ↓ᵇ (λ tc → cell-at-t-is qt zero (get-pos tc) (bs tc)) ≡ true) → ?
+--     initial-tapeᵖ bs x tc = ?
 
     -- want to show what?
     -- for any other finite tape of the same size
@@ -268,6 +268,18 @@ module TmToSat {Γ Q : Set} (tm : TuringMachine Γ Q) where
       where open CartesianBind
 
 
+open import np-complete5
+open import Data.Bool
 
+module _ {Name : Set} (name-fin : IsFinite Name) (bs : Name → Bool) where
+  open import np-complete3 name-fin bs
+  open InNP-Complete
+  open _≤ₚ_
+
+  SAT-in-NPC : InNP-Complete SAT-in-NP
+  size (is-complete SAT-in-NPC C'-in-np) = {! !}
+  size-poly (is-complete SAT-in-NPC C'-in-np) = {! !}
+  reduce (is-complete SAT-in-NPC C'-in-np) = {! !}
+  _≤ₚ_.equiv (is-complete SAT-in-NPC C'-in-np) = {! !}
 
 ```
