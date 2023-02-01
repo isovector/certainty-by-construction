@@ -14,7 +14,7 @@ data MoveDirection : Set where
   L R : MoveDirection
 
 open import 8-iso using (Equivalent)
-open import Data.Product using (_×_; ∃)
+open import Data.Product using (_×_; ∃; ∃-syntax)
 open import Data.Sum using (_⊎_)
 open import Agda.Primitive using (Level; lzero; lsuc)
 open import sets using (IsFinite; IsNonemptyFinite)
@@ -24,6 +24,7 @@ record TuringMachine (Γ Q : Set) : Set₁ where
   field
     δ : Q × Γ → Q × Γ × MoveDirection → Set
     δ-dec : (qi : Q × Γ) → (qid : Q × Γ × MoveDirection) → Dec (δ qi qid)
+    δ-finite : IsFinite (∃[ qi ] ∃[ qid ] δ qi qid)
     δ-deterministic
       : (qt : Q × Γ)
       → {o₁ o₂ : Q × Γ × MoveDirection}

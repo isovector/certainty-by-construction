@@ -12,8 +12,10 @@ open import sets
 open import 8-iso using (Equivalent)
 open import Agda.Primitive using (Level; lzero; lsuc)
 open import Data.Nat
+open import Data.Nat.Properties using (+-comm)
 open import Data.Fin using (suc)
 open import case-bash
+open import Data.List using ([]; _∷_)
 
 module TmToSat {Γ Q : Set} (tm : TuringMachine Γ Q) where
   open TuringMachine tm
@@ -104,9 +106,12 @@ module TmToSat {Γ Q : Set} (tm : TuringMachine Γ Q) where
     open import Relation.Binary using (Setoid)
     open import Relation.Binary.PropositionalEquality
 
-    open import np-complete3 slit-fin ↓ hiding (δ-dec)
+    open import np-complete3 slit-fin ↓ hiding (δ-dec; δ-finite)
     open import Data.Vec
     open IsNonemptyFinite using (card-pred; card-is-card; finite; ne-elements)
+
+    nδ : ℕ
+    nδ = card δ-finite
 
     nQ-1 nQ nΓ-1 nΓ : ℕ
     nQ-1 = card-pred Q-ne-finite
@@ -123,8 +128,8 @@ module TmToSat {Γ Q : Set} (tm : TuringMachine Γ Q) where
     t₀ : TapeCell → SLit
     t₀ tc = tape-contents tc (read (get-pos tc) initial-tape) zero
 
-    initial-tape-cnf : Vec SLit (suc (2 * n))
-    initial-tape-cnf = map t₀ $ elements tape-fin
+    initial-tape-cnf : Vec Lit (suc (2 * n))
+    initial-tape-cnf = map (↪ ∘ t₀) $ elements tape-fin
 
     initial-state-cnf : Vec Lit 1
     initial-state-cnf = ↪ (state-at-time zero initial-state) ∷ []
@@ -155,22 +160,11 @@ module TmToSat {Γ Q : Set} (tm : TuringMachine Γ Q) where
       time <- tabulate (from-pred time-ne-fin)
       pos <- elements tape-fin
       (sym , sym') <- ne-elements Γ-ne-finite
-      ! (tape-position pos time)
+      ↪ (tape-position pos time)
         ∷ ! (tape-contents pos sym time)
         ∷ ! (tape-contents pos sym' {! Fin.suc time !})
         ∷ []
       where open CartesianBind
-
-      -- (tape-contents pos sym time) and
-      -- (tape-contents pos sym' (suc time))
-      -- then
-      -- tape-position pos time
-
-      -- same as
-
-      -- ! (tape-position pos time)
-      -- or ! tape-contents pos sym time
-      -- or ! tape-contents pos sym' (suc time)
 
 
     single-state : Vec Lit (suc n * (nQ * nQ-1 * 2))
@@ -196,28 +190,57 @@ module TmToSat {Γ Q : Set} (tm : TuringMachine Γ Q) where
     go : MoveDirection → TapeCell → TapeCell
     go = ?
 
-    can-transition : Vec Lit (suc n * (nQ * (nQ * (nΓ * (nΓ * 8))) + (2 * n) * (nQ * (nQ * (nΓ * (nΓ * 8))))))
+    can-transition : Vec (Vec Lit 4) (card time-fin * (card δ-finite * 3 + (n + (n + 0)) * (card δ-finite * 3)))
     can-transition = do
       time <- elements time-fin
       pos <- elements tape-fin
-      q <- elements Q-finite
-      q' <- elements Q-finite
-      sym <- elements Γ-finite
-      sym' <- elements Γ-finite
-      dir <- L ∷ R ∷ []
+      (q , i) , (q' , i' , dir) , tr <- elements δ-finite
+      let pos' = go dir pos
+          time' = {! time !}
 
-      case δ-dec (q , sym) (q' , sym' , dir) of λ
-        { (yes d) →
-           ! (tape-position pos time)
-             ∷ ! (state-at-time time q)
-             ∷ ! (tape-contents pos sym time)
-             ∷ ↪ (tape-position (go dir pos) {! time !})
-             ∷ []
-
-        ; (no _) → ?
-        }
-
+      Data.Vec.map
+        (λ x
+        → ! (tape-position pos time)
+        ∷ ! (state-at-time time q)
+        ∷ ! (tape-contents pos i time)
+        ∷ x
+        ∷ []
+        )
+        ( ↪ (tape-position pos' time')
+        ∷ ↪ (state-at-time time' q')
+        ∷ ↪ (tape-contents pos' i' time')
+        ∷ []
+        )
       where open CartesianBind
+
+    data CNF' : ℕ → Set where
+      [] : CNF' zero
+      _∷_ : {n m : ℕ} → Vec Lit n → CNF' m → CNF' (suc (m + n))
+
+    fromVec : {m n : ℕ} → Vec (Vec Lit m) n → CNF' (n * suc m)
+    fromVec [] = []
+    fromVec {m} (x ∷ x₁) = subst CNF' (cong suc (+-comm _ m)) (x ∷ fromVec x₁)
+
+
+    -- 8 * n ^ 3 + 2 * nQ-1 ^ 2 + 14 * n ^ 2 + 12 * n * nΓ-1 + 9 * n * nΓ-1 ^ 2 + 12 * n ^ 2 * nΓ-1 + 10 * n ^ 2 * nΓ-1 ^ 2 + 2 * nQ-1 + 15 * d + 9 * n + 3 * nΓ-1 + 2 * nΓ-1 ^ 2 + 45 * n * d + 30 * d * n ^ 2 + 2 * n * nQ-1 + 2 * n * nQ-1 ^ 2 + 12
+    sat-problem : CNF' (suc (suc (suc (suc (suc (suc (suc (suc (suc n * (nδ * 3 + (2 * n) * (nδ * 3)) * 5 + suc n * ((2 * n + (2 * n) * (2 * n)) * 2)) + suc n * (nQ * nQ-1 * 2)) + n * (nΓ * nΓ-1 * 3 + (2 * n) * (nΓ * nΓ-1 * 3))) + suc n * (nΓ * 1 + 2 * n * (nΓ * 1))) + suc n * (nΓ * nΓ-1 * 2 + (2 * n) * (nΓ * nΓ-1 * 2))) + 1) + 1) + suc (2 * n)))
+    sat-problem
+      = initial-tape-cnf
+      ∷ initial-state-cnf
+      ∷ initial-pos-cnf
+      ∷ no-duplicates
+      ∷ one-holds
+      ∷ head-writes-cnf
+      ∷ single-state
+      ∷ single-head-pos
+      ∷ fromVec can-transition
+
+
+--     test : ℕ
+--     test = Data.List.length ⌊ sat-problem ⌋
+
+--     test₂ : test ≡ test
+--     test₂ = refl
 
 
 -- open import np-complete5

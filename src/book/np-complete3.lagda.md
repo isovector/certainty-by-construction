@@ -11,7 +11,7 @@ open import sets
 module np-complete3 {Name : Set} (name-fin : IsFinite Name) (bs : Name → Bool) where
 
 open import np-complete0 Name name-fin public
-open import Data.Fin using (Fin)
+open import Data.Fin using (Fin; zero; suc)
 
 open import Data.List
   using (List; _∷_; []; _++_; [_]; reverse; _∷ʳ_; map; concatMap; length)
@@ -20,7 +20,7 @@ open import Relation.Nullary using (yes; no; ¬_; Dec)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; subst; module ≡-Reasoning)
 open import Data.Empty using (⊥-elim)
 
-open import Data.Product using (_×_; _,_; ∃)
+open import Data.Product using (_×_; _,_; ∃; ∃-syntax)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 
 open import Agda.Primitive using (Level)
@@ -45,9 +45,6 @@ data δ : State × Instr → State × Instr × MoveDirection → Set where
       : {x : Lit} {lo hi : Bool}
       → δ ((lo , hi)             , val x)
           ((lo , hi ∨ (x ↓ˡ bs)) , nop , R)
-
-no-nops : ∀ q o → ¬ δ (q , nop) o
-no-nops q o ()
 
 δ-deterministic
     : (qt : State × Instr)
@@ -97,10 +94,15 @@ open import Data.Bool.Properties using () renaming (_≟_ to _≟𝔹_)
 ... | yes refl = yes ⟶val
 δ-dec (q , nop) _ = no λ ()
 
+open import propisos
+
+postulate
+  δ-finite : IsFinite (∃[ qi ] ∃[ qid ] δ qi qid)
 
 sat : TuringMachine (Instr) State
 TuringMachine.δ sat = δ
 TuringMachine.δ-dec sat = δ-dec
+TuringMachine.δ-finite sat = δ-finite
 TuringMachine.δ-deterministic sat = δ-deterministic
 TuringMachine.H sat = Halted
 TuringMachine.H-dec sat = Halted-dec
