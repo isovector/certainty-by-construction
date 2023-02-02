@@ -4,11 +4,11 @@ open import sets
 module np-complete0 (Name : Set) (name-fin : IsFinite Name) where
 
 open import Data.Nat
-  using (ℕ; _*_; _+_)
+  using (ℕ; _*_; _+_; zero; suc)
 open import Data.Fin
   using (Fin; zero; suc)
 open import Data.Vec
-  using (Vec; lookup; _∷_; [])
+  using (Vec; lookup; _∷_; []; foldr′)
 open import Data.Bool
 open import Data.List using (List; _++_)
 open import Relation.Nullary using (yes; no; ¬_)
@@ -63,23 +63,27 @@ card instr-fin = 2 + card lit-fin
 is-fin instr-fin = ↔-trans instr-iso (is-fin (finite-sum bool-fin lit-fin))
 
 
-Clause : Set
-Clause = List Lit
+Clause : ℕ → Set
+Clause = Vec Lit
 
-CNF : Set
-CNF = List Clause
+data CNF : ℕ → Set where
+  [] : CNF zero
+  _∷_ : {n m : ℕ} → Clause n → CNF m → CNF (suc (m + n))
 
 _↓ˡ_ : Lit → (Name → Bool) → Bool
 _↓ˡ_ (↪ x) bs = bs x
 _↓ˡ_ (! x) bs = not (bs x)
 
-open import Data.List using (List; _∷_; []; foldr)
+open import Data.List using (List; _∷_; [])
 
-_↓ᶜ_ : List Lit → (Name → Bool) → Bool
-_↓ᶜ_ cl bs = foldr (λ l lo → (l ↓ˡ bs) ∨ lo) false cl
+_↓ᶜ_ : {n : ℕ} → Vec Lit n → (Name → Bool) → Bool
+_↓ᶜ_ cl bs = foldr′ (λ l lo → (l ↓ˡ bs) ∨ lo) false cl
 
-_↓_ : List (List Lit) → (Name → Bool) → Bool
-_↓_ cnf bs = foldr (λ cl hi → (cl ↓ᶜ bs) ∧ hi) true cnf
+_↓_ : {n : ℕ} → CNF n → (Name → Bool) → Bool
+[] ↓ bs = true
+(cl ∷ cnf) ↓ bs = (cl ↓ᶜ bs) ∧ (cnf ↓ bs)
+
+-- foldr (λ cl hi → (cl ↓ᶜ bs) ∧ hi) true cnf
 
 
 data Expr : Set where

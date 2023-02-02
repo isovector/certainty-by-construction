@@ -22,16 +22,7 @@ module TmToSat {Γ Q : Set} (tm : TuringMachine Γ Q) where
   open import np-complete2 tm
   open import Data.Fin using (Fin; toℕ; splitAt; zero; suc)
 
-  module _ {qt : Q × Tape} {q : Q} {n : ℕ} (hw : HaltsWith qt q n) where
-    initial-tape : Tape
-    initial-tape = proj₂ qt
-
-    initial-state : Q
-    initial-state = proj₁ qt
-
-    arr : qt -⟨ n ⟩→ (q , HaltsWith.final-tape hw)
-    arr = HaltsWith.arr hw
-
+  module _  (n : ℕ)  where
     TapeCell : Set
     TapeCell = Fin (suc (2 * n))
 
@@ -98,15 +89,15 @@ module TmToSat {Γ Q : Set} (tm : TuringMachine Γ Q) where
     open import Data.Bool
     open Properties
 
-    ↓ : SLit → Bool
-    ↓ (tape-contents tc i m) = cell-at-t-is qt (get-time m) (get-pos tc) i
-    ↓ (tape-position tc m) = pos-at-t-is qt (get-time m) (get-pos tc)
-    ↓ (state-at-time m q) = q-at-t-is qt (get-time m) q
+    ↓ : Q × Tape → SLit → Bool
+    ↓ qt (tape-contents tc i m) = cell-at-t-is qt (get-time m) (get-pos tc) i
+    ↓ qt (tape-position tc m) = pos-at-t-is qt (get-time m) (get-pos tc)
+    ↓ qt (state-at-time m q) = q-at-t-is qt (get-time m) q
 
     open import Relation.Binary using (Setoid)
     open import Relation.Binary.PropositionalEquality
 
-    open import np-complete3 slit-fin ↓ hiding (δ-dec; δ-finite)
+    open import np-complete0 SLit slit-fin
     open import Data.Vec
     open IsNonemptyFinite using (card-pred; card-is-card; finite; ne-elements)
 
@@ -125,14 +116,14 @@ module TmToSat {Γ Q : Set} (tm : TuringMachine Γ Q) where
     open import Function using (_$_; _∘_)
 
 
-    t₀ : TapeCell → SLit
-    t₀ tc = tape-contents tc (read (get-pos tc) initial-tape) zero
+    t₀ : Tape → TapeCell → SLit
+    t₀ t tc = tape-contents tc (read (get-pos tc) t) zero
 
-    initial-tape-cnf : Vec Lit (suc (2 * n))
-    initial-tape-cnf = map (↪ ∘ t₀) $ elements tape-fin
+    initial-tape-cnf : Tape → Vec Lit (suc (2 * n))
+    initial-tape-cnf t = map (↪ ∘ t₀ t) $ elements tape-fin
 
-    initial-state-cnf : Vec Lit 1
-    initial-state-cnf = ↪ (state-at-time zero initial-state) ∷ []
+    initial-state-cnf : Q → Vec Lit 1
+    initial-state-cnf q₀ = ↪ (state-at-time zero q₀) ∷ []
 
     initial-pos-cnf : Vec Lit 1
     initial-pos-cnf = ↪ (tape-position zero zero) ∷ []
@@ -213,20 +204,19 @@ module TmToSat {Γ Q : Set} (tm : TuringMachine Γ Q) where
         )
       where open CartesianBind
 
-    data CNF' : ℕ → Set where
-      [] : CNF' zero
-      _∷_ : {n m : ℕ} → Vec Lit n → CNF' m → CNF' (suc (m + n))
-
-    fromVec : {m n : ℕ} → Vec (Vec Lit m) n → CNF' (n * suc m)
+    fromVec : {m n : ℕ} → Vec (Vec Lit m) n → CNF (n * suc m)
     fromVec [] = []
-    fromVec {m} (x ∷ x₁) = subst CNF' (cong suc (+-comm _ m)) (x ∷ fromVec x₁)
+    fromVec {m} (x ∷ x₁) = subst CNF (cong suc (+-comm _ m)) (x ∷ fromVec x₁)
 
+
+    the-size : ℕ → ℕ
+    the-size n = (suc (suc (suc (suc (suc (suc (suc (suc (suc n * (nδ * 3 + (2 * n) * (nδ * 3)) * 5 + suc n * ((2 * n + (2 * n) * (2 * n)) * 2)) + suc n * (nQ * nQ-1 * 2)) + n * (nΓ * nΓ-1 * 3 + (2 * n) * (nΓ * nΓ-1 * 3))) + suc n * (nΓ * 1 + 2 * n * (nΓ * 1))) + suc n * (nΓ * nΓ-1 * 2 + (2 * n) * (nΓ * nΓ-1 * 2))) + 1) + 1) + suc (2 * n)))
 
     -- 8 * n ^ 3 + 2 * nQ-1 ^ 2 + 14 * n ^ 2 + 12 * n * nΓ-1 + 9 * n * nΓ-1 ^ 2 + 12 * n ^ 2 * nΓ-1 + 10 * n ^ 2 * nΓ-1 ^ 2 + 2 * nQ-1 + 15 * d + 9 * n + 3 * nΓ-1 + 2 * nΓ-1 ^ 2 + 45 * n * d + 30 * d * n ^ 2 + 2 * n * nQ-1 + 2 * n * nQ-1 ^ 2 + 12
-    sat-problem : CNF' (suc (suc (suc (suc (suc (suc (suc (suc (suc n * (nδ * 3 + (2 * n) * (nδ * 3)) * 5 + suc n * ((2 * n + (2 * n) * (2 * n)) * 2)) + suc n * (nQ * nQ-1 * 2)) + n * (nΓ * nΓ-1 * 3 + (2 * n) * (nΓ * nΓ-1 * 3))) + suc n * (nΓ * 1 + 2 * n * (nΓ * 1))) + suc n * (nΓ * nΓ-1 * 2 + (2 * n) * (nΓ * nΓ-1 * 2))) + 1) + 1) + suc (2 * n)))
-    sat-problem
-      = initial-tape-cnf
-      ∷ initial-state-cnf
+    sat-problem : Q × Tape → CNF (the-size n)
+    sat-problem qt
+      = initial-tape-cnf (proj₂ qt)
+      ∷ initial-state-cnf (proj₁ qt)
       ∷ initial-pos-cnf
       ∷ no-duplicates
       ∷ one-holds
@@ -235,6 +225,15 @@ module TmToSat {Γ Q : Set} (tm : TuringMachine Γ Q) where
       ∷ single-head-pos
       ∷ fromVec can-transition
 
+  open import np-complete3
+  open import np-complete5
+
+  SAT-in-NPC : (qt : Q × Tape) → InNP-Complete (SAT-in-NP  (slit-fin qt))
+  SAT-in-NPC = ?
+  -- _≤ₚ_.size (InNP-Complete.is-complete SAT-in-NPC C'-in-np) n = the-size (InNP.runtime C'-in-np n)
+  -- _≤ₚ_.size-poly (InNP-Complete.is-complete SAT-in-NPC C'-in-np) n = {! poly-trans !}
+  -- _≤ₚ_.reduce (InNP-Complete.is-complete SAT-in-NPC C'-in-np) c' = {! InNP.compile C'-in-np c' !}
+  -- _≤ₚ_.equiv (InNP-Complete.is-complete SAT-in-NPC C'-in-np) = {! !}
 
 --     test : ℕ
 --     test = Data.List.length ⌊ sat-problem ⌋
@@ -243,7 +242,6 @@ module TmToSat {Γ Q : Set} (tm : TuringMachine Γ Q) where
 --     test₂ = refl
 
 
--- open import np-complete5
 -- open import Data.Bool
 
 -- module _ {Name : Set} (name-fin : IsFinite Name) (bs : Name → Bool) where

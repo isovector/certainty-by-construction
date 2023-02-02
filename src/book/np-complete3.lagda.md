@@ -2,7 +2,8 @@
 open import Data.Bool
   using (Bool; true; false; not; _∨_; _∧_; _≟_)
 open import Data.Nat using (ℕ; _+_; suc)
-open import Data.Vec using (Vec)
+open import Data.Nat.Properties using (+-comm)
+open import Data.Vec using (Vec; toList; _∷_; [])
 
 open import Relation.Binary.Definitions using (DecidableEquality)
 open import sets
@@ -17,7 +18,7 @@ open import Data.List
   using (List; _∷_; []; _++_; [_]; reverse; _∷ʳ_; map; concatMap; length)
 open import Relation.Unary using (Decidable)
 open import Relation.Nullary using (yes; no; ¬_; Dec)
-open import Relation.Binary.PropositionalEquality using (_≡_; refl; subst; module ≡-Reasoning)
+open import Relation.Binary.PropositionalEquality using (_≡_; refl; subst; module ≡-Reasoning; cong)
 open import Data.Empty using (⊥-elim)
 
 open import Data.Product using (_×_; _,_; ∃; ∃-syntax)
@@ -28,11 +29,30 @@ open import Agda.Primitive using (Level)
 State : Set
 State = Bool × Bool
 
-⌊_⌋ᶜ : Clause → List (Instr)
-⌊_⌋ᶜ ls = map val ls ∷ʳ pop
+⌊_⌋ᶜ : {m : ℕ} → Clause m → List Instr
+⌊_⌋ᶜ ls = map val (toList ls) ∷ʳ pop
 
-⌊_⌋ : CNF → List (Instr)
-⌊_⌋ = concatMap ⌊_⌋ᶜ
+⌊⌋ᶜ-length : {m : ℕ} → (ins : Clause m) → length ⌊ ins ⌋ᶜ ≡ suc m
+⌊⌋ᶜ-length [] = refl
+⌊⌋ᶜ-length (x ∷ ins) rewrite ⌊⌋ᶜ-length ins = refl
+
+⌊_⌋ : {m : ℕ} → CNF m → List Instr
+⌊ [] ⌋ = []
+⌊ x ∷ x₁ ⌋ = ⌊ x ⌋ᶜ ++ ⌊ x₁ ⌋
+
+open import Data.List.Properties using (length-++)
+
+⌊⌋-length : {sz : ℕ} → (ins : CNF sz) → length ⌊ ins ⌋ ≡ sz
+⌊⌋-length [] = refl
+⌊⌋-length (_∷_ {m} {n} x ins) = begin
+  length ⌊ x ∷ ins ⌋              ≡⟨⟩
+  length (⌊ x ⌋ᶜ ++ ⌊ ins ⌋)      ≡⟨ length-++ ⌊ x ⌋ᶜ ⟩
+  length ⌊ x ⌋ᶜ + length ⌊ ins ⌋  ≡⟨ cong (_+ _) (⌊⌋ᶜ-length x) ⟩
+  suc m + length ⌊ ins ⌋          ≡⟨ cong (suc m +_) (⌊⌋-length ins) ⟩
+  suc m + n                       ≡⟨ cong suc (+-comm m n) ⟩
+  suc (n + m)                     ∎
+  where open ≡-Reasoning
+
 
 open import np-complete1 using (MoveDirection; L; R; TuringMachine)
 
@@ -148,10 +168,11 @@ import Data.Integer.Properties as ℤ
   where open ≡-Reasoning
 
 equivClause
-    : (n : ℤ)
+    : {m : ℕ}
+    → (n : ℤ)
     → (lo hi : Bool)
     → (rs : List (Instr))
-    → (cl : Clause)
+    → (cl : Clause m)
     → ((lo , hi) , mkTape n (⌊ cl ⌋ᶜ ++ rs)) -⟨ length ⌊ cl ⌋ᶜ ⟩→
       ( (lo ∧ (hi ∨ (cl ↓ᶜ bs)) , false)
       , mkTape (ℤ.+ length ⌊ cl ⌋ᶜ ℤ.+ n) rs
@@ -171,7 +192,7 @@ equivClause n lo hi rs (x ∷ xs) =
   begin
     (lo , hi) , mkTape _ (⌊ x ∷ xs ⌋ᶜ ++ rs)
   ≡⟨⟩
-    (lo , hi) , tape _ [] (val x) ((map val xs ++ (pop ∷ [])) ++ rs)
+    (lo , hi) , tape _ [] (val x) ((map val (toList xs) ++ (pop ∷ [])) ++ rs)
   ≡ᵀ⟨ +-comm (length ⌊ xs ⌋ᶜ) 1 ⟩
     _
   ≈⟨ step ⟶val ⟩
@@ -190,9 +211,9 @@ equivClause n lo hi rs (x ∷ xs) =
 open import Function using (flip; _$_; _∘_)
 
 equiv
-    : (n : ℤ)
+    : {m : ℕ} → (n : ℤ)
     → (lo : Bool)
-    → (cnf : CNF)
+    → (cnf : CNF m)
     → HaltsWith ((lo , false) , mkTape n ⌊ cnf ⌋)
                 ((lo ∧ (cnf ↓ bs)) , false)
                 (length ⌊ cnf ⌋)
@@ -210,7 +231,7 @@ equiv n lo (x ∷ cnf)
           (lo , false) , mkTape _ ⌊ x ∷ cnf ⌋
         ≡⟨⟩
           (lo , false) , mkTape _ (⌊ x ⌋ᶜ ++ ⌊ cnf ⌋)
-        ≈⟨ equivClause _ lo false ⌊ cnf ⌋ x ⟩
+        ≈⟨ equivClause n lo false ⌊ cnf ⌋ x ⟩
           (lo ∧ (x ↓ᶜ bs) , false) , mkTape _ ⌊ cnf ⌋
         ∎
       )
@@ -221,7 +242,7 @@ equiv n lo (x ∷ cnf)
       (equiv _ (lo ∧ (x ↓ᶜ bs)) cnf)
   where open ⟶-Reasoning
 
-DONE : (cnf : CNF)
+DONE : {m : ℕ} → (cnf : CNF m)
      → HaltsWith ((true , false) , mkTape ℤ.0ℤ ⌊ cnf ⌋)
                  ((cnf ↓ bs)     , false)
                  (length ⌊ cnf ⌋)
@@ -231,25 +252,19 @@ open import np-complete5
 
 open InNP
 
-
-record SAT (n : ℕ) : Set where
-  field
-    cnf : CNF
-    cnf-size : length ⌊ cnf ⌋ ≡ n
-
-open SAT
-
+SAT : ℕ → Set
+SAT = CNF
 
 SAT-in-NP : InNP SAT
 Γ SAT-in-NP = _
 Q SAT-in-NP = _
 tm SAT-in-NP = sat
-compile SAT-in-NP ins = (true , false) , mkTape ℤ.0ℤ ⌊ cnf ins ⌋
+compile SAT-in-NP ins = (true , false) , mkTape ℤ.0ℤ ⌊ ins ⌋
 runtime SAT-in-NP sz = sz
 runtime-poly SAT-in-NP sz = poly-refl
 verify SAT-in-NP {sz} ins
-  = ((cnf ins ↓ bs) , false)
-  , subst (HaltsWith _ _) (cnf-size ins) (DONE (cnf ins))
+  = ((ins ↓ bs) , false)
+  , subst (HaltsWith _ _) (⌊⌋-length ins) (DONE ins)
 
 ```
 
