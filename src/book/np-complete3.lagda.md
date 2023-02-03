@@ -248,23 +248,5 @@ DONE : {m : ℕ} → (cnf : CNF m)
                  (length ⌊ cnf ⌋)
 DONE = equiv _ true
 
-open import np-complete5
-
-open InNP
-
-SAT : ℕ → Set
-SAT = CNF
-
-SAT-in-NP : InNP SAT
-Γ SAT-in-NP = _
-Q SAT-in-NP = _
-tm SAT-in-NP = sat
-compile SAT-in-NP ins = (true , false) , mkTape ℤ.0ℤ ⌊ ins ⌋
-runtime SAT-in-NP sz = sz
-runtime-poly SAT-in-NP sz = poly-refl
-verify SAT-in-NP {sz} ins
-  = ((ins ↓ bs) , false)
-  , subst (HaltsWith _ _) (⌊⌋-length ins) (DONE ins)
-
 ```
 
