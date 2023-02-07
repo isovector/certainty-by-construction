@@ -62,12 +62,18 @@ open import Relation.Binary.PropositionalEquality using (_≡_; refl)
     → qt₁' -⟨ n' ⟩→ qt₂'
 ⟶-subst refl refl refl x = x
 
-record HaltsWith (qt : Q × Tape) (q : Q) (n : ℕ) : Set where
+record HaltsWith' (H : Q × Γ → Set) (qt : Q × Tape) (q : Q) (n : ℕ) : Set where
   constructor halts-with
   field
     final-tape : Tape
-    arr : qt -⟨ n ⟩→ (q , final-tape)
-    is-halted : H (q , Tape.head final-tape)
+    arr        : qt -⟨ n ⟩→ (q , final-tape)
+    is-halted  : H (q , Tape.head final-tape)
+
+open import Function using (_∘_)
+
+HaltsWith   = HaltsWith' H
+AcceptsWith = HaltsWith' Accept
+RejectsWith = HaltsWith' Reject
 
 subst-halts
   : {qt qt' : Q × Tape} {q q' : Q} {n n' : ℕ}

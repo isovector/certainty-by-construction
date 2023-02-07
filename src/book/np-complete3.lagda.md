@@ -21,7 +21,7 @@ open import Relation.Nullary using (yes; no; ¬_; Dec)
 open import Relation.Binary.PropositionalEquality using (_≡_; refl; subst; module ≡-Reasoning; cong)
 open import Data.Empty using (⊥-elim)
 
-open import Data.Product using (_×_; _,_; ∃; ∃-syntax)
+open import Data.Product using (_×_; _,_; ∃; ∃-syntax; proj₁; proj₂)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
 
 open import Agda.Primitive using (Level)
@@ -74,13 +74,20 @@ data δ : State × Instr → State × Instr × MoveDirection → Set where
 δ-deterministic (_ , pop) ⟶pop ⟶pop = refl
 δ-deterministic (_ , val _) ⟶val ⟶val = refl
 
-data Halted : State × Instr → Set where
-  halted : {q : State} → Halted (q , nop)
+data Accept : State × Instr → Set where
+  accept : {hi : Bool} → Accept ((true , hi) , nop)
+
+data Reject : State × Instr → Set where
+  reject : {hi : Bool} → Reject ((false , hi) , nop)
+
+Halted : State × Instr → Set
+Halted qi = Accept qi ⊎ Reject qi
 
 Halted-dec : Decidable Halted
-Halted-dec (_ , pop) = no λ ()
-Halted-dec (_ , val x) = no λ ()
-Halted-dec (_ , nop) = yes halted
+Halted-dec (_ , pop) = no λ { (inj₁ ()) ; (inj₂ ()) }
+Halted-dec (_ , val x) = no λ { (inj₁ ()) ; (inj₂ ()) }
+Halted-dec ((false , _) , nop) = yes (inj₂ reject)
+Halted-dec ((true , _) , nop) = yes (inj₁ accept)
 
 
 open import Relation.Nullary using (¬_)
@@ -88,10 +95,12 @@ open import Relation.Nullary using (¬_)
 step-or-halt : (qi : State × Instr) →  ∃ (δ qi) ⊎ Halted qi
 step-or-halt (q , pop) = inj₁ (_ , ⟶pop)
 step-or-halt (q , val x) = inj₁ (_ , ⟶val)
-step-or-halt (q , nop) = inj₂ halted
+step-or-halt ((false , _) , nop) = inj₂ (inj₂ reject)
+step-or-halt ((true , _) , nop) = inj₂ (inj₁ accept)
 
 is-halted : ∀ {qi} → Halted qi → ∀ qir → ¬ δ qi qir
-is-halted halted _ ()
+is-halted (inj₁ accept) qir ()
+is-halted (inj₂ reject) qir ()
 
 open import Data.Product.Properties using (≡-dec)
 open import Data.Bool.Properties using () renaming (_≟_ to _≟𝔹_)
@@ -124,8 +133,10 @@ TuringMachine.δ sat = δ
 TuringMachine.δ-dec sat = δ-dec
 TuringMachine.δ-finite sat = δ-finite
 TuringMachine.δ-deterministic sat = δ-deterministic
-TuringMachine.H sat = Halted
+TuringMachine.Accept sat = Accept
+TuringMachine.Reject sat = Reject
 TuringMachine.H-dec sat = Halted-dec
+TuringMachine.not-both sat accept ()
 TuringMachine.step-or-halt sat = step-or-halt
 TuringMachine.b sat = nop
 TuringMachine.Q-ne-finite sat = nonempty-fin (finite-prod bool-fin bool-fin) 3 refl
@@ -210,6 +221,10 @@ equivClause n lo hi rs (x ∷ xs) =
 
 open import Function using (flip; _$_; _∘_)
 
+halted : {lo : Bool} {n : ℤ} → Halted ((lo ∧ true , false) , Tape.head (mkTape n ⌊ [] ⌋))
+halted {false} = inj₂ reject
+halted {true} = inj₁ accept
+
 equiv
     : {m : ℕ} → (n : ℤ)
     → (lo : Bool)
@@ -217,7 +232,7 @@ equiv
     → HaltsWith ((lo , false) , mkTape n ⌊ cnf ⌋)
                 ((lo ∧ (cnf ↓ bs)) , false)
                 (length ⌊ cnf ⌋)
-equiv n lo [] = flip (halts-with _) halted $
+equiv n lo [] = flip (halts-with _) (halted {n = n}) $
   begin
     (lo , false) , mkTape _ ⌊ [] ⌋
   ≡⟨ cong (λ φ → (φ , _) , _) (sym (∧-identityʳ lo)) ⟩

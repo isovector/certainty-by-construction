@@ -15,10 +15,12 @@ data MoveDirection : Set where
 
 open import 8-iso using (Equivalent)
 open import Data.Product using (_×_; ∃; ∃-syntax)
-open import Data.Sum using (_⊎_)
+open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Agda.Primitive using (Level; lzero; lsuc)
 open import sets using (IsFinite; IsNonemptyFinite)
 open import Relation.Binary.Definitions using (DecidableEquality)
+open import Data.Empty
+open import propisos
 
 record TuringMachine (Γ Q : Set) : Set₁ where
   field
@@ -30,11 +32,24 @@ record TuringMachine (Γ Q : Set) : Set₁ where
       → {o₁ o₂ : Q × Γ × MoveDirection}
       → δ qt o₁ → δ qt o₂
       → o₁ ≡ o₂
-    H : Q × Γ → Set
+    Accept : Q × Γ → Set
+    Reject : Q × Γ → Set
+
+  H : Q × Γ → Set
+  H qi = Accept qi ⊎ Reject qi
+
+  field
     H-dec : Decidable H
-    step-or-halt
-      : (qi : Q × Γ)
-      → ∃ (δ qi) ⊎ H qi
+    step-or-halt : (qi : Q × Γ) → ∃ (δ qi) ⊎ H qi
+    not-both : {qi : Q × Γ} → Accept qi → Reject qi → ⊥
+    -- step-or-halt₁
+    --   : (qi : Q × Γ) {qid : Q × Γ × MoveDirection}
+    --   → δ qi qid
+    --   → ¬ H qi
+    -- step-or-halt₂
+    --   : (qi : Q × Γ)
+    --   → H qi
+    --   → ¬ ∃ (δ qi)
     b : Γ
     Q-ne-finite : IsNonemptyFinite Q
     Γ-ne-finite : IsNonemptyFinite Γ
@@ -50,6 +65,28 @@ record TuringMachine (Γ Q : Set) : Set₁ where
 
   _≟Q_ : DecidableEquality Q
   _≟Q_ = IsFinite.dec-finite Q-finite
+
+
+module _ {Γ Q : Set} (tm : TuringMachine Γ Q) where
+  open TuringMachine tm
+  Accept-dec : Decidable Accept
+  Accept-dec qi with H-dec qi
+  ... | yes (_⊎_.inj₁ x) = yes x
+  ... | yes (_⊎_.inj₂ y) = no λ x → ⊥-elim (not-both x y)
+  ... | no z = no λ x → z (_⊎_.inj₁ x)
+
+  Reject-dec : Decidable Reject
+  Reject-dec qi with H-dec qi
+  ... | yes (_⊎_.inj₂ x) = yes x
+  ... | yes (_⊎_.inj₁ y) = no λ x → ⊥-elim (not-both y x)
+  ... | no z = no λ x → z (_⊎_.inj₂ x)
+
+--   step-or-halt : (qi : Q × Γ) → ∃ (δ qi) ⊎ H qi
+--   step-or-halt qi with H-dec qi
+--   ... | yes x = inj₂ x
+--   ... | no x = todo
+--     where postulate
+--       todo : {A : Set} → A
 
 
 module Tapes {Γ : Set} (b : Γ) (_≟Γ_ : DecidableEquality Γ) where
@@ -89,7 +126,4 @@ module Tapes {Γ : Set} (b : Γ) (_≟Γ_ : DecidableEquality Γ) where
   ... | tri< n<m _ _ = fromMaybe b (Data.List.head (drop ∣ m - n ∣ rs))
   ... | tri≈ _ n=m _ = i
   ... | tri> _ _ n>m = fromMaybe b (Data.List.head (drop ∣ m - n ∣ ls))
-
-  postulate
-    read-invariant : ∀ m d t → read m t ≡ read m (move d t)
 ```

@@ -228,12 +228,12 @@ module TmToSat {Γ Q : Set} (tm : TuringMachine Γ Q) where
   open import np-complete3
   open import np-complete5
 
-  SAT-in-NPC : (qt : Q × Tape) → InNP-Complete (SAT-in-NP  (slit-fin qt))
-  SAT-in-NPC = ?
-  -- _≤ₚ_.size (InNP-Complete.is-complete SAT-in-NPC C'-in-np) n = the-size (InNP.runtime C'-in-np n)
-  -- _≤ₚ_.size-poly (InNP-Complete.is-complete SAT-in-NPC C'-in-np) n = {! poly-trans !}
-  -- _≤ₚ_.reduce (InNP-Complete.is-complete SAT-in-NPC C'-in-np) c' = {! InNP.compile C'-in-np c' !}
-  -- _≤ₚ_.equiv (InNP-Complete.is-complete SAT-in-NPC C'-in-np) = {! !}
+--   SAT-in-NPC : (qt : Q × Tape) → InNP-Complete (SAT-in-NP  (slit-fin qt))
+--   SAT-in-NPC = ?
+--   -- _≤ₚ_.size (InNP-Complete.is-complete SAT-in-NPC C'-in-np) n = the-size (InNP.runtime C'-in-np n)
+--   -- _≤ₚ_.size-poly (InNP-Complete.is-complete SAT-in-NPC C'-in-np) n = {! poly-trans !}
+--   -- _≤ₚ_.reduce (InNP-Complete.is-complete SAT-in-NPC C'-in-np) c' = {! InNP.compile C'-in-np c' !}
+--   -- _≤ₚ_.equiv (InNP-Complete.is-complete SAT-in-NPC C'-in-np) = {! !}
 
 --     test : ℕ
 --     test = Data.List.length ⌊ sat-problem ⌋
