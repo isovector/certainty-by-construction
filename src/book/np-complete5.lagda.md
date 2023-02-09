@@ -5,7 +5,7 @@ module np-complete5 where
 open import np-complete1
 open import Data.Nat hiding (_⊔_)
 open import Data.Product
-open import np-complete2 using (HaltsWith)
+import np-complete2
 open import Relation.Binary.PropositionalEquality
 open import Agda.Primitive using (Level; lsuc; _⊔_)
 open import propisos
@@ -32,28 +32,26 @@ o³ = 5 n^ 1 + 3 n^ 2 + zero
 
 record ProblemClass {ℓ₁ ℓ₂ ℓ₃ : Level} : Set (lsuc (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)) where
   field
-
-    -- SAT : BOOLEAN EXPRS PARAMETERIZED VARIABLES
-    -- compile : Problem -> Tape Γ
-    --
-    Problem : (sz : ℕ) → Set ℓ₁
-    Candidate : {sz : ℕ} → Problem sz → Set ℓ₂
-    Solution : {sz : ℕ} → (p : Problem sz) → Candidate p → Set ℓ₃
+    Problem : Set ℓ₁
+    Candidate : Problem → Set ℓ₂
+    Solution : {p : Problem} → Candidate p → Set ℓ₃
 
 
 record InNP {ℓ₁ ℓ₂ ℓ₃ : Level} (PC : ProblemClass {ℓ₁} {ℓ₂} {ℓ₃}) : Set (lsuc (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃)) where
   open ProblemClass PC
 
   field
-    Γ Q : {sz : ℕ} → Problem sz → Set
-    runtime : (sz : ℕ) → ℕ
-    runtime-poly : (sz : ℕ) → Poly sz (runtime sz)
-    tm : {sz : ℕ} → (ins : Problem sz) → (soln : Candidate ins) → TuringMachine (Γ ins) (Q ins)
-    compile : {sz : ℕ}
-            → (ins : Problem sz)
-            → (soln : Candidate ins)
-            → Q ins × Tapes.Tape (TuringMachine.b (tm ins soln)) (TuringMachine._≟Γ_ (tm ins soln))
-    verify : {sz : ℕ} → (ins : Problem sz) (soln : Candidate ins) → (∃[ q ] HaltsWith (tm ins soln) (compile ins soln) q (runtime sz)) ↔ Solution ins soln
+    Γ Q : Set
+    runtime : Problem → ℕ
+    -- runtime-poly : Poly sz runtime
+    tm : TuringMachine Γ Q
+
+  open TuringMachine tm
+  open np-complete2 tm
+
+  field
+    compile : {ins : Problem} → (soln : Candidate ins) → Q × Tape
+    verify : {ins : Problem} (soln : Candidate ins) → (∃[ q ] AcceptsWith (compile soln) q (runtime ins)) ↔ Solution soln
 
 
 
