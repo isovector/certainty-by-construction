@@ -82,7 +82,7 @@ module _ where
   right-inv-of (Language.proof empty-lang .[]) (recog false tt start) = refl
 
 
-open import Data.Product
+open import Data.Product hiding (zip)
 open import Data.Sum
 
 module _ {d₁ d₂ : DFA Γ} (l₁ : Matching.Language d₁) (l₂ : Matching.Language d₂)  where
@@ -98,16 +98,39 @@ module _ {d₁ d₂ : DFA Γ} (l₁ : Matching.Language d₁) (l₂ : Matching.L
   Γ-fin branch-dfa = trivial
   F-prop branch-dfa = trivial
 
+  unzip : ∀ {r₁ r₂} ls → _After_ branch-dfa (r₁ , r₂) ls → _After_ d₁ r₁ ls × _After_ d₂ r₂ ls
+  unzip [] start = start , start
+  unzip (xs ∷ʳ x) (step s) with unzip xs s
+  ... | l , r = step l , step r
+
+  zip : ∀ {r₁ r₂} ls → _After_ d₁ r₁ ls → _After_ d₂ r₂ ls → _After_ branch-dfa (r₁ , r₂) ls
+  zip [] start start = start
+  zip (ls ∷ʳ x) (step m₁) (step m₂) = step (zip ls m₁ m₂)
+
+  unzip-zip : ∀ ls {r₁ r₂} m₁ m₂ → unzip {r₁} {r₂} ls (zip {r₁} {r₂} ls m₁ m₂) ≡ (m₁ , m₂)
+  unzip-zip [] start start = refl
+  unzip-zip (ls ∷ʳ x) (step m₁) (step m₂) rewrite unzip-zip ls m₁ m₂ = refl
+
+  run : {Γ : Set} {d : DFA Γ} → (ls : Listʳ Γ) → ∃[ q ] _After_ d q ls
+  run {d = d} [] = q₀ d , start
+  run {d = d} (ls ∷ʳ x) with run {d = d} ls
+  ... | _ , m = _ , step m
+
   branch-lang : Language branch-dfa
   Lang branch-lang x = Lang l₁ x ⊎ Lang l₂ x
-  to (proof branch-lang bs) (inj₁ x) with to (proof l₁ bs) x
-  ... | recog .(q₀ d₁) F-end start = recog (q₀ d₁ , q₀ d₂ ) (inj₁ F-end) start
-  ... | recog .(δ d₁ _ _) F-end (step matched) = recog {! !} (inj₁ F-end) (step {! matched !})
-  to (proof branch-lang bs) (inj₂ y) = {! !}
-  from (proof branch-lang bs) (recog (r₁ , r₂) (inj₁ x) matched) = inj₁ (from (proof l₁ bs) (recog r₁ x {! !}))
-  from (proof branch-lang bs) (recog (r₁ , r₂) (inj₂ x) matched) = inj₂ (from (proof l₂ bs) (recog r₂ x {! !}))
-  left-inv-of (proof branch-lang bs) = {! !}
-  right-inv-of (proof branch-lang bs) = {! !}
+  to (proof branch-lang bs) (inj₁ x) with run {d = d₂} bs | to (proof l₁ bs) x
+  ... | q₂ , m | recog end F-end matched = recog (end , q₂) (inj₁ F-end) (zip bs matched m)
+  to (proof branch-lang bs) (inj₂ x) with run {d = d₁} bs | to (proof l₂ bs) x
+  ... | q₁ , m | recog end F-end matched = recog (q₁ , end) (inj₂ F-end) (zip bs m matched)
+  from (proof branch-lang bs) (recog (r₁ , r₂) (inj₁ x) matched) = inj₁ (from (proof l₁ bs) (recog r₁ x (proj₁ (unzip bs matched))))
+  from (proof branch-lang bs) (recog (r₁ , r₂) (inj₂ x) matched) = inj₂ (from (proof l₂ bs) (recog r₂ x (proj₂ (unzip bs matched))))
+  left-inv-of (proof branch-lang bs) (inj₁ x)
+    rewrite unzip-zip bs (Recognizes.matched (to (proof l₁ bs) x)) (proj₂ (run bs))
+    rewrite left-inv-of (proof l₁ bs) x = refl
+  left-inv-of (proof branch-lang bs) (inj₂ y)
+    rewrite unzip-zip bs (proj₂ (run bs)) (Recognizes.matched (to (proof l₂ bs) y))
+    rewrite left-inv-of (proof l₂ bs) y = refl
+  right-inv-of (proof branch-lang bs) (recog q x m) = Recognizes-prop branch-dfa _ _
 
 module _ {d₁ d₂ : DFA Γ} (l₁ : Matching.Language d₁) (l₂ : Matching.Language d₂)  where
   open Matching
@@ -116,23 +139,23 @@ module _ {d₁ d₂ : DFA Γ} (l₁ : Matching.Language d₁) (l₂ : Matching.L
   data L : (Listʳ Γ) → Set where
     L-concat : {s₁ s₂ : Listʳ Γ} → Lang l₁ s₁ → Lang l₂ s₂ → L (s₁ ++ʳ s₂)
 
-  concat-dfa : DFA Γ
-  Q concat-dfa = {! !}
-  δ concat-dfa = {! !}
-  q₀ concat-dfa = {! !}
-  F concat-dfa = {! !}
-  Q-fin concat-dfa = {! !}
-  Γ-fin concat-dfa = {! !}
-  F-prop concat-dfa = {! !}
+--   concat-dfa : DFA Γ
+--   Q concat-dfa = {! !}
+--   δ concat-dfa = {! !}
+--   q₀ concat-dfa = {! !}
+--   F concat-dfa = {! !}
+--   Q-fin concat-dfa = {! !}
+--   Γ-fin concat-dfa = {! !}
+--   F-prop concat-dfa = {! !}
 
-  concat-lang : Language concat-dfa
-  Lang concat-lang = L
-  to (proof concat-lang .(xs ++ʳ ys)) (L-concat {xs} {ys} x y)
-    with to (proof l₁ xs) x | to (proof l₂ ys) y
-  ... | recog end F-end matched | recog end₁ F-end₁ matched₁ = recog ? ? ?
-  from (proof concat-lang bs) = {! !}
-  left-inv-of (proof concat-lang bs) = {! !}
-  right-inv-of (proof concat-lang bs) = {! !}
+--   concat-lang : Language concat-dfa
+--   Lang concat-lang = L
+--   to (proof concat-lang .(xs ++ʳ ys)) (L-concat {xs} {ys} x y)
+--     with to (proof l₁ xs) x | to (proof l₂ ys) y
+--   ... | recog end F-end matched | recog end₁ F-end₁ matched₁ = recog ? ? ?
+--   from (proof concat-lang bs) = {! !}
+--   left-inv-of (proof concat-lang bs) = {! !}
+--   right-inv-of (proof concat-lang bs) = {! !}
 
 -- compile : Regex → DFA Γ
 -- compile ε = empty-dfa

@@ -28,6 +28,10 @@ _++ʳ_ : {A : Set} → Listʳ A → Listʳ A → Listʳ A
 xs ++ʳ [] = xs
 xs ++ʳ (ys ∷ʳ y) = (xs ++ʳ ys) ∷ʳ y
 
+mapʳ : {A B : Set} → (A → B) → Listʳ A → Listʳ B
+mapʳ f [] = []
+mapʳ f (xs ∷ʳ x) = mapʳ f xs ∷ʳ f x
+
 module Matching {Γ : Set} (dfa : DFA Γ) where
   open DFA dfa
 
@@ -52,6 +56,11 @@ module Matching {Γ : Set} (dfa : DFA Γ) where
     field
       Lang : Listʳ Γ → Set
       proof : (bs : Listʳ Γ) → Lang bs ↔ Recognizes bs
+
+  postulate
+    After-prop : ∀ {q ls} → (a₁ a₂ : q After ls) → a₁ ≡ a₂
+    Recognizes-prop : ∀ {ls} → (a₁ a₂ : Recognizes ls) → a₁ ≡ a₂
+
 
 
 
