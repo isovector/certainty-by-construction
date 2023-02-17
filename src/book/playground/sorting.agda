@@ -13,28 +13,16 @@ suc x + y = suc (x + y)
 
 infix 5 _+_
 
-data _≤_ : ℕ → ℕ → Set where
-  z≤n : {n : ℕ} → zero ≤ n
-  s≤s : {m n : ℕ} → m ≤ n → suc m ≤ suc n
-
-≤-refl : {x : ℕ} → x ≤ x
-≤-refl {zero} = z≤n
-≤-refl {suc x} = s≤s ≤-refl
-
-_<_ : ℕ → ℕ → Set
-x < y = suc x ≤ y
-
 data _≡_ {A : Set} (a : A) : A → Set where
   refl : a ≡ a
 
 infix 3 _≡_
 
-infixr 2 _,_
-record Σ (A : Set) (B : A → Set) : Set where
-  constructor _,_
-  field
-    proj₁ : A
-    proj₂ : B proj₁
++-identityˡ : (x : ℕ) → zero + x ≡ x
++-identityˡ x = refl
+
+suc-+ : (x y : ℕ) → suc x + y ≡ suc (x + y)
+suc-+ x y = refl
 
 cong : {A B : Set} {x y : A} → (f : A → B) → x ≡ y → f x ≡ f y
 cong f refl = refl
@@ -47,9 +35,6 @@ cong f refl = refl
 +-suc zero y = refl
 +-suc (suc x) y = cong suc (+-suc x y)
 
-bigger : (n : ℕ) → Σ ℕ (λ m → n < m)
-bigger n = suc n , s≤s ≤-refl
-
 sym : {A : Set} → {x y : A} → x ≡ y → y ≡ x
 sym refl = refl
 
@@ -59,6 +44,38 @@ trans refl refl = refl
 +-comm : (x y : ℕ) → x + y ≡ y + x
 +-comm zero y = sym (+-identityʳ y)
 +-comm (suc x) y = sym (trans (+-suc y x) (cong suc (+-comm y x)))
+
+{-# BUILTIN NATURAL ℕ #-}
+
+data _≤_ : ℕ → ℕ → Set where
+  z≤n : {n : ℕ} → zero ≤ n
+  s≤s : {m n : ℕ} → m ≤ n → suc m ≤ suc n
+
+test : 10 ≤ 12
+test = s≤s (s≤s (s≤s (s≤s (s≤s (s≤s (s≤s (s≤s (s≤s (s≤s z≤n)))))))))
+
+≤-refl : {x : ℕ} → x ≤ x
+≤-refl {zero} = z≤n
+≤-refl {suc x} = s≤s ≤-refl
+
+_<_ : ℕ → ℕ → Set
+x < y = suc x ≤ y
+
+record Σ (A : Set) (B : A → Set) : Set where
+  constructor _,_
+  field
+    proj₁ : A
+    proj₂ : B proj₁
+infixr 2 _,_
+
+bigger₁ : (n : ℕ) → ℕ
+bigger₁ = suc
+
+bigger₂ : (n : ℕ) → n < bigger₁ n
+bigger₂ n = s≤s ≤-refl
+
+bigger : (n : ℕ) → Σ ℕ (λ m → n < m)
+bigger n = suc n , s≤s ≤-refl
 
 data Vec (A : Set) : ℕ → Set where
   [] : Vec A zero

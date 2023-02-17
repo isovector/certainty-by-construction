@@ -24,6 +24,7 @@ open import propisos
 
 record TuringMachine (Γ Q : Set) : Set₁ where
   field
+    q₀ : Q
     δ : Q × Γ → Q × Γ × MoveDirection → Set
     δ-dec : (qi : Q × Γ) → (qid : Q × Γ × MoveDirection) → Dec (δ qi qid)
     δ-finite : IsFinite (∃[ qi ] ∃[ qid ] δ qi qid)
