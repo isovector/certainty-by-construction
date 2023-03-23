@@ -118,19 +118,30 @@ module _ {d₁ d₂ : DFA Γ} (l₁ : Matching.Language d₁) (l₂ : Matching.L
 
   branch-lang : Language branch-dfa
   Lang branch-lang x = Lang l₁ x ⊎ Lang l₂ x
-  to (proof branch-lang bs) (inj₁ x) with run {d = d₂} bs | to (proof l₁ bs) x
-  ... | q₂ , m | recog end F-end matched = recog (end , q₂) (inj₁ F-end) (zip bs matched m)
-  to (proof branch-lang bs) (inj₂ x) with run {d = d₁} bs | to (proof l₂ bs) x
-  ... | q₁ , m | recog end F-end matched = recog (q₁ , end) (inj₂ F-end) (zip bs m matched)
-  from (proof branch-lang bs) (recog (r₁ , r₂) (inj₁ x) matched) = inj₁ (from (proof l₁ bs) (recog r₁ x (proj₁ (unzip bs matched))))
-  from (proof branch-lang bs) (recog (r₁ , r₂) (inj₂ x) matched) = inj₂ (from (proof l₂ bs) (recog r₂ x (proj₂ (unzip bs matched))))
+  to (proof branch-lang bs) (inj₁ x)
+   with run {d = d₂} bs
+      | to (proof l₁ bs) x
+  ... | q₂ , m₂
+      | recog end F-end m₁
+      = recog (end , q₂) (inj₁ F-end) (zip bs m₁ m₂)
+  to (proof branch-lang bs) (inj₂ x)
+   with run {d = d₁} bs
+      | to (proof l₂ bs) x
+  ... | q₁ , m₁
+      | recog end F-end m₂
+      = recog (q₁ , end) (inj₂ F-end) (zip bs m₁ m₂)
+  from (proof branch-lang bs) (recog (r₁ , r₂) (inj₁ x) m₁)
+    = inj₁ (from (proof l₁ bs) (recog r₁ x (proj₁ (unzip bs m₁))))
+  from (proof branch-lang bs) (recog (r₁ , r₂) (inj₂ x) m₂)
+    = inj₂ (from (proof l₂ bs) (recog r₂ x (proj₂ (unzip bs m₂))))
   left-inv-of (proof branch-lang bs) (inj₁ x)
     rewrite unzip-zip bs (Recognizes.matched (to (proof l₁ bs) x)) (proj₂ (run bs))
     rewrite left-inv-of (proof l₁ bs) x = refl
   left-inv-of (proof branch-lang bs) (inj₂ y)
     rewrite unzip-zip bs (proj₂ (run bs)) (Recognizes.matched (to (proof l₂ bs) y))
     rewrite left-inv-of (proof l₂ bs) y = refl
-  right-inv-of (proof branch-lang bs) (recog q x m) = Recognizes-prop branch-dfa _ _
+  right-inv-of (proof branch-lang bs) (recog q x m
+    ) = Recognizes-prop branch-dfa _ _
 
 module _ {d₁ d₂ : DFA Γ} (l₁ : Matching.Language d₁) (l₂ : Matching.Language d₂)  where
   open Matching
