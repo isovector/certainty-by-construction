@@ -65,9 +65,9 @@ module BinomialHeap {o r} {A : Set o} {_<_ : A → A → Set r} where
     leaf : (x : A) → bound ≤ x → BinomialTree bound 0
     node : ∀ {n} → (x : A) → bound ≤ x → DVec (BinomialTree x) n → BinomialTree bound (suc n)
 
-  mergeTree : ∀ {b n} → BinomialTree b n → BinomialTree b n → BinomialTree b (suc n)
-  mergeTree (leaf a1 b≤a1) (leaf a2 b≤a2) = node {! !} {! !} [ leaf {! !} {! !} ]
-  mergeTree (node a1 b≤a1 dv1) (node a2 b≤a2 dv2) = node a1 b≤a1 (node a2 ? dv2 ∷ dv1)
+--   mergeTree : ∀ {b n} → BinomialTree b n → BinomialTree b n → BinomialTree b (suc n)
+--   mergeTree (leaf a1 b≤a1) (leaf a2 b≤a2) = node {! !} {! !} [ leaf {! !} {! !} ]
+--   mergeTree (node a1 b≤a1 dv1) (node a2 b≤a2 dv2) = node a1 b≤a1 (node a2 ? dv2 ∷ dv1)
 
   postulate
     bot : A
@@ -143,14 +143,6 @@ module heap2 where
     open import Relation.Binary.Definitions
     open import Relation.Binary.PropositionalEquality
 
-    postulate
-      _≤_ : A → A → Set
-      ≤-cmp : Trichotomous _≡_ _≤_
-      a : A
-
-    _ : Heap incomp 2
-    _ = left {! !} (right {! !} (one {! !}) empty) (one {! !})
-
 --     sink : ∀ {c n} → Heap c n → Heap c n
 --     sink empty = empty
 --     sink (one x) = one x
@@ -164,49 +156,50 @@ module heap2 where
 --     sink (full k l (one x)) = {! !}
 --     sink (full k l (full x rl rr)) = {! !}
 
-module heap3 {A : Set} where
-  open import Relation.Binary.Definitions
-  open import Relation.Binary.PropositionalEquality
-  open import Data.Product
-  open import Data.Sum
-  open import Data.Nat hiding (_≤_)
+open import Relation.Binary.Definitions
+open import Relation.Binary.PropositionalEquality
+
+module heap3
+    {A : Set}
+    (_≤_ : A → A → Set)
+    (≤-cmp : Trichotomous _≡_ _≤_) where
 
   postulate
-    _≤_ : A → A → Set
-    ≤-cmp : Trichotomous _≡_ _≤_
-    a b : A
-    refl≤ : {a : A} → a ≤ a
-    a≤b : a ≤ b
+    ≤refl : {a : A} → a ≤ a
+    ≤trans : {a b c : A} → a ≤ b → b ≤ c → a ≤ c
 
-  data Heap : A → ℕ → Set where
-    ⟨_⟩ : (a : A) → Heap a 1
-    _≤⟨_⟩_ : {bound : A} {n : ℕ} → (a : A) → a ≤ bound → Heap bound n → Heap a (suc n)
+  data SortedList : A → Set where
+    [] : {bound : A} → SortedList bound
+    _∷⟨_⟩_ : {bound : A} → (a : A) → a ≤ bound → SortedList bound → SortedList a
+  infixr 4 _∷⟨_⟩_
 
-  infixr 5 _≤⟨_⟩_
+  open import Data.Product
+  open import Data.Sum
 
-  x : Heap a 3
-  x = a ≤⟨ a≤b ⟩ b ≤⟨ refl≤ ⟩ ⟨ b ⟩
+  insert : {bound : A} → (a : A) → SortedList bound → SortedList bound ⊎ SortedList a
+  insert a [] = inj₂ (a ∷⟨ ≤refl ⟩ [])
+  insert a (b ∷⟨ b≤xs ⟩ xs) with ≤-cmp a b
+  ... | tri< a≤b _ _ = inj₂ (a ∷⟨ ≤trans a≤b b≤xs ⟩ xs)
+  ... | tri≈ _ refl _ = inj₂ (a ∷⟨ ≤refl ⟩ b ∷⟨ b≤xs ⟩ xs)
+  ... | tri> _ _ b≤a with insert a xs
+  ... | inj₁ x = inj₁ (b ∷⟨ b≤xs ⟩ x)
+  ... | inj₂ y = inj₁ (b ∷⟨ b≤a ⟩ y)
 
-  insert : {b : A} {n : ℕ} → (a : A) → Heap b n → Heap a (suc n) ⊎ Heap b (suc n)
-  insert {b} a ⟨ .b ⟩ with ≤-cmp a b
-  ... | tri< a≤b _ _  = inj₁ (a ≤⟨ a≤b ⟩ ⟨ b ⟩ )
-  ... | tri≈ _ refl _ = inj₁ (a ≤⟨ refl≤ ⟩ ⟨ b ⟩ )
-  ... | tri> _ _ b≤a  = inj₂ (b ≤⟨ b≤a ⟩ ⟨ a ⟩ )
-  insert {b} a (.b ≤⟨ x₁ ⟩ x₂) with ≤-cmp a b
-  ... | tri< a≤b _ _  = inj₁ (a ≤⟨ a≤b ⟩ b ≤⟨ x₁ ⟩ x₂ )
-  ... | tri≈ _ refl _ = inj₁ (a ≤⟨ refl≤ ⟩ b ≤⟨ x₁ ⟩ x₂ )
-  ... | tri> _ _ b≤a with insert a x₂
-  ... | inj₁ fst      = inj₂ (b ≤⟨ b≤a ⟩ fst)
-  ... | inj₂ fst      = inj₂ (b ≤⟨ x₁ ⟩ fst)
+  insert' : (a : A) → Σ A SortedList → Σ A SortedList
+  insert' a (_ , l) = [ -,_ , -,_ ]′ (insert a l)
 
-  Heap' : ℕ → Set
-  Heap' n = ∃[ b ] Heap b n
+  open import Data.Maybe
 
-  insert' : ∀ {n} → A → Heap' n → Heap' (suc n)
-  insert' a (_ , h) with insert a h
-  ... | inj₁ h' = -, h'
-  ... | inj₂ h' = -, h'
+  pop : Σ A SortedList →  Maybe (A × Σ A SortedList)
+  pop (_ , []) = nothing
+  pop (_ , a ∷⟨ _ ⟩ as) = just (a , -, as)
 
-
-
+  record IsHeap (F : Set)  : Set where
+    field
+      empty : F
+      xinsert : A → F → F
+      to-sorted-list : F → Σ A SortedList
+      empty-hom : ∀ {b} → to-sorted-list empty ≡ (b , [])
+      insert-hom : ∀ a l → to-sorted-list (xinsert a l)
+                         ≡ insert' a (to-sorted-list l)
 

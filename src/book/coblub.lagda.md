@@ -161,3 +161,79 @@ It is a necessary struggle, akin to the type-checker informing you that your
 program is wrong. While it can be tempting to blame the tool, the real fault is
 in the workmanship.
 
+
+# A World Without Execution?
+
+It's worth stopping and asking ourselves in what way an unexecutable programming
+language might be useful. If the end result of a coding endeavor is the eventual
+result, whether that be an answer (as in a computation) or series of
+side-effects (as in most real-world programs,) non-execution seems useless at
+best and masturbatory at worst.
+
+Consider the case of rewriting a program from scratch. Even though none of the
+source code is reused, nor is the computation or side effects preserved, the
+second time writing a program is always easier. Why should this be so? Writing
+the program has an effect on the world, completely apart from the digital
+artifacts that result---namely, the way in which your brain changes from having
+written the program. As a creative endeavor, every program leaves its mark on
+its creator, in the mental battle scars that accumulate from having struggled
+with---and eventually having conquered---the individual problems inherent in the
+program. Considering a program to be only a digital artifact ignores the very
+real groove it made on its author's brain.
+
+It is for this reason that programmers, in their spare time, will also write
+other sorts of programs. Code that are is not necessarily useful, but code that
+allows its author to grapple with problems. Many open-source projects got
+started as a hobbyist project that someone created in order to learn more about
+the internals of databases, or to try their hand at implementing a new
+programming language. For programmers, code is a very accessible means of
+exploring new ideas, which acts as a forcing function to prevent us from fooling
+ourselves into thinking we understand when we don't. After all, it's much easier
+to fool ourselves than it is to fool the computer.
+
+So, programmers are not unfamiliar with writing programs, not running the
+eventual code, but for the process of having built it in the first place. In
+effect, the real output of this process is the neural pathways it engenders.
+
+Agda fits very naturally into this niche; the purpose of writing Agda is not to
+be able to run the code, but that Agda is such a harsh mistress that having
+programmed it in Agda will teach you much more about the subject than you
+thought there *was.* Agda forces you to grapple with the hard, conceptual parts
+of the problem, without worrying very much about how you're going to make the
+whole thing go fast later. After all, there's nothing *to* go fast if you don't
+know what you're building in the first place.
+
+This message might be at odds with some readers. Surely you don't have to
+*really* understand the problem in order to get work done? I would say yes, you
+do. Consider the universal programmer experience of spending a week implementing
+a tricky algorithm or data structure, only to realize upon completion that you
+don't need it---either that it doesn't do what you hoped, or it doesn't actually
+solve the problem you thought you had. Unfortunately, this is the rule to
+software, not the exception. Without total conceptual clarity, your software can
+never possibly be correct, if for no other reason than you don't know what
+correct even *means.* Maybe the program will still give you an answer, but it is
+nothing but willful ignorance to assume this output corresponds at all to
+reality.
+
+The reality is, conceptual understanding is the difficult part of
+programming---the rest is just iteratively filling in the blanks. The way we
+have all learned how to do programming is to attempt to solve both problems at
+once: we write code and try to decipher the problem as we go; it is the rare
+coder who stops to think on the whiteboard, and the rarer-still engineer who
+starts there.
+
+But again recall the case of rewriting a program. Once you have worked through
+the difficult pieces, the rest is just going through the motions. There exists
+some order in which we must wiggle our fingers to produce the necessary syntax
+for the computer to solve our problem, and finding this order is trivial once we
+have conceptual clarity of what the solution is.
+
+This, in short, is the value of learning and writing Agda. It's less of a
+programming language as it is a tool for thought; one in which we can express
+extremely precise ideas, propagate constraints around, and be informed loudly
+whenever we fail to live up to the exacting rigor that Agda demands of us. While
+traditional programming models are precise only about the "how," Agda allows us
+to instead think about the "what," without worrying very much about the "how."
+After all, we're all very good at the "how"---it's been drilled into us for our
+entire careers.
+
