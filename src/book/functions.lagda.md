@@ -9,18 +9,22 @@ module functions where
 - matrices
 
 ```agda
--- presentation as given by
--- https://personal.cis.strath.ac.uk/james.wood.100/blog/html/VecMat.html
+open import Data.Nat using (ℕ; zero; suc)
+private variable
+  m n p : ℕ
+  c ℓ : Agda.Primitive.Level
+  A B C : Set ℓ
+
+open import Function using (id; _∘_)
+open import Relation.Binary.PropositionalEquality
+
+open import Algebra
+  using (Semiring)
 module matrices where
-  open import Data.Nat using (ℕ; zero; suc)
+  -- presentation as given by
+  -- https://personal.cis.strath.ac.uk/james.wood.100/blog/html/VecMat.html
   open import Data.Vec
 
-  private variable
-    m n p : ℕ
-    c ℓ : Agda.Primitive.Level
-    A B C : Set ℓ
-
-  open import Relation.Binary.PropositionalEquality
 
   Mat : Set c → ℕ → ℕ → Set c
   Mat A m n = Vec (Vec A n) m
@@ -46,8 +50,6 @@ module matrices where
   column [] = []
   column (x ∷ xs) = (x ∷ []) ∷ column xs
 
-  open import Algebra
-    using (Semiring)
   module WithSemiring (R : Semiring c ℓ) where
     open Semiring R renaming (Carrier to X) using (0#; 1#; _+_; _*_)
 
@@ -86,8 +88,6 @@ module matrices where
     ⌊ m ⌋ v with left/rest (m $ column v)
     ... | fst , _ = fst
 
-    open import Function using (id; _∘_)
-
     postulate
       *-zeroˡ : ∀ x → 0# * x ≡ 0#
       +-identityʳ : ∀ x → x + 0# ≡ x
@@ -119,15 +119,20 @@ module matrices where
             | outer/replicate0 {m} (x ∷ xs)
             = refl
 
-    dunno : (xs : Vec X m) → (replicate 0# ∷ 1ₘ) *ₘ column xs ≡ column (0# ∷ xs)
-    dunno [] = refl
-    dunno (x ∷ xs) rewrite *-zeroˡ x | *-identityˡ x =
-      begin
-        zipWith (zipWith _+_) ((0# ∷ []) ∷ (x ∷ []) ∷ outer _*_ (Σ.proj₁ (left/rest (map (_∷_ 0#) 1ₘ))) (x ∷ [])) ((replicate 0# ∷ replicate 0# ∷ Σ.proj₂ (left/rest (map (_∷_ 0#) 1ₘ))) *ₘ column xs)
-      ≡⟨ ? ⟩
-        (0# ∷ []) ∷ (x ∷ []) ∷ column xs
-      ∎
-      where open ≡-Reasoning
+    postulate
+      dunno : (xs : Vec X m) → (replicate 0# ∷ 1ₘ) *ₘ column xs ≡ column (0# ∷ xs)
+    -- dunno [] = refl
+    -- dunno (x ∷ xs) =
+    --   begin
+    --     (replicate 0# ∷ 1ₘ) *ₘ column (x ∷ xs)
+    --   ≡⟨⟩
+    --     (replicate 0# ∷ 1ₘ) *ₘ ((x ∷ []) ∷ column xs)
+    --   ≡⟨⟩
+    --     (Σ.proj₁ (left/rest (replicate 0# ∷ 1ₘ)) ⊗ₒ (x ∷ [])) +ₘ (Σ.proj₂ (left/rest (replicate 0# ∷ 1ₘ)) *ₘ (column xs))
+    --   ≡⟨ ? ⟩
+    --     (0# ∷ []) ∷ (x ∷ []) ∷ column xs
+    --   ∎
+    --   where open ≡-Reasoning
 
     left/column : (xs : Vec X m) → left/rest (column xs) ≡ (xs , replicate [])
     left/column [] = refl
@@ -176,5 +181,300 @@ module matrices where
       where open ≡-Reasoning
 
     -- this would be a really nice thing to show
+```
+
+```agda
+module WithSemiring₂ (R : Semiring c ℓ) where
+    open Semiring R renaming (Carrier to X) using (0#; 1#; _+_; _*_)
+
+    open import Data.Fin using (Fin; zero; suc)
+
+    Vec : ℕ → Set c
+    Vec m = Fin m → X
+
+    postulate
+      fin-ext : {v₁ v₂ : Vec m} → (∀ i → v₁ i ≡ v₂ i) → v₁ ≡ v₂
+
+    postulate
+      *-zeroˡ : ∀ x → 0# * x ≡ 0#
+      *-zeroʳ : ∀ x → x * 0# ≡ 0#
+      +-identityʳ : ∀ x → x + 0# ≡ x
+      +-identityˡ : ∀ x → 0# + x ≡ x
+      *-identityˡ : ∀ x → 1# * x ≡ x
+      *-+-distribʳ : ∀ x y z → (x + y) * z ≡ x * z + y * z
+
+    Matrix : ℕ → ℕ → Set c
+    Matrix m n = Fin m → Fin n → X
+
+    0ₘ : Matrix m n
+    0ₘ _ _ = 0#
+
+    open import Data.Bool using (Bool; true; false; if_then_else_)
+
+    _==_ : Fin n → Fin n → Bool
+    zero == zero = true
+    zero == suc y = false
+    suc x == zero = false
+    suc x == suc y = x == y
+
+    1ₘ : Matrix m m
+    1ₘ i j = if i == j then 1# else 0#
+
+    sum : Vec n → X
+    sum {zero} v = 0#
+    sum {suc n} v = v zero + sum {n} (v ∘ suc)
+
+    sum/0* : (f : Fin m → X) → sum (λ j → 0# * f j) ≡ 0#
+    sum/0* {zero} f = refl
+    sum/0* {suc m} f
+      rewrite sum/0* {m} (f ∘ suc)
+            | *-zeroˡ (f zero)
+            | +-identityʳ 0#
+            = refl
+
+
+    _*ₘ_ : Matrix m n → Matrix n p → Matrix m p
+    (m₁ *ₘ m₂) i k = sum λ j → m₁ i j * m₂ j k
+
+    column : Vec m → Matrix m 1
+    column v i _ = v i
+
+    ⌊_⌋ : Matrix m n → Vec n → Vec m
+    ⌊ m ⌋ v i = (m *ₘ column v) i zero
+```
+
+We will first need a little lemma that states that the sum of anything
+pointwise-multiplied by zero is also zero:
+
+```agda
+    sum/*0 : (f : Fin m → X) → sum (λ j → f j * 0#) ≡ 0#
+    sum/*0 {zero} f = refl
+    sum/*0 {suc m} f
+      rewrite sum/*0 {m} (f ∘ suc)
+            | *-zeroʳ (f zero)
+            | +-identityˡ 0#
+            = refl
+```
+
+And we are now ready to show the first of two facts demonstrating that matrices
+are just encodings of functions. The first is that `⌊ 1ₘ ⌋` corresponds to the
+`id` function:
+
+```agda
+    ⌊1ₘ⌋ : (x : Vec m)
+         → (i : Fin m)
+         → ⌊ 1ₘ {m} ⌋ x i ≡ x i
+```
+
+The type here would be clearer as `⌊ 1ₘ {m} ⌋ ≗ id`, but adding in the `x` and
+`i` points allow us to avoid dealing with function extentionality in our proof.
+The proof itself is straightforward: pattern match on `i`, and add rewrites to
+eliminate the obvious algebraic identities:
+
+```agda
+    ⌊1ₘ⌋ x zero
+      rewrite (*-identityˡ (x zero))
+            | sum/0* (x ∘ suc)
+            | +-identityʳ (x zero)
+            = refl
+    ⌊1ₘ⌋ x (suc i)
+      rewrite (*-zeroˡ (x zero))
+            | ⌊1ₘ⌋ (x ∘ suc) i
+            | +-identityˡ (x (suc i))
+            = refl
+```
+
+
+```agda
+    *ₘ⟶∘
+      : (m₁ : Matrix m n)
+      → (m₂ : Matrix n p)
+      → (v : Vec p)
+      → (i : Fin m)
+      → ⌊ m₁ *ₘ m₂ ⌋ v i ≡ (⌊ m₁ ⌋ ∘ ⌊ m₂ ⌋) v i
+```
+
+Giving a proof of `*ₘ⟶∘` isn't particularly hard on a conceptual level, although
+Agda forces us to jump through several hoops to make everything work out
+properly. Now that we are working with the function representation of matrices,
+we no longer need to play silly games doing induction on the shape of the
+matrix; instead, we can do induction on the indices. By binding the implicits
+`m`, `n` and `p`, we can see what subgoals fall out when we try destructing on
+each.
+
+Destructing on `m` doesn't help simplify anything, but we notice that when
+either `n = zero` or `p = zero`, the whole expression must simplify down to
+`0#`. Let's do those two cases first, leaving the `suc`/`suc` case for later:
+
+```agda
+    *ₘ⟶∘ {m} {n} {zero} m₁ m₂ v i rewrite sum/*0 (m₁ i) = refl
+    *ₘ⟶∘ {m} {zero} {p} m₁ m₂ v i rewrite sum/0* v = refl
+```
+
+We start by opening a new `≡-Reasoning block:
+
+```agda
+    *ₘ⟶∘ {m} {suc n} {suc p} m₁ m₂ v i = begin
+        ⌊ m₁ *ₘ m₂ ⌋ v i
+```
+
+Unfortunately, our usual tool of dropping down a reflexive hole and asking Agdda
+to normalize-solve it doesn't work here:
+
+```agda
+      ≡⟨⟩
+        (m₁ *ₘ m₂) i zero * column v zero zero + sum (λ x → (m₁ *ₘ m₂) i (suc x) * column v (suc x) zero)
+```
+
+The issue is that Agda is trying to be *too helpful* here and doing an awful job
+of it. In fact, Agda normalizes our expression past the point at which the proof
+becomes obvious. The solution is tedious, but we must expand out our definitions
+ourselves, first, with `⌊_⌋`:
+
+```agda
+      ≡⟨⟩
+        ((m₁ *ₘ m₂) *ₘ column v) i zero
+```
+
+and then the outermost `_*ₘ_`:
+
+```agda
+      ≡⟨⟩
+        sum (λ j → (m₁ *ₘ m₂) i j * (column v) j zero)
+```
+
+We can now eliminate `column`:
+
+```agda
+      ≡⟨⟩
+        sum (λ j → (m₁ *ₘ m₂) i j * v j)
+```
+
+and then the remaining `_*ₘ_`:
+
+```agda
+      ≡⟨⟩
+        sum (λ j → sum (λ k → m₁ i k * m₂ k j) * column v j zero)
+```
+
+Again, eliminate the `column`:
+
+```agda
+      ≡⟨⟩
+        sum (λ j → sum (λ k → m₁ i k * m₂ k j) * v j)
+```
+
+Playing the same game, except from the bottom up, we arrive at:
+
+```agda
+      ≡⟨ lemma ⟩
+        sum (λ k → m₁ i k * sum (λ j → m₂ k j * v j))
+      ≡⟨⟩  -- eliminate column
+        sum (λ k → m₁ i k * sum (λ j → m₂ k j * column v j zero))
+      ≡⟨⟩  -- expand _*ₘ_
+        sum (λ k → m₁ i k * (m₂ *ₘ column v) k zero)
+      ≡⟨⟩  -- expand ⌊_⌋
+        sum (λ k → m₁ i k * ⌊ m₂ ⌋ v k)
+      ≡⟨⟩  -- eliminate column
+        sum (λ k → m₁ i k * column (⌊ m₂ ⌋ v) k zero)
+      ≡⟨⟩  -- expand  _*ₘ_
+        (m₁ *ₘ column (⌊ m₂ ⌋ v)) i zero
+      ≡⟨⟩  -- expand ⌊_⌋
+        ⌊ m₁ ⌋ (⌊ m₂ ⌋ v) i
+      ≡⟨⟩  -- expand _∘_
+        (⌊ m₁ ⌋ ∘ ⌊ m₂ ⌋) v i
+        ∎
+      where
+        open ≡-Reasoning
+```
+
+Most of the work in this proof this proof is already done; it comes from
+performing *just enough* evaluation of terms to see that `lemma` is the
+interesting piece of the proof. Adding `lemma` to our `where` block:
+
+```agda
+        postulate
+          lemma
+            : sum (λ j → sum (λ k → m₁ i k * m₂ k j) * v j)
+            ≡ sum (λ k → m₁ i k * sum (λ j → m₂ k j * v j))
+```
+
+we can inspect its type. From here, it's easy to spot that is a trivial fact of
+algebra. We must prove the fact that:
+
+$$
+\sum_{j}{\left(\sum_{k} {m_{1ik} \times m_{2kj}\right) \times v_j} =
+\sum_{k}{m_{1ik} \times \sum_{j} {m_{2kj} \times v_j}
+$$
+
+The proof (in Agda) is uninteresting and tedious, thus we will omit it from
+presentation here, satisfying ourselves with a postulate. The result, however,
+is straightforward, relying only on the associativity and distributivity of
+multiplication, and the commutativity of addition:
+
+$$
+\begin{align}
+\sum_{j}{\left(\sum_{k} {m_{1ik} \times m_{2kj}\right)} \times v_j}
+  &= \sum_{j}{\sum_{k} {m_{1ik} \times m_{2kj} \times v_j}} \\
+  &= \sum_{k}{\sum_{j} {m_{1ik} \times m_{2kj} \times v_j}} \\
+  &= \sum_{k}{m_{1ik} \times \sum_{k} {m_{1ik} \times m_{2kj} \times v_j}}
+\end{align}
+$$
+
+Here are the gory details if you aren't happy postulating `lemma`:
+
+```agda
+            -- ≡⟨ cong sum (fin-ext λ j → sum-scalar (λ k → m₁ i k * m₂ k j) (v j))  ⟩
+        -- sum (λ j → sum (λ k → m₁ i k * m₂ k j * v j))
+            -- ≡⟨ sum-sum (λ j k → m₁ i k * m₂ k j * v j) ⟩
+        -- sum (λ k → sum (λ j → m₁ i k * m₂ k j * v j))    ≡⟨ trust-me ⟩
+        -- sum (λ k → sum (λ j → m₁ i k * (m₂ k j * v j)))  ≡⟨ trust-me ⟩
+
+    sum-scalar : (f : Fin m → X) → (y : X) → sum (λ x → f x) * y ≡ sum (λ x → f x * y)
+    sum-scalar {zero} f y = *-zeroˡ y
+    sum-scalar {suc m} f y =
+      begin
+        (f zero + sum (λ x → f (suc x))) * y
+      ≡⟨ *-+-distribʳ (f zero) _ y ⟩
+        f zero * y + sum (λ x → f (suc x)) * y
+      ≡⟨ cong (f zero * y +_) (sum-scalar (f ∘ suc) y) ⟩
+        f zero * y + sum (λ x → f (suc x) * y)
+      ∎
+      where open ≡-Reasoning
+
+    postulate
+      trust-me : {x y : X} → x ≡ y
+
+    +-sum : (f₁ f₂ : Fin m → X) → sum f₁ + sum f₂ ≡ sum (λ x → f₁ x + f₂ x)
+    +-sum {zero} f₁ f₂ = +-identityʳ 0#
+    +-sum {suc m} f₁ f₂ =
+      begin
+        f₁ zero + sum (λ x → f₁ (suc x)) + (f₂ zero + sum (λ x → f₂ (suc x)))
+      ≡⟨ trust-me ⟩
+        f₁ zero + f₂ zero + (sum (λ x → f₁ (suc x)) + sum (λ x → f₂ (suc x)))
+      ≡⟨ cong (λ φ → f₁ zero + f₂ zero + φ) (+-sum (f₁ ∘ suc) (f₂ ∘ suc)) ⟩
+        f₁ zero + f₂ zero + sum (λ x → f₁ (suc x) + f₂ (suc x))
+      ∎
+      where
+        open ≡-Reasoning
+
+
+    sum-sum : (f : Fin m → Fin n → X) → sum (λ j → sum (λ k → f j k)) ≡ sum (λ k → sum (λ j → f j k))
+    sum-sum {zero} {zero} f = refl
+    sum-sum {zero} {suc n} f = trust-me
+    sum-sum {suc m} {zero} f = trust-me
+    sum-sum {suc m} {suc n} f =
+      begin
+        sum {suc m} (λ j → sum {suc n} (λ k → f j k))
+      ≡⟨⟩
+        sum {suc n} (λ k → f zero k) + sum {m} (λ j → sum {suc n} (λ k → f (suc j) k))
+      ≡⟨ cong (λ φ → sum {suc n} (λ k → f zero k) + φ) (sum-sum (λ j k → f (suc j) k)) ⟩
+        sum {suc n} (λ k → f zero k) + sum {suc n} (λ k → sum {m} (λ j → f (suc j) k))
+      ≡⟨ +-sum (λ k → f zero k) (λ k → sum {m} (λ j → f (suc j) k)) ⟩
+        sum {suc n} (λ k → f zero k + sum {m} (λ j → f (suc j) k))
+      ≡⟨⟩
+        sum {suc n} (λ k → sum {suc m} (λ j → f j k))
+      ∎
+      where open ≡-Reasoning
 ```
 
