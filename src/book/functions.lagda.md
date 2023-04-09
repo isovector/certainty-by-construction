@@ -201,7 +201,9 @@ module WithSemiring₂ (R : Semiring c ℓ) where
       +-identityʳ : ∀ x → x + 0# ≡ x
       +-identityˡ : ∀ x → 0# + x ≡ x
       *-identityˡ : ∀ x → 1# * x ≡ x
+      *-+-distribˡ : ∀ x y z → z * (x + y) ≡ z * x + z * y
       *-+-distribʳ : ∀ x y z → (x + y) * z ≡ x * z + y * z
+      *-comm : ∀ x y → x * y ≡ y * x
 
     Matrix : ℕ → ℕ → Set c
     Matrix m n = Fin m → Fin n → X
@@ -427,8 +429,8 @@ Here are the gory details if you aren't happy postulating `lemma`:
             -- ≡⟨ cong sum (fin-ext λ j → sum-scalar (λ k → m₁ i k * m₂ k j) (v j))  ⟩
         -- sum (λ j → sum (λ k → m₁ i k * m₂ k j * v j))
             -- ≡⟨ sum-sum (λ j k → m₁ i k * m₂ k j * v j) ⟩
-        -- sum (λ k → sum (λ j → m₁ i k * m₂ k j * v j))    ≡⟨ trust-me ⟩
-        -- sum (λ k → sum (λ j → m₁ i k * (m₂ k j * v j)))  ≡⟨ trust-me ⟩
+        -- sum (λ k → sum (λ j → m₁ i k * m₂ k j * v j))    ≡⟨ obvious ⟩
+        -- sum (λ k → sum (λ j → m₁ i k * (m₂ k j * v j)))  ≡⟨ obvious ⟩
 
     sum-scalar : (f : Fin m → X) → (y : X) → sum (λ x → f x) * y ≡ sum (λ x → f x * y)
     sum-scalar {zero} f y = *-zeroˡ y
@@ -443,14 +445,14 @@ Here are the gory details if you aren't happy postulating `lemma`:
       where open ≡-Reasoning
 
     postulate
-      trust-me : {x y : X} → x ≡ y
+      obvious : {x y : X} → x ≡ y
 
     +-sum : (f₁ f₂ : Fin m → X) → sum f₁ + sum f₂ ≡ sum (λ x → f₁ x + f₂ x)
     +-sum {zero} f₁ f₂ = +-identityʳ 0#
     +-sum {suc m} f₁ f₂ =
       begin
         f₁ zero + sum (λ x → f₁ (suc x)) + (f₂ zero + sum (λ x → f₂ (suc x)))
-      ≡⟨ trust-me ⟩
+      ≡⟨ obvious ⟩
         f₁ zero + f₂ zero + (sum (λ x → f₁ (suc x)) + sum (λ x → f₂ (suc x)))
       ≡⟨ cong (λ φ → f₁ zero + f₂ zero + φ) (+-sum (f₁ ∘ suc) (f₂ ∘ suc)) ⟩
         f₁ zero + f₂ zero + sum (λ x → f₁ (suc x) + f₂ (suc x))
@@ -461,8 +463,8 @@ Here are the gory details if you aren't happy postulating `lemma`:
 
     sum-sum : (f : Fin m → Fin n → X) → sum (λ j → sum (λ k → f j k)) ≡ sum (λ k → sum (λ j → f j k))
     sum-sum {zero} {zero} f = refl
-    sum-sum {zero} {suc n} f = trust-me
-    sum-sum {suc m} {zero} f = trust-me
+    sum-sum {zero} {suc n} f = obvious
+    sum-sum {suc m} {zero} f = obvious
     sum-sum {suc m} {suc n} f =
       begin
         sum {suc m} (λ j → sum {suc n} (λ k → f j k))
@@ -477,4 +479,135 @@ Here are the gory details if you aren't happy postulating `lemma`:
       ∎
       where open ≡-Reasoning
 ```
+
+So, what kind of functions are representable as matrices? As it happens, they
+are precisely the *linear maps* --- that is, the two properties must hold:
+
+```agda
+    map : (X → X) → Vec m → Vec m
+    map f v i = f (v i)
+
+    zip : (X → X → X) → Vec m → Vec m → Vec m
+    zip f v₁ v₂ i = f (v₁ i) (v₂ i)
+
+    record LinearFunction (f : Vec m → Vec n) : Set c where
+      field
+        additive : ∀ v₁ v₂ → f (zip _+_ v₁ v₂) ≗ zip _+_ (f v₁) (f v₂)
+        homogeneity : ∀ v x → f (map (x *_) v) ≗ map (x *_) (f v)
+    open LinearFunction
+
+    ⌊⌋-linear : (M : Matrix m n) → LinearFunction ⌊ M ⌋
+    additive (⌊⌋-linear M) v₁ v₂ i =
+      begin
+        ⌊ M ⌋ (zip _+_ v₁ v₂) i
+      ≡⟨⟩
+        sum (λ j → M i j * (v₁ j + v₂ j))
+      ≡⟨ cong sum (fin-ext λ j → *-+-distribˡ _ _ (M i j)) ⟩
+        sum (λ j → M i j * v₁ j + M i j * v₂ j)
+      ≡⟨ sym (+-sum (λ j → M i j * v₁ j) (λ j → M i j * v₂ j)) ⟩
+        sum (λ j → M i j * v₁ j) + sum (λ j → M i j * v₂ j)
+      ≡⟨⟩
+        ⌊ M ⌋ v₁ i + ⌊ M ⌋ v₂ i
+      ∎
+      where open ≡-Reasoning
+    homogeneity (⌊⌋-linear M) v x i =
+      begin
+        ⌊ M ⌋ (map (x *_) v) i
+      ≡⟨⟩
+        sum (λ j → M i j * (x * v j))
+      ≡⟨ obvious ⟩
+        sum (λ j → M i j * (v j * x))
+      ≡⟨ obvious ⟩
+        sum (λ j → (M i j * v j) * x)
+      ≡⟨ obvious ⟩
+        sum (λ j → (M i j * v j) * x)
+      ≡⟨ sym (sum-scalar (λ j → (M i j * v j)) x) ⟩
+        sum (λ j → M i j * v j) * x
+      ≡⟨ *-comm _ x ⟩
+        x * sum (λ j → M i j * v j)
+      ≡⟨⟩
+        map (x *_) (⌊ M ⌋ v) i
+      ∎
+      where open ≡-Reasoning
+```
+
+```agda
+
+open import Data.Bool using (true; false)
+open import Relation.Nullary using (Dec; yes; no; _because_; ofʸ)
+
+module dictionaries {K : Set} (_≟_ : (x y : K) → Dec (x ≡ y)) where
+  open import Data.Maybe using (Maybe; just; nothing)
+  open import Data.Product using (_×_; _,_; ∃; Σ; proj₁; proj₂)
+
+  open import Data.List using (List; []; _∷_; map)
+  open import Data.List.Relation.Unary.All using (All; []; _∷_)
+  open import Data.List.Relation.Unary.AllPairs using (AllPairs; []; _∷_)
+  open import Data.List.Relation.Unary.Unique.Propositional using (Unique; []; _∷_)
+
+  private variable
+    V : Set
+
+  UniqueAssocList : (K V : Set) → List (K × V) → Set
+  UniqueAssocList _ _ = AllPairs λ { (k₁ , _) (k₂ , _) → k₁ ≢ k₂ }
+
+  Dict : Set → Set → Set
+  Dict K V = ∃ (UniqueAssocList K V)
+
+  lookup : List (K × V) → K → Maybe V
+  lookup [] i = nothing
+  lookup ((k , v) ∷ l) i with i ≟ k
+  ... | yes refl = just v
+  ... | no _ = lookup l i
+
+  ⌊_⌋ : Dict K V → (K → Maybe V)
+  ⌊ l , _ ⌋ = lookup l
+
+  data Preimage_∋_ (f : K → Maybe V) : K → Set where
+    im : ∀ {x} y → f x ≡ just y → Preimage f ∋ x
+
+  open import Data.List.Membership.Propositional
+
+  record ComputablePreimage (f : K → Maybe V) (l : List K) : Set where
+    field
+      is-unique : Unique l
+      is-preimage : All (Preimage f ∋_) l
+      is-total : ∀ k v → f k ≡ just v → k ∈ l
+  open ComputablePreimage
+
+  preimage : Dict K V → List K
+  preimage (l , _) = map proj₁ l
+
+  open import Data.List.Relation.Unary.Unique.Propositional.Properties
+
+  postulate
+    ≟-refl : ∀ k → k ≟ k ≡ (true because ofʸ refl)
+
+  open import Data.Empty using (⊥-elim)
+
+
+  ⌊⌋-preimage : (d : Dict K V) → ComputablePreimage ⌊ d ⌋ (preimage d)
+  is-unique (⌊⌋-preimage (l , u)) = map⁺ ? ?
+  is-preimage (⌊⌋-preimage ([] , _)) = []
+  is-preimage (⌊⌋-preimage d@((k , v) ∷ l , _ ∷ p)) with ⌊ d ⌋ k in eq
+  ... | just v rewrite eq = im v eq ∷ is-preimage {! ⌊⌋-preimage (l , p) !}
+  ... | nothing = ⊥-elim {! !}
+  is-total (⌊⌋-preimage d) = {! !}
+
+
+
+
+
+
+
+
+  -- record ComputablePreimage (f : K → Maybe V) : Set where
+  --   field
+  --     inv : (f x ≡ just y) → x
+
+  --     { x | ∃ y. f x = just y }
+
+
+```
+
 
