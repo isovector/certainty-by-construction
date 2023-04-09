@@ -1,3 +1,5 @@
 name: math-for-programmers
 depend: standard-library
 include: src/book
+flags:
+  --warning=noUnsupportedIndexedMatch

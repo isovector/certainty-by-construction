@@ -1,3 +1,6 @@
 name: math-for-programmers
 depend: standard-library
 include: tex/agda
+flags:
+  --warning=noUnsupportedIndexedMatch
+
