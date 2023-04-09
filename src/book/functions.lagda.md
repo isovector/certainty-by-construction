@@ -1,12 +1,255 @@
-# Functions Big and Small
+# Functions, Big and Small
 
 ```agda
 module functions where
 ```
 
-- maps
-- subsets
-- matrices
+Computer science is chocked full of data structures. A great many come from the
+official pantheon---things like binary search trees, hash maps, stacks, graphs,
+and heaps. But, dwarfing all of these, there exists orders of magnitude more
+data structures in the arcane vault, from the
+passingly-familiar-but-unlikely-to-have-implemented *rope* to the obscure *Judy
+array.* With so many options to choose from, how can we even hope to make an
+informed choice?
+
+The reason there exist many more data structures than any practitioner can
+possibly know about is that most data structures are minor tweaks of other
+well-known structures. For example, the UB-tree is a variation on the B+ tree,
+which itself is a B-tree that maintains a particular invariant, while a B-tree
+is a generalization of the binary search tree (BST henceforth). Unrolling the
+lineage here shows us that whatever the UB-tree is, it's probably a BST that has
+more desirable computational properties for certain shapes of data.
+
+As Donald Knuth said, "premature optimization is the root of all evil." For the
+vast majority of tasks, you can start with (and subsequently get away with) a
+BST, upgrading to the more complex UB-tree in the future only if it turns out to
+be mission critical. This is a well-understood idea in the modern age.
+
+However, most programmers coming to Agda make an error in the spirit of the
+Co-Blub paradox. After years of honing their taste and cutting their teeth on
+picking the simplest data structure for the job, they come to Agda and
+immediately fall down the rabbit-hole of long, arduous proofs. As I have gotten
+older and more experienced, my guiding philosophy for writing software has
+become *if it feels too hard, it probably is.*
+
+As it happens, your choice of representation matters much more in Agda than it
+does in most programming languages. That arises from the fact that your proofs
+will inevitably trace the same grooves as the implementations they are proofs
+*about.* In other words, the proof follows the implementation. It's not hard to
+imagine that a complicated implementation will warrant a complicated proof.
+
+
+## Matrices
+
+Let's work through an example together, to get a feel for just how important a
+representation can be. Our object of investigation will be *matrices*---that is,
+rectangular arrays of numbers. Matrices are often used in computational
+geometry, including 3D graphics, and are the back-bone of modern machine
+learning techniques. As an exercise in honing our
+translating-mathematics-to-Agda chops, let's take a look at the definition of a
+matrix.
+
+Matrix
+:   A rectangular array of numbers.
+
+Matrices have a predefined height and width, often referred to as $m$ and $n$
+respectively, and given in that order. For example, the following is a 3x2
+matrix:
+
+```text
+1   1
+5  -42
+0  2.5
+```
+
+Note that the numbers inside a matrix are rather flexible. Depending on the
+circumstances, we might prefer them to be naturals, while in others we might
+want reals, or even functions. In order to avoid the complexities here, we will
+simply parameterize the our module over the type of numbers, and postulate any
+properties of those numbers as the need occurs. Let's call this number type
+parameter `𝔸`:
+
+```agda
+module matrix₁ {𝔸 : Set} where
+```
+
+Returning to the problem of modeling matrices in Agda, note that we don't have
+any good, inductive primitives for two-dimensional data, I think most
+programmers would thus come up with the next best thing: the "vector of vectors"
+model---indeed, it's what I first thought of.
+
+```agda
+  open import Data.Product
+    as Σ
+    using (_×_; _,_)
+  open import Data.Nat
+    using (ℕ; zero; suc)
+  open import Data.Vec
+    using (Vec; []; _∷_)
+
+  Matrix : ℕ → ℕ → Set
+  Matrix m n = Vec (Vec 𝔸 n) m
+
+  private variable
+    m n p : ℕ
+```
+
+This representation is known as the "row-major order" of matrices, that is, the
+rows have contiguous data, while the columns do not. There are immediate
+repercussions here. For example, let's implement the function `top/rest` which
+separates the first row from the rest of the matrix:
+
+```agda
+  top/rest
+      : Matrix (suc m) n
+      → Vec 𝔸 n × Matrix m n
+  top/rest (x ∷ xs) = x , xs
+```
+
+Compare `top/rest` to the analogous function that pulls the leftmost column off
+of a matrix:
+
+```agda
+  left/rest
+      : Matrix m (suc n)
+      → Vec 𝔸 m × Matrix m n
+  left/rest [] = [] , []
+  left/rest ((x ∷ v) ∷ m)
+    = Σ.map (x ∷_) (v ∷_) (left/rest m)
+```
+
+The dramatic difference in complexity between these two analogous functions is
+telling. Clearly, row-major order significantly privileges working with rows
+over working with columns.
+
+Nevertheless, we can continue by implementing a few special matrices of note.
+First is the zero-matrix, which is the matrix that is full only of zeroes. Note
+that we will also need to postulate the existence of `0# : 𝔸`.
+
+```agda
+  postulate 0# : 𝔸
+
+  open Data.Vec
+    using (replicate)
+
+  0ₘ : Matrix m n
+  0ₘ = replicate (replicate 0#)
+```
+
+Two matrices of the same dimensions support a kind of addition, given by adding
+the respective cells in each of the two columns. That is:
+
+$$
+\begin{bmatrix}
+a & b & c\\
+d & e & f
+\end{bmatrix}
++
+\begin{bmatrix}
+x & y & z\\
+t & u & v
+\end{bmatrix}
+=
+\begin{bmatrix}
+a + x & b + y & c + z\\
+d + t & e + u & f + v
+\end{bmatrix}
+$$
+
+We can implement this operation over matrices by positing the existence of an
+addition over `𝔸`, as well as some common-sense identity laws:
+
+```agda
+  open import Relation.Binary.PropositionalEquality
+
+  postulate
+    _+_ : 𝔸 → 𝔸 → 𝔸
+    +-identityˡ : ∀ x → 0# + x ≡ x
+    +-identityʳ : ∀ x → x + 0# ≡ x
+
+  open Data.Vec
+    using (zipWith)
+```
+
+Addition of matrices doesn't present us any problems, as pointwise operations
+don't need to distinguish between rows and columns. Thus, we can zip the rows
+together, zip the corresponding cells together, and add each pair:
+
+```agda
+  _+ₘ_ : Matrix m n → Matrix m n → Matrix m n
+  x +ₘ y = zipWith (zipWith _+_) x y
+```
+
+Let's now prove the trivial fact that `0ₘ` is a left identity for `+ₘ`:
+
+```agda
+  +ₘ-identityˡ : (x : Matrix m n) → 0ₘ +ₘ x ≡ x
+```
+
+We can begin, as always, with induction on our argument. The first case, in
+which `m ≡ 0`, is easy:
+
+```agda
+  +ₘ-identityˡ [] = refl
+```
+
+The case that `n ≡ 0` is also easy, although slightly more work, as our
+row-major order would suggest:
+
+```agda
+  +ₘ-identityˡ ([] ∷ rs)
+    rewrite +ₘ-identityˡ rs
+      = refl
+```
+
+We're now left with the induction case. After some obvious rewriting to
+eliminate the `0# +_` and the row-recursive case, we're left here:
+
+```agda
+  +ₘ-identityˡ ((c ∷ cs) ∷ rs)
+    rewrite +-identityˡ c
+    rewrite +ₘ-identityˡ rs
+```
+
+with the goal
+
+```goal
+  (c ∷ zipWith _+_ (replicate 0#) cs) ∷ rs
+≡
+  (c ∷ cs) ∷ rs
+```
+
+and it's unclear how to move forwards. It would be nice if our induction just
+worked, but, unfortunately, it doesn't. Crossing our fingers that this is not a
+serious problem, we can write a little lemma to solve the goal for us:
+
+```agda
+      = cong (λ φ → (c ∷ φ) ∷ rs) (lemma cs)
+
+    where
+      lemma
+          : ∀ {m} (cs : Vec 𝔸 m)
+          → zipWith _+_ (replicate 0#) cs ≡ cs
+      lemma [] = refl
+      lemma (c ∷ cs)
+        rewrite +-identityˡ c
+        rewrite lemma cs
+          = refl
+```
+
+It's not the tidiest proof in the world, but it certainly gets the job done.
+However, we should be wary here; this is our second function in which dealing
+with the columns was clunkier than the same operation over the rows.
+
+Addition, however, is not the primary task for which programmers and
+mathematicians use matrices. No, the more interesting operation is *matrix
+multiplication*
+
+
+
+
+
+
 
 ```agda
 open import Data.Nat using (ℕ; zero; suc)
@@ -25,30 +268,29 @@ module matrices where
   -- https://personal.cis.strath.ac.uk/james.wood.100/blog/html/VecMat.html
   open import Data.Vec
 
-
-  Mat : Set c → ℕ → ℕ → Set c
-  Mat A m n = Vec (Vec A n) m
+  Matrix : Set c → ℕ → ℕ → Set c
+  Matrix A m n = Vec (Vec A n) m
 
   open import Data.Product
     using (_×_; _,_)
   import Data.Product as Σ
 
-  left/rest : Mat A m (suc n) → Vec A m × Mat A m n
+  left/rest : Matrix A m (suc n) → Vec A m × Matrix A m n
   left/rest [] = [] , []
   left/rest ((x ∷ v) ∷ m) = Σ.map (x ∷_) (v ∷_) (left/rest m)
 
-  left/rest-map-∷ : (x : A) (M : Mat A m n) →
-                    left/rest (map (x ∷_) M) ≡ (replicate x , M)
-  left/rest-map-∷ x [] = refl
-  left/rest-map-∷ x (u ∷ M) rewrite left/rest-map-∷ x M = refl
-
-  outer : (A → B → C) → (Vec A m → Vec B n → Mat C m n)
+  outer : (A → B → C) → (Vec A m → Vec B n → Matrix C m n)
   outer f [] ys = []
   outer f (x ∷ xs) ys = map (f x) ys ∷ outer f xs ys
 
-  column : Vec A m → Mat A m 1
+  column : Vec A m → Matrix A m 1
   column [] = []
   column (x ∷ xs) = (x ∷ []) ∷ column xs
+
+  left/rest-map-∷ : (x : A) (M : Matrix A m n) →
+                    left/rest (map (x ∷_) M) ≡ (replicate x , M)
+  left/rest-map-∷ x [] = refl
+  left/rest-map-∷ x (u ∷ M) rewrite left/rest-map-∷ x M = refl
 
   module WithSemiring (R : Semiring c ℓ) where
     open Semiring R renaming (Carrier to X) using (0#; 1#; _+_; _*_)
@@ -62,29 +304,29 @@ module matrices where
     _*ᵥ_ : X → Vec X m → Vec X m
     x *ᵥ y = map (x *_) y
 
-    0ₘ : Mat X m n
+    0ₘ : Matrix X m n
     0ₘ = replicate 0ᵥ
 
-    _+ₘ_ : Mat X m n → Mat X m n → Mat X m n
+    _+ₘ_ : Matrix X m n → Matrix X m n → Matrix X m n
     _+ₘ_ = zipWith _+ᵥ_
 
-    1ₘ : Mat X m m
+    1ₘ : Matrix X m m
     1ₘ {zero} = []
     1ₘ {suc m} = (1# ∷ 0ᵥ) ∷ map (0# ∷_) 1ₘ
 
-    _⊗ₒ_ : Vec X m → Vec X n → Mat X m n
+    _⊗ₒ_ : Vec X m → Vec X n → Matrix X m n
     _⊗ₒ_ = outer _*_
 
-    _*ₘ_ : Mat X m n → Mat X n p → Mat X m p
+    _*ₘ_ : Matrix X m n → Matrix X n p → Matrix X m p
     x *ₘ [] = 0ₘ
     x *ₘ (y ∷ ys) =
       let u , m = left/rest x
        in (u ⊗ₒ y) +ₘ (m *ₘ ys)
 
-    _$_ : Mat X m n → Mat X n 1 → Mat X m 1
+    _$_ : Matrix X m n → Matrix X n 1 → Matrix X m 1
     _$_ = _*ₘ_
 
-    ⌊_⌋ : Mat X m n → Vec X n → Vec X m
+    ⌊_⌋ : Matrix X m n → Vec X n → Vec X m
     ⌊ m ⌋ v with left/rest (m $ column v)
     ... | fst , _ = fst
 
@@ -99,7 +341,7 @@ module matrices where
     left/1ₘ {suc m}
       rewrite left/rest-map-∷ {m = m} 0# (map (0# ∷_) 1ₘ) = refl
 
-    left/+ : (x y : Mat X m (suc n)) → left/rest (x +ₘ y) ≡ Σ.zip′ (zipWith _+_) _+ₘ_ (left/rest x) (left/rest y)
+    left/+ : (x y : Matrix X m (suc n)) → left/rest (x +ₘ y) ≡ Σ.zip′ (zipWith _+_) _+ₘ_ (left/rest x) (left/rest y)
     left/+ [] [] = refl
     left/+ ((x ∷ xx) ∷ xs) ((y ∷ yy) ∷ ys) rewrite left/+ xs ys = refl
 
@@ -152,7 +394,7 @@ module matrices where
       begin
         ⌊ 1ₘ ⌋ (x ∷ xs)
       ≡⟨⟩
-        let left : ∀ {m} → Mat X m 1 → Vec X m
+        let left : ∀ {m} → Matrix X m 1 → Vec X m
             left = Σ.proj₁ ∘ left/rest in
         left (1ₘ *ₘ column (x ∷ xs))
       ≡⟨⟩
@@ -586,28 +828,17 @@ module dictionaries {K : Set} (_≟_ : (x y : K) → Dec (x ≡ y)) where
   open import Data.Empty using (⊥-elim)
 
 
-  ⌊⌋-preimage : (d : Dict K V) → ComputablePreimage ⌊ d ⌋ (preimage d)
-  is-unique (⌊⌋-preimage (l , u)) = map⁺ ? ?
-  is-preimage (⌊⌋-preimage ([] , _)) = []
-  is-preimage (⌊⌋-preimage d@((k , v) ∷ l , _ ∷ p)) with ⌊ d ⌋ k in eq
-  ... | just v rewrite eq = im v eq ∷ is-preimage {! ⌊⌋-preimage (l , p) !}
-  ... | nothing = ⊥-elim {! !}
-  is-total (⌊⌋-preimage d) = {! !}
+--   ⌊⌋-preimage : (d : Dict K V) → ComputablePreimage ⌊ d ⌋ (preimage d)
+--   is-unique (⌊⌋-preimage (l , u)) = map⁺ ? ?
+--   is-preimage (⌊⌋-preimage ([] , _)) = []
+--   is-preimage (⌊⌋-preimage d@((k , v) ∷ l , _ ∷ p)) with ⌊ d ⌋ k in eq
+--   ... | just v rewrite eq = im v eq ∷ is-preimage {! ⌊⌋-preimage (l , p) !}
+--   ... | nothing = ⊥-elim {! !}
+--   is-total (⌊⌋-preimage d) = {! !}
 
-
-
-
-
-
-
-
-  -- record ComputablePreimage (f : K → Maybe V) : Set where
-  --   field
-  --     inv : (f x ≡ just y) → x
-
-  --     { x | ∃ y. f x = just y }
-
-
+-- Fuck preimages.
 ```
+
+subsets
 
 

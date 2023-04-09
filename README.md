@@ -9,3 +9,6 @@
   - bst
   - heap
   - trie
+
+- representations matter!
+  - eg matrices suck as vecs of vecs
