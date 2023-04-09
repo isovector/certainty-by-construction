@@ -13,7 +13,7 @@ open import Data.Maybe
 open import Data.Bool
 open import Data.List hiding (merge; last)
 open import Data.Nat
-open import Data.Unit
+open import Data.Unit hiding (setoid)
 
 module monoid {c l : Level} (eq : Setoid c l)  where
   open Setoid eq renaming (_≈_ to _≡_; Carrier to A)
