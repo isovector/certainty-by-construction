@@ -2,6 +2,8 @@
 
 ```agda
 module functions where
+
+open import Level using (Level)
 ```
 
 Computer science is chocked full of data structures. A great many come from the
@@ -547,7 +549,265 @@ row-major implementation:
 --          = refl
 ```
 
-Clearly we are onto something with our new representation.
+Clearly we are onto something with our new representation. A problem which once
+was hard is now much easier. Content with our new representation, we can explore
+the question of what *is* a matrix, and why do practitioners care so much about
+them.
+
+
+### Matrices as Functions
+
+The type of `_*ₘ_ : Matrix m n → Matrix n p → Matrix m p` is somewhat suspicious
+in its requirement that both matrices have a `n` dimension, in different
+positions, which gets eliminated being pushed through the multiplication.
+Compare this type against that of function composition, namely `_∘_ : (B → C) →
+(A → B) → (A → C)`, which seems oddly similar: the functions both need a `B`
+parameter, on opposite sides of the arrow, which gets eliminated in the result.
+
+This is not a coincidence, because nothing is ever a coincidence. Whenever the
+indices need to align, you should immediately think "function" (or at least
+"morphism," as we will discuss in @sec:categorytheory.) But, if matrices
+correspond to functions, exactly which functions are we talking about? The
+indices give us a clue --- the input must be parameterized by exactly one of
+`m`, `n`, and the output must be the other. In every day tasks, matrices are
+usually multiplied against column vectors. For example, if we think about a
+2-dimensional space with XY coordinates, the corresponds to a 90 degree
+rotation clockwise:
+
+$$
+\begin{bmatrix}
+0 & -1\\
+1 & 0
+\end{bmatrix}
+$$
+
+We can thus apply this matrix to a particular coordinate, let's say $(5, 6)$, as
+follows:
+
+$$
+\begin{bmatrix}
+0 & -1\\
+1 & 0
+\end{bmatrix}
+\times
+\begin{bmatrix}
+5 \\
+6
+\end{bmatrix}
+$$
+
+Viewed in this light, the XY coordinate is the input, the rotation matrix is the
+function, and the result of the multiplication is the output. Thus, it seems
+natural to call the "width" of the matrix its input index. Let's define the type
+of vectors as functions into our scalar:
+
+```agda
+  Vec : ℕ → Set
+  Vec n = Fin n → 𝔸
+```
+
+Nothing goes particularly wrong if we were to use the standard `Data.Vec`
+encoding instead, but this saves us some lemmas to more naturally turn vectors
+into matrices and vice versa. Given vectors, we can lift them into column
+matrices:
+
+```agda
+  column : Vec m → Matrix m 1
+  column v i _ = v i
+```
+
+which gives rise to a natural definition of the interpretation of a matrix as a
+function from vectors to vectors:
+
+```agda
+  ⌊_⌋ : Matrix m n → Vec n → Vec m
+  ⌊ M ⌋ v i = (M *ₘ column v) i zero
+```
+
+This is merely a convention; nothing prevents us from multiplying on the left
+instead. In fact, we will prove this fact later (see `ᵀ-*ₘ-braid`.) For the time
+being, we'd like to prove that function composition is indeed a specification
+for `_*ₘ_`. That is, we'd like to work our way towards a proof of `⌊*ₘ⌋⟶⌊⌋∘⌊⌋ :
+(g : Matrix m n) → (f : Matrix n p) → ∀ v → ⌊ g *ₘ f ⌋ v ≗ (⌊ g ⌋ ∘ ⌊ f ⌋) v`.
+It's a bit of a mouthful, but really what we're saying here is that the
+interpretation of matrix multiplication is the composition of the matrices
+interpreted as functions.
+
+We will build our way towards this proof, but as a helper lemma, it will be
+valuable to show the extensionality of sum---that is, if we can show the
+equivalence of each term in the sum, we can thus show the two sums themselves
+are equal. This function requires a little bit of induction on the `Fin`ite
+numbers, but is a straightforward application of rewriting:
+
+```agda
+  sum-ext : {f g : Fin m → 𝔸} → ((i : Fin m) → f i ≡ g i) → sum f ≡ sum g
+  sum-ext {zero} x = refl
+  sum-ext {suc m} same
+    rewrite same zero
+    rewrite sum-ext (same ∘ suc)
+      = refl
+```
+
+Our next lemma is to show that multiplication distributes over `sum`. This is a
+straightforward application of the fact that multiplication distributes over
+addition; only, we need to repeat the argument for every term in the sum. We
+assume two non-controversial facts about `𝔸`:
+
+```agda
+  postulate
+    *-zeroˡ : ∀ x → 0# * x ≡ 0#
+    *-+-distribʳ : ∀ x y z → (x + y) * z ≡ (x * z) + (y * z)
+```
+
+and then can show `*-sum-distribʳ` in earnest:
+
+```agda
+  *-sum-distribʳ
+    : {f : Fin m → 𝔸}
+    → (k : 𝔸)
+    → sum f * k ≡ sum (λ i → f i * k)
+  *-sum-distribʳ {zero} k = *-zeroˡ k
+  *-sum-distribʳ {suc m} {f} k
+    rewrite *-+-distribʳ (f zero) (sum (f ∘ suc)) k
+    rewrite *-sum-distribʳ {f = f ∘ suc} k
+      = refl
+```
+
+There are a few more facts to prove about sums before we can get to the meat of
+our proof. But first, another reasonable assumption about `𝔸` --- namely that
+it's multiplication is commutative:
+
+```agda
+  postulate
+    *-comm : ∀ x y → x * y ≡ y * x
+```
+
+and, for the sake of the reader's (and the author's) sanity, we will postulate
+`…algebra…` stating that the intermediary step is a tedious-but-straightforward
+application of grade-school algebra:
+
+```agda
+    …algebra… : {ℓ : Level} {A : Set ℓ} {x y : A} → x ≡ y
+```
+
+Returning to our final two lemmas: first, we can show that the sum of two `sum`s
+over the same bounds is the `sum` of the sum.
+
+```agda
+  +-sum-hom
+    : (f g : Fin m → 𝔸)
+    → sum f + sum g ≡ sum (λ i → f i + g i)
+```
+
+The proof of this is rather verbose, but is just some shuffling of the addition
+terms and a recursive call:
+
+```agda
+  +-sum-hom {zero} f g = +-identityˡ 0#
+  +-sum-hom {suc m} f g =
+    begin
+      (f zero + sum (λ i → f (suc i))) + (g zero + sum (λ i → g (suc i)))
+    ≡⟨ …algebra… ⟩
+      (f zero + g zero) + (sum (λ i → f (suc i)) + sum (λ i → g (suc i)))
+    ≡⟨ cong ((f zero + g zero) +_) (+-sum-hom (f ∘ suc) (g ∘ suc)) ⟩
+      (f zero + g zero) + sum (λ i → f (suc i) + g (suc i))
+    ∎
+    where open ≡-Reasoning
+```
+
+Our final necessary lemma before showing that matrix multiplication is a model
+for function composition is to show that we can arbitrarily swap nested `sum`s,
+so long as doing so doesn't introduce any scoping issues. The idea is that,
+given some function `f : Fin m → Fin n → 𝔸`, we can freely interchange nested
+`sum`s which iterate over `m` and `n`. First, the type:
+
+```agda
+  sum-sum-distrib
+      : (f : Fin m → Fin n → 𝔸)
+      → sum (λ j → sum (λ k → f j k)) ≡ sum (λ k → sum (λ j → f j k))
+```
+
+Take a moment to really understand what's going on in this type signature before
+continuing. The only difference in the terms we'd like to show equivalence of is
+which `sum` binds `j` and which binds `k`. We can proceed by induction on `m`,
+which first requires us to show the sum of many 0 terms is itself zero:
+
+```agda
+  sum-sum-distrib {zero} {n} f = begin
+    0#                   ≡⟨ sym (*-zeroˡ _) ⟩
+    0# * sum (λ k → 0#)  ≡⟨ *-comm 0# _ ⟩
+    sum (λ k → 0#) * 0#  ≡⟨ *-sum-distribʳ 0# ⟩
+    sum (λ k → 0# * 0#)  ≡⟨ sum-ext (λ _ → *-zeroˡ 0#) ⟩
+    sum (λ k → 0#)       ∎
+    where open ≡-Reasoning
+```
+
+The inductive case isn't particularly interesting, we just need to get
+everything into the right shape that we can invoke `sum-sum-distrib`:
+
+```agda
+  sum-sum-distrib {suc m} {n} f =
+    begin
+      sum (λ k → f zero k) + sum (λ j → sum (λ k → f (suc j) k))
+    ≡⟨ cong (sum _ +_) (sum-sum-distrib (λ j → f (suc j))) ⟩
+      sum (λ k → f zero k) + sum (λ k → sum (λ j → f (suc j) k))
+    ≡⟨ +-sum-hom _ _ ⟩
+      sum (λ k → f zero k + sum (λ j → f (suc j) k))
+    ∎
+    where open ≡-Reasoning
+```
+
+Finally we get to the meat of our goal: to show that the interpretation of
+matrix multiplication is the composition of the interpretation of matrices as
+functions. Start with the type:
+
+```agda
+  ⌊*ₘ⌋⟶⌊⌋∘⌊⌋
+    : (g : Matrix m n)
+    → (f : Matrix n p)
+    → (v : Fin p → 𝔸)
+    → ⌊ g *ₘ f ⌋ v ≗ (⌊ g ⌋ ∘ ⌊ f ⌋) v
+```
+
+The proof mostly writes itself, given the lemmas we've already proven. Of
+course, if you were working this out for yourself, you'd start with `⌊*ₘ⌋⟶⌊⌋∘⌊⌋`
+and work backwards, determining which lemmas you need and proving them. This is
+one flaw of presenting a book as a literate Agda document; it's hard to show
+things in the order they happen "in real life."
+
+```agda
+  ⌊*ₘ⌋⟶⌊⌋∘⌊⌋ g f v i = begin
+      sum (λ j → sum (λ k → g i k * f k j) * v j)
+    ≡⟨ sum-ext (λ j → *-sum-distribʳ (v j))  ⟩
+      sum (λ j → sum (λ k → (g i k * f k j) * v j))
+    ≡⟨ sum-sum-distrib (λ j k → (g i k * f k j) * v j) ⟩
+      sum (λ k → sum (λ j → (g i k * f k j) * v j))
+    ≡⟨ …algebra… ⟩
+      sum (λ k → sum (λ j → (f k j * v j) * g i k))
+    ≡⟨ sym (sum-ext (λ k → *-sum-distribʳ (g i k))) ⟩
+      sum (λ k → sum (λ j → f k j * v j) * g i k)
+    ≡⟨ sum-ext (λ k → *-comm _ _) ⟩
+      sum (λ k → g i k * sum (λ j → f k j * v j))
+    ∎
+    where open ≡-Reasoning
+```
+
+```agda
+  row : (Fin n → 𝔸) → Matrix 1 n
+  row v _ j = v j
+
+
+
+  infix 100 _ᵀ
+  _ᵀ : Matrix m n → Matrix n m
+  (M ᵀ) i j = M j i
+
+  -- TODO(sandy): what's a good name for this?
+  ᵀ-*ₘ-braid : (a : Matrix m n) → (b : Matrix n p) → a *ₘ b ≡ₘ (b ᵀ *ₘ a ᵀ) ᵀ
+  ᵀ-*ₘ-braid a b i j = sum-ext λ k → *-comm _ _
+```
+
+
 
 
 
