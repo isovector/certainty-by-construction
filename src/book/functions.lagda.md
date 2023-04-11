@@ -70,8 +70,11 @@ properties of those numbers as the need occurs. Let's call this number type
 parameter `𝔸`:
 
 ```agda
-module matrix₁ {𝔸 : Set} where
+module matrix-induction {𝔸 : Set} where
 ```
+
+
+### The Row-Major Representation
 
 Returning to the problem of modeling matrices in Agda, note that we don't have
 any good, inductive primitives for two-dimensional data, I think most
@@ -243,7 +246,309 @@ with the columns was clunkier than the same operation over the rows.
 
 Addition, however, is not the primary task for which programmers and
 mathematicians use matrices. No, the more interesting operation is *matrix
-multiplication*
+multiplication.* Matrix multiplication, unlike your everyday multiplication, has
+a stronger type, and requires our two matrices to have an equal dimension
+between them. That is, the matrix on the left must have the same width as the
+height of the matrix on the right. That is, given `a : Matrix m n` and `b :
+Matrix n p`, we can write the operation `a *ₘ b` in symbols as:
+
+$$
+\begin{bmatrix}
+a_{1,1} & a_{1,2} & \cdots & a_{1,n}\\
+a_{2,1} & a_{2,2} & \cdots & a_{2,n}\\
+\vdots & \vdots & \ddots & \vdots \\
+a_{m,1} & a_{m,2} & \cdots & a_{m,n}
+\end{bmatrix}
+\times
+\begin{bmatrix}
+b_{1,1} & b_{1,2} & \cdots & b_{1,p}\\
+b_{2,1} & b_{2,2} & \cdots & b_{2,p}\\
+\vdots & \vdots & \ddots & \vdots \\
+b_{n,1} & b_{n,2} & \cdots & b_{n,p}
+\end{bmatrix}
+$$
+
+with the result being `c : Matrix m p`, where each cell is given by the formula:
+
+$$
+c_{i,j} = \sum_{k = 1}^{n} a_{i,k} \times b_{k, j}
+$$
+
+Said another way, the product matrix resulting from a multiplication pairs the
+rows of the first matrix with the columns of the second, adding each cell up
+pointwise.
+
+If this is your first time seeing matrix multiplication (or even if it isn't,)
+it might be unclear what the *intuition* behind matrix multiplication is. Why
+does it exist, what does it do, and why should we care about it? We will return
+to this question in a moment, but for the time being, resign ourselves to
+implementing it in our row-major matrix representation.
+
+We will implement matrix multiplication in two steps; first, by computing the
+*outer-product*, which is the analogous operation on vectors (matrices with one
+dimension set to 1.) The outer product of two vectors is a matrix using the
+length of the first as its height, and the length of the second as its width. In
+symbols, the result of:
+
+$$
+\begin{bmatrix}
+a_{1} \\
+a_{2} \\
+\vdots \
+a_{m}
+\end{bmatrix}
+\otimes
+\begin{bmatrix}
+b_{1} \\
+b_{2} \\
+\vdots \
+b_{n}
+\end{bmatrix}
+$$
+
+is a matrix:
+
+$$
+\begin{bmatrix}
+a_{1}\times b_{1} & a_{1}\times b_{2} & \cdots & a_{1}\times b_{n}\\
+a_{2}\times b_{1} & a_{2}\times b_{2} & \cdots & a_{2}\times b_{n}\\
+\vdots & \vdots & \ddots & \vdots \\
+a_{m}\times b_{1} & a_{m}\times b_{2} & \cdots & a_{m}\times b_{n}
+\end{bmatrix}
+$$
+
+It's not too tricky to implement such a thing in Agda; the secret is to write
+down the type and use the type-checker to help us ensure that we haven't lost a
+case anywhere.
+
+```agda
+  open Data.Vec
+    using (map)
+
+  postulate
+    _*_ : 𝔸 → 𝔸 → 𝔸
+
+  _⊗_ : Vec 𝔸 m → Vec 𝔸 n → Matrix m n
+  []       ⊗ ys = []
+  (x ∷ xs) ⊗ ys = map (x *_) ys ∷ xs ⊗ ys
+```
+
+Now that we have the outer product, we can implement matrix multiplication by
+taking the outer product of each row/column pair and doing a matrix addition
+with the multiplication of the rest of the matrix. Start with the type:
+
+```agda
+  _*ₘ_ : Matrix m n → Matrix n p → Matrix m p
+```
+
+Recall that in the definition of matrix multiplication, the *columns* of the
+first matrix get paired with the *rows* of the latter. Since our matrices are in
+row-major order, our induction naturally will proceed on the second argument,
+since that's where the rows are. If we're out of rows, the result is
+conceptually zero, but that doesn't typecheck, so instead we use `0ₘ` which is
+the matrix analogue:
+
+```agda
+  x *ₘ [] = 0ₘ
+```
+
+Otherwise, we must pair a column from `x` with the row we just pulled off. We
+can use `left/rest` to get the column, and then proceed with our outer product
+added to the resultant multiplication:
+
+```agda
+  x *ₘ (r ∷ rs) =
+    let c , cs = left/rest x
+      in (c ⊗ r) +ₘ (cs *ₘ rs)
+```
+
+As it happens, this definition of `_*ₘ_` *is* indeed correct, but it's rather
+hard to convince ourselves of that, isn't it? Recall the definition we gave
+earlier, where the $c_{i,j}$ element in the resultant matrix was given by the
+formula:
+
+$$
+c_{i,j} = \sum_{k = 1}^{n} a_{i,k} \times b_{k, j}
+$$
+
+Our implementation instead gives us a recursive definition:
+
+$$
+a \times_m b = (a_{-, 1} \otimes b_{1, -}) +_m ((a_{-, 2\dots}) \times_m (b_{2\dots, -}))
+$$
+
+which uses nonstandard notation to suggest pulling a column off a matrix via
+$a_{-, 1}$ and the rest of the matrix as $a_{-, 2\dots}$. We can convince
+ourselves of the correctness here by noticing that the induction is actually on
+`p`, which means the rows and the columns on which we're doing the outer product
+remain of length `m` and `n` respectively. Thus, each outer product still
+results in a matrix of size $m \times n$, of which we add up exactly `p` in
+number. Thus, our definition here performs `p` matrix additions, while the
+mathematical definition performs `p` scalar additions in each cell.
+
+These two definitions are thus equivalent, but there is significantly more
+algebraic manipulation necessary to use `_*ₘ_` as written. Notice that if we
+wanted to prove anything about it, we would first need to inline the definitions
+of `left/rest`, `_⊗_`, and `_+ₘ_`, each of which is annoyingly recursive and
+none of which will Agda automatically compute for us. It's thus rather more work
+than we'd like to do! In choosing the row-major order as our representation,
+we've obscured the mathematics we're trying to prove. Not only do we need to
+still do the original mathematics, we also need to juggle the weight of our
+representation.
+
+
+### Function Representation
+
+Rather than go forward with the row-major representation, we will try again with
+a different representation and see how all the same things roll-out. We note
+that where things really went wrong was that rows and columns were citizens of
+differing standing. It was easy to work with rows, but difficult to work with
+columns. Of course, we could always try a column-major ordering instead, but
+that would merely move the challenges.
+
+Instead, we find ourselves looking for a representation which doesn't make any
+distinctions between the two dimensions. Any sort of inductive definition is
+sure to build up matrices from smaller matrices, which is likely to give rise to
+the same issues. Let's thus turn our attention to a function representation:
+
+```agda
+module matrix-functions {𝔸 : Set} where
+  open import Data.Nat
+    using (ℕ; zero; suc)
+  open import Data.Fin
+    using (Fin; zero; suc)
+
+  Matrix : ℕ → ℕ → Set
+  Matrix m n = (i : Fin m) → (j : Fin n) → 𝔸
+```
+
+A matrix is thus parameterized by its dimensions, and is represented by a
+function which takes those indices and gives you back an element of `𝔸`. Giving
+names to the `Fin` arguments here isn't strictly necessary, but it helps Agda
+give meaningful names to indices as we work with matrices.
+
+We can implement the zero matrix trivially, by simply ignoring the indices:
+
+```agda
+  private variable
+    m n p : ℕ
+
+  postulate 0# : 𝔸
+
+  0ₘ : Matrix m n
+  0ₘ _ _ = 0#
+```
+
+Furthermore, we can now implement the identity matrix straightforwardly. In
+symbols, the identity function is a square ($n \times n$) matrix whose cells are
+given by:
+
+$$
+c_{i,j} =
+\begin{cases}
+  1 & i = j \\
+  0 & \text{otherwise}
+\end{cases}
+$$
+
+In Agda:
+
+```agda
+  open import Data.Bool
+    using (Bool; true; false; if_then_else_)
+
+  _==_ : Fin n → Fin n → Bool
+  zero == zero = true
+  zero == suc y = false
+  suc x == zero = false
+  suc x == suc y = x == y
+
+  postulate 1# : 𝔸
+
+  1ₘ : Matrix m m
+  1ₘ i j = if i == j then 1# else 0#
+```
+
+We can implement the summation operator by way of `sum`, which takes a function
+out of `Fin n` and adds up every term:
+
+```agda
+  postulate
+    _+_ : 𝔸 → 𝔸 → 𝔸
+
+  open import Function
+    using (id; _∘_)
+
+  sum : (Fin n → 𝔸) → 𝔸
+  sum {zero} v = 0#
+  sum {suc n} v = v zero + sum {n} (v ∘ suc)
+```
+
+With all of these pieces under our belt, the definition of matrix multiplication
+is now extremely simple, and mirrors its mathematical counterpart exactly:
+
+```agda
+  postulate
+    _*_ : 𝔸 → 𝔸 → 𝔸
+
+  _*ₘ_ : Matrix m n → Matrix n p → Matrix m p
+  (a *ₘ b) i j = sum λ k → a i k * b k j
+```
+
+Implementing matrix addition is also exceptionally easy under our new scheme,
+corresponding again exactly with the mathematical definition:
+
+```agda
+  _+ₘ_ : Matrix m n → Matrix m n → Matrix m n
+  (a +ₘ b) i j = a i j + b i j
+```
+
+With a little bit of machinery in order to express equality of matrices:
+
+```agda
+  open import Relation.Binary.PropositionalEquality
+
+  infix 0 _≡ₘ_
+  _≡ₘ_ : (a b : Matrix m n) → Set
+  a ≡ₘ b = ∀ i j → a i j ≡ b i j
+```
+
+We can now prove `+ₘ-identityˡ` again.
+
+```agda
+  postulate
+    +-identityˡ : ∀ x → 0# + x ≡ x
+
+  +ₘ-identityˡ : (a : Matrix m n) → 0ₘ +ₘ a ≡ₘ a
+  +ₘ-identityˡ a i j
+    rewrite +-identityˡ (a i j)
+      = refl
+```
+
+Compare the simplicity of this proof to the previous one we wrote for the
+row-major implementation:
+
+```agda
+--  +ₘ-identityˡ ([] ∷ rs)
+--    rewrite +ₘ-identityˡ rs
+--      = refl
+--  +ₘ-identityˡ ((c ∷ cs) ∷ rs)
+--    rewrite +-identityˡ c
+--    rewrite +ₘ-identityˡ rs
+--      = cong (λ φ → (c ∷ φ) ∷ rs) (lemma cs)
+--    where
+--      lemma
+--          : ∀ {m} (cs : Vec 𝔸 m)
+--          → zipWith _+_ (replicate 0#) cs ≡ cs
+--      lemma [] = refl
+--      lemma (c ∷ cs)
+--        rewrite +-identityˡ c
+--        rewrite lemma cs
+--          = refl
+```
+
+Clearly we are onto something with our new representation.
+
 
 
 
@@ -263,166 +568,6 @@ open import Relation.Binary.PropositionalEquality
 
 open import Algebra
   using (Semiring)
-module matrices where
-  -- presentation as given by
-  -- https://personal.cis.strath.ac.uk/james.wood.100/blog/html/VecMat.html
-  open import Data.Vec
-
-  Matrix : Set c → ℕ → ℕ → Set c
-  Matrix A m n = Vec (Vec A n) m
-
-  open import Data.Product
-    using (_×_; _,_)
-  import Data.Product as Σ
-
-  left/rest : Matrix A m (suc n) → Vec A m × Matrix A m n
-  left/rest [] = [] , []
-  left/rest ((x ∷ v) ∷ m) = Σ.map (x ∷_) (v ∷_) (left/rest m)
-
-  outer : (A → B → C) → (Vec A m → Vec B n → Matrix C m n)
-  outer f [] ys = []
-  outer f (x ∷ xs) ys = map (f x) ys ∷ outer f xs ys
-
-  column : Vec A m → Matrix A m 1
-  column [] = []
-  column (x ∷ xs) = (x ∷ []) ∷ column xs
-
-  left/rest-map-∷ : (x : A) (M : Matrix A m n) →
-                    left/rest (map (x ∷_) M) ≡ (replicate x , M)
-  left/rest-map-∷ x [] = refl
-  left/rest-map-∷ x (u ∷ M) rewrite left/rest-map-∷ x M = refl
-
-  module WithSemiring (R : Semiring c ℓ) where
-    open Semiring R renaming (Carrier to X) using (0#; 1#; _+_; _*_)
-
-    0ᵥ : Vec X m
-    0ᵥ = replicate 0#
-
-    _+ᵥ_ : Vec X m → Vec X m → Vec X m
-    _+ᵥ_ = zipWith _+_
-
-    _*ᵥ_ : X → Vec X m → Vec X m
-    x *ᵥ y = map (x *_) y
-
-    0ₘ : Matrix X m n
-    0ₘ = replicate 0ᵥ
-
-    _+ₘ_ : Matrix X m n → Matrix X m n → Matrix X m n
-    _+ₘ_ = zipWith _+ᵥ_
-
-    1ₘ : Matrix X m m
-    1ₘ {zero} = []
-    1ₘ {suc m} = (1# ∷ 0ᵥ) ∷ map (0# ∷_) 1ₘ
-
-    _⊗ₒ_ : Vec X m → Vec X n → Matrix X m n
-    _⊗ₒ_ = outer _*_
-
-    _*ₘ_ : Matrix X m n → Matrix X n p → Matrix X m p
-    x *ₘ [] = 0ₘ
-    x *ₘ (y ∷ ys) =
-      let u , m = left/rest x
-       in (u ⊗ₒ y) +ₘ (m *ₘ ys)
-
-    _$_ : Matrix X m n → Matrix X n 1 → Matrix X m 1
-    _$_ = _*ₘ_
-
-    ⌊_⌋ : Matrix X m n → Vec X n → Vec X m
-    ⌊ m ⌋ v with left/rest (m $ column v)
-    ... | fst , _ = fst
-
-    postulate
-      *-zeroˡ : ∀ x → 0# * x ≡ 0#
-      +-identityʳ : ∀ x → x + 0# ≡ x
-      +-identityˡ : ∀ x → 0# + x ≡ x
-      *-identityˡ : ∀ x → 1# * x ≡ x
-
-    left/1ₘ : left/rest (1ₘ {suc m}) ≡ ((1# ∷ replicate 0#) , replicate 0# ∷ 1ₘ {m})
-    left/1ₘ {zero} = refl
-    left/1ₘ {suc m}
-      rewrite left/rest-map-∷ {m = m} 0# (map (0# ∷_) 1ₘ) = refl
-
-    left/+ : (x y : Matrix X m (suc n)) → left/rest (x +ₘ y) ≡ Σ.zip′ (zipWith _+_) _+ₘ_ (left/rest x) (left/rest y)
-    left/+ [] [] = refl
-    left/+ ((x ∷ xx) ∷ xs) ((y ∷ yy) ∷ ys) rewrite left/+ xs ys = refl
-
-    map/*0 : ∀ xs → map {n = n} (0# *_) xs ≡ replicate 0#
-    map/*0 [] = refl
-    map/*0 (x ∷ xs) rewrite *-zeroˡ x | map/*0 xs = refl
-
-    outer/replicate0
-      : {m n : ℕ}
-      → (x : Vec X n)
-      → replicate {n = m} 0# ⊗ₒ x ≡ replicate (replicate 0#)
-    outer/replicate0 {zero} x = refl
-    outer/replicate0 {suc m} [] rewrite outer/replicate0 {m} [] = refl
-    outer/replicate0 {suc m} (x ∷ xs)
-      rewrite *-zeroˡ x
-            | map/*0 xs
-            | outer/replicate0 {m} (x ∷ xs)
-            = refl
-
-    postulate
-      dunno : (xs : Vec X m) → (replicate 0# ∷ 1ₘ) *ₘ column xs ≡ column (0# ∷ xs)
-    -- dunno [] = refl
-    -- dunno (x ∷ xs) =
-    --   begin
-    --     (replicate 0# ∷ 1ₘ) *ₘ column (x ∷ xs)
-    --   ≡⟨⟩
-    --     (replicate 0# ∷ 1ₘ) *ₘ ((x ∷ []) ∷ column xs)
-    --   ≡⟨⟩
-    --     (Σ.proj₁ (left/rest (replicate 0# ∷ 1ₘ)) ⊗ₒ (x ∷ [])) +ₘ (Σ.proj₂ (left/rest (replicate 0# ∷ 1ₘ)) *ₘ (column xs))
-    --   ≡⟨ ? ⟩
-    --     (0# ∷ []) ∷ (x ∷ []) ∷ column xs
-    --   ∎
-    --   where open ≡-Reasoning
-
-    left/column : (xs : Vec X m) → left/rest (column xs) ≡ (xs , replicate [])
-    left/column [] = refl
-    left/column (x ∷ xs) rewrite left/column xs = refl
-
-    left/replicate : left/rest (replicate {n = m} (0# ∷ [])) ≡ (replicate 0# , replicate [])
-    left/replicate {zero} = refl
-    left/replicate {suc m} rewrite left/replicate {m} = refl
-
-    zip/0#+ : ∀ xs → zipWith _+_ (replicate {n = m} 0#) xs ≡ xs
-    zip/0#+ [] = refl
-    zip/0#+ (x ∷ xs) rewrite +-identityˡ x | zip/0#+ xs = refl
-
-    ⌊1ₘ⌋ : ⌊ 1ₘ {m} ⌋ ≗ id
-    ⌊1ₘ⌋ {zero} [] = _≡_.refl
-    ⌊1ₘ⌋ {suc m} (x ∷ xs) =
-      begin
-        ⌊ 1ₘ ⌋ (x ∷ xs)
-      ≡⟨⟩
-        let left : ∀ {m} → Matrix X m 1 → Vec X m
-            left = Σ.proj₁ ∘ left/rest in
-        left (1ₘ *ₘ column (x ∷ xs))
-      ≡⟨⟩
-        left (1ₘ *ₘ ((x ∷ []) ∷ column xs))
-      ≡⟨⟩
-        left ((Σ.proj₁ (left/rest (1ₘ {suc m})) ⊗ₒ (x ∷ [])) +ₘ (Σ.proj₂ (left/rest (1ₘ {suc m})) *ₘ (column xs)))
-      ≡⟨ cong Σ.proj₁ (left/+ (Σ.proj₁ (left/rest (1ₘ {suc m})) ⊗ₒ (x ∷ [])) (Σ.proj₂ (left/rest (1ₘ {suc m})) *ₘ (column xs))) ⟩
-        zipWith _+_ (left (Σ.proj₁ (left/rest 1ₘ) ⊗ₒ (x ∷ []))) (Σ.proj₁ (left/rest (Σ.proj₂ (left/rest 1ₘ) *ₘ column xs)))
-      ≡⟨ cong (λ φ → zipWith _+_ (left (Σ.proj₁ φ ⊗ₒ (x ∷ []))) (Σ.proj₁ (left/rest (Σ.proj₂ φ *ₘ column xs)))) (left/1ₘ {m}) ⟩
-        zipWith _+_ (left ((1# ∷ replicate 0#) ⊗ₒ (x ∷ []))) (left ((replicate 0# ∷ 1ₘ) *ₘ column xs))
-      ≡⟨ cong (λ φ → zipWith _+_ (φ ∷ left (replicate 0# ⊗ₒ _)) _) (*-identityˡ x) ⟩
-        zipWith _+_ (x ∷ left (replicate 0# ⊗ₒ (x ∷ []))) (left ((replicate 0# ∷ 1ₘ) *ₘ column xs))
-      ≡⟨ cong (λ φ → zipWith _+_ (x ∷ left φ) _) (outer/replicate0 (x ∷ [])) ⟩
-        zipWith _+_ (x ∷ (left (replicate (replicate 0#)))) (left ((replicate {n = m} 0# ∷ 1ₘ {m}) *ₘ column xs))
-      ≡⟨ cong (λ φ → zipWith _+_ (x ∷ (left (replicate (replicate 0#)))) (left φ)) (dunno xs) ⟩
-        zipWith _+_ (x ∷ left (replicate (replicate 0#))) (left (column (0# ∷ xs)))
-      ≡⟨ cong (λ φ → zipWith _+_ (x ∷ left (replicate (replicate 0#))) (Σ.proj₁ φ)) (left/column (0# ∷ xs)) ⟩
-        x + 0# ∷ zipWith _+_ (Σ.proj₁ (left/rest (replicate (0# ∷ [])))) xs
-      ≡⟨ cong (_∷ _) (+-identityʳ x) ⟩
-        x ∷ zipWith _+_ (Σ.proj₁ (left/rest (replicate (0# ∷ [])))) xs
-      ≡⟨ cong (λ φ → x ∷ zipWith _+_ (Σ.proj₁ φ) xs) left/replicate ⟩
-        x ∷ zipWith _+_ (replicate 0#) xs
-      ≡⟨ cong (x ∷_) (zip/0#+ xs) ⟩
-        x ∷ xs
-      ∎
-      where open ≡-Reasoning
-
-    -- this would be a really nice thing to show
 ```
 
 ```agda
