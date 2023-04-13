@@ -881,7 +881,7 @@ are precisely the *linear maps* --- that is, the two properties must hold:
     using (Σ; proj₁; proj₂)
 
   ⌈_⌉ : {f : Vec n → Vec m} → LinearFunction f → Matrix m n
-  ⌈_⌉ {f = f} _ i j = f (λ k → 1ₘ k j) i
+  ⌈_⌉ {f = f} _ i j = f (1ₘ j) i
 
   postulate
     vec-ext : {f g : Vec m} → (∀ i → f i ≡ g i) → f ≡ g
@@ -930,7 +930,7 @@ are precisely the *linear maps* --- that is, the two properties must hold:
 
   lemma : ∀ (f : Vec (suc m) → Vec n)
             (i : Fin n) (j : Fin m) →
-          f (λ k → 1ₘ k (suc j)) i ≡ f (raise (λ k → 1ₘ k j)) i
+          f (1ₘ (suc j)) i ≡ f (raise (1ₘ j)) i
   lemma f i x =
     cong (λ φ → f φ i)
       (vec-ext λ { zero → refl
@@ -938,7 +938,7 @@ are precisely the *linear maps* --- that is, the two properties must hold:
                  })
 
   lemma₁ : (v : Vec (suc m)) (i : Fin (suc m)) →
-          ((v zero * (if i == zero then 1# else 0#)) +
+          ((v zero * (if zero == i then 1# else 0#)) +
             raise (λ x₁ → v (suc x₁)) i)
           ≡ v i
   lemma₁ v zero
@@ -947,7 +947,6 @@ are precisely the *linear maps* --- that is, the two properties must hold:
   lemma₁ v (suc i)
     rewrite *-zeroʳ (v zero)
       = +-identityˡ (v (suc i))
-
 
   linear-to-matrix
       : {f : Vec m → Vec n}
@@ -964,25 +963,25 @@ are precisely the *linear maps* --- that is, the two properties must hold:
     begin
       ⌊ ⌈ add ⊢ hom ⌉ ⌋ v x
     ≡⟨⟩
-      ((λ i j → f (λ k → 1ₘ k j) i) *ₘ column v) x zero
+      ((λ i j → f (1ₘ j) i) *ₘ column v) x zero
     ≡⟨⟩
-      sum (λ i → f (λ j → 1ₘ j i) x * v i)
+      sum (λ i → f (1ₘ i) x * v i)
     ≡⟨⟩
-      (f (λ j → 1ₘ j zero) x * v zero) + sum (λ i → f (λ j → 1ₘ j (suc i)) x * v (suc i))
+      (f (1ₘ zero) x * v zero) + sum (λ i → f (1ₘ (suc i)) x * v (suc i))
     ≡⟨⟩
-      (f (λ j → 1ₘ j zero) x * v zero) + (((λ i j → f (λ k → 1ₘ k (suc j)) i) *ₘ column (v ∘ suc)) x zero)
+      (f (1ₘ zero) x * v zero) + (((λ i j → f (1ₘ (suc j)) i) *ₘ column (v ∘ suc)) x zero)
     ≡⟨⟩
-      (f (λ j → 1ₘ j zero) x * v zero) + ⌊ (λ i j → f (λ k → 1ₘ k (suc j)) i)⌋ (v ∘ suc) x
-    ≡⟨ cong (λ φ → (f (λ j → 1ₘ j zero) x * v zero) + ⌊ φ ⌋ (v ∘ suc) x) (matrix-ext (lemma f)) ⟩
-      (f (λ j → 1ₘ j zero) x * v zero) + ⌊ ⌈ linear-raise (add ⊢ hom) ⌉ ⌋ (v ∘ suc) x
-    ≡⟨ cong (λ φ → (f (λ j → 1ₘ j zero) x * v zero) + φ) (linear-to-matrix (linear-raise (add ⊢ hom)) (v ∘ suc) x)  ⟩
-      (f (λ j → 1ₘ j zero) x * v zero) + f (raise (v ∘ suc)) x
+      (f (1ₘ zero) x * v zero) + ⌊ (λ i j → f (1ₘ (suc j)) i)⌋ (v ∘ suc) x
+    ≡⟨ cong (λ φ → (f (1ₘ zero) x * v zero) + ⌊ φ ⌋ (v ∘ suc) x) (matrix-ext (lemma f)) ⟩
+      (f (1ₘ zero) x * v zero) + ⌊ ⌈ linear-raise (add ⊢ hom) ⌉ ⌋ (v ∘ suc) x
+    ≡⟨ cong (λ φ → (f (1ₘ zero) x * v zero) + φ) (linear-to-matrix (linear-raise (add ⊢ hom)) (v ∘ suc) x)  ⟩
+      (f (1ₘ zero) x * v zero) + f (raise (v ∘ suc)) x
     ≡⟨ …algebra… ⟩
-      (v zero * f (λ j → 1ₘ j zero) x) + f (raise (v ∘ suc)) x
+      (v zero * f (1ₘ zero) x) + f (raise (v ∘ suc)) x
     ≡⟨ sym (cong (_+ f (raise (v ∘ suc)) x) (hom _ _ _)) ⟩
-      f (map (_*_ (v zero)) (λ j → 1ₘ j zero)) x + f (raise (v ∘ suc)) x
+      f (map (_*_ (v zero)) (1ₘ zero)) x + f (raise (v ∘ suc)) x
     ≡⟨ sym (add _ _ x) ⟩
-      f (λ i → (v zero * (if i == zero then 1# else 0#)) + raise (λ x₁ → v (suc x₁)) i) x
+      f (λ i → (v zero * (if zero == i then 1# else 0#)) + raise (λ x₁ → v (suc x₁)) i) x
     ≡⟨ cong (λ φ → f φ x) (vec-ext (lemma₁ v)) ⟩
       f v x
     ∎
