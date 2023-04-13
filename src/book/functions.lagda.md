@@ -893,11 +893,40 @@ are precisely the *linear maps* --- that is, the two properties must hold:
   raise v zero = 0#
   raise v (suc i) = v i
 
-  postulate
-    linear-raise : {f : Vec (suc m) → Vec n} → LinearFunction f → LinearFunction (λ i j → f (raise i) j)
+  +-raise-hom
+      : ∀ v₁ v₂ x
+      → raise {m} (λ i → v₁ i + v₂ i) x ≡ raise v₁ x + raise v₂ x
+  +-raise-hom v₁ v₂ zero rewrite +-identityʳ 0# = refl
+  +-raise-hom v₁ v₂ (suc x) = refl
 
-  -- lemma₂ : ∀ j → (∀ k → 1ₘ k (suc j)) ≡ raise (λ k → 1ₘ k j)
-  -- lemma₂ = ?
+  *-raise-hom
+      : ∀ v x → raise {m} (map (x *_) v) ≗ map (x *_) (raise v)
+  *-raise-hom v x zero
+    rewrite *-zeroʳ x = refl
+  *-raise-hom v x (suc i) = refl
+
+  linear-raise
+      : {f : Vec (suc m) → Vec n}
+      → LinearFunction f
+      → LinearFunction (λ i j → f (raise i) j)
+  additive (linear-raise {f = f} (add ⊢ _)) v₁ v₂ x =
+    begin
+      f (raise (λ i → v₁ i + v₂ i)) x
+    ≡⟨ cong (λ φ → f φ x) (vec-ext (+-raise-hom v₁ v₂)) ⟩
+      f (λ i → raise v₁ i + raise v₂ i) x
+    ≡⟨ add _ _ x ⟩
+      f (raise v₁) x + f (raise v₂) x
+    ∎
+    where open ≡-Reasoning
+  homogeneity (linear-raise {f = f} (_ ⊢ hom)) v x i =
+    begin
+      f (raise (map (_*_ x) v)) i
+    ≡⟨ cong (λ φ → f φ i) (vec-ext (*-raise-hom _ _)) ⟩
+      f (map (_*_ x) (raise v)) i
+    ≡⟨ hom _ x i ⟩
+      map (_*_ x) (f (raise v)) i
+    ∎
+    where open ≡-Reasoning
 
   lemma : ∀ (f : Vec (suc m) → Vec n)
             (i : Fin n) (j : Fin m) →
@@ -907,6 +936,17 @@ are precisely the *linear maps* --- that is, the two properties must hold:
       (vec-ext λ { zero → refl
                  ; (suc n) → refl
                  })
+
+  lemma₁ : (v : Vec (suc m)) (i : Fin (suc m)) →
+          ((v zero * (if i == zero then 1# else 0#)) +
+            raise (λ x₁ → v (suc x₁)) i)
+          ≡ v i
+  lemma₁ v zero
+    rewrite *-identityʳ (v zero)
+      = +-identityʳ (v zero)
+  lemma₁ v (suc i)
+    rewrite *-zeroʳ (v zero)
+      = +-identityˡ (v (suc i))
 
 
   linear-to-matrix
@@ -937,7 +977,13 @@ are precisely the *linear maps* --- that is, the two properties must hold:
       (f (λ j → 1ₘ j zero) x * v zero) + ⌊ ⌈ linear-raise (add ⊢ hom) ⌉ ⌋ (v ∘ suc) x
     ≡⟨ cong (λ φ → (f (λ j → 1ₘ j zero) x * v zero) + φ) (linear-to-matrix (linear-raise (add ⊢ hom)) (v ∘ suc) x)  ⟩
       (f (λ j → 1ₘ j zero) x * v zero) + f (raise (v ∘ suc)) x
-    ≡⟨ ? ⟩
+    ≡⟨ …algebra… ⟩
+      (v zero * f (λ j → 1ₘ j zero) x) + f (raise (v ∘ suc)) x
+    ≡⟨ sym (cong (_+ f (raise (v ∘ suc)) x) (hom _ _ _)) ⟩
+      f (map (_*_ (v zero)) (λ j → 1ₘ j zero)) x + f (raise (v ∘ suc)) x
+    ≡⟨ sym (add _ _ x) ⟩
+      f (λ i → (v zero * (if i == zero then 1# else 0#)) + raise (λ x₁ → v (suc x₁)) i) x
+    ≡⟨ cong (λ φ → f φ x) (vec-ext (lemma₁ v)) ⟩
       f v x
     ∎
     where open ≡-Reasoning
