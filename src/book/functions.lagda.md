@@ -640,7 +640,10 @@ are equal. This function requires a little bit of induction on the `Fin`ite
 numbers, but is a straightforward application of rewriting:
 
 ```agda
-  sum-ext : {f g : Fin m → 𝔸} → ((i : Fin m) → f i ≡ g i) → sum f ≡ sum g
+  sum-ext
+      : {f g : Fin m → 𝔸}
+      → f ≗ g
+      → sum f ≡ sum g
   sum-ext {zero} x = refl
   sum-ext {suc m} same
     rewrite same zero
@@ -704,12 +707,12 @@ terms and a recursive call:
 
 ```agda
   +-sum-hom {zero} f g = +-identityˡ 0#
-  +-sum-hom {suc m} f g =
-    begin
-      (f zero + sum (λ i → f (suc i))) + (g zero + sum (λ i → g (suc i)))
+  +-sum-hom {suc m} f g = begin
+      (f zero + sum (f ∘ suc)) + (g zero + sum (g ∘ suc))
     ≡⟨ …algebra… ⟩
-      (f zero + g zero) + (sum (λ i → f (suc i)) + sum (λ i → g (suc i)))
-    ≡⟨ cong ((f zero + g zero) +_) (+-sum-hom (f ∘ suc) (g ∘ suc)) ⟩
+      (f zero + g zero) + (sum (f ∘ suc) + sum (g ∘ suc))
+    ≡⟨ cong ((f zero + g zero) +_)
+            (+-sum-hom (f ∘ suc) (g ∘ suc)) ⟩
       (f zero + g zero) + sum (λ i → f (suc i) + g (suc i))
     ∎
     where open ≡-Reasoning
@@ -738,7 +741,8 @@ given some function `f : Fin m → Fin n → 𝔸`, we can freely interchange ne
 ```agda
   sum-sum-distrib
       : (f : Fin m → Fin n → 𝔸)
-      → sum (λ j → sum (λ k → f j k)) ≡ sum (λ k → sum (λ j → f j k))
+      → sum (λ j → sum (λ k → f j k))
+      ≡ sum (λ k → sum (λ j → f j k))
 ```
 
 Take a moment to really understand what's going on in this type signature before
@@ -850,7 +854,10 @@ depends only on the commutativity of multiplication, which makes sense when you
 think about what these two operations must be doing:
 
 ```agda
-  ⌊⌋′-is-⌊ᵀ⌋ : (a : Matrix m n) → (v : Vec m) → ⌊ a ⌋′ v ≗ ⌊ a ᵀ ⌋ v
+  ⌊⌋′-is-⌊ᵀ⌋
+      : (a : Matrix m n)
+      → (v : Vec m)
+      → ⌊ a ⌋′ v ≗ ⌊ a ᵀ ⌋ v
   ⌊⌋′-is-⌊ᵀ⌋ a v x = sum-ext λ k → *-comm _ _
 ```
 
@@ -873,8 +880,12 @@ are precisely the *linear maps* --- that is, the two properties must hold:
   record LinearFunction (f : Vec m → Vec n) : Set where
     constructor _⊢_
     field
-      additive : ∀ v₁ v₂ → f (zip _+_ v₁ v₂) ≗ zip _+_ (f v₁) (f v₂)
-      homogeneity : ∀ v x → f (map (x *_) v) ≗ map (x *_) (f v)
+      additive
+          : ∀ v₁ v₂
+          → f (zip _+_ v₁ v₂) ≗ zip _+_ (f v₁) (f v₂)
+      homogeneity
+          : ∀ v x
+          → f (map (x *_) v) ≗ map (x *_) (f v)
   open LinearFunction
 
   open import Data.Product
@@ -1003,73 +1014,6 @@ are precisely the *linear maps* --- that is, the two properties must hold:
     map (x *_) (⌊ M ⌋ v) i         ∎
     where open ≡-Reasoning
 
-```
-
-```agda
-
-open import Data.Bool using (true; false)
-open import Relation.Nullary using (Dec; yes; no; _because_; ofʸ)
-open import Relation.Binary.PropositionalEquality
-
-module dictionaries {K : Set} (_≟_ : (x y : K) → Dec (x ≡ y)) where
-  open import Data.Maybe using (Maybe; just; nothing)
-  open import Data.Product using (_×_; _,_; ∃; Σ; proj₁; proj₂)
-
-  open import Data.List using (List; []; _∷_; map)
-  open import Data.List.Relation.Unary.All using (All; []; _∷_)
-  open import Data.List.Relation.Unary.AllPairs using (AllPairs; []; _∷_)
-  open import Data.List.Relation.Unary.Unique.Propositional using (Unique; []; _∷_)
-
-  private variable
-    V : Set
-
-  UniqueAssocList : (K V : Set) → List (K × V) → Set
-  UniqueAssocList _ _ = AllPairs λ { (k₁ , _) (k₂ , _) → k₁ ≢ k₂ }
-
-  Dict : Set → Set → Set
-  Dict K V = ∃ (UniqueAssocList K V)
-
-  lookup : List (K × V) → K → Maybe V
-  lookup [] i = nothing
-  lookup ((k , v) ∷ l) i with i ≟ k
-  ... | yes refl = just v
-  ... | no _ = lookup l i
-
-  ⌊_⌋ : Dict K V → (K → Maybe V)
-  ⌊ l , _ ⌋ = lookup l
-
-  data Preimage_∋_ (f : K → Maybe V) : K → Set where
-    im : ∀ {x} y → f x ≡ just y → Preimage f ∋ x
-
-  open import Data.List.Membership.Propositional
-
-  record ComputablePreimage (f : K → Maybe V) (l : List K) : Set where
-    field
-      is-unique : Unique l
-      is-preimage : All (Preimage f ∋_) l
-      is-total : ∀ k v → f k ≡ just v → k ∈ l
-  open ComputablePreimage
-
-  preimage : Dict K V → List K
-  preimage (l , _) = map proj₁ l
-
-  open import Data.List.Relation.Unary.Unique.Propositional.Properties
-
-  postulate
-    ≟-refl : ∀ k → k ≟ k ≡ (true because ofʸ refl)
-
-  open import Data.Empty using (⊥-elim)
-
-
---   ⌊⌋-preimage : (d : Dict K V) → ComputablePreimage ⌊ d ⌋ (preimage d)
---   is-unique (⌊⌋-preimage (l , u)) = map⁺ ? ?
---   is-preimage (⌊⌋-preimage ([] , _)) = []
---   is-preimage (⌊⌋-preimage d@((k , v) ∷ l , _ ∷ p)) with ⌊ d ⌋ k in eq
---   ... | just v rewrite eq = im v eq ∷ is-preimage {! ⌊⌋-preimage (l , p) !}
---   ... | nothing = ⊥-elim {! !}
---   is-total (⌊⌋-preimage d) = {! !}
-
--- Fuck preimages.
 ```
 
 subsets
