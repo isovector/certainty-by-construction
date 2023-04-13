@@ -871,44 +871,88 @@ are precisely the *linear maps* --- that is, the two properties must hold:
   zip f v₁ v₂ i = f (v₁ i) (v₂ i)
 
   record LinearFunction (f : Vec m → Vec n) : Set where
+    constructor _⊢_
     field
       additive : ∀ v₁ v₂ → f (zip _+_ v₁ v₂) ≗ zip _+_ (f v₁) (f v₂)
       homogeneity : ∀ v x → f (map (x *_) v) ≗ map (x *_) (f v)
   open LinearFunction
 
-  ⌊⌋-linear : (M : Matrix m n) → LinearFunction ⌊ M ⌋
-  additive (⌊⌋-linear M) v₁ v₂ i =
+  open import Data.Product
+    using (Σ; proj₁; proj₂)
+
+  ⌈_⌉ : {f : Vec n → Vec m} → LinearFunction f → Matrix m n
+  ⌈_⌉ {f = f} _ i j = f (λ k → 1ₘ k j) i
+
+
+  postulate
+    vec-ext : {f g : Vec m} → (∀ i → f i ≡ g i) → f ≡ g
+    *-identityʳ : ∀ x → x * 1# ≡ x
+
+
+
+
+  linear-to-matrix
+      : {f : Vec m → Vec n}
+      → (lf : LinearFunction f)
+      → ∀ v
+      → ⌊ ⌈ lf ⌉ ⌋ v ≗ f v
+  linear-to-matrix {zero} {n} {f} (add ⊢ hom) v x = begin
+    0#                    ≡⟨ sym (*-zeroˡ _) ⟩
+    0# * f v x            ≡⟨ sym (hom v 0# x) ⟩
+    f (λ i → 0# * v i) x  ≡⟨ cong (λ φ → f φ x) (vec-ext λ ()) ⟩
+    f v x                 ∎
+    where open ≡-Reasoning
+  linear-to-matrix {suc m} {n} {f} (add ⊢ hom) v x =
     begin
-      ⌊ M ⌋ (zip _+_ v₁ v₂) i
+      let rest = sum (λ i → f (λ k → 1ₘ k (suc i)) x * v (suc i)) in
+      (f (λ k → 1ₘ k zero) x * v zero) + rest
+    ≡⟨ …algebra… ⟩
+      let res = f (λ k → if k == zero then v zero else 0#) x in
+      res + rest
     ≡⟨⟩
-      sum (λ j → M i j * (v₁ j + v₂ j))
-    ≡⟨ cong sum {! fin-ext λ j → *-+-distribˡ _ _ (M i j) !} ⟩
-      sum (λ j → (M i j * v₁ j) + (M i j * v₂ j))
-    ≡⟨ sym {! +-sum (λ j → M i j * v₁ j) (λ j → M i j * v₂ j) !} ⟩
-      sum (λ j → M i j * v₁ j) + sum (λ j → M i j * v₂ j)
-    ≡⟨⟩
-      ⌊ M ⌋ v₁ i + ⌊ M ⌋ v₂ i
+      res + sum (λ i → f (λ k → if k == suc i then 1# else 0#) x * v (suc i))
+    ≡⟨ ? ⟩
+      f v x
     ∎
     where open ≡-Reasoning
-  homogeneity (⌊⌋-linear M) v x i =
-    begin
-      ⌊ M ⌋ (map (x *_) v) i
-    ≡⟨⟩
-      sum (λ j → M i j * (x * v j))
-    ≡⟨ …algebra… ⟩
-      sum (λ j → M i j * (v j * x))
-    ≡⟨ …algebra… ⟩
-      sum (λ j → (M i j * v j) * x)
-    ≡⟨ …algebra… ⟩
-      sum (λ j → (M i j * v j) * x)
-    ≡⟨ sym {! sum-scalar (λ j → (M i j * v j)) x !} ⟩
-      sum (λ j → M i j * v j) * x
-    ≡⟨ *-comm _ x ⟩
-      x * sum (λ j → M i j * v j)
-    ≡⟨⟩
-      map (x *_) (⌊ M ⌋ v) i
-    ∎
-    where open ≡-Reasoning
+
+
+
+
+--   ⌊⌋-linear : (M : Matrix m n) → LinearFunction ⌊ M ⌋
+--   additive (⌊⌋-linear M) v₁ v₂ i =
+--     begin
+--       ⌊ M ⌋ (zip _+_ v₁ v₂) i
+--     ≡⟨⟩
+--       sum (λ j → M i j * (v₁ j + v₂ j))
+--     ≡⟨ cong sum {! fin-ext λ j → *-+-distribˡ _ _ (M i j) !} ⟩
+--       sum (λ j → (M i j * v₁ j) + (M i j * v₂ j))
+--     ≡⟨ sym {! +-sum (λ j → M i j * v₁ j) (λ j → M i j * v₂ j) !} ⟩
+--       sum (λ j → M i j * v₁ j) + sum (λ j → M i j * v₂ j)
+--     ≡⟨⟩
+--       ⌊ M ⌋ v₁ i + ⌊ M ⌋ v₂ i
+--     ∎
+--     where open ≡-Reasoning
+--   homogeneity (⌊⌋-linear M) v x i =
+--     begin
+--       ⌊ M ⌋ (map (x *_) v) i
+--     ≡⟨⟩
+--       sum (λ j → M i j * (x * v j))
+--     ≡⟨ …algebra… ⟩
+--       sum (λ j → M i j * (v j * x))
+--     ≡⟨ …algebra… ⟩
+--       sum (λ j → (M i j * v j) * x)
+--     ≡⟨ …algebra… ⟩
+--       sum (λ j → (M i j * v j) * x)
+--     ≡⟨ sym {! sum-scalar (λ j → (M i j * v j)) x !} ⟩
+--       sum (λ j → M i j * v j) * x
+--     ≡⟨ *-comm _ x ⟩
+--       x * sum (λ j → M i j * v j)
+--     ≡⟨⟩
+--       map (x *_) (⌊ M ⌋ v) i
+--     ∎
+--     where open ≡-Reasoning
+
 ```
 
 ```agda
