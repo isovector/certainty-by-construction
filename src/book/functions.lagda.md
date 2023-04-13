@@ -883,12 +883,30 @@ are precisely the *linear maps* --- that is, the two properties must hold:
   ⌈_⌉ : {f : Vec n → Vec m} → LinearFunction f → Matrix m n
   ⌈_⌉ {f = f} _ i j = f (λ k → 1ₘ k j) i
 
-
   postulate
     vec-ext : {f g : Vec m} → (∀ i → f i ≡ g i) → f ≡ g
     *-identityʳ : ∀ x → x * 1# ≡ x
+    matrix-ext : {f g : Matrix m n} → f ≡ₘ g → f ≡ g
 
 
+  raise : Vec m → Vec (suc m)
+  raise v zero = 0#
+  raise v (suc i) = v i
+
+  postulate
+    linear-raise : {f : Vec (suc m) → Vec n} → LinearFunction f → LinearFunction (λ i j → f (raise i) j)
+
+  -- lemma₂ : ∀ j → (∀ k → 1ₘ k (suc j)) ≡ raise (λ k → 1ₘ k j)
+  -- lemma₂ = ?
+
+  lemma : ∀ (f : Vec (suc m) → Vec n)
+            (i : Fin n) (j : Fin m) →
+          f (λ k → 1ₘ k (suc j)) i ≡ f (raise (λ k → 1ₘ k j)) i
+  lemma f i x =
+    cong (λ φ → f φ i)
+      (vec-ext λ { zero → refl
+                 ; (suc n) → refl
+                 })
 
 
   linear-to-matrix
@@ -904,13 +922,21 @@ are precisely the *linear maps* --- that is, the two properties must hold:
     where open ≡-Reasoning
   linear-to-matrix {suc m} {n} {f} (add ⊢ hom) v x =
     begin
-      let rest = sum (λ i → f (λ k → 1ₘ k (suc i)) x * v (suc i)) in
-      (f (λ k → 1ₘ k zero) x * v zero) + rest
-    ≡⟨ …algebra… ⟩
-      let res = f (λ k → if k == zero then v zero else 0#) x in
-      res + rest
+      ⌊ ⌈ add ⊢ hom ⌉ ⌋ v x
     ≡⟨⟩
-      res + sum (λ i → f (λ k → if k == suc i then 1# else 0#) x * v (suc i))
+      ((λ i j → f (λ k → 1ₘ k j) i) *ₘ column v) x zero
+    ≡⟨⟩
+      sum (λ i → f (λ j → 1ₘ j i) x * v i)
+    ≡⟨⟩
+      (f (λ j → 1ₘ j zero) x * v zero) + sum (λ i → f (λ j → 1ₘ j (suc i)) x * v (suc i))
+    ≡⟨⟩
+      (f (λ j → 1ₘ j zero) x * v zero) + (((λ i j → f (λ k → 1ₘ k (suc j)) i) *ₘ column (v ∘ suc)) x zero)
+    ≡⟨⟩
+      (f (λ j → 1ₘ j zero) x * v zero) + ⌊ (λ i j → f (λ k → 1ₘ k (suc j)) i)⌋ (v ∘ suc) x
+    ≡⟨ cong (λ φ → (f (λ j → 1ₘ j zero) x * v zero) + ⌊ φ ⌋ (v ∘ suc) x) (matrix-ext (lemma f)) ⟩
+      (f (λ j → 1ₘ j zero) x * v zero) + ⌊ ⌈ linear-raise (add ⊢ hom) ⌉ ⌋ (v ∘ suc) x
+    ≡⟨ cong (λ φ → (f (λ j → 1ₘ j zero) x * v zero) + φ) (linear-to-matrix (linear-raise (add ⊢ hom)) (v ∘ suc) x)  ⟩
+      (f (λ j → 1ₘ j zero) x * v zero) + f (raise (v ∘ suc)) x
     ≡⟨ ? ⟩
       f v x
     ∎
