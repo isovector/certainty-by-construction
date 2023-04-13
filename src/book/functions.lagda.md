@@ -987,42 +987,21 @@ are precisely the *linear maps* --- that is, the two properties must hold:
     ∎
     where open ≡-Reasoning
 
-
-
-
---   ⌊⌋-linear : (M : Matrix m n) → LinearFunction ⌊ M ⌋
---   additive (⌊⌋-linear M) v₁ v₂ i =
---     begin
---       ⌊ M ⌋ (zip _+_ v₁ v₂) i
---     ≡⟨⟩
---       sum (λ j → M i j * (v₁ j + v₂ j))
---     ≡⟨ cong sum {! fin-ext λ j → *-+-distribˡ _ _ (M i j) !} ⟩
---       sum (λ j → (M i j * v₁ j) + (M i j * v₂ j))
---     ≡⟨ sym {! +-sum (λ j → M i j * v₁ j) (λ j → M i j * v₂ j) !} ⟩
---       sum (λ j → M i j * v₁ j) + sum (λ j → M i j * v₂ j)
---     ≡⟨⟩
---       ⌊ M ⌋ v₁ i + ⌊ M ⌋ v₂ i
---     ∎
---     where open ≡-Reasoning
---   homogeneity (⌊⌋-linear M) v x i =
---     begin
---       ⌊ M ⌋ (map (x *_) v) i
---     ≡⟨⟩
---       sum (λ j → M i j * (x * v j))
---     ≡⟨ …algebra… ⟩
---       sum (λ j → M i j * (v j * x))
---     ≡⟨ …algebra… ⟩
---       sum (λ j → (M i j * v j) * x)
---     ≡⟨ …algebra… ⟩
---       sum (λ j → (M i j * v j) * x)
---     ≡⟨ sym {! sum-scalar (λ j → (M i j * v j)) x !} ⟩
---       sum (λ j → M i j * v j) * x
---     ≡⟨ *-comm _ x ⟩
---       x * sum (λ j → M i j * v j)
---     ≡⟨⟩
---       map (x *_) (⌊ M ⌋ v) i
---     ∎
---     where open ≡-Reasoning
+  ⌊⌋-linear : (M : Matrix m n) → LinearFunction ⌊ M ⌋
+  additive (⌊⌋-linear M) v₁ v₂ i = begin
+    ⌊ M ⌋ (zip _+_ v₁ v₂) i                      ≡⟨⟩
+    sum (λ j → M i j * (v₁ j + v₂ j))            ≡⟨ …algebra… ⟩
+    sum (λ j → (M i j * v₁ j) + (M i j * v₂ j))  ≡⟨ sym (+-sum-hom _ _) ⟩
+    ⌊ M ⌋ v₁ i + ⌊ M ⌋ v₂ i                      ∎
+    where open ≡-Reasoning
+  homogeneity (⌊⌋-linear M) v x i = begin
+    ⌊ M ⌋ (map (x *_) v) i         ≡⟨⟩
+    sum (λ j → M i j * (x * v j))  ≡⟨ …algebra… ⟩
+    sum (λ j → (M i j * v j) * x)  ≡⟨ sym (*-sum-distribʳ x) ⟩
+    sum (λ j → M i j * v j) * x    ≡⟨ *-comm _ x ⟩
+    x * sum (λ j → M i j * v j)    ≡⟨⟩
+    map (x *_) (⌊ M ⌋ v) i         ∎
+    where open ≡-Reasoning
 
 ```
 
