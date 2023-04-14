@@ -459,6 +459,7 @@ In Agda:
   open import Data.Bool
     using (Bool; true; false; if_then_else_)
 
+  infix 3 _==_
   _==_ : Fin n → Fin n → Bool
   zero == zero = true
   zero == suc y = false
@@ -674,6 +675,12 @@ and then can show `*-sum-distribʳ` in earnest:
     rewrite *-+-distribʳ (f zero) (sum (f ∘ suc)) k
     rewrite *-sum-distribʳ {f = f ∘ suc} k
       = refl
+
+  sum-zero : sum {m} (λ _ → 0#) ≡ 0#
+  sum-zero {zero} = refl
+  sum-zero {suc m}
+    rewrite sum-zero {m}
+      = +-identityˡ 0#
 ```
 
 There are a few more facts to prove about sums before we can get to the meat of
@@ -859,6 +866,12 @@ think about what these two operations must be doing:
       → (v : Vec m)
       → ⌊ a ⌋′ v ≗ ⌊ a ᵀ ⌋ v
   ⌊⌋′-is-⌊ᵀ⌋ a v x = sum-ext λ k → *-comm _ _
+
+  ⌊gᵀ∘fᵀ⌋-⌊f∘g⌋ᵀ
+      : (g : Matrix n m)
+     →  (f : Matrix p n)
+      → g ᵀ *ₘ f ᵀ ≡ₘ (f *ₘ g) ᵀ
+  ⌊gᵀ∘fᵀ⌋-⌊f∘g⌋ᵀ g f i j = sum-ext λ _ → *-comm _ _
 ```
 
 Because of `⌊⌋′-is-⌊ᵀ⌋`, we are able to make the arbitrary decision to multiply
@@ -898,6 +911,24 @@ are precisely the *linear maps* --- that is, the two properties must hold:
     vec-ext : {f g : Vec m} → (∀ i → f i ≡ g i) → f ≡ g
     *-identityʳ : ∀ x → x * 1# ≡ x
     matrix-ext : {f g : Matrix m n} → f ≡ₘ g → f ≡ g
+
+--   _*ᵥ_ : 𝔸 → Vec m → Vec m
+--   a *ᵥ v = map (a *_) v
+
+--   basis-sum : (v : Vec m) → Vec m
+--   basis-sum v x = sum λ { k → (v k *ᵥ 1ₘ k) x }
+
+--   v-is-basis : (v : Vec m) → basis-sum v ≗ v
+--   v-is-basis {suc m} v zero
+--     rewrite *-identityʳ (v zero)
+--     rewrite sum-ext (λ k → *-zeroʳ (v (suc k)))
+--     rewrite sum-zero {m}
+--       = +-identityʳ (v zero)
+--   v-is-basis v (suc x)
+--     rewrite *-zeroʳ (v zero)
+--     rewrite v-is-basis (v ∘ suc) x
+--     rewrite +-identityˡ (v (suc x))
+--       = refl
 
 
   raise : Vec m → Vec (suc m)
