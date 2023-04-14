@@ -881,39 +881,68 @@ the wrong decision is welcome to transpose their matrix first.
 
 
 So, what kind of functions are representable as matrices? As it happens, they
-are precisely the *linear maps* --- that is, the two properties must hold:
+are precisely the *linear maps* --- that is, the two properties `additive` and
+`homogeneity` must hold:
 
 ```agda
-  map : (𝔸 → 𝔸) → Vec m → Vec m
-  map f v i = f (v i)
+  _+ᵥ_ : Vec m → Vec m → Vec m
+  (v₁ +ᵥ v₂) i = v₁ i + v₂ i
 
-  zip : (𝔸 → 𝔸 → 𝔸) → Vec m → Vec m → Vec m
-  zip f v₁ v₂ i = f (v₁ i) (v₂ i)
+  _*ᵥ_ : 𝔸 → Vec m → Vec m
+  (c *ᵥ v₂) i = c * v₂ i
 
-  record LinearFunction (f : Vec m → Vec n) : Set where
+  record LinearMap (f : Vec m → Vec n) : Set where
     constructor _⊢_
     field
       additive
           : ∀ v₁ v₂
-          → f (zip _+_ v₁ v₂) ≗ zip _+_ (f v₁) (f v₂)
+          → f (v₁ +ᵥ v₂) ≗ f v₁ +ᵥ f v₂
       homogeneity
-          : ∀ v x
-          → f (map (x *_) v) ≗ map (x *_) (f v)
-  open LinearFunction
+          : ∀ v c
+          → f (c *ᵥ v) ≗ c *ᵥ f v
+  open LinearMap
+```
 
-  open import Data.Product
-    using (Σ; proj₁; proj₂)
+These two properties correspond to *homomorphisms* over the function `f`, with
+`additive` that we can happily move between addition in the domain of `f` to
+addition in the codomain, and `homogeneity` saying similar for scalar
+multiplication.
 
-  ⌈_⌉ : {f : Vec n → Vec m} → LinearFunction f → Matrix m n
+It's easy to show that `⌊_⌋` is always a linear map, first on `additive`:
+
+```agda
+  ⌊⌋-linear : (M : Matrix m n) → LinearMap ⌊ M ⌋
+  additive (⌊⌋-linear M) v₁ v₂ i = begin
+    ⌊ M ⌋ (v₁ +ᵥ v₂) i                           ≡⟨⟩
+    sum (λ j → M i j * (v₁ j + v₂ j))            ≡⟨ …algebra… ⟩
+    sum (λ j → (M i j * v₁ j) + (M i j * v₂ j))  ≡⟨ sym (+-sum-hom _ _) ⟩
+    ⌊ M ⌋ v₁ i + ⌊ M ⌋ v₂ i                      ∎
+    where open ≡-Reasoning
+```
+
+and then by `homogeneity`:
+
+```agda
+  homogeneity (⌊⌋-linear M) v x i = begin
+    ⌊ M ⌋ (x *ᵥ v) i               ≡⟨⟩
+    sum (λ j → M i j * (x * v j))  ≡⟨ …algebra… ⟩
+    sum (λ j → (M i j * v j) * x)  ≡⟨ sym (*-sum-distribʳ x) ⟩
+    sum (λ j → M i j * v j) * x    ≡⟨ *-comm _ x ⟩
+    x * sum (λ j → M i j * v j)    ≡⟨⟩
+    (x *ᵥ ⌊ M ⌋ v) i               ∎
+    where open ≡-Reasoning
+```
+
+Harder, however, is showing that every linear map can be encoded as a matrix.
+
+```agda
+  ⌈_⌉ : {f : Vec n → Vec m} → LinearMap f → Matrix m n
   ⌈_⌉ {f = f} _ i j = f (1ₘ j) i
 
   postulate
     vec-ext : {f g : Vec m} → (∀ i → f i ≡ g i) → f ≡ g
     *-identityʳ : ∀ x → x * 1# ≡ x
     matrix-ext : {f g : Matrix m n} → f ≡ₘ g → f ≡ g
-
---   _*ᵥ_ : 𝔸 → Vec m → Vec m
---   a *ᵥ v = map (a *_) v
 
 --   basis-sum : (v : Vec m) → Vec m
 --   basis-sum v x = sum λ { k → (v k *ᵥ 1ₘ k) x }
@@ -942,15 +971,15 @@ are precisely the *linear maps* --- that is, the two properties must hold:
   +-raise-hom v₁ v₂ (suc x) = refl
 
   *-raise-hom
-      : ∀ v x → raise {m} (map (x *_) v) ≗ map (x *_) (raise v)
+      : ∀ v x → raise {m} (x *ᵥ v) ≗ x *ᵥ raise v
   *-raise-hom v x zero
     rewrite *-zeroʳ x = refl
   *-raise-hom v x (suc i) = refl
 
   linear-raise
       : {f : Vec (suc m) → Vec n}
-      → LinearFunction f
-      → LinearFunction (λ i j → f (raise i) j)
+      → LinearMap f
+      → LinearMap (λ i j → f (raise i) j)
   additive (linear-raise {f = f} (add ⊢ _)) v₁ v₂ x =
     begin
       f (raise (λ i → v₁ i + v₂ i)) x
@@ -962,11 +991,11 @@ are precisely the *linear maps* --- that is, the two properties must hold:
     where open ≡-Reasoning
   homogeneity (linear-raise {f = f} (_ ⊢ hom)) v x i =
     begin
-      f (raise (map (_*_ x) v)) i
+      f (raise (x *ᵥ v)) i
     ≡⟨ cong (λ φ → f φ i) (vec-ext (*-raise-hom _ _)) ⟩
-      f (map (_*_ x) (raise v)) i
+      f (x *ᵥ (raise v)) i
     ≡⟨ hom _ x i ⟩
-      map (_*_ x) (f (raise v)) i
+      (x *ᵥ f (raise v)) i
     ∎
     where open ≡-Reasoning
 
@@ -992,9 +1021,9 @@ are precisely the *linear maps* --- that is, the two properties must hold:
 
   linear-to-matrix
       : {f : Vec m → Vec n}
-      → (lf : LinearFunction f)
+      → (lm : LinearMap f)
       → ∀ v
-      → ⌊ ⌈ lf ⌉ ⌋ v ≗ f v
+      → ⌊ ⌈ lm ⌉ ⌋ v ≗ f v
   linear-to-matrix {zero} {n} {f} (add ⊢ hom) v x = begin
     0#                    ≡⟨ sym (*-zeroˡ _) ⟩
     0# * f v x            ≡⟨ sym (hom v 0# x) ⟩
@@ -1021,7 +1050,7 @@ are precisely the *linear maps* --- that is, the two properties must hold:
     ≡⟨ …algebra… ⟩
       (v zero * f (1ₘ zero) x) + f (raise (v ∘ suc)) x
     ≡⟨ sym (cong (_+ f (raise (v ∘ suc)) x) (hom _ _ _)) ⟩
-      f (map (_*_ (v zero)) (1ₘ zero)) x + f (raise (v ∘ suc)) x
+      f (v zero *ᵥ 1ₘ zero) x + f (raise (v ∘ suc)) x
     ≡⟨ sym (add _ _ x) ⟩
       f (λ i → (v zero * (if zero == i then 1# else 0#)) + raise (λ x₁ → v (suc x₁)) i) x
     ≡⟨ cong (λ φ → f φ x) (vec-ext (lemma₁ v)) ⟩
@@ -1029,24 +1058,5 @@ are precisely the *linear maps* --- that is, the two properties must hold:
     ∎
     where open ≡-Reasoning
 
-  ⌊⌋-linear : (M : Matrix m n) → LinearFunction ⌊ M ⌋
-  additive (⌊⌋-linear M) v₁ v₂ i = begin
-    ⌊ M ⌋ (zip _+_ v₁ v₂) i                      ≡⟨⟩
-    sum (λ j → M i j * (v₁ j + v₂ j))            ≡⟨ …algebra… ⟩
-    sum (λ j → (M i j * v₁ j) + (M i j * v₂ j))  ≡⟨ sym (+-sum-hom _ _) ⟩
-    ⌊ M ⌋ v₁ i + ⌊ M ⌋ v₂ i                      ∎
-    where open ≡-Reasoning
-  homogeneity (⌊⌋-linear M) v x i = begin
-    ⌊ M ⌋ (map (x *_) v) i         ≡⟨⟩
-    sum (λ j → M i j * (x * v j))  ≡⟨ …algebra… ⟩
-    sum (λ j → (M i j * v j) * x)  ≡⟨ sym (*-sum-distribʳ x) ⟩
-    sum (λ j → M i j * v j) * x    ≡⟨ *-comm _ x ⟩
-    x * sum (λ j → M i j * v j)    ≡⟨⟩
-    map (x *_) (⌊ M ⌋ v) i         ∎
-    where open ≡-Reasoning
-
 ```
-
-subsets
-
 
