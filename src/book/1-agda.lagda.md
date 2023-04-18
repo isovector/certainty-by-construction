@@ -65,54 +65,6 @@ two are inseparably linked; mathematical prowess *is* computational prowess.
 
 
 ## Overview
-
-Agda descends from the ML family of languages, making it related to Elm, F#,
-Haskell, OCaml, PureScript, among many, many other cousins. This section will
-give you a brief overview of how to conceptualize Agda as a programming
-language, including some sense of how to mentally parse it.
-
-Agda is divided into four distinct pieces of linguistic structure. First and
-foremost, it is an *expression-based* language, meaning there are no statements
-in the language. On the right side of every equals sign, Agda expects an
-expression, which is to say, a program tree that produces a value. If you are
-unfamiliar with ML-style languages, this will strike you as quite the
-restriction; Agda has no mutable variable assignment, `for` loops, or early
-`return` statements, because none of these things produce a value. Having no
-loops sounds limiting, but it's OK in practice: we simply use recursion instead.
-
-Syntactically, Agda's expression language can read a little peculiarly. While
-Agda supports many of the operators you know and love, its syntax for function
-calls is very different from that in other language families'. You are likely
-familiar with ALGOL-style function calls which look like this:
-
-```cpp
-foo(bar, 5, true)
-```
-
-Instead of these parentheses and commas, Agda instead uses *juxtaposition* as
-its syntax for function calls. The above call would look, in Agda, like this:
-
-```example
-foo bar 5 true
-```
-
-where arguments are separated from their function and one another by
-white-space. If disambiguation is necessary, we surround the entire expression
-in parentheses:
-
-```example
-baz 0 (f false) (foo bar 5 true)
-```
-
-which would be written in the ALGOL style as
-
-```cpp
-baz(0, f(false), foo(bar, 5, true))
-```
-
-While this might feel like an unnecessarily annoying break in conventional
-syntax, there are mightily-good theoretical reasons for it.
-
 Another interesting fact about Agda's syntax is it's extraordinary flexibility
 when it comes to what constitutes an identifier. Besides a few special
 characters, almost every string of non-whitespace characters is a valid

@@ -25,16 +25,9 @@ and allow us better interopability when doing real work.
 
 ## Booleans
 
-To begin, we will open a new module to sandbox our work, without needing to leak
-our newly defined numbers into the global namespace. The simplest "number"
-system are the booleans, so we will start our foray there.
-
 ```agda
 module Sandbox-Bools where
 ```
-
-We start by defining the booleans, which we can do by enumerating all of them,
-of which there are only two:
 
 ```agda
   data Bool : Set where
@@ -50,59 +43,17 @@ things. All we have said about them thus far is that they exist, are both
 *every* `Bool` is either `false` or `true` --- a direct consequence of the
 semantics of data type constructors.
 
-The simplest function over booleans is their negation, given by `not`:
-
 ```agda
   not : Bool → Bool
   not false = true
   not true  = false
 ```
 
-This function gives us a taste of how we can do computation in Agda; on the left
-side of the equals, we match on the distinct possibilities for our parameters,
-and give a result for each on the right side of the equals sign.
-
-Another simple operation over booleans is logical OR; that is, the result is
-true if at least one of its arguments is true. Mathematicians often use the
-symbol $\vee$ (pronounced "vel") for this operation, which we will follow, since
-the goal is to define the same interface as is present in the Agda standard
-library. This operator is used infix, which we can communicate to Agda by naming
-the OR function `_∨_`:
-
-
-```agda
-  _∨⅋_ : Bool → Bool → Bool
-  false ∨⅋ false = false
-  false ∨⅋ true  = true
-  true  ∨⅋ false = true
-  true  ∨⅋ true  = true
-```
-
-Here we take the same approach as `not`; for each argument, we enumerate every
-possibilities, giving the answer on the right side of the equals sign. You will
-notice that this strategy grows enormously; a function of five booleans would
-require 32 clauses to enumerate every possibility. Fortunately, this is not the
-only way to define `_∨_`. We can instead throw some thought at the problem, and
-realize the goal is to identify whether or not one of the arguments is `true`.
-This doesn't require pattern matching on *both* parameter, we can get away
-matching only on one.
-
-If the argument we matched on is `true`, we're done, without looking at the
-other argument. If our matched argument is `false`, then the result is `true` if
-and only if the second argument is `true`. In neither case do we need to inspect
-one of the arguments. We can take advantage of this fact by using a variable to
-abstract over the second parameter. Instead, let us define `_∨_`
-
 ```agda
   _∨_ : Bool → Bool → Bool
   false ∨ other = other
   true  ∨ other = true
 ```
-
-Here, because we wrote `other` rather than any of the constructors of `Bool`,
-Agda knows we don't want to perform a pattern match, and instead have
-introduced a new variable `other : Bool`. In the `false` case, we simply return
-this argument, and in the `true` case we ignore it completely.
 
 We can take the same approach to define the logical AND operation, which returns
 `true` if and only if both of its arguments are `true`. Mathematicians use the
