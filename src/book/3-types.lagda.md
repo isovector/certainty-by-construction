@@ -67,40 +67,14 @@ In many programming languages, booleans are special and privileged, often baked
 directly into the language. Being able to define them ourselves so trivially is
 an early indication of the power of things to come.
 
-Just as Dijkstra popularized the role of *structured programming* by arguing
-programmers should not be writing jumps directly, we will note that real
-programming does not get done by writing typing judgments directly (nor does
-mathematics, for that matter.) Why is this?
-
-You can imagine the chaos that might occur if someone added a new introduction
-rule for `Bool`s, maybe:
-
-```agda
-    file-not-found : Bool
-```
-
-All of a sudden, our programs, carefully designed to handle only the binary case
-of booleans, would now need to be retrofitted with extra logic to handle the
-case of `file-not-found`. Such a possibility is anathema to the concept of
-modular and composable programs --- those that we can write and prove correct
-once, without needing to worry about what the future will bring.
-
 Instead of allowing introduction rules anywhere at any time, we allow them only
 in the context of a type declaration. Type declarations define the type and its
 introduction forms all at once, in a closed way. This ensures nobody can come
 along later and extend the type. While such a thing might sounds stifling at
 first, please suspend your disbelief; it all works out in practice.
 
-We give a type definition in Agda with the `data` keyword, followed by the
-introduction form for the type itself, followed by the word `where`:
-
 ```agda
 data Bool : Set where
-```
-
-and then inside, simply give the introduction forms for each value in the type:
-
-```agda
   false : Bool
   true  : Bool
 ```

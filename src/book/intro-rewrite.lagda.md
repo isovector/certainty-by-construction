@@ -421,7 +421,79 @@ when checking that the expression refl has type not⅋⅋⅋ true ≡ true
 
 This error is telling us that our unit test failed; that `not true` is actually
 `false`, but we said it was `true`! We will discuss these strange `≡` and `refl`
-things in great detail soon.
+things in great detail soon enough.
+
+
+## A Note on Syntax
+
+Agda descends from the ML family of languages, making it related to Elm, F#,
+Haskell, OCaml, PureScript, among many, many other cousins. This section will
+give you a brief overview of how to conceptualize Agda as a programming
+language, including some sense of how to mentally parse it.
+
+Agda is divided into four distinct pieces of linguistic structure. First and
+foremost, it is an *expression-based* language, meaning there are no statements
+in the language. On the right side of every equals sign, Agda expects an
+expression, which is to say, a program tree that produces a value. If you are
+unfamiliar with ML-style languages, this will strike you as quite the
+restriction; Agda has no mutable variable assignment, `for` loops, or early
+`return` statements, because none of these things produce a value. Having no
+loops sounds limiting, but it's OK in practice: we simply use recursion instead.
+
+Syntactically, Agda's expression language can read a little peculiarly. While
+Agda supports many of the operators you know and love, its syntax for function
+calls is very different from that in other language families'. You are likely
+familiar with ALGOL-style function calls which look like this:
+
+```cpp
+foo(bar, 5, true)
+```
+
+Instead of these parentheses and commas, Agda instead uses *juxtaposition* as
+its syntax for function calls. The above call would look, in Agda, like this:
+
+```example
+foo bar 5 true
+```
+
+where arguments are separated from their function and one another by
+white-space. If disambiguation is necessary, we surround the entire expression
+in parentheses:
+
+```example
+baz 0 (f false) (foo bar 5 true)
+```
+
+which would be written in the ALGOL style as
+
+```cpp
+baz(0, f(false), foo(bar, 5, true))
+```
+
+While this might feel like an unnecessarily annoying break in conventional
+syntax, there are mightily-good theoretical reasons for it. With this knowledge
+of function calls, it's interesting to look back at our definition of `not`;
+recall:
+
+```agda
+not⅋⅋⅋⅋ : Bool → Bool
+not⅋⅋⅋⅋ false = true
+not⅋⅋⅋⅋ true = false
+```
+
+we can now mentally parse these definitions differently, that is, reading them
+literally. The first of which, says "the function call `not false` is equal to
+`true`". Thus, this equals sign is really and truly an *equals* sign. It is
+*not* the "assignment" operator found in all stateful descendants of ALGOL, nor
+is it some sort of test-for-equality that usually gets called `==`. No, we are
+saying the thing on the left side is exactly the same thing as on the right!
+
+This equality is very deep. While Agda will simplify the left side to the right
+whenever possible, the two sides are exactly equivalent in all non-pattern
+(TODO: what does this mean?) contexts. Indeed, many proofs depend on finding two
+complicated expressions that are exactly equal in this way, and much of the work
+is in showing that equivalence.
+
 
 
 
