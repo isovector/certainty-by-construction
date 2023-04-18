@@ -1,40 +1,8 @@
 # Introduction to Agda
 
-This book in your hands is no ordinary prose. No, it is a living, breathing
-document. Certainly this is a curious claim; on what grounds can it be made? The
-book you are reading is not just a book, it is also a computer program written
-in the *literate style.*
-
-Literate programming is a technique for interspersing prose and computer
-programs in the same document. The result is a "polyglot": a single artifact
-that can be interpreted simultaneously as a book written in English, or a series
-of program modules written in Agda.
-
-The advantage of reading a literate program are that you can be sure the code
-*actually works.* This is not by the virtue of having had a diligent
-copy-editor; it's merely a byproduct of the process. The book simply can't be
-assembled into its current form if it contains any syntax errors or if any of
-its tests fail. And as we will see shortly, Agda programs come with very
-extensive tests. Furthermore, presenting all the code means I, the author,
-cannot sweep any nitty-gritty details under the rug.
-
-When code is presented in this book, it will come in a box like the following:
-
 ```agda
 module 1-agda where
 ```
-
-This is not merely an example; it's necessary preamble when starting a new Agda
-file. The `module` is Agda's simplest unit of compilation, and every chapter in
-this book will begin a new module. Thus, you shouldn't be surprised to see
-similar blocks of code at the beginning of each chapter.
-
-One distinct advantage of organizing chapters into modules is that chapters thus
-become conceptual units in our program. If a later chapter depends on an earlier
-one, this fact must be explicitly documented in the prose by way of an `import`.
-If later chapters require code or extend concepts from earlier ones, they can
-simply import the necessary pieces. For example, we will require the following
-modules from the standard library later on, which we can import as follows:
 
 ```agda
 open import Data.Bool hiding (_≤_)
