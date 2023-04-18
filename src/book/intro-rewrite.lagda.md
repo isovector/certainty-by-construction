@@ -829,3 +829,232 @@ discuss proof techniques, but for now, try not to get into the habit of bashing
 your way through every implementation if you can at all help it.
 
 
+## Records and Functions
+
+In this section, we will play around with record and function types: two
+seemingly disparate ideas with a surprising amount of interplay between them. We
+would like to motivate an answer to the question of "what's up with the funny
+arrow `→` in function types?" Why does `_∨_` have type `Bool → Bool → Bool`,
+instead of a more "standard" type like it would in most everyday programming
+languages. For example, we might write `_∨_`'s type as `(Bool, Bool) → Bool`,
+which makes it very clear which are the parameters and which is the return.
+
+Types like `(Bool, Bool)` are known as *tuple* types, which we can encode to a
+first approximation in Agda like this:
+
+```agda
+module Sandbox-Tuples where
+  record _×⅋_ (A : Set) (B : Set) : Set where  -- ! 1
+    field -- ! 2
+      proj₁ : A
+      proj₂ : B
+```
+
+There is quite a lot going on here, which we will tackle one step at a time. At
+[1](Ann) we parameterize the entire type `_×_` by two other types, call them `A`
+and `B`. This is because we'd like to be able to form tuples of any two types,
+whether they be integers and booleans, tuples of tuples, or more exotic things
+still. Note that this name `_×_` is not the Latin letter `x`, but is instead the
+*times symbol,* input via `\x`.
+
+At [2](Ann) we say "inside of the `_×_` type, there are two fields." These two
+fields are named `proj₁` and `proj₂`, and have types `A` and `B`, respectively.
+This is what you would expect; if we have a record corresponding to a tuple of
+two things, *it should have two things in it.*
+
+We can try out our new tuple type, as usual by plunking a hole down on the right
+hand side of the equals sign:
+
+```agda
+  my-tuple⅋⅋ : Bool ×⅋ Bool
+  my-tuple⅋⅋ = ?
+```
+
+This time we will use the [Refine](AgdaCmd) command, which asks Agda to build us
+a value of the correct type, leaving holes for every argument. The result is:
+
+```agda
+  my-tuple⅋ : Bool ×⅋ Bool
+  my-tuple⅋ = record { proj₁ = ? ; proj₂ = ? }
+```
+
+Note that these two holes both have type `Bool`, corresponding exactly to the
+type of the tuple (`Bool × Bool`.) We can fill them in with arbitrary boolean
+expressions:
+
+```agda
+  my-tuple : Bool ×⅋ Bool
+  my-tuple = record { proj₁ = true ∨ true ; proj₂ = not true }
+```
+
+Congratulations! We've made a reusable---if not very syntactically
+beautiful---tuple type! We'd now like to extract the two fields from `my-tuple`.
+How can we do that? Agda provides two means of *projecting* fields from records;
+the first is with the *record access* syntax, where the field name is prepended
+with a dot and given *after* the tuple:
+
+```agda
+  my-tuple-first : Bool
+  my-tuple-first = my-tuple ._×⅋_.proj₁
+```
+
+The other form is we can omit the dot, and put the field name *before* the tuple:
+
+```agda
+  my-tuple-second : Bool
+  my-tuple-second = _×⅋_.proj₂ my-tuple
+```
+
+The attentive reader will notice that this syntax looks a lot like a function
+call---which, in a very real sense, it is! These two syntactic forms are
+completely equivalent to Agda, and it's a matter of personal preference as to
+which you pick. Personally, I prefer using the prefix form, because it means I
+can forget the fact that I'm working with *records* and think only about
+*functions.*
+
+In reading the above, it cannot have escaped your attention that these two call
+sites are *ugly.* What is this `_×_.proj₁` nonsense? Do we really need to use a
+fully-qualified name every time we want to access a field? Fortunately, we do
+not. Believe it or not, every `record` creates a new `module` with the same
+name. Thus, we can bring `proj₁` and `proj₂` into the top-level scope by opening
+our new module, allowing us to rewrite the previous two definitions as such:
+
+
+```agda
+  open _×⅋_
+
+  my-tuple-first⅋ : Bool
+  my-tuple-first⅋ = my-tuple .proj₁
+
+  my-tuple-second⅋ : Bool
+  my-tuple-second⅋ = proj₂ my-tuple
+```
+
+Much nicer, isn't it? All that's left is to clean up the syntax for
+*constructing* tuples in the first place. It would be really nice to be able to
+avoid the `record { proj₁ = ... }` boilerplate every time we wanted to make a
+tuple. Instead, we can write a helper function that will clean up the syntax for
+us.
+
+```agda
+  _,⅋_  : {A B : Set} → A → B → A ×⅋ B  -- ! 1
+  _,⅋_  = ?
+```
+
+The type of `_,_` should really be `A → B → A × B`, however, recall that `A` and
+`B` are variables standing in for *whatever type the user wants.* But those
+variables are not in scope, so we must bind them ourselves. This is the meaning
+of the `{A B : Set} →` prefix of the type at [1](Ann)---it's responsible for
+bringing `A` and `B` both into scope and letting Agda know they are both types
+(that is, they are both of type `Set`.) We will discuss Agda's scoping mechanism
+in more detail in @sec:implicits.
+
+Implementing `_,_` isn't hard to do by hand; but we can be lazy and ask Agda to
+do it for us. Begin as usual by getting Agda to bind our arguments, via
+[MakeCase](AgdaCmd) in the hole:
+
+```agda
+  _,⅋⅋_  : {A B : Set} → A → B → A ×⅋ B
+  x ,⅋⅋ x₁ = {! !}
+```
+
+and follow up by invoking [Auto](AgdaCmd), which asks Agda to just write the
+function for you. Of course, this doesn't always work, but it's surprisingly
+good for little functions like this. The result is exactly what we'd expect it
+to be:
+
+```agda
+  _,⅋⅋⅋_  : {A B : Set} → A → B → A ×⅋ B
+  x ,⅋⅋⅋ x₁ = record { proj₁ = x ; proj₂ = x₁ }
+```
+
+Move the definition of `_,_` above the definition of `my-tuple`, which we can
+now reimplement:
+
+```agda
+  my-tuple⅋⅋⅋ : Bool ×⅋ Bool
+  my-tuple⅋⅋⅋ = (true ∨ true) ,⅋⅋⅋ not true
+```
+
+The parentheses here are necessary because Agda doesn't know if it should parse
+the expression `true ∨ true , not true` as `true ∨ (true , not true)` or as the
+intended expression above. Of course, we know that the other parse doesn't even
+typecheck and thus it must be the unintended one, but you can imagine a much
+larger expression could take an exponential amount of time in order to find a
+unique way of adding parentheses to make the types work out properly. This is
+not a hard limitation, but we will not fix it here, since the stack of concepts
+currently on the reader's brain is likely reaching its breaking point. We will
+solve this problem of helping Agda parse bigger expressions in a moment.
+
+Our exploration of this topic has gotten somewhat out of hand, requiring us to
+go back and amend definitions. To avoid the mental anguish of keeping ourselves
+all on the same page, let's just start a new sandbox module:
+
+```agda
+module Sandbox-Tuples₂ where
+```
+
+We will again define our tuple type; this time however, we will make one small
+addition:
+
+```agda
+  record _×_ (A : Set) (B : Set) : Set where
+    constructor _,_  -- ! 1
+    field
+      proj₁ : A
+      proj₂ : B
+```
+
+The keyword `constructor` at [1](Ann) tells Agda we'd like to avoid the whole
+`record { ... }` nonsense we had to deal with last on the go-around, instead
+asking it to just automate writing the `_,_` function for us. Sorry to have
+led you down the garden path, but it's nice to see for ourselves what tedium
+each language feature can assuage.
+
+We can return to the problem of getting Agda to correctly parse `true ∨ true ,
+false` with the implied parentheses on the left. Infix operators like `_∨_` and
+`_,_` are parsed, in every language, according to rules of *precedence* and
+*associativity.*
+
+The *precedence* of an operator lets the parser know how "tightly" an operator
+should bind with respect to other operators. In this case, because we'd like the
+parentheses to go around `_∨_`, we would like `_∨_` to have a higher precedence
+than `_,_`. Agda assumes a precedence of 20 (on a scale from 0 to 100) by
+default for any operator, so we must give `_,_` a *lower* precedence than 20. By
+convention, we give `_,_` a precedence of 4, which makes it play nicely with the
+conventions for the more usual mathematic operators like addition and
+subtraction.
+
+The *associativity* of an operator describes how to insert parentheses into
+repeated applications of the operator. That is, should we parse `x , y , z` as
+`(x , y) , z` or as `x , (y , z)`? The former here is said to be
+*left-associative*, while the latter is, appropriately, *right-associative.* For
+reasons that will make sense later, we'd like `_,_` to be right-associative.
+
+We can tell Agda's parser about our preferences, that `_,_` be right-associative
+with precedence 4 with the following declaration:
+
+```agda
+  infixr 4 _,_
+```
+
+Here, the `r` at the end of `infixr` tells Agda about our associativity
+preference. Of course, you could use `infixl` instead if you wanted
+left-associativity (although you don't in this case.) Of course, if you ever
+*do* want an explicit left-nested tuple, you are free to insert the parentheses
+on the left yourself!
+
+While `_,_` is the operator for building *values* of tuple types, `_×_` is the
+operator for building the tuple type itself. The values and their types should
+be in one-to-one correspondence. That is to say, if we have `a : A`, `b : B` and
+`c : C`, we'd like it to be the case that `a , b , c` have type `A × B × C`. And
+thus, we must also choose right-associativity for `_×_`. For mysterious reasons,
+however, `_×_` is traditionally given a preference of 2:
+
+```agda
+  infixr 2 _×_
+```
+
+
+
+
