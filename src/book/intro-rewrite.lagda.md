@@ -829,18 +829,22 @@ discuss proof techniques, but for now, try not to get into the habit of bashing
 your way through every implementation if you can at all help it.
 
 
-## Records and Functions
+## Records and Tuples
 
-In this section, we will play around with record and function types: two
-seemingly disparate ideas with a surprising amount of interplay between them. We
-would like to motivate an answer to the question of "what's up with the funny
-arrow `→` in function types?" Why does `_∨_` have type `Bool → Bool → Bool`,
-instead of a more "standard" type like it would in most everyday programming
-languages. For example, we might write `_∨_`'s type as `(Bool, Bool) → Bool`,
-which makes it very clear which are the parameters and which is the return.
+In this section, we will play around with record types, as a lead up to
+discussing functions. These two seemingly disparate ideas have a surprising
+amount of interplay between them. We would like to motivate an answer to the
+question of "what's up with the funny arrow `→` in function types?" Why does
+`_∨_` have type `Bool → Bool → Bool`, instead of a more "standard" type like it
+would in most everyday programming languages. For example, we might write
+`_∨_`'s type as `(Bool, Bool) → Bool`, which makes it very clear which are the
+parameters and which is the return.
 
 Types like `(Bool, Bool)` are known as *tuple* types, which we can encode to a
-first approximation in Agda like this:
+in Agda as record types. Record types are types with a number of subfields. A
+special case of records are tuples, which we can think of as anonymous records
+with only two fields. As a first approximation, we can write the tuple type like
+this:
 
 ```agda
 module Sandbox-Tuples where
@@ -1003,6 +1007,8 @@ addition:
     field
       proj₁ : A
       proj₂ : B
+
+  open _×_
 ```
 
 The keyword `constructor` at [1](Ann) tells Agda we'd like to avoid the whole
@@ -1055,6 +1061,234 @@ however, `_×_` is traditionally given a preference of 2:
   infixr 2 _×_
 ```
 
+We will end our discussion of record types here, as this is enough to get you
+started.
 
 
+## Function Types
+
+It is now time to tackle the question of what's up with the funny syntax for
+functions with multiple arguments. Most programming languages assign a type of
+the form `(A × B) → C` to functions with two arguments, while in Agda we instead
+write `A → B → C`. The reason for this is, in short, that they are equivalent,
+but that the latter is more useful.
+
+In order to see this equivalence directly, we can stop for a moment to think
+about the issue of parsing again. Although the function arrow is intrinsically
+magical and built-in to Agda, we can ask ourselves how it ought to work.
+Spiritually, `_→_` is a binary operator, which means we can ask about its
+precedence and associativity. In Agda, the typing judgment `_:_` binds with the
+lowest precedence of all, while `_→_` comes in just after as the second-lowest
+precedence in the language. What this means is that in practice, `_→_` always
+acts as a separator between types, and we don't need to worry ourselves about
+where the parentheses should go.
+
+The associativity for `_→_`, on the other hand, is to the right. That means,
+given the type `A → B → C`, we must read it as `A → (B → C)`. A literal
+interpretation of such a thing is a function that takes an `A` argument and
+*returns a function.* That returned function itself takes a `B` argument and
+returns a `C`. At the end of the day, we did take two arguments, an `A` and a
+`B`, in order to produce a `C`.
+
+What's nice about this encoding is that, unlike in most programming languages,
+we don't to give every argument at once. In fact, we can *specialize* a function
+call by slowly fixing its parameters as in this example:
+
+```agda
+  module Example where
+    data AnimalVariety : Set where  -- ! 1
+      dog : AnimalVariety
+      cat : AnimalVariety
+      bird : AnimalVariety
+      reptile : AnimalVariety
+
+    postulate
+      Name : Set  -- ! 2
+      Age : Set
+      SpecificAnimal : Set
+
+      makeAnimal
+        : AnimalVariety → Age → Name → SpecificAnimal  -- ! 3
+
+    makeBird : Age → Name → SpecificAnimal  -- ! 4
+    makeBird age name = makeAnimal bird age name
+```
+
+Here, we've made a new `data` type at [1](Ann), enumerating possible sorts of
+animals one might have. At [2](Ann) we postulate the existence of some other
+types with suggestive names, in order to give our postulated function
+`makeAnimal` a suggestive type at [3](Ann). Finally, at [4](Ann) we specialize
+the `makeAnimal` function into `makeBird`, where we always decide the animal
+variety should be a `bird`.
+
+This doesn't yet exhibit the desirability of one-at-a-time functions we'd like
+to showcase. But we will note that `makeBird` is a function whose definition
+binds two arguments (`age` and `name`), and simply passes them off to
+`makeAnimal`. If you were to drop a hole on the right side of this equation,
+you'd see that the type of the hole is `SpecificAnimal`. By the law of equality,
+this means the left-hand side must also have type `SpecificAnimal`. If we were
+to drop the `name` binding on the left side, the hole now has type `Name →
+SpecificAnimal`. Dropping now the `age` parameter too, we see the resulting hole
+now has type `Age → Name → SpecificAnimal`, exactly what we expect from the type
+definition.
+
+Are you ready for the cool part? If we insert the implicit parentheses into the
+type of `makeAnimal`, we get `AnimalVariety → (Age → (Name → SpecificAnimal))`;
+a creative reading of which will suggest to us that we can fill the hole with
+less ceremony:
+
+```agda
+    makeBird⅋ : Age → Name → SpecificAnimal
+    makeBird⅋ = makeAnimal bird
+```
+
+I like to think of this a lot like "canceling" in grade-school algebra. Because,
+in our original equation, both sides of the equality ended in `age name`, those
+arguments on either side cancel one another out, and we're left with a simpler
+equation.
+
+
+## The Curry/Uncurry Isomorphism
+
+A usual tool in mathematics to show two things are equivalent is the
+*isomorphism.* We will study this technique in much more detail in
+@sec:isomorphisms, but for now, you can think of an isomorphism as a pair of
+functions which transform back and forth between two types. Whenever you have an
+isomorphism around, it means the two types you're transforming between are
+*equivalent* to one another.
+
+So as to convince any potential doubters that our one-at-a-time function
+encoding (also known as *curried functions*) are equivalent to the usual "take
+all your arguments at once as a big tuple," we can show an isomorphism between
+the two. That is, we'd like to be able to transform functions of the shape `A ×
+B → C` into `A → B → C` and vice versa. We'll work through the first half of
+this isomorphism together, and leave the other direction as an exercise to try
+your hand at writing some Agda for yourself (or talking Agda into writing it for
+you!)
+
+-- TODO(sandy): actually, do this example as an exercise, and show uncurry in
+-- full
+
+In particular, the first function we'd like to write has this types:
+
+```agda
+  curry : {A B C : Set} → (A × B → C) → (A → B → C)
+```
+
+If this is your first time looking at function arrows, avoid the temptation to
+panic. The first step is always to parse out exactly what's going on. Let's look
+at `curry`. Let's ignore the `{A B C : Set} →` part, which you'll recall exists
+only to bring the type variables into scope:
+
+```illegal
+  curry : (A × B → C) → (A → B → C)
+```
+
+After inserting the parentheses arising from the interaction of
+`_→_` as the lowest precedence operator, we obtain some parentheses around the
+tuple:
+
+```illegal
+  curry : ((A × B) → C) → (A → B → C)
+```
+
+We can then insert the parentheses from the function arrow's right-associativity
+to the innermost parentheses:
+
+```illegal
+  curry : ((A × B) → C) → (A → (B → C))
+```
+
+Written like this, we see that `curry` is a function which itself takes a
+*function* as an *argument,* and also produces a function as its *return type.*
+Alternatively, we can drop the last two pairs of parentheses, and think about
+`curry` like this:
+
+```illegal
+  curry : ((A × B) → C) → A → B → C
+```
+
+That is, `curry` is a function that takes *three* inputs, one is a function, and
+the other two are an `A` and a `B` respectively, at the end of the day returning
+a `C`. Written in this form, it's a little easier to see how you would go about
+implementing such a thing, while the previous form gives a better sense of what
+exactly you're trying to accomplish.
+
+
+Exercise
+
+:   Implement the `curry` function for yourself. If you get stuck, don't forget
+    you can always ask Agda for help by using [TypeContext](AgdaCmd) to inspect
+    what you have lying around in scope, [MakeCase](AgdaCmd) to bind arguments
+    and [Refine](AgdaCmd) to construct values for you.
+
+
+Solution
+
+:   ```agda
+  curry f a b = f (a , b)
+    ```
+
+
+Going the other direction and implementing `uncurry` is slightly harder, since
+it requires you to remember how to project fields out of record types. The type
+you want is:
+
+```agda
+  uncurry : {A B C : Set} → (A → B → C) → (A × B → C)
+```
+
+Exercise
+
+:   Implement `uncurry`. Remember that you can use `proj₁` and `proj₂` to get
+    the fields out of a tuple.
+
+
+Solution
+
+
+:   ```agda
+  uncurry f ab = f (proj₁ ab) (proj₂ ab)
+    ```
+
+
+It's slightly annoying needing to project both fields out of `ab` in the
+implementation of `uncurry`. This leads us to one last trick. Start again,
+having just bound your arguments:
+
+```agda
+  uncurry⅋ : {A B C : Set} → (A → B → C) → (A × B → C)
+  uncurry⅋ f ab = {! !}
+```
+
+From here, we can ask Agda to pattern match on `ab` directly by invoking
+[MakeCase:ab](AgdaCmd), which results in:
+
+```agda
+  uncurry⅋⅋ : {A B C : Set} → (A → B → C) → (A × B → C)
+  uncurry⅋⅋ f (proj₃ , proj₄) = {! !}
+```
+
+Agda has replaced `ab` with the `_,_` constructor that is used to build the
+tuple type `_×_`, and then bound the two projections that result from tearing
+apart `_,_`. It's debatable whether or not the names it chose (`proj₁` and
+`proj₂`) are good or bad---on one hand, those are the names we said the fields
+have, on the other, they shadow the projections that are already in scope and
+have different types. I prefer to rename them:
+
+```agda
+  uncurry⅋⅋ : {A B C : Set} → (A → B → C) → (A × B → C)
+  uncurry⅋⅋ f (a , b) = {! !}
+```
+
+and from here, Agda will happily write the remainder of the function via
+[Auto](AgdaCmd).
+
+Because we were able to implement `curry` and `uncurry`, we have shown that
+curried functions (used in Agda) are equivalent in power to uncurried functions
+(used in most programming languages.) But the oddity of our choice leads to our
+ability to "cancel" arguments that are duplicated on either side of a function
+definition, and this happens to be extremely useful for massaging general
+functions into the right shape so that they can be used in place of
+more-specific functions.
 
