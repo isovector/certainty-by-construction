@@ -805,7 +805,9 @@ Nor can we reduce [Normalise:not stuck](AgdaCmd) to a value:
 not stuck
 ```
 
-As you might expect, [Normalise:true ∨₁ stuck](AgdaCmd) is also stuck:
+Don't believe the response, this is indeed stuck~ Rather, the entire call to
+`not` with argument `stuck` is stuck. And, as you might expect, [Normalise:true
+∨₁ stuck](AgdaCmd) is also stuck:
 
 ```info
 true ∨₁ stuck
