@@ -164,6 +164,7 @@ As a quick guide, you can visually spot the following pieces of Agda:
 - \AgdaModule{purple}: modules
 - \AgdaFunction{blue}: other definitions
 - \AgdaHole{green background}: interactive holes
+- \AgdaUnsolvedMeta{yellow background}: underspecified elaboration
 
 We haven't yet discussed all of these ideas, but these conventions will be used
 throughout the book. Feel free to return to this section if you're ever having a
@@ -1352,7 +1353,10 @@ at. The exact functions we wrote above are instead named `_,′_`, `curry′` an
 import in order to get our sandbox into an equivalent state as the one above:
 
 ```agda
-    renaming (_,′_ to _,_; curry′ to curry; uncurry′ to uncurry)
+    renaming ( _,′_     to _,_
+             ; curry′   to curry
+             ; uncurry′ to uncurry
+             )
 ```
 
 Note that these are *primes* at the end of `curry` and `uncurry`, not
@@ -1498,8 +1502,37 @@ explicit names to these implicits, so that we need to fill them all in order to
 fill only one:
 
 ```agda
-  mk-color-bool-tuple : PrimaryColor → Bool → PrimaryColor × Bool
+  mk-color-bool-tuple
+      : PrimaryColor
+      → Bool
+      → PrimaryColor × Bool
   mk-color-bool-tuple = _,_ {A = PrimaryColor} {B = Bool}
 ```
 
+Of course, implicit elaboration is not magic. It cannot write your entire
+program for you; it can only elucidate specific details that are already true,
+but which you would prefer not to write out. To illustrate, Agda can't solve the
+following, because it doesn't know whether you want `false` or `true`:
+
+```agda
+  ambiguous : Bool
+  ambiguous = _
+```
+
+You'll notice the syntax highlighting for this implicit has gone yellow; that's
+Agda informing us that it doesn't have enough information to elaborate.
+Agda refers to this as an *unsolved meta.* In addition, you'll also see a warning
+message like this in the info window:
+
+```info
+Invisible Goals:
+_236 : Agda.Builtin.Bool.Bool [at 1518,15-16]
+```
+
+Agda refers to problems like these as *unsolved metas.*
+
+Whenever you see this yellow background, something has gone wrong, and it's
+worth fixing before powering on. Ambiguities have a habit of propagating
+themselves forwards, and so what is one unsolved meta now might turn into ten a
+few functions down the line.
 
