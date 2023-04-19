@@ -173,6 +173,9 @@ hard time mentally parsing what's going on.
 
 ## Types
 
+-- TODO(sandy): a value has exactly one type
+
+
 ```agda
 module Sandbox-Judgments where
 ```
@@ -1535,4 +1538,22 @@ Whenever you see this yellow background, something has gone wrong, and it's
 worth fixing before powering on. Ambiguities have a habit of propagating
 themselves forwards, and so what is one unsolved meta now might turn into ten a
 few functions down the line.
+
+
+## Wrapping Up
+
+You have managed to survive an *extremely* whirlwind tour of Agda. While you
+likely are not yet the world's best Agda programmer, the attentive reader has
+been exposed to the majority of this gentle language's most astronautic
+features.
+
+What we have seen here are Agda's fundamental building blocks. While they are
+interesting in their own right, the fun parts come when we start putting them
+together into funky shapes. Throughout our progression we will learn
+that there was more to learn about these simple pieces all along. Indeed,
+perhaps these primitive elements are much more sophisticated than they look.
+
+We have not even begun to scratch the surface of what interesting things are
+possible in Agda, but we now have enough background that we can earnestly get
+into the meat of this book. Prepare yourself.
 
