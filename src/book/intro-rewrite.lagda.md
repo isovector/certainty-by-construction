@@ -306,9 +306,10 @@ booleans, allowing us and Agda to reason about that fact.
 To do this, we can use a `data` declaration:
 
 ```agda
-data Bool : Set where
-  false : Bool
-  true : Bool
+module Booleans where
+  data Bool : Set where
+    false : Bool
+    true : Bool
 ```
 
 which simultaneously asserts the three typing judgments `Bool : Set`, `false :
@@ -324,8 +325,8 @@ As a first step, let's write the `not` function, which transforms `false` into
 immediately followed by a *definition* of the function:
 
 ```agda
-not : Bool → Bool  -- ! 1
-not = ?  -- ! 2
+  not : Bool → Bool  -- ! 1
+  not = ?  -- ! 2
 ```
 
 Line [1](Ann) should be read aloud as "`not` is a function that takes a `Bool`
@@ -357,8 +358,8 @@ Position your cursor on the hole and invoke the [MakeCase](AgdaCmd), which will
 replace our definition with:
 
 ```agda
-not⅋ : Bool → Bool
-not⅋ x = {! !}
+  not⅋ : Bool → Bool
+  not⅋ x = {! !}
 ```
 
 You will notice two things have happened; Agda wrote `x` on the left side of the
@@ -400,9 +401,9 @@ We can ask Agda for more help. This time, if we put our cursor in the hole and
 invoke [MakeCase:x](AgdaCmd), we will instead get:
 
 ```agda
-not⅋⅋ : Bool → Bool
-not⅋⅋ false = {! !}
-not⅋⅋ true = {! !}
+  not⅋⅋ : Bool → Bool
+  not⅋⅋ false = {! !}
+  not⅋⅋ true = {! !}
 ```
 
 You'll notice where once there was one hole there are now two. We asked Agda to
@@ -413,9 +414,9 @@ function without any help from Agda; we'd like `false` to map to `true`, and
 vice versa:
 
 ```agda
-not⅋⅋⅋ : Bool → Bool
-not⅋⅋⅋ false = true
-not⅋⅋⅋ true = false
+  not⅋⅋⅋ : Bool → Bool
+  not⅋⅋⅋ false = true
+  not⅋⅋⅋ true = false
 ```
 
 Congratulations, you've just written your first Agda function!
@@ -437,13 +438,13 @@ tests as follows[^equals-sign]:
 [^equals-sign]: You can input `≡` by typing `\==`.
 
 ```agda
-open import Relation.Binary.PropositionalEquality
+  open import Relation.Binary.PropositionalEquality
 
-_ : not⅋⅋⅋ false ≡ true
-_ = refl
+  _ : not⅋⅋⅋ false ≡ true
+  _ = refl
 
-_ : not⅋⅋⅋ true ≡ false
-_ = refl
+  _ : not⅋⅋⅋ true ≡ false
+  _ = refl
 ```
 
 There's quite a lot going on here, which, rest assured, we will get into in
@@ -452,8 +453,8 @@ that these are automatically-run unit tests. You can convince yourself of this
 by writing another test with an intentionally wrong result:
 
 ```illegal
-_ : not⅋⅋⅋ true ≡ true
-_ = refl
+  _ : not⅋⅋⅋ true ≡ true
+  _ = refl
 ```
 
 which results in an error message after running [Load](AgdaCmd):
@@ -609,9 +610,9 @@ of function calls, it's interesting to look back at our definition of `not`;
 recall:
 
 ```agda
-not⅋⅋⅋⅋ : Bool → Bool
-not⅋⅋⅋⅋ false = true
-not⅋⅋⅋⅋ true = false
+  not⅋⅋⅋⅋ : Bool → Bool
+  not⅋⅋⅋⅋ false = true
+  not⅋⅋⅋⅋ true = false
 ```
 
 we can now mentally parse these definitions differently, that is, reading them
@@ -639,16 +640,16 @@ the OR function `_∨_`; note that this is not a latin `v`, but the unicode
 character `\or`. Note also the underscores on either side of it!
 
 ```agda
-_∨⅋⅋_ : Bool → Bool → Bool
-_∨⅋⅋_ = ?
+  _∨⅋⅋_ : Bool → Bool → Bool
+  _∨⅋⅋_ = ?
 ```
 
 We will again interactively ask for Agda's help here. Place your cursor in the
 hole and run [MakeCase](AgdaCmd). Agda will respond:
 
 ```agda
-_∨⅋⅋⅋_ : Bool → Bool → Bool
-x ∨⅋⅋⅋ x₁ = {! !}
+  _∨⅋⅋⅋_ : Bool → Bool → Bool
+  x ∨⅋⅋⅋ x₁ = {! !}
 ```
 
 You will notice that `_∨_` has been replaced with `x ∨ x₁`. The underscores are
@@ -657,8 +658,8 @@ syntax. If we fill the resulting hole with the names of both arguments `x` and
 `x₁`, we can again ask Agda to `[MakeCase](AgdaCmd)`:
 
 ```agda
-_∨⅋⅋⅋⅋_ : Bool → Bool → Bool
-x ∨⅋⅋⅋⅋ x₁ = {! x x₁ !}
+  _∨⅋⅋⅋⅋_ : Bool → Bool → Bool
+  x ∨⅋⅋⅋⅋ x₁ = {! x x₁ !}
 ```
 
 This time Agda will use the variables named in the hole as input on what to
@@ -666,22 +667,22 @@ split. The result is a very satisfying four lines of code that we didn't need to
 write for ourselves:
 
 ```agda
-_∨⅋⅋⅋⅋⅋_ : Bool → Bool → Bool
-false ∨⅋⅋⅋⅋⅋ false = {! !}
-false ∨⅋⅋⅋⅋⅋ true  = {! !}
-true  ∨⅋⅋⅋⅋⅋ false = {! !}
-true  ∨⅋⅋⅋⅋⅋ true  = {! !}
+  _∨⅋⅋⅋⅋⅋_ : Bool → Bool → Bool
+  false ∨⅋⅋⅋⅋⅋ false = {! !}
+  false ∨⅋⅋⅋⅋⅋ true  = {! !}
+  true  ∨⅋⅋⅋⅋⅋ false = {! !}
+  true  ∨⅋⅋⅋⅋⅋ true  = {! !}
 ```
 
 We can finish the definition of `_∨_` by giving filling in the desired answers
 in each hole:
 
 ```agda
-_∨⅋_ : Bool → Bool → Bool
-false ∨⅋ false = false
-false ∨⅋ true  = true
-true  ∨⅋ false = true
-true  ∨⅋ true  = true
+  _∨⅋_ : Bool → Bool → Bool
+  false ∨⅋ false = false
+  false ∨⅋ true  = true
+  true  ∨⅋ false = true
+  true  ∨⅋ true  = true
 ```
 
 Here we have taken the same approach as in `not`: for each argument, we
@@ -701,9 +702,9 @@ both of the arguments! We can take advantage of this fact by using a variable to
 abstract over the second parameter. Instead, let us define `_∨_` in this way:
 
 ```agda
-_∨_ : Bool → Bool → Bool
-false ∨ other = other
-true  ∨ other = true
+  _∨_ : Bool → Bool → Bool
+  false ∨ other = other
+  true  ∨ other = true
 ```
 
 Because we wrote `other`---rather than any of the constructors of `Bool`--- Agda
@@ -729,19 +730,19 @@ Let's compare our two definitions of `_∨_`, reproduced here with slightly
 different names:
 
 ```agda
-_∨₁_ : Bool → Bool → Bool  -- ! 1
-false ∨₁ false = false
-false ∨₁ true  = true
-true  ∨₁ false = true
-true  ∨₁ true  = true
+  _∨₁_ : Bool → Bool → Bool  -- ! 1
+  false ∨₁ false = false
+  false ∨₁ true  = true
+  true  ∨₁ false = true
+  true  ∨₁ true  = true
 ```
 
 and
 
 ```agda
-_∨₂_ : Bool → Bool → Bool  -- ! 2
-false ∨₂ other = other
-true  ∨₂ other = true
+  _∨₂_ : Bool → Bool → Bool  -- ! 2
+  false ∨₂ other = other
+  true  ∨₂ other = true
 ```
 
 Besides the amount of code we needed to write, is there a reason to prefer
@@ -788,8 +789,8 @@ We can see this behavior more clearly by postulating a boolean value. Postulated
 values are always stuck, and thus `stuck` is an apt name for one:
 
 ```agda
-postulate
-  stuck : Bool
+  postulate
+    stuck : Bool
 ```
 
 Our new `stuck` is always stuck. For example, we can learn nothing more about it
@@ -848,6 +849,8 @@ this:
 
 ```agda
 module Sandbox-Tuples where
+  open Booleans
+
   record _×⅋_ (A : Set) (B : Set) : Set where  -- ! 1
     field -- ! 2
       proj₁ : A
@@ -996,6 +999,7 @@ all on the same page, let's just start a new sandbox module:
 
 ```agda
 module Sandbox-Tuples₂ where
+  open Booleans
 ```
 
 We will again define our tuple type; this time however, we will make one small
@@ -1246,10 +1250,9 @@ Exercise
 
 Solution
 
-
-:   ```agda
+:    ```agda
   uncurry f ab = f (proj₁ ab) (proj₂ ab)
-    ```
+     ```
 
 
 It's slightly annoying needing to project both fields out of `ab` in the
@@ -1277,8 +1280,8 @@ have, on the other, they shadow the projections that are already in scope and
 have different types. I prefer to rename them:
 
 ```agda
-  uncurry⅋⅋ : {A B C : Set} → (A → B → C) → (A × B → C)
-  uncurry⅋⅋ f (a , b) = {! !}
+  uncurry⅋⅋⅋ : {A B C : Set} → (A → B → C) → (A × B → C)
+  uncurry⅋⅋⅋ f (a , b) = {! !}
 ```
 
 and from here, Agda will happily write the remainder of the function via
@@ -1291,4 +1294,212 @@ ability to "cancel" arguments that are duplicated on either side of a function
 definition, and this happens to be extremely useful for massaging general
 functions into the right shape so that they can be used in place of
 more-specific functions.
+
+
+## Implicit Arguments
+
+Let's try using our `uncurry` function from before. As a first example, we can
+uncurry the `_∨_` function. If we don't want to do the work to figure out what
+type this thing should have, we can simply leave behind a hole in its type
+judgment:
+
+```agda
+  _ : ?
+  _ = uncurry _∨_
+```
+
+and then ask Agda to fill it in for us via [Solve](AgdaCmd):
+
+```agda
+  _ : Bool × Bool → Bool
+  _ = uncurry _∨_
+```
+
+The [Solve](AgdaCmd) command asks Agda to infer the contents of a hole based on
+information it already knows from somewhere else. In this case, Agda knows the
+type of `_∨_` (that is, `Bool → Bool → Bool`,) and so it can infer the type of
+`uncurry _∨_` as `Bool × Bool → Bool`. Since this is the entire expression, the
+type of our definition is fully known to Agda, and it will happily fill it in
+for us.
+
+As you can see, Agda is quite the clever language! The constraint solving
+exhibited here is a generally useful tool when coding. For example, you can
+state a proof as being trivial, and then work backwards---asking Agda to
+synthesize the solution for you!
+
+Time to make a new sandbox. The booleans we implemented by hand in the previous
+section exist in the standard library, under the module `Data.Bool`. This is
+quite a big module, but we can import only the pieces we need via a `using`
+modifier:
+
+```agda
+module Sandbox-Implicits where
+  open import Data.Bool
+    using (Bool; false; true; not; _∨_)
+```
+
+The tuple type exists under `Data.Product`:
+
+```agda
+  open import Data.Product
+    using (_×_; proj₁; proj₂)
+```
+
+In addition, `Data.Product` also supplies `_,_`, `curry` and `uncurry`. However,
+the ones it implements are slightly more general than the ones we have looked
+at. The exact functions we wrote above are instead named `_,′_`, `curry′` and
+`uncurry′` in the standard library, so we can use a `renaming` modifier on our
+import in order to get our sandbox into an equivalent state as the one above:
+
+```agda
+    renaming (_,′_ to _,_; curry′ to curry; uncurry′ to uncurry)
+```
+
+Note that these are *primes* at the end of `curry` and `uncurry`, not
+apostrophes. Primes can be input via `\'`.
+
+It is now time to investigate the mysterious curly braces that prefix several of
+our functions. As a reminder, we have the following functions in scope, with
+the given typing judgments:
+
+```agda
+  postulate  -- HIDEME
+    ⅋_,_ : {A B : Set} → A → B → A × B
+    ⅋curry : {A B C : Set} → (A × B → C) → (A → B → C)
+    ⅋uncurry : {A B C : Set} → (A → B → C) → (A × B → C)
+```
+
+Each of these types is preceded by curly braces containing a list of types,
+which are brought into scope for the remainder of the type signature. But what
+exactly is going on here?
+
+The first thing to realize is that the notation `{A B : Set}` is syntactic sugar
+for `{A : Set} → {B : Set}`, and so on for more variables. We can therefore
+rewrite the type of `_,_` in its full glory:
+
+```agda
+    ⅋⅋_,_ : {A : Set} → {B : Set} → A → B → A × B
+```
+
+In this form, it looks a lot like `A : Set` and `B : Set` are *arguments* to
+`_,_`. And rather amazingly, *they are!* The curly braces around them make these
+*invisible* arguments. Something interesting happens if we replace them with
+parentheses instead. Let's make a new function called `mk-tuple` using regular,
+visible arguments:
+
+```agda
+  mk-tuple⅋ : (A : Set) → (B : Set) → A → B → A × B
+  mk-tuple⅋ = ?
+```
+
+We will do the usual ceremony to bind our arguments via [MakeCase:](AgdaCmd):
+
+```agda
+  mk-tuple⅋⅋ : (A : Set) → (B : Set) → A → B → A × B
+  mk-tuple⅋⅋ A B x x₁ = {! !}
+```
+
+And then run [Auto](AgdaCmd) to implement the function for us.
+
+```agda
+  mk-tuple : (A : Set) → (B : Set) → A → B → A × B
+  mk-tuple A B x x₁ = x , x₁
+```
+
+Here you can see that the implementation of `mk-tuple` *completely ignores* its
+`A` and `B` arguments. Peculiar. We can try using `mk-tuple` to build ourselves
+a tuple. Starting from a delimited hole:
+
+```agda
+  _ : Bool × Bool
+  _ = {! !}
+```
+
+we can type `mk-tuple` *inside the hole:*
+
+```agda
+  _ : Bool × Bool
+  _ = {! mk-tuple !}
+```
+
+and then invoke [Refine](AgdaCmd), asking Agda to use the given function to try
+to fill the hole:
+
+```agda
+  _ : Bool × Bool
+  _ = mk-tuple {! !} {! !} {! !} {! !}
+```
+
+This expression now has four holes for the four arguments to `mk-tuple`. The
+first two are the type parameters of the tuple, while the last two are the
+actual values we'd like to fill our tuple with. Thankfully, Agda can
+[Solve](AgdaCmd) the first two holes for us:
+
+```agda
+  _ : Bool × Bool
+  _ = mk-tuple Bool Bool {! !} {! !}
+```
+
+and we are free to fill in the latter two to our heart's content. Perhaps more
+interestingly, we can see what happens if we fill in one of these types
+*incorrectly*---that is to say, with a type which *isn't* `Bool`. Thankfully,
+it's easy to spin up new types at will:
+
+```agda
+  data PrimaryColor : Set where
+    red green blue : PrimaryColor
+```
+
+and we can try again:
+
+
+```illegal
+  bad-tuple : Bool × Bool
+  bad-tuple = mk-tuple PrimaryColor Bool {! !} {! !}
+```
+
+The response from Agda is immediate and serious:
+
+```info
+PrimaryColor != Bool of type Set
+when checking that the expression mk-tuple PrimaryColor Bool ? ?
+has type Bool × Bool
+```
+
+Agda is telling us off, for writing down `PrimaryColor` when we should have
+written `Bool`. The language knows this should be a `Bool` since our type claims
+to be a `Bool × Bool`. You will notice this is all a bit stupid. If Agda knows
+what exactly what we should write into this hole, and yells at us if we don't do
+it properly, why do we have to do it at all? As it happens, we don't!
+
+Instead, in any expression, we can leave behind an underscore, asking Agda to
+make an informed decision and fill it in for us. Thus, we can write the
+following:
+
+```agda
+  color-bool-tuple : PrimaryColor × Bool
+  color-bool-tuple = mk-tuple _ _ red false
+```
+
+and Agda will (silently, without changing our file) fill in the two underscores
+as `PrimaryColor` and `Bool`, respectively. Filling in arguments in this way is
+known as *elaboration,* as it offloads the work of figuring out exactly what
+your program should be to the compiler. No human input necessary.
+
+It is exactly this elaboration that is happening behind the scenes of our
+invisible parameters. Whenever you mark a parameter as invisible by ensconcing
+it in curly braces, you're really just asking Agda to elaborate that argument
+for you by means of inserting an underscore.
+
+We can make the invisible visible again by explicitly filling in implicit
+arguments for ourselves. The syntax for this is to give our implicit arguments
+as regular arguments, but themselves in curly braces. We can also use the
+explicit names to these implicits, so that we need to fill them all in order to
+fill only one:
+
+```agda
+  mk-color-bool-tuple : PrimaryColor → Bool → PrimaryColor × Bool
+  mk-color-bool-tuple = _,_ {A = PrimaryColor} {B = Bool}
+```
+
 

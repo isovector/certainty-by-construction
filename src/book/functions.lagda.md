@@ -685,7 +685,7 @@ and then can show `*-sum-distribʳ` in earnest:
 
 There are a few more facts to prove about sums before we can get to the meat of
 our proof. But first, another reasonable assumption about `𝔸` --- namely that
-it's multiplication is commutative:
+its multiplication is commutative:
 
 ```agda
   postulate
