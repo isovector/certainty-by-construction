@@ -1,0 +1,37 @@
+## A Note on Identifiers
+
+As we saw earlier when we defined `if_then_else_`, a so-called *mixfix
+operator,* Agda's syntax is extremely permissive. But this is really just the
+beginning. Most programming languages have strong restrictions on what letters
+can occur in identifiers. Agda takes the opposite approach, and says only that
+identifiers may not contain any of `.;(){}@`. That's it. Anything else is fair
+game.
+
+Oh, and also, because of the mixfix parsing above, you can't use `_` as a
+literal character; it always means "a hole for other syntax goes here." If you'd
+like an alternative to the `snake_case` you write in other languages, consider
+instead using `kebab-case`.
+
+Aside from a few keywords, any other identifier is OK. Do you want to name your
+proof that $m = n$ something like `m=n`? Agda isn't going to complain. As we saw
+above, the standard library itself makes some very strange choices for its names
+as well.
+
+One consideration of the mixfix rules above is that all binary operators are
+thus named with a leading and a trailing underscore. Thus, the addition
+operator's name is `_+_`, because it leaves syntactical holes on either side to
+fill in. This means you can define any binary operator you'd like, with any
+name, including a name consisting wholly of ASCII characters. The standard
+library does more of this than is my personal preference, but your mileage will
+vary.
+
+Because Agda is so permissive when it comes to identifiers, spaces are extremely
+significant. That is, the expression `5+6` is *a single identifier*, while `5 +
+6` is actually parsed as `_+_ 5 6` --- that is, apply the addition operator to
+two arguments, 5 and 6. Be very particular with spaces; a good rule of thumb is
+to separate everything with a space, with the exception of anything that abuts
+against any of the reserved letters `.;(){}@`.
+
+Over your first few hours, you'll probably get a flurry of strange parse errors
+and unknown identifiers. The solution is almost always to just insert more
+spaces.
