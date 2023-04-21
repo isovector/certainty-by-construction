@@ -86,15 +86,19 @@ the natural numbers. Under such a scheme, we would write the number 7 as:
 
 Hidden
 
-:   ```agda
+:     ```agda
 module HiddenCrap where
   data ℕ : Set where
     zero : ℕ
     suc  : ℕ → ℕ
+      ```
 
+Hidden
+
+:     ```agda
   _ : ℕ
   _ =
-    ```
+      ```
 
 ```agda
     suc (suc (suc (suc (suc (suc (suc zero))))))
@@ -263,15 +267,13 @@ a given natural is equal to 2.
 
 Exercise
 
-:   Implement
-    ```agda
-  n=2? : ℕ → Bool
-    ```
+:   Implement `n=2? : ℕ → Bool`
 
 
 Solution
 
 :   ```agda
+  n=2? : ℕ → Bool
   n=2? zero = false
   n=2? (suc zero) = false
   n=2? (suc (suc zero)) = true
@@ -698,22 +700,6 @@ We're close to the end. Now we know that `x : IsEven n` and our hole requires an
   ... | just x = just (suc-suc-even x)
   ... | nothing = nothing
 ```
-
-
-## Dot Patterns
-
-
-```agda
-  test : {n : ℕ} → IsEven n → Bool
-  test {.zero} zero-even = {! !}
-  test {.(suc (suc _))} (suc-suc-even x) = {! !}
-```
-
-
-
-
-
-
 
 
 ## Addition
