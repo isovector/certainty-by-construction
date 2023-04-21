@@ -1,0 +1,70 @@
+You will notice that a lot of the work in giving these proofs is done by the
+quantifiers over the types. We are saying not just that `curry` and `uncurry`
+work on some functions, but in fact, that they work for *any functions* over
+*any types* `A`, `B`, `C`. Imagine if we were to relax this type to instead be
+over the natural numbers:
+
+```agda
+curry-nat : (ℕ × ℕ → ℕ) → ℕ → ℕ → ℕ
+```
+
+Now that the types are no longer different, we are unable to enforce that our
+arguments move to the right place. For example, we could implement `curry-nat`
+as follows:
+
+```agda
+curry-nat f a b = f (0 , 49)
+```
+
+in which we ignore the two arguments and always call the given function with 0
+and 49. While the implementation of `curry-nat` truly is a proof of `(ℕ × ℕ → ℕ)
+→ ℕ → ℕ → ℕ`, we are forced to conclude that `(ℕ × ℕ → ℕ) → ℕ → ℕ → ℕ` is a very
+weak mathematical statement ("given a function of two numbers, and two other
+numbers, it's possible to compute a number".) That's not very surprising, is it?
+
+This leads us to our next point, that just like in programming, we should strive
+to make our proofs as general as possible. That is to say, if the algorithm
+requires a specific type as its input, but doesn't use any features of that
+type, then it should be generalized to instead take a less specific type. To
+illustrate this, let's look at another function:
+
+```agda
+swap-nat : ℕ × ℕ → ℕ × ℕ
+swap-nat (fst , snd) = snd , fst
+```
+
+Our `swap-nat` function merely moves the first element in the pair to be the
+second, and vice versa. It's stated to be a function over pairs of natural
+numbers, but nothing in this definition requires the pair to *actually* be over
+natural numbers. The algorithm works just as well for booleans, strings, or
+other pairs. Instead, we can generalize the type:
+
+```agda
+swap-mono : {A : Set} → A × A → A × A
+swap-mono (fst , snd) = snd , fst
+```
+
+which is a marked improvement, but is still too specific. We are now requiring
+both elements in the pair to have the same type, but this isn't a necessary
+precondition of the function, either. So instead we can generalize further:
+
+
+```agda
+swap : {A B : Set} → A × B → B × A
+swap (fst , snd) = snd , fst
+```
+
+You'll notice that the actual implementations of `swap-nat`, `swap-mono` and
+`swap` are completely identical; the only thing that has changed in these three
+snippets has been the types involved. Furthermore, by finding the most general
+type for `swap`, we have further constrained what it *can't do.* The final
+`swap` function can't copy one element over both places in the result, because
+the output must have one element from the type `A`, and another from type `B`.
+By finding the most general type, we know a great deal about the implementation,
+without necessarily needing to look at it.
+
+Bringing this back to programming, having better control over our types can help
+us avoid writing bugs (because they won't type check), and help us when
+debugging (because we need only look at the types of things to see if they could
+go wrong.) Good mathematical habits make for good programming habits, and vice
+versa.
