@@ -1,5 +1,15 @@
 # Proofs
 
+Hidden
+
+:   ```agda
+{-# OPTIONS --allow-unsolved-metas #-}
+    ```
+
+```agda
+module 2-proofs where
+```
+
 In this chapter we will take our first looks at what constitutes a mathematical
 proof, as well as how to articulate proofs in Agda. In the process, we will need
 to learn a little more about Agda's execution model and begin exploring the
@@ -10,10 +20,371 @@ where I quickly learned I had no idea what a proof was (and had the marks to
 prove it!) A proof is supposed to be a mathematical argument that other
 mathematicians find convincing; my problem was, things that seemed convincing to
 me were inevitably unconvincing to the professor. Perhaps you have encountered
-this same problem. If so, there is good news for you in this chapter --- working
+this same problem. If so, there is good news for you in this chapter---working
 in Agda makes it exceptionally clear what constitutes a proof; either Agda is
 happy with what you've written, or it isn't. In either case, the feedback cycle
 is extremely quick, and it's easy to iterate until you're done.
+
+
+## Constructivism
+
+It is worth noting that the mathematics we will be doing in this book are not
+the "whole story" of mathematics. You see, there are two big camps in the
+mathematics worlds: the *classicists* and the *constructivists.* Much like
+many religious sects, these two groups have much more in common than they have
+distinct. In fact, the only distinction between these two groups of
+truth-seekers is their opinion on the nature of falsities.
+
+The classicists believe all mathematical statements are divided into the ones
+which are *true* and the ones which are *false.* There is no middle ground, and
+thus the ones which are not true must certainly be false, and vice versa. It is
+very probable that you, gentle reader, fall into this camp, likely without
+knowing it. Most of the world does.
+
+Contrasting with the classicists are the constructivists, who trust their nose
+more than they trust logical arguments. Constructivists aren't happy knowing
+something merely *doesn't not exist;* they'd like to see that thing with their
+own eyes.
+
+In general, there are two ways to mathematically show something exists. The
+first way is to just build the thing, in sense "proof by doing." The other is to
+show that a world without the thing would be meaningless, and thus show its
+existence --- in some sense --- by sheer force of will, because we really
+*don't* want to believe our world is meaningless.
+
+To illustrate this difference, suppose we'd like to prove that there exists a
+prime number greater than 10. Under a classical worldview, a perfectly
+acceptable proof would go something like this:
+
+1. Suppose there does not exist a prime number greater than 10.
+2. Therefore, the prime factorization of every number must consist only of 2, 3,
+   5, and 7.
+3. If a number $n$ has a prime factor $d$, then $n + 1$ does not have have $d$ as
+   a prime factor.
+4. The number $2 \times 3 \times 5 \times 7 = 210$ has prime factors of 2, 3, 5,
+   and 7.
+5. Therefore, $210 + 1 = 211$ does not have prime factors of 2, 3, 5, or 7.
+6. Therefore, 211 has no prime factors.
+7. This is a contradiction, because all numbers have prime factors.
+8. Therefore, there does exist a prime number greater than 10. ∎
+
+Contrast this against a constructive proof of the same proposition:
+
+1. 11 is divisible by no number between 2 and 10.
+2. Therefore, 11 is a prime number.
+3. 11 is a number greater than 10.
+4. Therefore, there exists a prime number greater than 10. ∎
+
+Classical arguments are allowed to assume the negation, show that it leads to
+absurdity, and therefore refute the negation. But constructive arguments are
+*required* to build the object in question, and furthermore to take on the
+burden to show that it satisfies the necessary properties.
+
+Under a computational setting, constructive arguments are much more compelling
+than classical ones. This is because constructive arguments correspond to
+objects we can hold in our hands (or, at least, in memory), while classical
+arguments come from counterfactual observations pointing out that something must
+exist without telling you how to get your hands on such a thing. To put it
+another way, constructive arguments correspond to *algorithms.*
+
+
+## Propositions as Types
+
+Now that we are familiar with our programming language, let's turn our focus
+towards more mathematical ideas. When most humans think of mathematics, their
+immediate thought is that of numbers. But of course, mathematics is a field
+significantly larger than numbers, and we will not deal with numbers in this
+section.
+
+But what is mathematics, if not about numbers? I would say it is the process of
+clear, logical deduction around precise ideas. Numbers are one such precise
+idea, but they are not the only one. In fact, mathematics can be split into two
+magisteria: propositions, and proofs of those propositions. Propositions are the
+statements you're claiming to be true, while proofs are the evidence you have
+that the statements *are* true. In mathematics, unlike science, evidence isn't
+just *convincing*---it's necessarily so. A proof of a proposition has no
+wiggle room or space for error; either it is an all-encompassing, argument that
+necessitates belief in the premise, or it is not. There are no half measures in
+belief in mathematics.
+
+A corollary of this idea is that two mathematicians can have differing opinions
+on whether a proposition is true, but once they have a proof, they both must
+believe the proposition to be true. Any other result is to not have a proof in
+the first place.
+
+There is an analogy to software here---quite an apt one---that it's easy to
+disbelieve a problem can be solved. That is, of course, until someone hands you
+the algorithm that solves it. The algorithm itself is a proof artifact that
+shows the problem can be solved.
+
+It is exactly this analogy that we will exploit for the remainder of this book
+in order to show the relationship between mathematics and programming, and
+furthermore, to help programmers use the tools they already have to start being
+productive in mathematics. But let's make the connection more formal.
+
+-- TODO(sandy): what is a proposition
+
+To be very explicit, our analogy equates *mathematical propositions* and
+*types.* That is to say, any mathematical proposition has an encoding as a type,
+and vice versa. Furthermore, every *proof of a proposition* corresponds to a
+*program with that type*. For example, we can say that the following type:
+
+```type
+Bool
+```
+
+corresponds to the proposition "there exists a boolean." This is not a
+particularly strong claim. Under a constructive lens, we can prove the
+proposition merely by proving a boolean, thus proving at least one exists.
+
+For further illustration, with a more complicated example, let's bring back our
+`IsEven` type from @sec:numbers. First we can import the chapter module:
+
+```agda
+open import 2-numbers
+```
+
+then bring the types from the sandboxed module into scope:
+
+```agda
+open Naturals using (ℕ; IsEven)
+```
+
+and finally, bring the constructors of those types into scope:
+
+```agda
+open ℕ
+open IsEven
+```
+
+We can then ask the question whether zero is an even number by formulating a
+type to that effect:
+
+```agda
+zero-is-even : IsEven zero
+```
+
+Of course, zero *is* even, the proof of which we have seen before:
+
+```agda
+zero-is-even = zero-even
+```
+
+We can also ask whether one is an even number by writing down the type:
+
+```agda
+one-is-even : IsEven (suc zero)
+one-is-even = ?
+```
+
+One however is not an even number, and thus there is no way to fill this hole.
+
+These two examples illustrate the point. While we can always write down the type
+of something we'd like to prove, we cannot always find a value with that type.
+Therefore, we say that types correspond to propositions, while values are proofs
+of those propositions. In the literature, this concept is known by the name
+*types as propositions,* and, alternatively as the *Curry--Howard
+correspondence.*
+
+The Curry--Howard correspondence thus gives us a guiding principle for doing
+constructive mathematics in a programming language. We encode down the problem
+statement as a type, and then we construct a value of that type in order to show
+the truth of the problem statement. Keeping this perspective in mind is the
+secret to success.
+
+
+## Hard to Prove or Simply False?
+
+Of the absolute utmost importance in mathematics is the *principle of
+consistency.* This is a fancy way of saying "there should be no proof for false
+things." We use math as a tool for exploring truths about platonic abstractions,
+and being able to prove a falsity would be devastating to the entire
+formalization. The problem is that falsities beget falsities; if you find one,
+you can use it to produce another. Mathematicians call this the *principle of
+explosion* in English, or say *ex falso quodlibet* if they're feeling
+particularly regal. All this means is that, given a proof of false, you can
+subsequently provide a proof of anything. Therefore, contradictions are *really,
+really* bad, and a huge chunk of logical development (including computation
+itself) has arisen from people discovering contradictions arising from less
+rigorous mathematics than we use today.
+
+All of this is to say: it's desirable that it be very difficult to prove
+something that is false. From afar, this sounds like a very good and righteous
+desideratum. But when you're deep in the proof mines, having difficulties
+eliciting the sought-after proof, it's often unclear whether you haven't tried
+hard enough or whether the problem is impossible outright. I have spent weeks of
+my life trying to prove false statements without realizing it, and I suspect
+this is a necessary rite of passage.
+
+Nevertheless, I hope you spare you from some of the toil spent wasted on a false
+proposition. If you're ever finding a proof to be exceptionally hard, it's
+worth taking some time out to prove the proposition for extremely simple,
+concrete values. If you're working with numbers, see if it holds when everything
+is zero or one. Working through the easiest cases by hand will usually point out
+a fundamental problem if there is one, or might alert you to the fact that you
+haven't yet built enough machinery (that is, library code around your particular
+problem) to make proving things easy.
+
+Remember, you can always prove something the stupid way first, and come back
+with a better proof later on if you deem necessary. In proofs as in life, done
+is better than perfect.
+
+
+## The Equality Type
+
+All of this is fine and dandy, but how do we go about actually building types
+corresponding to mathematical propositions? Usually the technique is to use an
+indexed type, like we did with `IsEven`.
+
+One of the most common mathematical propositions---indeed, often synonymous with
+math in school---is the *equation.* Equality is the proposition that two
+different objects are in fact just one object. There is a wide and raging debate
+about exactly what equality *means,* but for the time being we will limit
+ourselves to the case that the two expressions will eventually *evaluate to the
+exact same series of constructors.* This particular notion of equality is known
+as *propositional equality* and is the basic notion of equality in Agda.
+
+We can define propositional equality by making a type for it. The type should
+relate two objects, stating that they are equal, and thus it must be *indexed by
+two values.* These indices correspond to the values being related. In order for
+two things to evaluate to the same constructors, they must have the same type.
+And because we'd like to define propositional equality once and for all, we can
+parameterize the whole thing by the type of things it relates. Solving all these
+constraints simultaneously gives us the following `data` definition.
+
+```agda
+-- TODO(sandy): drop this module when the chapter is rewritten
+module REMOVE-ME where
+
+  data _≡_ {A : Set} : A → A → Set where
+```
+
+The `≡` symbol is input via `\==`.
+
+Remember that the type corresponds to the proposition, while the constructors
+are the primitive ways by which we can prove the proposition. In this case,
+there is only one basic way to show an equality, which is to say, two things are
+equal only if they are the same thing in the first place!
+
+```agda
+    refl : {x : A} → x ≡ x
+```
+
+The type here, `{x : A} → x ≡ x` says that for any value `x` we'd like, we know
+that `x` is equal to itself. The constructor is called `refl`, which is short
+for *reflexivity,* which is the technical jargon for the property that all
+things are equal to themselves. We shorten "reflexivity" because we end up
+writing this constructor *a lot.*
+
+In order to play nicely with standard mathematical notation, we'd like `_≡_` to
+bind very loosely, that is to say, to have a low precedence. Furthermore, we do
+not want `_≡_` to associate at all, so we can use `infix` without a left or
+right suffix to prevent this behavior:
+
+```
+  infix 4 _≡_
+```
+
+We have already encountered `_≡_` and `refl` in @sec:chapter1 where we called
+them "unit tests." This was a little white-lie, about which I am now coming
+clean. In fact, what we were doing before with our "unit tests" was proposing
+the equality of two terms, and giving a proof saying that were already the same
+thing. Because Agda will automatically do as much computation and simplification
+as it can, for any two concrete expressions that are in fact eventually equal,
+Agda will convince itself of this fact. As a practical technique, we often can,
+and do, write little unit tests of this form. But, as we will see in a moment,
+we can use propositional equality to assert much stronger claims than unit tests
+are capable of determining.
+
+Let's play around with our equality type to get a feel for how much work it can
+do, without any further machinery.
+
+```agda
+  module Sandbox-Playground where
+    open Naturals
+      using (one; two; three; four; _+_; _*_)
+```
+
+It's no surprise that Agda can determine the equality of two syntactically
+identical terms:
+
+```agda
+    3≡3 : suc (suc (suc zero)) ≡ suc (suc (suc zero))
+    3≡3 = refl
+```
+
+Agda will also expand definitions:
+
+```agda
+    three≡3 : three ≡ suc (suc (suc zero))
+    three≡3 = refl
+```
+
+including if those definitions require computation:
+
+```agda
+    three≡one+two : three ≡ one + two
+    three≡one+two = refl
+```
+
+Each of these examples is of the "unit test" variety. Perhaps you'll be
+delighted to learn that we can also use propositional equality to automatically
+show some algebraic identities. For example, we'd like to show the following
+fact:
+
+$$
+0 + x = x
+$$
+
+We can write this proposition as a type rather directly:
+
+```agda
+    0+x≡x : (x : ℕ) → zero + x ≡ x
+```
+
+In order to give a proof of this fact, we must bind the parameter on the left
+side of the equals (in fact, we don't even need to give it a name), but `refl`
+is sufficient on the right side:
+
+```agda
+    0+x≡x _ = refl
+```
+
+There are two equally valid interpretations of `0+x≡x`. The first is exactly the
+equation we wrote earlier, namely:
+
+$$
+0 + x = x
+$$
+
+However, you can also train your keen computer-science eye at this and take the
+type of `0+x≡x` more literally---that is, as a function. Namely: a function
+which takes some `x` and gives you back a proof that *for that particular `x`*,
+it is the case that $0 + x = x$.
+
+
+
+
+
+
+
+
+
+
+
+
+We're merely saying we can build a list, but saying nothing about it. As humans
+we might imagine such a list would have length one, and contain the given
+element, as in `f1`:
+
+```agda
+-- f1 : {A : Set} → A → List A
+-- f1 a = a ∷ []
+```
+
+
+
+## rest
 
 We begin by starting a new module for the chapter, and importing the necessary
 proof machinery from Agda's standard library.
@@ -307,7 +678,6 @@ for you under `Data.Bool.Properties`.
 
 ```agda
 module Nat-Properties where
-  open import Data.Nat
 ```
 
 In this section, our goal is to prove associativity and commutativity of both
@@ -348,14 +718,14 @@ Our first lemma is `+-identityʳ`, which is to say, that 0 acts as a right
 identity to addition. That is, we're looking to show the following:
 
 ```agda
-  +-identityʳ : (x : ℕ) → x + 0 ≡ x
+  -- +-identityʳ : (x : ℕ) → x + 0 ≡ x
 ```
 
 We begin as we did for booleans; pattern matching on the argument. If it's zero,
 we're already done:
 
 ```agda
-  +-identityʳ zero = refl
+  -- +-identityʳ zero = refl
 ```
 
 If our parameter isn't zero, then it must be `suc x` for some `x`. In this case,
@@ -369,7 +739,7 @@ Fortunately, this is exactly what `cong` does. Recursion will give us a proof of
 suc x`. Therefore, our lemma is completed as:
 
 ```agda
-  +-identityʳ (suc x) = cong suc (+-identityʳ x)
+  -- +-identityʳ (suc x) = cong suc (+-identityʳ x)
 ```
 
 
@@ -381,9 +751,9 @@ Exercise
 Solution
 
 :   ```agda
-  *-identityʳ : (x : ℕ) → x * 1 ≡ x
-  *-identityʳ zero = refl
-  *-identityʳ (suc x) = cong suc (*-identityʳ x)
+  -- *-identityʳ : (x : ℕ) → x * 1 ≡ x
+  -- *-identityʳ zero = refl
+  -- *-identityʳ (suc x) = cong suc (*-identityʳ x)
     ```
 
 
@@ -395,9 +765,9 @@ Exercise
 Solution
 
 :   ```agda
-  +-suc : (x y : ℕ) → x + suc y ≡ suc (x + y)
-  +-suc zero y = refl
-  +-suc (suc x) y = cong suc (+-suc x y)
+  -- +-suc : (x y : ℕ) → x + suc y ≡ suc (x + y)
+  -- +-suc zero y = refl
+  -- +-suc (suc x) y = cong suc (+-suc x y)
     ```
 
 
@@ -409,15 +779,15 @@ associativity together, because the approach comes with a new proof technique:
 `+-assoc`:
 
 ```agda
-  +-assoc : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
-  +-assoc zero y z = refl
-  +-assoc (suc x) y z = begin
-    (suc x + y) + z    ≡⟨⟩
-    suc (x + y) + z    ≡⟨⟩
-    suc ((x + y) + z)  ≡⟨ cong suc (+-assoc x y z) ⟩  -- ! 1
-    suc (x + (y + z))  ≡⟨⟩
-    suc x + (y + z)    ∎
-    where open ≡-Reasoning
+  -- +-assoc : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
+  -- +-assoc zero y z = refl
+  -- +-assoc (suc x) y z = begin
+  --   (suc x + y) + z    ≡⟨⟩
+  --   suc (x + y) + z    ≡⟨⟩
+  --   suc ((x + y) + z)  ≡⟨ cong suc (+-assoc x y z) ⟩  -- ! 1
+  --   suc (x + (y + z))  ≡⟨⟩
+  --   suc x + (y + z)    ∎
+  --   where open ≡-Reasoning
 ```
 
 In the second clause of `+-assoc`, we did `where open ≡-Reasoning`, which allows
@@ -444,14 +814,14 @@ Exercise
 Solution
 
 :   ```agda
-  +-comm : (x y : ℕ) → x + y ≡ y + x
-  +-comm zero y = sym (+-identityʳ y)
-  +-comm (suc x) y = begin
-    suc x + y    ≡⟨⟩
-    suc (x + y)  ≡⟨ cong suc (+-comm x y) ⟩
-    suc (y + x)  ≡⟨ sym (+-suc y x) ⟩
-    y + suc x    ∎
-    where open ≡-Reasoning
+  -- +-comm : (x y : ℕ) → x + y ≡ y + x
+  -- +-comm zero y = sym (+-identityʳ y)
+  -- +-comm (suc x) y = begin
+  --   suc x + y    ≡⟨⟩
+  --   suc (x + y)  ≡⟨ cong suc (+-comm x y) ⟩
+  --   suc (y + x)  ≡⟨ sym (+-suc y x) ⟩
+  --   y + suc x    ∎
+  --   where open ≡-Reasoning
     ```
 
 Often, a huge amount of the work to prove something is simply in manipulating
@@ -460,30 +830,30 @@ This is the case in `*-suc`, which allows us to expand a `suc` on the right side
 of a multiplication term:
 
 ```agda
-  *-suc : (x y : ℕ) → x * suc y ≡ x + x * y
-  *-suc zero y = refl
-  *-suc (suc x) y = begin
-    suc x * suc y          ≡⟨⟩
-    suc y + x * suc y      ≡⟨ cong (λ φ → suc y + φ) (*-suc x y) ⟩
-    suc y + (x + x * y)    ≡⟨⟩
-    suc (y + (x + x * y))
-                         ≡⟨ cong suc (sym (+-assoc y x (x * y))) ⟩
-    suc ((y + x) + x * y)
-                ≡⟨ cong (λ φ → suc (φ + x * y)) (+-comm y x) ⟩
-    suc ((x + y) + x * y)  ≡⟨ cong suc (+-assoc x y (x * y)) ⟩
-    suc (x + (y + x * y))  ≡⟨⟩
-    suc x + (y + x * y)    ≡⟨⟩
-    suc x + (suc x * y)    ∎
-    where open ≡-Reasoning
+  -- *-suc : (x y : ℕ) → x * suc y ≡ x + x * y
+  -- *-suc zero y = refl
+  -- *-suc (suc x) y = begin
+  --   suc x * suc y          ≡⟨⟩
+  --   suc y + x * suc y      ≡⟨ cong (λ φ → suc y + φ) (*-suc x y) ⟩
+  --   suc y + (x + x * y)    ≡⟨⟩
+  --   suc (y + (x + x * y))
+  --                        ≡⟨ cong suc (sym (+-assoc y x (x * y))) ⟩
+  --   suc ((y + x) + x * y)
+  --               ≡⟨ cong (λ φ → suc (φ + x * y)) (+-comm y x) ⟩
+  --   suc ((x + y) + x * y)  ≡⟨ cong suc (+-assoc x y (x * y)) ⟩
+  --   suc (x + (y + x * y))  ≡⟨⟩
+  --   suc x + (y + x * y)    ≡⟨⟩
+  --   suc x + (suc x * y)    ∎
+  --   where open ≡-Reasoning
 ```
 
 We're now on the homestretch. As a simple lemma, we can show that `_* zero` is
 equal to zero:
 
 ```agda
-  *-zeroʳ : (x : ℕ) → x * 0 ≡ 0
-  *-zeroʳ zero = refl
-  *-zeroʳ (suc x) = *-zeroʳ x
+  -- *-zeroʳ : (x : ℕ) → x * 0 ≡ 0
+  -- *-zeroʳ zero = refl
+  -- *-zeroʳ (suc x) = *-zeroʳ x
 ```
 
 and we are now ready to prove `*-comm`, one of our major results in this
@@ -498,34 +868,34 @@ Exercise
 Solution
 
   : ```agda
-  *-comm : (x y : ℕ) → x * y ≡ y * x
-  *-comm zero y = sym (*-zeroʳ y)
-  *-comm (suc x) y = begin
-    suc x * y  ≡⟨⟩
-    y + x * y  ≡⟨ cong (y +_) (*-comm x y) ⟩
-    y + y * x  ≡⟨ sym (*-suc y x) ⟩
-    y * suc x  ∎
-    where open ≡-Reasoning
+  -- *-comm : (x y : ℕ) → x * y ≡ y * x
+  -- *-comm zero y = sym (*-zeroʳ y)
+  -- *-comm (suc x) y = begin
+  --   suc x * y  ≡⟨⟩
+  --   y + x * y  ≡⟨ cong (y +_) (*-comm x y) ⟩
+  --   y + y * x  ≡⟨ sym (*-suc y x) ⟩
+  --   y * suc x  ∎
+  --   where open ≡-Reasoning
     ```
 
 ```agda
-  *-distribʳ-+ : (x y z : ℕ) → (y + z) * x ≡ y * x + z * x
-  *-distribʳ-+ x zero z = refl
-  *-distribʳ-+ x (suc y) z = begin
-    (suc y + z) * x      ≡⟨⟩
-    x + (y + z) * x      ≡⟨ cong (x +_) (*-distribʳ-+ x y z) ⟩
-    x + (y * x + z * x)  ≡⟨ sym (+-assoc x (y * x) (z * x)) ⟩
-    (x + y * x) + z * x  ≡⟨⟩
-    suc y * x + z * x    ∎
-    where open ≡-Reasoning
+  -- *-distribʳ-+ : (x y z : ℕ) → (y + z) * x ≡ y * x + z * x
+  -- *-distribʳ-+ x zero z = refl
+  -- *-distribʳ-+ x (suc y) z = begin
+  --   (suc y + z) * x      ≡⟨⟩
+  --   x + (y + z) * x      ≡⟨ cong (x +_) (*-distribʳ-+ x y z) ⟩
+  --   x + (y * x + z * x)  ≡⟨ sym (+-assoc x (y * x) (z * x)) ⟩
+  --   (x + y * x) + z * x  ≡⟨⟩
+  --   suc y * x + z * x    ∎
+  --   where open ≡-Reasoning
 
-  *-assoc : (x y z : ℕ) → (x * y) * z ≡ x * (y * z)
-  *-assoc zero y z = refl
-  *-assoc (suc x) y z = begin
-    suc x * y * z        ≡⟨⟩
-    (y + x * y) * z      ≡⟨ *-distribʳ-+ z y (x * y) ⟩
-    y * z + (x * y) * z  ≡⟨ cong (λ φ → y * z + φ) (*-assoc x y z) ⟩
-    y * z + x * (y * z)  ≡⟨⟩
-    suc x * (y * z)      ∎
-    where open ≡-Reasoning
+  -- *-assoc : (x y z : ℕ) → (x * y) * z ≡ x * (y * z)
+  -- *-assoc zero y z = refl
+  -- *-assoc (suc x) y z = begin
+  --   suc x * y * z        ≡⟨⟩
+  --   (y + x * y) * z      ≡⟨ *-distribʳ-+ z y (x * y) ⟩
+  --   y * z + (x * y) * z  ≡⟨ cong (λ φ → y * z + φ) (*-assoc x y z) ⟩
+  --   y * z + x * (y * z)  ≡⟨⟩
+  --   suc x * (y * z)      ∎
+  --   where open ≡-Reasoning
 ```
