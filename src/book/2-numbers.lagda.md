@@ -7,15 +7,21 @@ with fresh eyes, and to get familiar with many of the mathematical objects
 we'll need for the remainder of the book. As always, we start with a new module
 for the chapter:
 
+Hidden
+
+:   ```agda
+{-# OPTIONS --allow-unsolved-metas #-}
+    ```
+
 ```agda
 module 2-numbers where
 ```
 
-As you might expect, Agda already has support for numbers, and they are not
+Agda already has support for numbers as you might expect, and they are not
 things we necessarily need to build for ourselves. That being said, it's
-important to get an intuition for how we can use Agda to solve problems, and
-numbers are simultaneously a domain you already understand, and are usually
-*built-in,* magical constructs in most programming languages. This is not true
+important to get an intuition for how we can use Agda to solve problems. Numbers
+are simultaneously a domain you already understand, and, in most programming
+languages, they usually come as pre-built, magical primitives. This is not true
 in Agda: numbers are defined in the standard library. Our approach will be to
 build the same number system exported by the standard library so we can peek at
 how it's done. However, this is just an exercise; after this chapter, we will
@@ -23,135 +29,148 @@ just use the standard library's implementation, since it will be more complete,
 and allow us better interopability when doing real work.
 
 
-## Booleans
-
-```agda
-module Sandbox-Bools where
-```
-
-```agda
-  data Bool : Set where
-    false : Bool
-    true  : Bool
-```
-
-This definition creates a new type, `Bool`, and two *constructors* of that type,
-`false` and `true`. It's important to note that all constructors of a type are
-considered *distinct*. That is to say, `false` and `true` are two separate
-things. All we have said about them thus far is that they exist, are both
-`Bool`s, and are not equal to one another. In fact, we have also said that
-*every* `Bool` is either `false` or `true` --- a direct consequence of the
-semantics of data type constructors.
-
-```agda
-  not : Bool → Bool
-  not false = true
-  not true  = false
-```
-
-```agda
-  _∨_ : Bool → Bool → Bool
-  false ∨ other = other
-  true  ∨ other = true
-```
-
-We can take the same approach to define the logical AND operation, which returns
-`true` if and only if both of its arguments are `true`. Mathematicians use the
-$\wedge$ symbol for this one, pronounced "wedge."
-
-```agda
-  _∧_ : Bool → Bool → Bool
-  false ∧ y = false
-  true  ∧ y = y
-```
-
-You are likely wondering why we're discussing booleans in a chapter about
-defining number systems. The answer is that booleans behave a lot like numbers,
-as we can show in a little test module.
-
-```agda
-  module Tests where
-```
-
-As a number system, the booleans have exactly two numbers, 0 and 1:
-
-```agda
-    0𝔹 : Bool
-    0𝔹 = false
-
-    1𝔹 : Bool
-    1𝔹 = true
-```
-
-and, given these definitions, OR behaves exactly like addition, while AND takes
-the place of multiplication:
-
-```agda
-    _+_ : Bool → Bool → Bool
-    _+_ = _∨_
-
-    _*_ : Bool → Bool → Bool
-    _*_ = _∧_
-```
-
-To illustrate this, we will pull in Agda's testing machinery from
-`Relation.Binary.PropositionalEquality`, and show that adding `0𝔹` doesn't
-change the result, nor does multiplying `1𝔹` change the result --- exactly the
-properties you'd expect to hold in a number system with only two values.
-
-```agda
-    open import Relation.Binary.PropositionalEquality
-
-    0+-is-id : (x : Bool) → 0𝔹 + x ≡ x  -- ! 1
-    0+-is-id x = refl
-
-    1*-is-id : (x : Bool) → 1𝔹 * x ≡ x  -- ! 2
-    1*-is-id x = refl
-```
-
-Take note of the line marked by [1](Ann), which we interpret as the mathematical
-statement:
-
-> for any `x : Bool`, it is the case that `0𝔹 + x` is equal to `x`
-
-[2](Ann) makes a similar claim about the relationship between `1𝔹` and
-multiplication. We will investigate how these strange-looking tests work in due
-time; for now, be content with the fact that the booleans form a number system,
-although admittedly, not a very interesting one.
-
-
 ## Natural Numbers
 
-Booleans probably aren't the first thing that comes to mind when you think about
-number systems. So let's instead build something a little more representative of
-numbers: the *natural numbers.* The natural numbers are those non-negative whole
-numbers that we use for counting: $0, 1, 2, 3, \dots$. Mathematicians describe
-this set of numbers by the "blackboard bolded" symbol `ℕ`, which is the notation
-we too will use.
+It is one thing to say we will "construct the numbers," but it is a very
+different thing to actually do so. The first question we must ask ourselves is:
+"which numbers?" All of them, of course---although that gives rise to what
+exactly we mean by "all." There are many different sets of numbers: the numbers
+we use to count in the real world (which start at 1), the numbers we use to
+index in computer science (which begin at 0), the integers (which contain
+negatives), the rationals (which contain fractions and all numbers you have ever
+encountered in real life), the reals (which are somehow bigger still), the
+complex numbers (which have an "imaginary" part, whatever that means), the
+quanternions (which have three different sorts of imaginary parts), or the
+octonions (which have *seven*!).
 
-The natural numbers are sometimes known as Peano numbers, named after Giuseppe
-Peano, whose 1889 mathematical formulation of them has enjoyed wide popularity.
-The first thing to note is that there are infinitely many natural numbers, which
-means any attempt at formulating them cannot possibly be exhaustive; we'd tire
-long before getting to the end! However, there is a natural starting point,
-namely, zero. From there, we notice that given any natural number $n$, there
-exists a "next" number $1 + n$. The pedants among readers might, fairly, object
-to our usage of $1$ (and $+$, for that matter) in this formalization. Instead,
-we can compress the $1 +$ part into a function `suc : ℕ → ℕ`, whose existence we
-postulate, which constructs the "successive" number.
+In order to construct "the numbers," we must choose between these distinct sets
+of numbers. And those are just some of the number systems mathematicians talk
+about. But worse, there are the number systems that computer scientists use,
+like the *bits*, the *bytes*, the *words*, and by far the worst of all, the IEEE
+754 "floating point" numbers known to software practitioners as *floats* and
+*doubles*. You, gentle reader, are probably a programmer, and it is probably in
+number systems such as these that you feel more at home. We will not, however,
+be working with number systems of the computer science variety, as these are
+extremely non-standard systems of numbers, with all sorts of technical
+difficulties that you have likely been burned by so badly that you have lost
+your pain receptors.
 
-In Agda, we can build this set by introducing a new `data` type with two
-introduction forms --- one for zero, and one for succession:
+Who among us hasn't been burned by an integer overflow, where adding two
+positive numbers somehow results in a negative one? Or the fact that, when
+working with floats, we get different answers when multiplying together three
+numbers depending on which pair we choose to do first. One might make a
+successful argument that these are a necessarily limitations of our computing
+hardware. As a retort, I will only point to the co-Blub paradox (@sec:coblub),
+and remind you that our goal here is to learn *how things can be,* rather than
+limit our minds to the way we perceive things must be. After all, we cannot hope
+to reach paradise if we do not know what would improve the status-quo.
 
-```agda
-module Sandbox-Naturals where
+And so we return to the question of which number system we'd like to build
+first. As a natural starting point, we will pick the simplest system that it
+seems fair to call "numbers": the *natural numbers.* These are the numbers you
+learn as a child, in a simpler time, before you needed to worry about things
+like negative numbers, decimal points, or fractions. The natural numbers start
+at 0, and proceed upwards exactly one at a time, to 1, then 2, then 3, and so on
+and so forth. Importantly to the computer scientist, there are *infinitely many*
+natural numbers, and we intend to somehow construct *every single one of them.*
+We will not placate ourselves with arbitrary upper limits, or with arguments of
+the form "X ought to be enough for anyone."
+
+How can we hope to generate an infinite set of numbers? The trick isn't very
+impressive---in fact, I've already pointed it out. You start at zero, and then
+you go up one at a time, forever. In Agda, we can encode this by saying `zero`
+is a natural number, and that, given some number `n`, we can construct the next
+number up---its *successor*---as `suc n`. Such an encoding gives rise to a
+rather elegant (if *inefficient*, but, remember, we don't care) specification of
+the natural numbers. Under such a scheme, we would write the number 7 as:
+
+Hidden
+
+:   ```agda
+module HiddenCrap where
   data ℕ : Set where
     zero : ℕ
     suc  : ℕ → ℕ
+
+  _ : ℕ
+  _ =
+    ```
+
+```agda
+    suc (suc (suc (suc (suc (suc (suc zero))))))
 ```
 
-By repeated application of `suc`, we can build an infinite tower of natural
-numbers, the first four of which are built like this:
+It is important to stress that this is a *unary* encoding, rather than the
+traditional *binary* encoding familiar to computer scientists. There is nothing
+intrinsically special about binary; it just happens to be an easy thing to build
+machines that can distinguish between two states, whether they be magnetic
+forces, electric potentials, or the presence or absence of a bead on the wire of
+an abacus. Do not be distraught; working in unary *dramatically* simplifies
+math, and if you are not yet sold on the approach, you will be before the end of
+this chapter.
+
+But enough talk. It's time to conjure up the natural numbers. In the
+mathematical literature, the naturals are denoted by the *blackboard bold*
+symbol `ℕ`---a convention we too will adopt. You can input this symbol via
+`\bN`.
+
+```agda
+module Naturals where
+
+  data ℕ : Set where
+    zero : ℕ
+    suc  : ℕ → ℕ  -- ! 1
+```
+
+Here we use the `data` keyword to construct a type consisting of several
+different constructors. In this case, a natural is either a `zero` or it is a
+`suc` of some other natural number. You will notice that we must give explicit
+types to constructors of a `data` type, and at [1](Ann) we give the type of
+`suc` as `ℕ → ℕ`. This is the precise meaning that a `suc` is "of some other
+natural number." You can think of `suc` as the mathematical function:
+
+$$
+x \mapsto x + 1
+$$
+
+although this is just a mental shortcut, since we can define the 1 in this
+function *only* via `suc`, and we do not yet have a definition of addition.
+
+
+## A Note on Algebraic Data Types
+
+We will play around with our new numeric toys in a moment after two asides to
+pique your interest. We also saw the `data` keyword when we defined the
+booleans, and indeed, we will need it whenever we'd like to build a type whose
+values are *apart*---that is, new symbols whose meaning is in their
+distinctiveness from one another. The boolean values `false` and `true` are
+*just symbols,* which, by convention, we assign meaning to. And this meaning is
+justified exactly because `false` and `true` are *different symbols.*
+
+Such is true also of numbers; the reason we care about numbers is exactly
+because they are a collection of symbols, all distinct from one another.
+
+Contrast this to the tuple type (a type defined via `record` instead of `data`)
+we defined earlier, which in some sense, exists only for bookkeeping. The tuple
+type doesn't build new things, it just lets you simultaneously move around two
+things that already exist. Another way to think about this is that `record`
+are made up of things that already exist, while `data` types create new things
+*ex nihilo.*
+
+Most programming languages have a concept of `record` types (whether they be
+called *structures*, *tuples*, or *classes*), but very few support `data` types.
+Booleans and numbers are the canonical examples of `data` types, and the lack of
+support for them is exactly why these two types are usually baked-in to a
+language.
+
+-- TODO(sandy): a point about enums?
+
+
+## Playing with Naturals
+
+Let's return now to our discussion of the naturals. By repeated application of
+`suc`, we can build an infinite tower of natural numbers, the first four of
+which are built like this:
 
 ```agda
   one : ℕ
@@ -175,75 +194,646 @@ defined `four` thusly:
   four⅋ = suc (suc (suc (suc zero)))
 ```
 
+It is tempting to use the traditional base-ten symbols for numbers, and of
+course, Agda supports this (although setting it up will require a little more
+effort on our part.) However, we will persevere with our explicit unary encoding
+for the time being, to really hammer-in that there is no magic behind the scenes
+here.
+
 The simplest function we can write over the naturals is to determine whether or
 not the argument is equal to 0. For the same of simplicity, this function will
-return a boolean, but this is a bad habit in Agda thus this function is only
-provided to help us get a feel for pattern matching over natural numbers.
-Furthermore, rather than using our home-grown booleans, we will import them from
-the standard library.
+return a boolean, but we note that this is a bad habit in Agda, and there are
+much better techniques that don't lead to *boolean blindness.* Thus, this
+function is only provided to help us get a feel for pattern matching over
+natural numbers.
+
+Rather than using our home-grown booleans, we will fetch them from the standard
+library:
 
 ```agda
   open import Data.Bool
-
-  n=0? : ℕ → Bool
-  n=0? zero    = true
-  n=0? (suc x) = false  -- ! 1
+    using (Bool; true; false)
 ```
 
-The `n=0?` function returns true if and only if its argument is `zero`. At
-[1](Ann) we see another use of a variable in a pattern match, but this time it's
-for the number the argument is one bigger than. Because there are an infinite
-number of naturals, *it is impossible* to write this function exhaustively. We
-therefore are forced to use a variable to describe every other possibility,
-which is OK because we'd like to handle them in identical ways, namely returning
-`false`.
+As always, we begin with our type signature, and a hole.
 
-A more natural function to define over `ℕ` is addition. Again, we are unable
-(and wouldn't want) to build a table explicitly giving the result for every
-possible pair of inputs. Instead we must be more clever, and take inspiration
-from the booleans, noticing that adding `zero` to anything doesn't change the
-result. If the input wasn't zero, it was one more than some other value $x$; in
-which case we can add $x$ to the right hand side, and take the `suc` afterwards.
+```agda
+  n=0?⅋₁ : ℕ → Bool
+  n=0?⅋₁ = ?
+```
+
+After [MakeCase:](AgdaCmd), our argument is bound for us:
+
+```agda
+  n=0?⅋₂ : ℕ → Bool
+  n=0?⅋₂ n = {! !}
+```
+
+and, like when writing functions over the booleans, we can immediately
+[MakeCase:x](AgdaCmd) to split `x` apart into its distinct possible
+constructors:
+
+```agda
+  n=0?⅋₃ : ℕ → Bool
+  n=0?⅋₃ zero = {! !}
+  n=0?⅋₃ (suc x) = {! !}  -- ! 1
+```
+
+Interestingly, at [1](Ann), Agda has given us a new form, something we didn't
+see in the case of booleans. It gave us a pattern match `(suc x)`, which after
+some mental type-checking, makes sense. We said `n` was a `ℕ`, but `suc` has
+type `ℕ → ℕ`. That means, `n` can only be a natural number of the `suc` form *if
+that function has already been applied to some other number.*
+
+The interpretation you should give to this expression is that if $n$ is of the
+form `suc x`, then $x = n - 1$.
+
+In our case, we care only if `n` is equal to zero, which we can immediately
+solve from here, without needing to do anything with `x`.
+
+```agda
+  n=0? : ℕ → Bool
+  n=0? zero    = true
+  n=0? (suc x) = false
+```
+
+It will be informative to compare this against a function that computes whether
+a given natural is equal to 2.
+
+
+Exercise
+
+:   Implement
+    ```agda
+  n=2? : ℕ → Bool
+    ```
+
+
+Solution
+
+:   ```agda
+  n=2? zero = false
+  n=2? (suc zero) = false
+  n=2? (suc (suc zero)) = true
+  n=2? (suc (suc (suc x))) = false
+    ```
+
+
+## Induction
+
+Unlike functions out of the booleans, where we only had two possibilities to
+worry about, functions out of the naturals have (in principle) an infinite
+number of possibilities. This is why we must always have a `... (suc x)` case
+somewhere, which says "and do this for every *other* number."
+
+That restriction, however, doesn't mean we are forced to give *the same* answer
+for every number above a certain threshold. It's easy enough to compute whether
+a number is even---we need only make the (mathematical) argument that "a number
+$n + 2$ is even if and only if the number $n$ is." This is expressed naturally
+by recursion:
+
+```agda
+  even? : ℕ → Bool
+  even? zero = true
+  even? (suc zero) = false
+  even? (suc (suc x)) = even? x
+```
+
+This general technique of giving some explicit answers for specific inputs, and
+recursing after refining inputs to simpler values is known as
+*induction.* **Induction is the fundamental mathematical technique.** Induction
+is the workhorse of all mathematics. Which makes sense. If you need to make some
+argument about an infinite number of things, you can neither physically nor
+theoretically analyze each and every possible case. You instead must give a few
+(usually very simple) answers, and otherwise show how to reduce a complicated
+problem into a simpler one. This moves the burden of effort from the theorem
+prover (you) to whomever wants an answer, since they are the ones who become
+responsible for carrying out the repetitive task of reduction to simpler forms.
+However, this is not so bad, since the end-user is the one who wants the answer,
+and they necessarily have a particular, finite problem that they'd like to
+solve.
+
+Not being very creative, mathematicians often *define* the principle of
+induction as being a property of the natural numbers. They say all of
+mathematics comes from:
+
+1. *a base case*---that is, proving something in the case that $n=0$
+2. *an inductive case*---that is, showing something holds in the case of $n$
+   under the assumption that it holds under $n - 1$.
+
+However, the exact same technique can be used for any sort of
+recursively-defined type, such as lists, trees, graphs, matrices, etc. While
+perhaps you could shoe-horn these to fit into the natural numbers, it would be
+wasted effort in order to satisfy nothing but a silly definition.
+Notwithstanding, the terminology is good, and so we will sometimes refer to
+recursive steps as "induction" and non-recursive steps as "base cases."
+
+
+## Two Notions of Evenness
+
+We have now defined `isEven`, a function which determines where a given natural
+number is even. A related question is whether we can define a type for *only*
+the even numbers. That is, a type which contains 0, 2, 4, and so on, but not 1
+or 3 or any of the odd numbers.
+
+In a monkey-see-monkey-do fashion, we can define a new type called `Evenℕ` with
+a constructor for `zero`, but unlike `ℕ`, no `suc`. Instead, we will give a
+constructor called `suc-suc`, intending to be suggestive of taking two
+successors simultaneously:
+
+```agda
+  data Evenℕ : Set where
+    zero : Evenℕ
+    suc-suc : Evenℕ → Evenℕ
+```
+
+We can transform an `Evenℕ` into a `ℕ` by induction:
+
+```agda
+  toℕ : Evenℕ → ℕ
+  toℕ zero = zero
+  toℕ (suc-suc x) = suc (toℕ x)
+```
+
+This approach, however, feels slightly underwhelming. The attentive reader will
+recall that in a `data` type, the *meaning* of the constructors comes only from
+their types and the suggestive names we give them. A slight renaming of
+`suc-suc` to `suc` makes the definition of `Evenℕ` look very similar indeed to
+that of `ℕ`. In fact, the two types are completely equivalent, modulo the names
+we picked.
+
+As such, there is nothing stopping us from writing an incorrect (but not
+*obviously* wrong) version of the `toℕ` function. In fact, did you notice that
+the definition given above *was* wrong? Oops! Instead, the correct
+implementation should be this:
+
+```agda
+  correct-toℕ : Evenℕ → ℕ
+  correct-toℕ zero = zero
+  correct-toℕ (suc-suc x) = suc (suc (correct-toℕ x))
+```
+
+Rather than trying to construct a completely new type for the even naturals,
+perhaps we can instead look for a way to filter for only the naturals we'd like
+to include. A mathematician would look at this problem and immediately think to
+build a *subset*---that is, a restricted collection of the objects at study. In
+this particular case, we'd like to build a subset of the natural numbers,
+corresponding to the even numbers.
+
+The high-level construction here is we'd like to build `IsEven : ℕ → Set`,
+which, like you'd think, is a function that takes a natural and returns a type.
+The idea that we can compute types in this way is rare in programming languages,
+even those with strong type systems. The ability to do so is known as *dependent
+typing.*
+
+In order to use `IsEven` as a subset, it must return some sort of "usable" type
+when its argument is even, and an of "unusable" type otherwise. We can take this
+function idea literally if we'd please, given the existence of some usable and
+unusable types:
+
+```agda
+  module Sandbox-Usable where
+    postulate
+      Usable : Set
+      Unusable : Set
+
+    IsEven : ℕ → Set
+    IsEven zero = Usable
+    IsEven (suc zero) = Unusable
+    IsEven (suc (suc x)) = IsEven x
+```
+
+You will notice the definition of `IsEven` is identical to that of `isEven`,
+except that we replaced `Bool` with `Set`, `true` with `Usable`, and `false`
+with `Unusable`. Which, really, is what you would expect; `isEven` was already a
+function that computed whether a given number is even! While we could flesh this
+idea out in full by finding specific (non-postulated) types to use for `Usable`
+and `Unusable`, constructing subsets in this way isn't often fruitful. Though
+it occasionally comes in handy, and it's nice to know you can compute types
+directly in this way.
+
+Let's drop out of the `Sandbox-Usable` module, and try defining `IsEven` in a
+different way.
+
+The situation here is analogous to our first venture into typing judgments.
+While we realized we could get away working directly in typing judgments, things
+became much easier when we used a more principled structure---namely, the `data`
+type. Amazingly, here too we can use a `data` type to solve our problem. The
+trick is to add an *index* to our type. Let's begin just with the `data`
+declaration:
+
+```agda
+  data IsEven : ℕ → Set where  -- ! 1
+```
+
+Every type we have seen so far has been of the form `data X : Set`, but at
+[1](Ann) we have `ℕ → Set` on the right side of the colon. Reading this as a
+type declaration directly, it says that this type `IsEven` we're currently
+defining *is exactly* that function we were looking for earlier with type `ℕ →
+Set`. We `IsEven` an *indexed type*, and the `ℕ` to be its index.
+
+Every constructor of an indexed type must fully fill in every index. But to a
+first approximation, constructors of an indexed type are *statements* about the
+index. For example, it is an axiom that `zero` is an even number, which we can
+reflect directly as a constructor:
+
+```agda
+    zero-even : IsEven zero
+```
+
+Notice that this constructor is equivalent to the base case `isEven zero =
+true`. We would like to exclude odd numbers from `IsEven`, so we can ignore the
+`suc zero` case. Which brings us to the inductive case, where in `isEven` we
+peeled off two `suc`s and then recursed. In a very real way that we will make
+precise later, constructing this subset is the "opposite" of implementing the
+decision function. Thus, where we used to pull off two `suc`s and recurse, we'd
+now like to first recurse, and then *add* two `suc`s!
+
+```agda
+    suc-suc-even : {n : ℕ} → IsEven n → IsEven (suc (suc n))
+```
+
+Here we're saying, `suc-suc-even` takes a proof that `n : ℕ` is even, and
+transforms it into a proof that `suc (suc n))` is even. The result is an
+inductive way to show that a given number is even!
+
+This is a concept that is so fundamentally different from mainstream programming
+languages that it is prudent to spend some time here and work through several
+examples of what-the-hell-is-happening-here together. Let's begin by showing
+that `four` is even. Begin with the type and a hole:
+
+```agda
+  four-is-even⅋₀ : IsEven four
+  four-is-even⅋₀ = ?
+```
+
+Here's where things get cool. We can ask Agda to refine this hole via
+[Refine](AgdaCmd). Recall that refine asks Agda to fill in the hole with the
+only constructor that matches. Rather amazingly, the result of this invocation
+is:
+
+```agda
+  four-is-even⅋₁ : IsEven four
+  four-is-even⅋₁ = suc-suc-even {! !}
+```
+
+Even more impressive is that the new goal has type `IsEven two`---which is to
+say, we need to show that `two` is even in order to show that `four` is even.
+Thankfully we can ask Agda to do some more heavy lifting for us, and again
+request a [Refine](AgdaCmd):
+
+```agda
+  four-is-even⅋₂ : IsEven four
+  four-is-even⅋₂ = suc-suc-even (suc-suc-even {! !})
+```
+
+Our new hole has type `IsEven zero`, which again Agda will refine for us:
+
+```agda
+  four-is-even : IsEven four
+  four-is-even = suc-suc-even (suc-suc-even zero-even)
+```
+
+We have successfully proven that `four` is in fact even. Let's see what happens
+when we go down a less happy case. Can we prove that `three` is even?
+
+```agda
+  three-is-even⅋₀ : IsEven three
+  three-is-even⅋₀ = ?
+```
+
+Let's play the same refinement game, which results in:
+
+```agda
+  three-is-even : IsEven three
+  three-is-even = suc-suc-even {! !}
+```
+
+The new goal is `IsEven one`. If we try to refine again, Agda gives us an error:
+
+-- TODO(sandy): CLEAN THIS UP
+
+```info
+Object (fromList [("kind",String "IntroNotFound")])
+```
+
+What's (correctly) going wrong here is that Agda is trying to find a constructor
+for `IsEven (suc zero)`, but no such thing exists. We have `zero-even` for
+`IsEven zero`, and we have `suc-suc-even` for `IsEven (suc (suc n))`. But there
+is no such constructor when we have only one `suc`! Thus neither `zero-even` nor
+`suc-suc-even` will typecheck in our hole. Since these are the *only*
+constructors, and neither fits, it's fair to say that *nothing can fill this
+hole!* That is, `three-is-even` is *unimplementable,* which means it's
+impossible to construct an `IsEven n` whenever `n` isn't even!
+
+This is truly a miraculous result, and perhaps might give you a glimpse at why
+we can prove things about mathematics in Agda. The idea is to carefully
+construct types for which we can give values only when the desired property *is
+actually true.* But we will have much more to say about that later.
+
+
+Exercise
+
+:   Build an indexed type for `IsOdd`.
+
+
+Solution
+
+:   ```agda
+  data IsOdd : ℕ → Set where
+    one-odd : IsOdd one
+    suc-suc-odd : {n : ℕ} → IsOdd n → IsOdd (suc (suc n))
+    ```
+
+
+Exercise
+
+:   Write an inductive function `evenOdd : {n : ℕ} → IsEven n → IsOdd (suc n)`
+    which witnesses the fact that every even number is followed by an odd
+    number.
+
+
+Solution
+
+:   ```agda
+  evenOdd : {n : ℕ} → IsEven n → IsOdd (suc n)
+  evenOdd zero-even = one-odd
+  evenOdd (suc-suc-even x) = suc-suc-odd (evenOdd x)
+    ```
+
+
+## Constructing Evidence
+
+When we originally implemented `isEvent`, I mentioned that functions which
+return booleans are generally a bad habit in Agda. The reason is that you have
+done a bunch of computation in order to computer an answer, and then you end up
+throwing all that work away to say merely "yes" or "no." Instead of returning a
+`Bool`, we could instead return an `IsEven`, proving the number is indeed even!
+
+However, not all numbers are even, so we will first need some notion of failure.
+Enter the `Maybe` type, which is a container that contains exactly zero or one
+element of some type `A`.
+
+```agda
+  data Maybe (A : Set) : Set where
+    just : A → Maybe A
+    nothing : Maybe A
+```
+
+Here, `just` is the constructor for when the `Maybe` *does* contain an element,
+and `nothing` is for when it doesn't. `Maybe` is a good type for representing
+*partial functions*---those which don't always give back a result. Our desired
+improvement to `isEven` is one such function, since there are naturals in the
+input which do not have a corresponding value in the output.
+
+Our new function is called `evenEv`, to be suggestive of the fact that it
+returns *evidence* of the number's evenness. The first thing to study here is
+the type:
+
+```agda
+  evenEv⅋₀ : (n : ℕ) → Maybe (IsEven n)
+  evenEv⅋₀ = ?
+```
+
+The type here says "for some `n : ℕ`, I can maybe provide a proof that it is an
+even number." The implementation will look very reminiscent of `isEven`. First,
+we can do [MakeCase](AgdaCmd) a few times:
+
+```agda
+  evenEv⅋₁ : (n : ℕ) → Maybe (IsEven n)
+  evenEv⅋₁ zero = {! !}
+  evenEv⅋₁ (suc zero) = {! !}
+  evenEv⅋₁ (suc (suc n)) = {! !}
+```
+
+Then, everywhere we know there is definitely not an answer, we can fill in the
+hole with `nothing`:
+
+```agda
+  evenEv⅋₂ : (n : ℕ) → Maybe (IsEven n)
+  evenEv⅋₂ zero = {! !}
+  evenEv⅋₂ (suc zero) = nothing
+  evenEv⅋₂ (suc (suc n)) = {! !}
+```
+
+In the zero case, where we know there is an answer, we refine our hole with
+`just`:
+
+```agda
+  evenEv⅋₃ : (n : ℕ) → Maybe (IsEven n)
+  evenEv⅋₃ zero = just {! !}
+  evenEv⅋₃ (suc zero) = nothing
+  evenEv⅋₃ (suc (suc n)) = {! !}
+```
+
+but `just` what? The type `IsEven zero` of the goal tells us, but we can also
+elicit an answer from Agda via [Refine:](AgdaCmd):
+
+```agda
+  evenEv⅋₄ : (n : ℕ) → Maybe (IsEven n)
+  evenEv⅋₄ zero = just zero-even
+  evenEv⅋₄ (suc zero) = nothing
+  evenEv⅋₄ (suc (suc n)) = {! !}
+```
+
+Here, in `isEven`, we just recursed and we were done. However, that can't quite
+work here. The problem is that if we were to recurse, we'd get a result of type
+`Maybe (IsEven n)`, but we need a result of type `Maybe (IsEven (suc (suc n)))`.
+What needs to happen then is for us to recurse, *inspect the answer,* and then,
+if it's `just`, insert a `suc-suc-even` on the inside. It seems a little
+convoluted, but the types are always there to guide you if you ever lose the
+forest for the trees.
+
+Agda does allow us to pattern match on the result of a recursive call. This is
+known as a `with` abstraction, and the syntax is as follows:
+
+```agda
+  evenEv⅋₅ : (n : ℕ) → Maybe (IsEven n)
+  evenEv⅋₅ zero = just zero-even
+  evenEv⅋₅ (suc zero) = nothing
+  evenEv⅋₅ (suc (suc n)) with evenEv⅋₅ n  -- ! 1
+  ... | result = {! !}  -- ! 2
+```
+
+At [1](Ann), which you will note is on the *left* side of the equals sign, we
+add the word `with` and the expression we'd like to pattern match on. Here, it's
+`evenEv n`, which is the recursive call we'd like to make. At [2](Ann), we put
+three dots, a vertical bar, and a name for the resulting value of the call we
+made, and then the equals sign. The important thing to note here is that
+`result` is a binding that corresponds to the result of having called `evenEv
+n`. This seems like quite a lot of ceremony, but what's cool is that we can now
+run [MakeCase:result](AgdaCmd) in the hole to pattern match on `result`:
+
+```agda
+  evenEv⅋₆ : (n : ℕ) → Maybe (IsEven n)
+  evenEv⅋₆ zero = just zero-even
+  evenEv⅋₆ (suc zero) = nothing
+  evenEv⅋₆ (suc (suc n)) with evenEv⅋₆ n
+  ... | just x = {! !}
+  ... | nothing = {! !}
+```
+
+In the case that `result` is nothing, we know that our recursive call failed,
+and thus that $n - 2$ is not even. Therefore, we too should return `nothing`.
+Similarly for the `just` case:
+
+```agda
+  evenEv⅋₇ : (n : ℕ) → Maybe (IsEven n)
+  evenEv⅋₇ zero = just zero-even
+  evenEv⅋₇ (suc zero) = nothing
+  evenEv⅋₇ (suc (suc n)) with evenEv⅋₆ n
+  ... | just x = just {! !}
+  ... | nothing = nothing
+```
+
+We're close to the end. Now we know that `x : IsEven n` and our hole requires an
+`IsEven (suc (suc n))`. We can fill in the rest by hand, or invoke
+[Auto](AgdaCmd) to do it on our behalf.
+
+```agda
+  evenEv : (n : ℕ) → Maybe (IsEven n)
+  evenEv zero = just zero-even
+  evenEv (suc zero) = nothing
+  evenEv (suc (suc n)) with evenEv n
+  ... | just x = just (suc-suc-even x)
+  ... | nothing = nothing
+```
+
+
+## Dot Patterns
+
+
+```agda
+  test : {n : ℕ} → IsEven n → Bool
+  test {.zero} zero-even = {! !}
+  test {.(suc (suc _))} (suc-suc-even x) = {! !}
+```
+
+
+
+
+
+
+
+
+## Addition
+
+With the concept of induction firmly in our collective tool-belt, we are now
+ready to tackle a much more interesting function: addition over the naturals.
+Begin with the type, and bind the variables:
+
+```agda
+  _+⅋₁_ : ℕ → ℕ → ℕ
+  x +⅋₁ y  = ?
+```
+
+At first blush, it's not obvious how we might go about implementing this.
+Perhaps we could mess about at random and see comes out, but while such a thing
+might be fun, it is rarely productive. Instead, we can go at this with a more
+structured approach, seeing what happens if we throw induction at the problem.
+Doing induction requires something to do *induction* on, meaning we can choose
+either `x`, `y` or both simultaneously. In fact, all three cases will work, but,
+as a general rule, if you have no reason to pick any parameter in particular,
+choose the first one.
+
+In practice, doing induction means calling [MakeCase](AgdaCmd) on your chosen
+parameter, and then analyzing if a base case or an inductive case will help in
+each resulting equation. Usually, the values which are recursively-defined will
+naturally require recursion on their constituent parts. Let's now invoke
+[MakeCase:x](AgdaCmd):
+
+```agda
+  _+⅋₂_ : ℕ → ℕ → ℕ
+  zero +⅋₂ y = {! !}
+  suc x +⅋₂ y = {! !}
+```
+
+Immediately a base case is clear to us; adding zero to something doesn't change
+it. In fact, that's the *definition* of zero. Thus, we have:
+
+```agda
+  _+⅋₃_ : ℕ → ℕ → ℕ
+  zero +⅋₃ y = y
+  suc x +⅋₃ y = {! !}
+```
+
+The second case here clearly requires recursion, but it might not immediately be
+clear what that recursion should be. The answer is to squint and reinterpret
+`suc x` as $1 + x$, which allows us to write our left hand side as
+
+$$
+(1 + x) + y
+$$
+
+If we were to reshuffle the parentheses here, we get an $x + y$ term on its own,
+which is exactly what we need in order to do recursion. In symbols, this
+inductive case is thus written as:
+
+$$
+(1 + x) + y = 1 + (x + y)
+$$
+
+which translates back to Agda as our final definition of addition:
+
 
 ```agda
   _+_ : ℕ → ℕ → ℕ
   zero  + y = y
-  suc x + y = suc (x + y)  -- ! 1
+  suc x + y = suc (x + y)
 ```
 
-Convince yourself that `_+_` correctly implements addition before continuing.
+With a little thought, it's clear that this function really does implement
+addition. By induction, the first argument is either of the form `zero`, in
+which case it adds nothing to the result, or it is of the form `suc x`, in which
+case we assume `x + y` to properly implement addition, and we observe the fact
+that $(m + n) + p = m + (n + p)$. This is our first mathematical proof, although
+it is a rather "loose" one: argued out in words, rather than being *checked* by
+the computer. Nevertheless, it is a great achievement on our path towards
+mathematical fluency and finesse.
 
-There is a subtle point to be made here. Notice at [1](Ann) the right hand side
-is written as `suc (x + y)`; you might wonder if those parentheses are strictly
-necessary. In fact, they are. Without those parentheses, our equation turns into
-`suc x + y = suc x + y`, which you will notice has the exact express on both
-sides of the equals sign. While this statement is mathematically true, it is
-computationally worthless. Behind the scenes, Agda is silently rewriting the
-left hand sides of these equalities as the right hand sides whenever it comes
-across one. So a definition of the form `x = x` puts Agda into a loop, trying
-forever to make progress computationally. Fortunately, Agda is smart enough to
-identify this case, and will holler, complaining about "termination checking,"
-if you attempt to do it:
+To wrap things up, we will add a fixity declaration for `_+_` so that it behaves
+nicely as an infix operator. We must choose a direction for repeated additions
+to associate. In fact, it doesn't matter one way or another, and we used that
+fact in the inductive case of `_+_`. But, looking forwards, we realize that
+subtraction *must* be left-associative in order to get the right answer, and
+therefore it makes sense that addition have the same associativity. And, as a
+matter of convention, we will pick precedence 6 for this operator.
+
+```agda
+  infixl 6 _+_
+```
+
+
+## Termination Checking
+
+There is a subtle point to be made about our implementation of `_+_`, namely
+that the parentheses are extremely important. Our last line is written as `suc x
++ y = suc (x + y)`, but if you were to omit the parentheses, the last line
+becomes `suc x + y = suc x + y`. Such a statement is unequivocally *true*, but
+it *extraordinarily unhelpful.* Since both sides of the equals sign are
+syntactically identical, Agda has no ability to make computational progress by
+rewriting one side as the other. In fact, if such a thing were allowed, it would
+let you prove anything at all! The only caveat would be that if you tried to
+inspect the proof, your computer would fall into an infinite loop, rewriting the
+left side of the equation into the right, forever.
+
+Fortunately, Agda is smart enough to identify this case, and will holler,
+complaining about "termination checking," if you attempt to do it:
 
 ```error
-2-numbers.lagda.md:258,3-260,24
 Termination checking failed for the following functions:
   Sandbox-Naturals._+_
 Problematic calls:
   suc x + y
-    (at 2-numbers.lagda.md:260,21-22)
 ```
 
 By putting in the parentheses, `suc (x + y)` is now recursive, and, importantly,
 it is recursive on *structurally smaller* inputs than it was given. Since the
 recursive call must be smaller (in the sense of there is one fewer `suc` to
 worry about,) eventually this recursion must terminate, and thus Agda is happy.
-We can tie a little bow on `_+_` by giving a hint to Agda about how to parse it,
-saying it should nest to the left with precedence 5:
 
-```agda
-  infixl 5 _+_
-```
+
+## Semi-subtraction
 
 The natural numbers don't support subtraction, because we might try to take too
 much away and be forced to go negative, but there are no negative natural
