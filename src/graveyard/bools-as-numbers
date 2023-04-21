@@ -1,0 +1,96 @@
+## Booleans
+
+```agda
+module Sandbox-Bools where
+```
+
+```agda
+  data Bool : Set where
+    false : Bool
+    true  : Bool
+```
+
+This definition creates a new type, `Bool`, and two *constructors* of that type,
+`false` and `true`. It's important to note that all constructors of a type are
+considered *distinct*. That is to say, `false` and `true` are two separate
+things. All we have said about them thus far is that they exist, are both
+`Bool`s, and are not equal to one another. In fact, we have also said that
+*every* `Bool` is either `false` or `true` --- a direct consequence of the
+semantics of data type constructors.
+
+```agda
+  not : Bool → Bool
+  not false = true
+  not true  = false
+```
+
+```agda
+  _∨_ : Bool → Bool → Bool
+  false ∨ other = other
+  true  ∨ other = true
+```
+
+We can take the same approach to define the logical AND operation, which returns
+`true` if and only if both of its arguments are `true`. Mathematicians use the
+$\wedge$ symbol for this one, pronounced "wedge."
+
+```agda
+  _∧_ : Bool → Bool → Bool
+  false ∧ y = false
+  true  ∧ y = y
+```
+
+You are likely wondering why we're discussing booleans in a chapter about
+defining number systems. The answer is that booleans behave a lot like numbers,
+as we can show in a little test module.
+
+```agda
+  module Tests where
+```
+
+As a number system, the booleans have exactly two numbers, 0 and 1:
+
+```agda
+    0𝔹 : Bool
+    0𝔹 = false
+
+    1𝔹 : Bool
+    1𝔹 = true
+```
+
+and, given these definitions, OR behaves exactly like addition, while AND takes
+the place of multiplication:
+
+```agda
+    _+_ : Bool → Bool → Bool
+    _+_ = _∨_
+
+    _*_ : Bool → Bool → Bool
+    _*_ = _∧_
+```
+
+To illustrate this, we will pull in Agda's testing machinery from
+`Relation.Binary.PropositionalEquality`, and show that adding `0𝔹` doesn't
+change the result, nor does multiplying `1𝔹` change the result --- exactly the
+properties you'd expect to hold in a number system with only two values.
+
+```agda
+    open import Relation.Binary.PropositionalEquality
+
+    0+-is-id : (x : Bool) → 0𝔹 + x ≡ x  -- ! 1
+    0+-is-id x = refl
+
+    1*-is-id : (x : Bool) → 1𝔹 * x ≡ x  -- ! 2
+    1*-is-id x = refl
+```
+
+Take note of the line marked by [1](Ann), which we interpret as the mathematical
+statement:
+
+> for any `x : Bool`, it is the case that `0𝔹 + x` is equal to `x`
+
+[2](Ann) makes a similar claim about the relationship between `1𝔹` and
+multiplication. We will investigate how these strange-looking tests work in due
+time; for now, be content with the fact that the booleans form a number system,
+although admittedly, not a very interesting one.
+
