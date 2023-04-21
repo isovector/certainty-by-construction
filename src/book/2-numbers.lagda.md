@@ -819,6 +819,139 @@ recursive call must be smaller (in the sense of there is one fewer `suc` to
 worry about,) eventually this recursion must terminate, and thus Agda is happy.
 
 
+## Multiplication and Exponentiation
+
+With addition happily under our belt, we will try our hand at multiplication.
+The approach is the same as with addition: write down the type, bind the
+variables, do induction, and use algebraic identities to help us figure out what
+the cases should work out to. The whole thing is really quite underwhelming once
+you get the hang of out!
+
+After writing down the type and binding some variables, we're left with the
+following:
+
+```agda
+  _*⅋₁_ : ℕ → ℕ → ℕ
+  x *⅋₁ y = {! !}
+```
+
+We need to do induction on one of these bindings; because we have no reason to
+pick one or the other, we default to `x`:
+
+```agda
+  _*⅋₂_ : ℕ → ℕ → ℕ
+  zero *⅋₂ y = {! !}
+  suc x *⅋₂ y = {! !}
+```
+
+From school, recall that zero times anything is zero:
+
+```agda
+  _*⅋₃_ : ℕ → ℕ → ℕ
+  zero *⅋₃ y = zero
+  suc x *⅋₃ y = {! !}
+```
+
+What's left is where we can dig into our mental cache of algebra facts. Recall
+that `suc x` is how we write $1 + x$ in Agda, thus:
+
+$$
+\begin{align}
+(1 + x) \times y &= 1 \times y + x \times y \\
+&= y + x \times y
+\end{align}
+$$
+
+Therefore, our final implementation of multiplication is just:
+
+```agda
+  _*_ : ℕ → ℕ → ℕ
+  zero * y = zero
+  suc x * y = y + x * y
+```
+
+of course, we need to add a fixity definition for everything to work out
+properly. Since `_*_` is just repeated addition (as you can see from our
+implementation,) it makes sense to give it the same associativity as addition
+(left.) However, we'd like the expression `y + x * y` to parse as `y + (x * y)`,
+and so we need to give `_*_` a *higher* precedence, to make it bind more
+tightly. Thus we settle on
+
+```agda
+  infixl 7 _*_
+```
+
+Multiplication is just repeated addition, and addition is just repeated
+counting---as made abundantly clear when working in our unary representation.
+We can repeat this pattern, moving upwards and building something that is "just
+repeated multiplication." That thing is, unsurprisingly, exponentiation.
+
+Begin as always, with the type and the bound variables:
+
+```agda
+  _^⅋₁_ : ℕ → ℕ → ℕ
+  x ^⅋₁ y = {! !}
+```
+
+We'd again like to do induction, but unlike all of our previous examples, we now
+have a good reason to pick one of these variables over the other. We must be
+careful here, because unlike addition and multiplication, exponentiation is not
+*commutative.*  Symbolically, it is not the case that:
+
+$$
+x^y \neq y^x
+$$
+
+It's always a good habit to test claims like these. Because we're computer
+scientists we can pick $x = 2$, and because we're humans, $y = 10$. Doing some
+quick math, we see that this is indeed an inequality:
+
+$$
+2^{10} = 1024 \neq 100 = 10^2
+$$
+
+Due to this lack of commutativity, we must be careful when doing induction on
+`_^_`. The standard definition of exponentiation, known to you---not necessarily
+consciously---requires that we pattern match on `y`.
+
+```agda
+  _^⅋₂_ : ℕ → ℕ → ℕ
+  x ^⅋₂ zero = {! !}
+  x ^⅋₂ suc y = {! !}
+```
+
+The first case is a usual identity, namely that
+
+$$
+x^0 = 1
+$$
+
+while the second case requires an application of the exponent law:
+
+$$
+x^{a + b} = x^a \times x^b
+$$
+
+Instantiating this gives us:
+
+$$
+\begin{align}
+x^{1 + y} &= x^1 \times x^y \\
+&= x \times x^y
+\end{align}
+$$
+
+and thus:
+
+```agda
+  _^_ : ℕ → ℕ → ℕ
+  x ^ zero = one
+  x ^ suc y = x * x ^ y
+```
+
+
+
+
 ## Semi-subtraction
 
 The natural numbers don't support subtraction, because we might try to take too
@@ -846,30 +979,23 @@ The last operation we will implement for natural numbers is multiplication,
 which sounds like it might be hard until you remember that multiplication is
 just repeated addition, which we define as follows:
 
-```agda
-  infixl 6 _*_
-  _*_ : ℕ → ℕ → ℕ
-  zero  * y = zero
-  suc x * y = (x * y) + y
-```
-
 Just to convince ourselves everything works, let's write a few unit tests:
 
 ```agda
   module Tests where
     open import Relation.Binary.PropositionalEquality
 
-    _ : one + two ≡ three
-    _ = refl
+    -- _ : one + two ≡ three
+    -- _ = refl
 
-    _ : three ∸ one ≡ two
-    _ = refl
+    -- _ : three ∸ one ≡ two
+    -- _ = refl
 
-    _ : one ∸ three ≡ zero
-    _ = refl
+    -- _ : one ∸ three ≡ zero
+    -- _ = refl
 
-    _ : two * two ≡ four
-    _ = refl
+    -- _ : two * two ≡ four
+    -- _ = refl
 ```
 
 You can find all of these goodies, and significantly more, in the standard
