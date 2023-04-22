@@ -281,7 +281,7 @@ bind very loosely, that is to say, to have a low precedence. Furthermore, we do
 not want `_≡_` to associate at all, so we can use `infix` without a left or
 right suffix to prevent this behavior:
 
-```
+```agda
   infix 4 _≡_
 ```
 

@@ -245,7 +245,9 @@ proving that `M : Set` is a monoid, a function `A → M`, and then transforms a
 its importance. We begin as always with the type:
 
 ```agda
-open import 3-types using (BinTree; branch; empty)
+data BinTree (A : Set) : Set where
+  empty : BinTree A
+  branch : BinTree A → A → BinTree A → BinTree A
 
 module _ {A : Set} {M : Set} where
   open monoid (setoid M)
