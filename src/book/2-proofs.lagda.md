@@ -362,11 +362,172 @@ type of `0+x≡x` more literally---that is, as a function. Namely: a function
 which takes some `x` and gives you back a proof that *for that particular `x`*,
 it is the case that $0 + x = x$.
 
+Our examples thus far seem to indicate that `_≡_` can automatically show all of
+the equalities we'd like. But this has been a careful ruse on my part.
+Try as we might, however, Agda will refuse to type check the analogous equality
+`x+0≡x`:
+
+```illegal
+    x+0≡x : (x : ℕ) → x + zero ≡ x
+    x+0≡x _ = refl
+```
+
+```info
+x + zero != x of type ℕ
+when checking that the expression refl has type x + zero ≡ x
+```
+
+Inspecting the error message here is quite informative; Agda tells us that `x +
+zero` is not the same thing as `x`. This should be quite reminiscent of our
+investigations into stuck values in @sec:stuck, which it is. The problem in this
+case is that `x` is stuck and `_+_` is defined by induction on its first
+argument. Therefore, `_+_` is also stuck, and we are unable to make any progress
+on this equality until we can unstick `x`. Like always, the solution to
+stuckness is pattern matching:
+
+```agda
+    x+0≡x⅋₀ : (x : ℕ) → x + zero ≡ x
+    x+0≡x⅋₀ zero = {! !}
+    x+0≡x⅋₀ (suc x) = {! !}
+```
+
+Immediately, Agda gets unstuck, and tells us now the type of the first hole is
+`zero ≡ zero`; which is an easy thing to prove:
+
+```agda
+    x+0≡x⅋₁ : (x : ℕ) → x + zero ≡ x
+    x+0≡x⅋₁ zero = refl
+    x+0≡x⅋₁ (suc x) = {! !}
+```
+
+This second goal here is `suc (x + zero) ≡ suc x`, which has arisen from
+instantiating the original type at `suc x`. Thus we are trying to show `suc x +
+zero ≡ suc x`, which Agda has reduced by noticing the leftmost argument to `_+_`
+is a `suc` constructor.
+
+Looking closely, this goal is almost exactly the type of `x+0≡x` itself, albeit
+with a `suc` tacked onto either side. If we were to recurse, we could get a
+proof of `x + zero ≡ x`, which then seems plausible that we could massage into
+the right shape. Let's backtrack on our definition of `x+0≡x` for a moment in
+order to work out this problem of fitting a `suc` into a proof-shaped hole.
+
+
+## Congruence
+
+At first blush, we are trying to solve the following problem:
+
+```agda
+    postulate
+      _ : (x : ℕ)
+        → x + zero ≡ x
+        → suc (x + zero) ≡ suc x
+```
+
+which we read as "for any number `x : ℕ`, we can transform a proof of `x + zero
+≡ x` into a proof of `suc (x + zero) ≡ suc x`." While such a thing is perfectly
+reasonable, it seems to be setting the bar too low. Surely it's the case that we
+could show the more general solution:
+
+```agda
+      _ : {x y : ℕ}
+        → x ≡ y
+        → suc x ≡ suc y
+```
+
+
+which we informally ready as "if `x` and `y` are equal, then so too are `suc x`
+and `suc y`." Notice that while `x` was an *explicit* parameter to the previous
+formulation of this idea, we here have made it *implicit.* Since there is no
+arithmetic required, Agda is therefore able to unambiguously determine which two
+things we're trying to show are equal.
+
+Phrased this way, perhaps again our aims are too narrow. Recall that
+propositional equality means "these two values evaluate to identical forms,"
+which is to say that, at the end of the day, they are indistinguishable. And if
+two things are indistinguishable, then there must not be any way that we can
+distinguish between them, including making a function call. Therefore, we can
+make the much stronger claim that "if `x` and `y` are equal, then so too are `f
+x` and `f y` *for any function* `f`!"
+
+This is a property known as *congruence*, which we again shorten to `cong` due
+to the frequency with which we will use this technique in the field. The type of
+`cong` is rather involved, but most of the work involved is binding the
+relevant variables.
+
+```agda
+    cong⅋₀
+        : {A B : Set}
+        → {x y : A}
+        → (f : A → B)
+        → x ≡ y
+        → f x ≡ f y
+    cong⅋₀ f x≡y = ?
+```
+
+Proving `cong` is straightforward. We already have a proof that `x ≡ y`. If we
+pattern match on this value, Agda is smart enough to rewrite every `y` in the
+type as `x`. Thus, after a [MakeCase:x≡y](AgdaCmd):
+
+```agda
+    cong⅋₁
+        : {A B : Set}
+        → {x y : A}
+        → (f : A → B)
+        → x ≡ y
+        → f x ≡ f y
+    cong⅋₁ f refl = {! !}
+```
+
+our new goal has type `f x ≡ f y`, which is trivially a call to `refl`.
+
+```agda
+    cong
+        : {A B : Set}
+        → {x y : A}
+        → (f : A → B)
+        → x ≡ y
+        → f x ≡ f y
+    cong f refl = refl
+```
+
+You'll notice something cool has happened here. When we pattern match on a
+proof, Agda uses the result as evidence, which can help it get unstuck and make
+computational progress. This is an idea we will explore further in
+@sec:dot-patterns.
+
+For now, recall that we were looking for a means of completing the following
+proof:
+
+```agda
+    x+0≡x⅋₂ : (x : ℕ) → x + zero ≡ x
+    x+0≡x⅋₂ zero = refl
+    x+0≡x⅋₂ (suc x) = {! !}
+```
+
+Our new `cong` function fits nicely into this hole:
+
+```agda
+    x+0≡x⅋₃ : (x : ℕ) → x + zero ≡ x
+    x+0≡x⅋₃ zero = refl
+    x+0≡x⅋₃ (suc x) = cong suc {! !}
+```
+
+which [Auto](AgdaCmd) will now happily fill for us using recursion:
+
+```agda
+    x+0≡x : (x : ℕ) → x + zero ≡ x
+    x+0≡x zero = refl
+    x+0≡x (suc x) = cong suc (x+0≡x x)
+```
+
+Congruence is an excellent tool for doing induction in proofs. You can do
+induction as normal, but the resulting proof from the recursive step is usually
+not quite be what you need. Luckily, the solution is often just a `cong` away.
 
 
 
 
-
+---
 
 
 
