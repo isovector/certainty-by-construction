@@ -230,7 +230,7 @@ with a better proof later on if you deem necessary. In proofs as in life, done
 is better than perfect.
 
 
-## The Equality Type
+## The Equality Type {#sec:propeq}
 
 All of this is fine and dandy, but how do we go about actually building types
 corresponding to mathematical propositions? Usually the technique is to use an
