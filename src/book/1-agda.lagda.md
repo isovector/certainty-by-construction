@@ -329,8 +329,8 @@ As a first step, let's write the `not` function, which transforms `false` into
 immediately followed by a *definition* of the function:
 
 ```agda
-  not : Bool → Bool  -- ! 1
-  not = ?  -- ! 2
+  not⅋₀ : Bool → Bool  -- ! 1
+  not⅋₀ = ?  -- ! 2
 ```
 
 Line [1](Ann) should be read aloud as "`not` is a function that takes a `Bool`
@@ -418,9 +418,9 @@ function without any help from Agda; we'd like `false` to map to `true`, and
 vice versa:
 
 ```agda
-  not⅋⅋⅋ : Bool → Bool
-  not⅋⅋⅋ false = true
-  not⅋⅋⅋ true = false
+  not : Bool → Bool
+  not false = true
+  not true = false
 ```
 
 Congratulations, you've just written your first Agda function!
@@ -444,10 +444,10 @@ tests as follows[^equals-sign]:
 ```agda
   open import Relation.Binary.PropositionalEquality
 
-  _ : not⅋⅋⅋ false ≡ true
+  _ : not false ≡ true
   _ = refl
 
-  _ : not⅋⅋⅋ true ≡ false
+  _ : not true ≡ false
   _ = refl
 ```
 
@@ -457,7 +457,7 @@ that these are automatically-run unit tests. You can convince yourself of this
 by writing another test with an intentionally wrong result:
 
 ```illegal
-  _ : not⅋⅋⅋ true ≡ true
+  _ : not true ≡ true
   _ = refl
 ```
 
@@ -465,7 +465,7 @@ which results in an error message after running [Load](AgdaCmd):
 
 ```info
 false != true of type Bool
-when checking that the expression refl has type not⅋⅋⅋ true ≡ true
+when checking that the expression refl has type not true ≡ true
 ```
 
 This error is telling us that our unit test failed; that `not true` is actually

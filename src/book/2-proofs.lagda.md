@@ -302,7 +302,7 @@ do, without any further machinery.
 ```agda
   module Sandbox-Playground where
     open Naturals
-      using (one; two; three; four; _+_; _*_)
+      using (one; two; three; four; _+_; _*_; _^_)
 ```
 
 It's no surprise that Agda can determine the equality of two syntactically
@@ -542,26 +542,394 @@ familiar with these idioms, we can give new our existing proofs:
     +-identityʳ = x+0≡x
 ```
 
-The superscript `l` and `r` here are input as
+The superscript `l` and `r` here are input as `\^l` and `\^r`, respectively. The
+attentive reader might question why exactly we need `+-identityˡ`, since it's
+fully-normalized definition is just `refl`, which is to say that it's something
+Agda can work out for itself without explicitly using `+-identityˡ`. While that
+is true, it is an *implementation detail.* If we were to not expose
+`+-identityˡ`, the user of our proof library would be required to understand for
+themselves exactly how addition is computed, which can be an onerous mental
+burden. Instead, we content ourselves with exposing "trivial" proofs like
+`+-identityˡ` with the understanding that it is the *name* of this proof that is
+important, more so than its contents. Throughout your exposure to the Agda
+standard library, you will find many such-named functions, and the convention
+can help you find the lemmas you need without needing to dig deeply into the
+implementation of the mathematical object at study.
+
+In addition to addition, multiplication also enjoys both left and right
+identities. A good exercise is to find and prove both.
 
 
+Exercise
+
+:   Find and prove a right identity for `_*_`:
 
 
----
+Solution
+
+:     ```agda
+    *-identityʳ : (x : ℕ) → x * one ≡ x
+    *-identityʳ zero = refl
+    *-identityʳ (suc x) = cong suc (*-identityʳ x)
+      ```
 
 
+Exercise
+
+:   Find and prove a left identity for `_*_`:
 
 
+Solution
+
+:     ```agda
+    *-identityˡ : (x : ℕ) → one * x ≡ x
+    *-identityˡ zero = refl
+    *-identityˡ (suc x) = cong suc (+-identityʳ x)
+      ```
+
+Exercise
+
+:   Exponentiation doesn't have notions of both left and right identities, but
+    has instead only one of the two. Determine which, and prove it is an
+    identity element.
 
 
-We're merely saying we can build a list, but saying nothing about it. As humans
-we might imagine such a list would have length one, and contain the given
-element, as in `f1`:
+Solution
+
+:     ```agda
+    ^-identityʳ : (x : ℕ) → x ^ one ≡ x
+    ^-identityʳ zero = refl
+    ^-identityʳ (suc x) = cong suc (*-identityʳ x)
+      ```
+
+
+## Symmetry and Involutivity
+
+Given that we have just proven `one * x ≡ x`, how hard do you think it will be
+to prove `x ≡ one * x`? The obvious idea is to try simply to reuse our
+`*-identityˡ` proof, as in:
+
+```illegal
+    *-identityˡ′ : (x : ℕ) → x ≡ one * x
+    *-identityˡ′ = *-identityˡ
+```
+
+Unfortunately, Agda is unhappy with this definition, and it complains:
+
+```info
+x + zero * x != x of type ℕ
+```
+
+This approach clearly isn't going to work. Instead, we might consider just
+writing the proof again, pattern-match and all. But we notice upon trying that
+the proof delegates out to `+-identityʳ`, which puts us in a recursive
+bind---surely we shouldn't have to rewrite the entire proof hierarchy just to
+switch what's on the left of the equals sign!
+
+But a propositional equality shows that the two things on either side of an
+equals sign are identical. That is, once we've pattern matched on `refl : x ≡
+x`, there is no longer a distinction between the left and right sides of the
+equals sign. We can exploit this fact to reverse every propositional equality
+proof via `sym`:
 
 ```agda
--- f1 : {A : Set} → A → List A
--- f1 a = a ∷ []
+    sym : {A : Set} → {x y : A} → x ≡ y → y ≡ x
+    sym refl = refl
 ```
+
+Rather underwhelming once you see it, isn't it? After we pattern match on
+`refl`, we learn that `x` and `y` are the same thing, so our goal becomes `x ≡
+x`, which we can solve with `refl`. And from there, Agda is happy to rewrite the
+left side as `y`, since it knows that's just a different name for `x` anyway.
+
+What's with the name `sym` anyway? It's short for *symmetry,* which is the idea
+that a relation doesn't distinguish between its left and right arguments. We
+shorten it to `sym` as always because of the sheer ubiquity with which this
+proof combinator gets used.
+
+With `sym`, we now have a satisfying, general-purpose tool for implementing
+`*-identityˡ′`:
+
+```agda
+    *-identityˡ′ : (x : ℕ) → x ≡ one * x
+    *-identityˡ′ x = sym (*-identityˡ x)
+```
+
+Because `sym` swaps which of its arguments is on the left and which is on the
+right, we should expect that applying `sym` twice should get us back to where we
+started. Is this so? We could try to ponder the question deeply, but instead we
+remember that we're now capable of doing computer-aided mathematics, and the
+more interesting question is whether we can prove it. And in fact we can! The
+hardest part is laying down the type, which we'd like to work for any proof,
+regardless of the types involved. Thus we must bind `A : Set` to quantify over
+the type of the proof, and then we must bind `x : A` and `y : A` for the
+particular arguments on either side of the equals sign. Then we're ready to get
+started on the question proper, namely:
+
+```agda
+    sym-involutive
+        : {A : Set} → {x y : A}
+        → (p : x ≡ y)
+        → sym (sym p) ≡ p
+```
+
+The proof here is simple and satisfying, and is left as an exercise to the
+reader.
+
+
+Exercise
+
+:   Prove `sym-involutive`.
+
+
+Solution
+
+  :   ```agda
+    sym-involutive refl = refl
+      ```
+
+
+An involution is any operation that gets you back to where you started after two
+invocations. In other words, it's a self-canceling operation. For another
+example we've already run into, `not : Bool → Bool` is also involutive:
+
+```agda
+    import 1-agda
+    open 1-agda.Booleans
+
+    not-involutive : (x : Bool) → not (not x) ≡ x
+    not-involutive false = refl
+    not-involutive true = refl
+```
+
+Throughout this book, we will encounter more and more algebraic properties like
+involutivity, symmetry and identities. In fact, I would **strongly recommend**
+jotting them down somewhere to keep as a handy cheatsheet. The road to success
+as a fledgling mathematician is to remember what all of these things mean, and
+to look for examples of each whenever you are in a new domain. Discovering them
+allow you to reuse your entire existing vocabulary and understanding,
+transplanting those ideas into the new area, which means you can hit the ground
+running. Indeed, much to the surprise of traditionally-educated people,
+mathematics is much more about these sorts of properties than it ever was about
+numbers.
+
+
+## Transitivity
+
+Let's stop for a moment and take stock of what we've managed to accomplish thus
+far in our exploration of equality proofs. We began with reflexivity, which is
+being able to state equalities of the form:
+
+$$
+x = x
+$$
+
+While such a thing is of paramount important, it's fundamentally the least
+interesting thing we could possibly do with equality. In the previous section,
+we discussed symmetry, which allows us to transform a statement like:
+
+$$
+x = y
+$$
+
+into one "the other way around:"
+
+$$
+y = x
+$$
+
+Perhaps this is slightly more intriguing than reflexivity, but only by the
+slightest of margins. Blatant in its absence, however, is the ability to
+*combine* proofs. This is something you know, even if you don't know that you
+know it. For example, consider the following symbolic proof:
+
+$$
+\begin{align}
+(a + b) \times c &= a \times c + b \times c \\
+&= a \times c + c \times b \\
+&= c \times b + a \times c
+\end{align}
+$$
+
+The omission of the left-hand sides of the equalities on subsequent lines is a
+notional convenience, but we can explicitly elaborate it out:
+
+$$
+\begin{align}
+(a + b) \times c &= a \times c + b \times c \\
+a \times c + b \times c &= a \times c + c \times b \\
+a \times c + c \times b &= c \times b + a \times c
+\end{align}
+$$
+
+Note that the right side of each equality is identical to the left side of the
+equality on the next line. This is the sort of composition of proofs we'd like
+to be able to perform; namely, to glue several proofs "end to end," much like a
+chain of dominoes. This notion is called *transitivity,* and we can state it
+thus:
+
+```agda
+    trans
+      : {A : Set} {x y z : A}
+      → x ≡ y
+      → y ≡ z
+      → x ≡ z
+```
+
+In other words, `trans` takes a proof that `x ≡ y` and a proof that `y ≡ z`, and
+gives us back a proof that `x ≡ z`. To prove such a thing, we take a page out of
+the `sym` book, and pattern match on both proofs, allowing Agda to unify `z` and
+`y`, before subsequently unifying `y` and `x`:
+
+```agda
+    trans refl refl = refl
+```
+
+We can use transitivity to help us prove less-fundamental properties about
+things. For example, we might like to show $a ^ 1 = a + (b \times 0)$. This
+isn't too tricky to do with pen and paper:
+
+$$
+\begin{align}
+a^1 &= a \\
+&= a + 0 \\
+&= a + (b \times 0)
+\end{align}
+$$
+
+
+```agda
+    -- TODO(sandy): put these zeroes in the section on identities
+    *-zeroˡ : (x : ℕ) → zero * x ≡ zero
+    *-zeroˡ _ = refl
+
+    *-zeroʳ : (x : ℕ) → x * zero ≡ zero
+    *-zeroʳ zero = refl
+    *-zeroʳ (suc x) = *-zeroʳ x
+```
+
+Let's write this as a proposition:
+
+
+```agda
+    a^1≡a+b*0⅋₋₁ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
+    a^1≡a+b*0⅋₋₁ a b = ?
+```
+
+Of course, we can always prove something by doing the manual work of pattern
+matching on our inputs, but that approach is best avoided if at possible, as it
+usually leaves you deep in the weeds. Proof by pattern matching is much akin to
+programming in assembly---you can get the job done, but it requires paying
+attention to much more detail than we'd like. Instead, we can prove the above
+proposition out of reusable pieces that we've already developed. Because we'd
+like to glue together some existing proofs, we begin with a call to `trans`:
+
+```agda
+    a^1≡a+b*0⅋₀ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
+    a^1≡a+b*0⅋₀ a b
+      = trans ? ?
+```
+
+This call to `trans` shows up with a yellow background because we haven't yet
+given Agda enough information to infer all the necessary types. This is nothing
+to worry about, as our next step will sort everything out. We will follow our
+"pen and paper" proof above, where our first step was that $a^1 = a$, which we
+called `^-identityʳ a`:
+
+```agda
+    a^1≡a+b*0⅋₁ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
+    a^1≡a+b*0⅋₁ a b
+      = trans (^-identityʳ a) ?
+```
+
+Our goal now has the type `a ≡ a + b * zero`, which we'd like to simplify and
+implement in two steps. Thus, we use another call to `trans`, this time to
+assert the fact that $a = a + 0$. We don't have a proof of this directly, but we
+do have the opposite direction via `+-identityʳ a`. Symmetry can help us out:
+
+```agda
+    a^1≡a+b*0⅋₂ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
+    a^1≡a+b*0⅋₂ a b
+      = trans (^-identityʳ a)
+      ( trans (sym (+-identityʳ a))
+              ?
+      )
+```
+
+We are left with a goal with the type `a + zero ≡ a + b * zero`. While we know
+that `*-zeroʳ b` could show $b \times 0 = 0$ for us, and thus that `sym (*-zeroʳ
+b)` will give us $0 = b \times 0$ , we are left with the problem of getting this
+evidence into the right place. Whenever you have a proof for a subexpression,
+you should think `cong`:
+
+```agda
+    -- TODO(sandy): rewrite me with the targeting idea first, so we can avoid
+    -- the unsolved metas here
+    --
+    -- also put in a note about picking the spot first, for exactly this reason
+    a^1≡a+b*0⅋₃ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
+    a^1≡a+b*0⅋₃ a b
+      = trans (^-identityʳ a)
+      ( trans (sym (+-identityʳ a))
+              (cong ? (sym (*-zeroʳ b)))
+      )
+```
+
+This final hole, recall, moves the given proof to the desired place in the
+expression. Here we have `a + zero` and would like to replace it with `a + b *
+zero`, meaning we need to target the `zero` in our original expression.
+Therefore, we must give a function that *targets* the `zero`, leaving the
+remainder of the expression alone. We can introduce a function via a lambda:
+
+```agda
+    a^1≡a+b*0⅋₄ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
+    a^1≡a+b*0⅋₄ a b
+      = trans (^-identityʳ a)
+      ( trans (sym (+-identityʳ a))
+              (cong (λ φ → ?) (sym (*-zeroʳ b)))
+      )
+```
+
+The lambda here is input as `\Gl`, while the phi is $\Gf$. A useful trick for
+filling in the body of `cong`'s targeting function is to copy the expression you
+had before, and replace the bit you'd like to change with the function's input.
+Thus:
+
+```agda
+    a^1≡a+b*0 : (a b : ℕ) → a ^ one ≡ a + (b * zero)
+    a^1≡a+b*0 a b
+      = trans (^-identityʳ a)
+      ( trans (sym (+-identityʳ a))
+              (cong (λ φ → a + φ) (sym (*-zeroʳ b)))
+      )
+```
+
+Of course, we can rewrite `λ φ → a + φ` by "canceling" the `φ` on both sides,
+which gives us the slightly terser form `a +_`. This gives rise to an
+alternative implementation:
+
+```agda
+    a^1≡a+b*0′ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
+    a^1≡a+b*0′ a b
+      = trans (^-identityʳ a)
+      ( trans (sym (+-identityʳ a))
+              (cong (a +_) (sym (*-zeroʳ b)))
+      )
+```
+
+Throughout this book, we will use the second notation whenever the subexpression
+we'd like to target is easy to get to. If it is very nested, we will opt to use
+the explicit lambda instead. Using an explicit lambda always works, while we
+can't always get away using short form. Both forms are equivalent, and you may
+choose whichever you prefer in your own code. However, by virtue of this
+presentation being a book, we are limited by physical page widths, and thus will
+opt for the terser form whenever it will simplify the presentation.
+
+
+
+
+
+
 
 
 
