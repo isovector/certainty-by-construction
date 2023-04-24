@@ -925,12 +925,436 @@ choose whichever you prefer in your own code. However, by virtue of this
 presentation being a book, we are limited by physical page widths, and thus will
 opt for the terser form whenever it will simplify the presentation.
 
+Composing proofs directly via `trans` does indeed work, but it leaves a lot to
+be desired. Namely, the proof we wrote out "by hand" looks nothing like the pile
+of `trans` calls we ended up using to implement `a^1≡a+b*0`. Thankfully, Agda's
+syntax is sufficiently versatile that we can build a miniature *domain specific
+language* in order to get more natural looking proofs. We will explore this idea
+in the next section.
 
 
+## Mixfix Parsing
+
+As we saw in @sec:chapter1, we can define binary operators in Agda by sticking
+underscores on either side, like in `_+_`. You might be surprised to learn that
+these underscores are a much more general feature. The underscore corresponds to
+a syntactic hole, hinting to Agda's parser that the underscore is a reasonable
+place to allow an expression.
+
+To illustrate this idea we can make a *postfix* operator by prefixing our
+operator with an underscore, as in the factorial function:
+
+```agda
+    _! : ℕ → ℕ
+    zero ! = one
+    suc n ! = suc n * n !  -- ! 1
+```
+
+-- TODO(sandy): is this claim true?
+
+One important thing to note is that function application binds most tightly of
+all, thus the `suc n !` at [1](Ann) is parsed `(suc n) !`, rather than the
+more obvious seeming `suc (n !)`. Recall that by default, operators get
+precedence 20, which is what `_!` gets in this case. And since we defined `_*_`
+with precedence 7, [1](Ann) correctly parses as `suc n * (n !)`.
+
+Sometimes it's desirable to make *prefix* operators, where the symbol comes
+before the argument. While Agda parses regular functions as prefix operators,
+writing an explicit underscore on the end of an identifier means we can play
+with associativity. For example, while it's tedious to write `five` out of
+`suc`s:
+
+```agda
+    five⅋₀ : ℕ
+    five⅋₀ = suc (suc (suc (suc (suc zero))))
+```
+
+where each of these sets of parentheses is mandatory, we can instead embrace the
+nature of counting in unary and define a right-associative prefix "tick mark"
+(input as `\|`):
+
+```agda
+    ∣_ : ℕ → ℕ
+    ∣_ = suc
+
+    infixr 20 ∣_
+
+    five : ℕ
+    five = ∣ ∣ ∣ ∣ ∣ zero
+```
+
+The presence of `zero` here is unfortunate, but necessary. When nesting
+operators like this, we always need some sort of *terminal* in
+order to tell Agda we're done this expression. Therefore, we will never be able
+to write "true" tick marks which are merely to be counted. However, we can
+lessen the ugliness by introducing some different syntax for `zero`, as in:
+
+```agda
+    □ : ℕ
+    □ = zero
+
+    five⅋₁ : ℕ
+    five⅋₁ = ∣ ∣ ∣ ∣ ∣ □
+```
+
+The square `□` can be input as `\sq`. Whether or not this syntax is better than
+our previous attempt is in the eye of the beholder. Suffice it to say that we
+will always need some sort of terminal value when doing this style of
+associativity to build values.
+
+Mixfix parsing gets even more interesting, however. We can make *delimited
+operators* by enclosing an underscore with syntax on either side. For example,
+the mathematical notation for the floor function (integer part) is
+$\lfloor{x}\rfloor$, which we can replicate in Agda:
+
+```agda
+    postulate
+      ℝ : Set
+      π : ℝ
+      ⌊_⌋ : ℝ → ℕ
+
+    three′ : ℕ
+    three′ = ⌊ π ⌋
+```
+
+The floor bars are input via `\clL` and `\clR`, while `ℝ` is written as `\bR`
+and `π` is `\Gp`. We don't dare define the real numbers here, as they are a
+tricky construction and would distract from the point.
+
+Agda's profoundly flexible syntax means we are capable of defining many built-in
+language features for ourselves. For example, many ALGOL-style languages come
+with the so-called "ternary operator" which does `if..else` in an expression
+context. Of course, the word "ternary" means only "three-ary", and has nothing
+to do with conditional evaluation. Mixfix parsing means we can define true
+ternary operators, with whatever semantics we'd like. However, just to
+demonstrate the approach, we can define it here. Because both `?` and `:`
+(the traditional syntax of the "ternary operator") have special meaning in Agda,
+we will instead use `‽` (`\?!`) and `⦂` (`\z:`):
+
+```agda
+    _‽_⦂_ : {A : Set} → Bool → A → A → A
+    false ‽ t ⦂ f = f
+    true ‽ t ⦂ f = t
+
+    infixr 20 _‽_⦂_
+
+    _ : ℕ
+    _ = not true ‽ four ⦂ one
+```
+
+Alternatively, since Agda doesn't come with an `if..else..` construct either, we
+can also trivially define that:
+
+```agda
+    if_then_else_ : {A : Set} → Bool → A → A → A
+    if_then_else_ = _‽_⦂_
+
+    infixr 20 if_then_else_
+```
+
+which we can immediately use:
+
+```agda
+    _ : ℕ
+    _ = if not true then four else one
+```
+
+or nest with itself:
+
+```agda
+    _ : ℕ
+    _ = if not true then four
+        else if true then one
+        else zero
+```
+
+As another example, languages from the ML family come with a `case..of`
+expression, capable of doing pattern matching on the right-hand side of an
+equals sign (as opposed to Agda, where we can only do it on the left side!)
+However, it's easy to replicate this syntax for ourselves:
+
+```agda
+    case_of_ : {A B : Set} → A → (A → B) → B
+    case e of f = f e
+```
+
+This definition takes advantage of Agda's pattern-matching lambda, as in:
+
+```agda
+    _ : ℕ
+    _ = case not true of λ
+          { false → one
+          ; true → four
+          }
+```
+
+There is one small problem when doing mixfix parsing; unfortunately, we cannot
+put two non-underscore tokens beside one another. For example, it might be nice
+to make a boolean operator `_is equal to_`. A simple fix is to intersperse our
+tokens with hyphens, as in:
+
+```agda
+    _is-equal-to_ : {A : Set} → A → A → Set
+    x is-equal-to y = x ≡ y
+```
+
+which is nearly as good.
+
+As you can see, Agda's parser offers us a great deal of flexibility, and we can
+use this to great advantage when defining domain specific languages. Returning
+to our problem of making `trans`-style proofs easier to think about, we can
+explore how to use mixfix parsing to construct valid syntax more amenable to
+equational reasoning.
 
 
+## Equational Reasoning
 
+Recall, we'd like to develop some syntax amenable to doing "pen and paper" style
+proofs. That is, we'd like to write something in Agda equivalent to:
 
+$$
+\begin{align}
+(a + b) \times c &= a \times c + b \times c \\
+&= a \times c + c \times b \\
+&= c \times b + a \times c
+\end{align}
+$$
+
+The bits written in this syntax are equivalent to the `x` and `y` in the type `x
+≡ y`. They tell us *what* is equal, but not *why.* In other words, proofs
+written in the above style are missing *justification* as to *why exactly* we're
+allowed to say each step of the proof follows. In order to make room, we will
+use *Bird notation,* attaching justification to the equals sign:
+
+$$
+\begin{align}
+& (a + b) \times c \\
+& \quad = (\text{distributivity}) \\
+& a \times c + b \times c \\
+& \quad = (\text{commutativity of $\times$}) \\
+& a \times c + c \times b \\
+& \quad = (\text{commutativity of $+$}) \\
+& c \times b + a \times c
+\end{align}
+$$
+
+The construction of our domain specific language is a little finicky and deserve
+some thought. Let's go slowly, but start with a new module:
+
+```agda
+    module ≡-Reasoning where
+```
+
+The idea here is that we will make a series of right-associative syntax
+operators, in the style of our tick marks in the previous section. We will
+terminate the syntax using `refl`, that is, showing that we've already proven
+what we set out to. You'll often see a formal proof ended with a black square,
+called a *tombstone* marker. Since proofs already end with this piece of syntax,
+it's a great choice to terminate our right-associative chain of equalities.
+
+```agda
+      _∎ : {A : Set} → (x : A) → x ≡ x
+      _∎ x = refl
+
+      infix 3 _∎
+```
+
+The tombstone marker is input in Agda via `\qed`. Note that the `x` parameter
+here is unused in the definition, and exists only to point out exactly which on
+object we'd like to show reflexivity. This gives us a convenient ending piece,
+so let's now work backwards. The simplest piece of reasoning we can do is an
+equality that requires no justification. If we already have the proof we'd like,
+we can simply return it:
+
+```agda
+      _≡⟨⟩_ : {A : Set} → (x : A) → {y : A} → x ≡ y → x ≡ y
+      x ≡⟨⟩ p = p
+
+      infixr 2 _≡⟨⟩_
+```
+
+Again, `x` is unused in the definition, and exists only in the type. You might
+think this is a good opportunity for an implicit argument, but we'd actually
+*prefer* it to be visible. Recall that the justifications (that is, the proofs)
+fully specify which two things we are stating are equal. The `x` arguments we've
+written in `_≡⟨⟩_` and `_∎` are unnecessary for the implementations, but act as
+a guide for the *human* writing the thing in the first place! These `x`s mark
+the current state of the computation. Let's illustrate the point:
+
+```agda
+      _ : four ≡ suc (one + two)
+      _ =
+        four
+          ≡⟨⟩
+        two + two
+          ≡⟨⟩
+        suc one + two
+          ≡⟨⟩
+        suc (one + two)
+          ∎
+```
+
+In this case, since everything is fully concrete, Agda can just work out the
+fact that each of these expressions is propositionally equal to one another,
+which is why we need no justifications. But you'll notice where once we had `x`
+parameters, we now have a human-legible argument about which things are equal!
+It can be helpful to insert explicit parentheses here to help us parse exactly
+what's going on:
+
+```agda
+      _ : four ≡ suc (one + two)
+      _ =
+        four ≡⟨⟩
+          ( two + two ≡⟨⟩
+            ( suc one + two ≡⟨⟩
+              ( suc (one + two) ∎ )))
+```
+
+Replacing `_∎` with its definition, we get:
+
+```agda
+      _ : four ≡ suc (one + two)
+      _ =
+        four ≡⟨⟩
+          ( two + two ≡⟨⟩
+            ( suc one + two ≡⟨⟩ refl ))
+```
+
+We can then replace the innermost `_≡⟨⟩_` with *its* definition, which you will
+remember is to just return its second argument:
+
+```agda
+      _ : four ≡ suc (one + two)
+      _ =
+        four ≡⟨⟩
+          ( two + two ≡⟨⟩ refl )
+```
+
+This process continues on and one until all of the syntax is eliminated, and we
+are left with just:
+
+```agda
+      _ : four ≡ suc (one + two)
+      _ = refl
+```
+
+While it seems like our notation merely ignores the equal terms, this isn't
+actually true. Recall that the elided `x`s actually do appear in the type
+signatures, which means these values *are* used to typecheck the whole thing.
+That is, if we make an invalid step, Agda will tell us. For example, perhaps we
+make an error in our proof, as in:
+
+```illegal
+      _ : four ≡ suc (one + two)
+      _ =
+        four
+          ≡⟨⟩
+        one + two  -- ! 1
+          ≡⟨⟩
+        suc one + two
+          ∎
+```
+
+At [1](Ann) we accidentally dropped a `suc`. But, Agda is smart enough to catch
+the mistake:
+
+```info
+zero != suc zero of type ℕ
+when checking that the inferred type of an application
+  one + two ≡ _y_379
+matches the expected type
+  four ≡ suc (one + two)
+```
+
+While all of this syntax construction itself is rather clever, there is nothing
+magical going on here. It's all just smoke and mirrors abusing Agda's mixfix
+parsing and typechecker in order to get nice notation for what we want.
+
+Of course, `_≡⟨⟩_` is no good for providing justifications. Instead, we will use
+the same idea, but this time leave a hole for the justification.
+
+```agda
+      _≡⟨_⟩_
+          : {A : Set}
+          → (x : A)
+          → {y z : A}
+          → x ≡ y
+          → y ≡ z
+          → x ≡ z
+      _≡⟨_⟩_ x = trans
+
+      infixr 2 _≡⟨_⟩_
+```
+
+`_≡⟨_⟩_` works exactly in the same way as `_≡⟨⟩_`, except that it takes a
+proof justification as its middle argument, and glues it together with its last
+argument as per `trans`. We have one piece of syntax left to introduce, and will
+then play with this machinery in full.
+
+Finally, by way of symmetry and to top things off, we will add a starting
+keyword. This is not strictly necessary, but makes for nice introductory syntax
+to let the reader know that an equational reasoning proof is coming up:
+
+```agda
+      begin_ : {A : Set} → {x y : A} → x ≡ y → x ≡ y
+      begin_ x=y = x=y
+
+      infix 1 begin_
+```
+
+The `begin_` function does nothing, it merely returns the proof given. And since
+its precedence is lower than any of our other `≡-Reasoning` pieces, it binds
+after any of our other syntax, ensuring the proof is already complete by the
+time we get here. The purpose really is just for decoration.
+
+Let's now put all of our hard work to good use. Recall the proof that originally
+set us off on a hunt for better syntax:
+
+```agda
+    a^1≡a+b*0′⅋₁ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
+    a^1≡a+b*0′⅋₁ a b
+      = trans (^-identityʳ a)
+      ( trans (sym (+-identityʳ a))
+              (cong (a +_) (sym (*-zeroʳ b)))
+      )
+```
+
+We can now rewrite this proof in the equational reasoning style:
+
+```agda
+    a^1≡a+b*0′⅋₂ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
+    a^1≡a+b*0′⅋₂ a b =
+      begin
+        a ^ one
+      ≡⟨ ^-identityʳ a ⟩
+        a
+      ≡⟨ sym (+-identityʳ a) ⟩
+        a + zero
+      ≡⟨ cong (a +_) (sym (*-zeroʳ b)) ⟩
+        a + b * zero
+      ∎
+      where open ≡-Reasoning
+```
+
+which, for the purposes of aesthetics, we will format in this book as the
+following whenever we have available line-width:
+
+```agda
+    a^1≡a+b*0′⅋₃ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
+    a^1≡a+b*0′⅋₃ a b = begin
+      a ^ one       ≡⟨ ^-identityʳ a ⟩
+      a             ≡⟨ sym (+-identityʳ a) ⟩
+      a + zero      ≡⟨ cong (a +_) (sym (*-zeroʳ b)) ⟩
+      a + b * zero  ∎
+      where open ≡-Reasoning
+```
+
+As you can see, this is a marked improvement over our original definition. The
+original implementation emphasized the proof justification---which are important
+to the computer---while this one emphasizes the actual steps taken---which is
+much more important to the human. Whenever you find yourself doing doing
+non-ergonomic things for the sake of the computer, it's time to take a step back
+as we have done here. This is an important lesson, inside Agda and out.
 
 
 ## rest
@@ -1240,7 +1664,7 @@ middle. An equational reasoning block is started via `begin`, ended with the
 "tombstone" character `∎`, and inside allows us to separate values via the
 `_≡⟨⟩_` operator. If you look closely, you'll notice two separators here:
 `_≡⟨⟩_` which helps the reader follow Agda's computational rewriting (but does
-nothing to help Agda.) The other separator is `_≡⟨_⟩_` as used at [1](Ann),
+nothing to help Agda.) The other separator is `_≡⟨_⟩_` as used at  1 (Ann),
 which allows us to put a *justification* for the rewrite in between the
 brackets. This form is necessary whenever you'd like to invoke a lemma to help
 prove the goal.
