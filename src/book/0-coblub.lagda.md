@@ -162,7 +162,7 @@ program is wrong. While it can be tempting to blame the tool, the real fault is
 in the workmanship.
 
 
-# A World Without Execution?
+## A World Without Execution?
 
 It's worth stopping and asking ourselves in what way an unexecutable programming
 language might be useful. If the end result of a coding endeavor is the eventual
