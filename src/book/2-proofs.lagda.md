@@ -525,6 +525,26 @@ induction as normal, but the resulting proof from the recursive step is usually
 not quite be what you need. Luckily, the solution is often just a `cong` away.
 
 
+## Identities
+
+A common idiom in Agda's standard library are the `-identityˡ` and `-identityʳ`
+functions, which are properties stating a binary operation has left- and right-
+identities, respectively. An *identity* is any value which doesn't change the
+result. As we have just now shown, 0 is both a right and left identity for
+addition, because $x + 0 = x$ and $0 + x = x$. In order to get start getting
+familiar with these idioms, we can give new our existing proofs:
+
+```agda
+    +-identityˡ : (x : ℕ) → zero + x ≡ x
+    +-identityˡ = 0+x≡x
+
+    +-identityʳ : (x : ℕ) → x + zero ≡ x
+    +-identityʳ = x+0≡x
+```
+
+The superscript `l` and `r` here are input as
+
+
 
 
 ---
@@ -554,120 +574,12 @@ proof machinery from Agda's standard library.
 module 2-proofs where
 
 open import Relation.Binary.PropositionalEquality
+
 ```
 
-In earlier chapters, we referred to this `PropositionalEquality` module as being
-Agda's support for unit testing. This was a little white lie, that we are now
-ready to come clean regarding. In fact, `PropositionalEquality` is the standard
-module for doing proofs about Agda's computation model --- of which unit tests
-are a very special case. For the remainder of this chapter, we will prove some
-facts about the number systems we built in the last.
-
-
-## Facts About Booleans
-
-To wet our whistle, we will begin by proving some facts about booleans. Because
-booleans exist in a very limited universe (there are only two of them,) the
-proofs tend to be rather stupid. Nothing clever is necessary to prove facts
-about booleans, we can simply enumerate every possible case and show that the
-desired property holds. Of course, this strategy won't take us very far in
-bigger types, but we will find it informative for the time being.
-
-Rather than working directly over the booleans we defined in the last chapter,
-we can instead use `Data.Bool` which is definition-for-definition compatable.
-
 ```agda
-module Bool-Properties where
-  open import Data.Bool
-```
-
-We began our exploration of booleans by defining the `not : Bool → Bool`
-function which swaps between `true` and `false`. One fact we might want to show
-about `not` is that it is it's own inverse, that is, applying `not` twice is the
-same as not having applied it at all. This is a mathematical property known as
-*involutivity,* and thus, we would like to show that `not` is involutive.
-
-In words, the statement we'd like to prove is:
-
-> For any boolean $x$, it is the case that `not (not x)` is equal to `x`.
-
-We can encode this in Agda by defining `not-involutive`:
-
-```agda
-  not-involutive
-      : (x : Bool)
-      → not (not x) ≡ x
-```
-
-which says exactly the same thing. For any `x : Bool`, we can produce `not (not
-x) ≡ x`, which is to say, a proof that `not (not x)` is equal to `x`. The `_≡_`
-type comes from the `PropositionalEquality` module, and the majority of this
-chapter will be our exploration in what it is and how it works.
-
-How can we prove our desired fact? One way would be to give a proof that this is
-the case when `x = true` and when `x = false`. Since there are no other options
-for `x`, if we can prove both cases, the proposition must hold in general.
-
-Proofs in Agda are no different than functions; therefore, we can define
-`not-involutive` as a function that takes a single parameter, and subsequently
-pattern match that parameter into its two cases:
-
-```agda
-  not-involutive false = refl
-  not-involutive true  = refl
-```
-
-On the right hand side of these two clauses, we have given `refl`, which is
-Agda's way of saying "it is obvious that the proof holds." Of course, it must be
-obvious to *Agda* that the proof holds. The question is, why is Agda obviously
-convinced in both of these cases?
-
-Recall the definition of `not`:
-
-```agda
-  not⅋ : Bool → Bool
-  not⅋ false = true
-  not⅋ true = false
-```
-
-We are originally trying to show `not (not x) ≡ x`, for some `x`. In
-`not-involutive`, when we subsequently pattern match on `x`, we learn what `x`
-is. In the first case, we learn `x = false`, and therefore, the statement we're
-trying to prove becomes `not (not false) ≡ false`. But Agda knows how to compute
-`not false`, which it then reduces to the claim `not true ≡ false`. Again, Agda
-knows how to compute `not true`, so it reduces further to `false ≡ false`. Such
-a statement is obviously true, and so Agda is happy when we say the proof is
-`refl`. The exact same argument holds when `x = true`.
-
-The word `refl` is short for *reflexivity,* which is the mathematical word for
-the idea that something is equal to itself. This is a rather indisputable fact,
-to say otherwise would be to throw out the meaning of equality altogether. The
-type of `refl` looks like this:
-
-```agda
-  postulate
-    refl⅋ : {A : Set} {a : A} → a ≡ a
-```
-
-which is to say, for any value `x` of any type `A`, `x` is equal to itself. When
-we were required to show `false ≡ false`, Agda inferred that we meant `A = Bool`
-and `x = false`.
-
-Looking back at the definition of `not-involutive`, it appears that the
-right-hand side doesn't depend at all on the value of the argument. Could we
-have instead gotten away by writing `not-involutive x = refl`? Unfortunately
-not. We require the pattern match to get Agda "unstuck" and able to reduce the
-definition of `not`.
-
-One common idiom in Agda's standard library are the `-identityˡ` and
-`-identityʳ` functions, which are properties stating a binary operation has
-left- and right- identities, respectively. An *identity* is any value which
-doesn't change the result. As shown in the previous chapter, `false` is an
-identity for logical OR, but we can prove this fact more formally now. Behold:
-
-```agda
-  ∨-identityˡ : (x : Bool) → false ∨ x ≡ x
-  ∨-identityˡ x = refl
+  -- ∨-identityˡ : (x : Bool) → false ∨ x ≡ x
+  -- ∨-identityˡ x = refl
 ```
 
 What's going on here? How can the right hand side be `refl` without having
@@ -676,9 +588,9 @@ exactly this? The answer comes from the definition of `_∨_`, which as you will
 recall is:
 
 ```agda
-  _∨⅋_ : Bool → Bool → Bool
-  false ∨⅋ other = other
-  true  ∨⅋ other = true
+  -- _∨⅋_ : Bool → Bool → Bool
+  -- false ∨⅋ other = other
+  -- true  ∨⅋ other = true
 ```
 
 The first equation here states that anything of the form `false ∨ other` gets
@@ -689,9 +601,9 @@ definition of `_∨_` doesn't need inspect it in order to reduce.
 Contrast `∨-identityˡ` to its mirror image:
 
 ```agda
-  ∨-identityʳ : (x : Bool) → x ∨ false ≡ x
-  ∨-identityʳ false = refl
-  ∨-identityʳ true  = refl
+  -- ∨-identityʳ : (x : Bool) → x ∨ false ≡ x
+  -- ∨-identityʳ false = refl
+  -- ∨-identityʳ true  = refl
 ```
 
 Here we are required to pattern match on `x` because `_∨_` pattern matches on
@@ -713,8 +625,8 @@ Exercise
 Solution
 
 :   ```agda
-  ∧-identityˡ : (x : Bool) → true ∧ x ≡ x
-  ∧-identityˡ x = refl
+  -- ∧-identityˡ : (x : Bool) → true ∧ x ≡ x
+  -- ∧-identityˡ x = refl
     ```
 
 
@@ -726,9 +638,9 @@ Exercise
 Solution
 
 :   ```agda
-  ∧-identityʳ : (x : Bool) → x ∧ true ≡ x
-  ∧-identityʳ false = refl
-  ∧-identityʳ true  = refl
+  -- ∧-identityʳ : (x : Bool) → x ∧ true ≡ x
+  -- ∧-identityʳ false = refl
+  -- ∧-identityʳ true  = refl
     ```
 
 
@@ -758,9 +670,9 @@ associativity is it means the two possible parses are equal. As it happens,
 `_∨_` is associative, as we can show:
 
 ```agda
-  ∨-assoc : (a b c : Bool) → (a ∨ b) ∨ c ≡ a ∨ (b ∨ c)
-  ∨-assoc false b c = refl
-  ∨-assoc true  b c = refl
+  -- ∨-assoc : (a b c : Bool) → (a ∨ b) ∨ c ≡ a ∨ (b ∨ c)
+  -- ∨-assoc false b c = refl
+  -- ∨-assoc true  b c = refl
 ```
 
 
@@ -772,9 +684,9 @@ Exercise
 Solution
 
 :   ```agda
-  ∧-assoc : (a b c : Bool) → (a ∧ b) ∧ c ≡ a ∧ (b ∧ c)
-  ∧-assoc false b c = refl
-  ∧-assoc true  b c = refl
+  -- ∧-assoc : (a b c : Bool) → (a ∧ b) ∧ c ≡ a ∧ (b ∧ c)
+  -- ∧-assoc false b c = refl
+  -- ∧-assoc true  b c = refl
     ```
 
 We have two final properties we'd like to prove about our binary number system,
@@ -791,11 +703,11 @@ without changing the result. We can prove this about `_∨_` by pattern matching
 on every argument:
 
 ```agda
-  ∨-comm : (x y : Bool) → x ∨ y ≡ y ∨ x
-  ∨-comm false false = refl
-  ∨-comm false true  = refl
-  ∨-comm true  false = refl
-  ∨-comm true  true  = refl
+  -- ∨-comm : (x y : Bool) → x ∨ y ≡ y ∨ x
+  -- ∨-comm false false = refl
+  -- ∨-comm false true  = refl
+  -- ∨-comm true  false = refl
+  -- ∨-comm true  true  = refl
 ```
 
 While such a thing works, this is clearly a very tedious proof. The amount of
@@ -806,20 +718,20 @@ and in this case, we're looking for the `case-bash!` tactic. Using `case-bash!`,
 we can rewrite `∨-comm` as:
 
 ```agda
-  ∨-comm⅋ : (x y : Bool) → x ∨ y ≡ y ∨ x
-  ∨-comm⅋ = case-bash!
-    -- TODO(sandy): find the right module
-    where open import case-bash
+  -- ∨-comm⅋ : (x y : Bool) → x ∨ y ≡ y ∨ x
+  -- ∨-comm⅋ = case-bash!
+  --   -- TODO(sandy): find the right module
+  --   where open import case-bash
 ```
 
 Similarly, we can case bash our way through `∧-comm`, though if we'd like, we
 can import `case-bash` into the global scope:
 
 ```agda
-  open import case-bash
+  -- open import case-bash
 
-  ∧-comm : (x y : Bool) → x ∧ y ≡ y ∧ x
-  ∧-comm = case-bash!
+  -- ∧-comm : (x y : Bool) → x ∧ y ≡ y ∧ x
+  -- ∧-comm = case-bash!
 ```
 
 We've now had some experience proving theorems about our code. Of course, the
