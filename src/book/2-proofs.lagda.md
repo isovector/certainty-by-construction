@@ -1357,337 +1357,240 @@ non-ergonomic things for the sake of the computer, it's time to take a step back
 as we have done here. This is an important lesson, inside Agda and out.
 
 
-## rest
+## Ergonomics, Associativity and Commutativity
 
-We begin by starting a new module for the chapter, and importing the necessary
-proof machinery from Agda's standard library.
+If you tried writing out the new definition of `a^1≡a+b*0′⅋₃` by hand, you
+likely didn't have fun. It's a huge amount of keystrokes in order to produce the
+above code artifact. Thankfully, Agda's interactive support can help us write
+out the mechanical parts of the above proof, allowing us to focus more on the
+navigation than the driving.
 
-```agda
-module 2-proofs where
+The first thing you'll want to do is to write a macro or snippet for your editor
+of choice. We're going to be typing out a lot of the following two things, and
+it will save you an innumerable amount of time to write it down once and have
+your text editor do it evermore. The two snippets you'll need are:
 
-open import Relation.Binary.PropositionalEquality
-
+```snippet
+  ≡⟨ ? ⟩
+    ?
 ```
 
-```agda
-  -- ∨-identityˡ : (x : Bool) → false ∨ x ≡ x
-  -- ∨-identityˡ x = refl
+and
+
+```snippet
+  begin
+    ?
+  ≡⟨ ? ⟩
+    ?
+  ∎
+  where open ≡-Reasoning
 ```
 
-What's going on here? How can the right hand side be `refl` without having
-pattern matched on the left? Didn't we just have a length discussion about
-exactly this? The answer comes from the definition of `_∨_`, which as you will
-recall is:
-
-```agda
-  -- _∨⅋_ : Bool → Bool → Bool
-  -- false ∨⅋ other = other
-  -- true  ∨⅋ other = true
-```
-
-The first equation here states that anything of the form `false ∨ other` gets
-immediately rewritten to `other`, which is exactly what's happening in
-`∨-identityʳ`. Agda doesn't need us to pattern match on `x` because the
-definition of `_∨_` doesn't need inspect it in order to reduce.
-
-Contrast `∨-identityˡ` to its mirror image:
-
-```agda
-  -- ∨-identityʳ : (x : Bool) → x ∨ false ≡ x
-  -- ∨-identityʳ false = refl
-  -- ∨-identityʳ true  = refl
-```
-
-Here we are required to pattern match on `x` because `_∨_` pattern matches on
-its first argument, and thus this is the only way to get Agda unstuck. This
-kind of asymmetry is intrinsic to Agda's evaluation model, and thus we must be
-conscious of it. As a general rule, anything you pattern match on in the
-implementation is something you'll need to pattern match on in a proof. As you
-become more proficient in Agda, you will start to get an eye for how to write
-definitions that are optimized for ease-of-proof. For any particular function,
-many definitions are possible, but they will all compute the answer differently,
-and thus will have impact upon how we go about proving things.
-
-
-Exercise
-
-: State and prove `∧-identityˡ`.
-
-
-Solution
-
-:   ```agda
-  -- ∧-identityˡ : (x : Bool) → true ∧ x ≡ x
-  -- ∧-identityˡ x = refl
-    ```
-
-
-Exercise
-
-: State and prove `∧-identityʳ`.
-
-
-Solution
-
-:   ```agda
-  -- ∧-identityʳ : (x : Bool) → x ∧ true ≡ x
-  -- ∧-identityʳ false = refl
-  -- ∧-identityʳ true  = refl
-    ```
-
-
-Identities are especially nice properties to find when designing mathematical
-objects; they act like the number 1 does when multiplying (thus the name
-"identity".) Identities are useful "placeholders" in algorithms when you need a
-default value, but don't have an obvious choice. We will discuss the important
-roles of identities further in @sec:objects.
-
-Another useful property for a binary operator is the notion of *associativity,*
-which is a familiar fact most commonly known about arithmetic, namely:
+I have bound the first to `\step`, and the latter to `\begin`. Let's put these
+to work writing something more useful. We'd like to prove that addition is
+*associative,* which is to say, that it satisfies the following law:
 
 $$
-(a + b) + c = a + (b + c)
+(a + b) + c = a + (b  + c)
 $$
 
-That is to say, the exact placement of parentheses is unimportant for
-associative operators, and for that reason, we are justified in leaving them
-out, as in:
+We can write this in Agda with the type:
 
-$$
-a + b + c
-$$
-
-Technically such a statement is ambiguous, but the great thing about
-associativity is it means the two possible parses are equal. As it happens,
-`_∨_` is associative, as we can show:
 
 ```agda
-  -- ∨-assoc : (a b c : Bool) → (a ∨ b) ∨ c ≡ a ∨ (b ∨ c)
-  -- ∨-assoc false b c = refl
-  -- ∨-assoc true  b c = refl
+    +-assoc⅋₀ : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
 ```
 
+A quick binding of variables, induction on `x`, and obvious use of `refl` gets
+us to this step:
 
-Exercise
+```agda
+    +-assoc⅋₀ zero y z = refl
+    +-assoc⅋₀ (suc x) y z = ?
+```
 
-: Is `_∧_` also associative? If so, prove it. If not, explain why.
+We're ready to start a reasoning block, and thus we can use our `\begin` snippet:
 
+```agda
+    +-assoc⅋₁ : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
+    +-assoc⅋₁ zero y z = refl
+    +-assoc⅋₁ (suc x) y z = begin
+      ?  ≡⟨ ? ⟩
+      ?  ∎
+      where open ≡-Reasoning
+```
 
-Solution
+Note that I have opted to format this lemma more horizontally than the vertical
+alignment you have. This is merely to make the most of our page width and save
+some paper, but feel free to format however you'd like. I find the horizontal
+layout to be more aesthetically pleasing, but much harder to write. Thus, when I
+am proving things, I'll do them in the vertical layout, and do a second pass
+after the fact to make it look prettier.
 
-:   ```agda
-  -- ∧-assoc : (a b c : Bool) → (a ∧ b) ∧ c ≡ a ∧ (b ∧ c)
-  -- ∧-assoc false b c = refl
-  -- ∧-assoc true  b c = refl
-    ```
+Regardless of my artisanal formatting decisions,  we can now start getting help
+from Agda. Using [Solve](AgdaCmd) at the first and last holes will get Agda to
+fill in the terms---the two things that eventually need to be equal:
 
-We have two final properties we'd like to prove about our binary number system,
-which is the fact that `_∨_` and `_∧_` are *commutative.* Commutative operators
-are ones which are symmetric about their arguments. Again, this property is best
-known as a fact about addition:
+```agda
+    +-assoc⅋₂ : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
+    +-assoc⅋₂ zero y z = refl
+    +-assoc⅋₂ (suc x) y z = begin
+      suc x + y + z    ≡⟨ ? ⟩
+      suc x + (y + z)  ∎
+      where open ≡-Reasoning
+```
+
+I always like to subsequently extend the top and bottom sides like this:
+
+```agda
+    +-assoc⅋₃ : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
+    +-assoc⅋₃ zero y z = refl
+    +-assoc⅋₃ (suc x) y z = begin
+      suc x + y + z    ≡⟨⟩
+      ?                ≡⟨ ? ⟩
+      ?                ≡⟨⟩
+      suc x + (y + z)  ∎
+      where open ≡-Reasoning
+```
+
+which recall says that the newly added lines are already equal to the other side
+of the `_≡⟨⟩_` operator. We can fill in these holes with
+[Solve/Normalise](AgdaCmd), which asks Agda to fully-evaluate both holes. This
+will expand as many definitions as it can while still making progress. Sometimes
+it goes too far, but for our simple examples here, this will always be helpful.
+The result looks like this:
+
+```agda
+    +-assoc⅋₄ : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
+    +-assoc⅋₄ zero y z = refl
+    +-assoc⅋₄ (suc x) y z = begin
+      suc x + y + z      ≡⟨⟩
+      suc (x + y + z)    ≡⟨ ? ⟩
+      suc (x + (y + z))  ≡⟨⟩
+      suc x + (y + z)    ∎
+      where open ≡-Reasoning
+```
+
+This new hole is clearly a `cong suc`, which we can partially fill in, and then
+invoke [Auto](AgdaCmd) to search for the remainder of the proof:
+
+```agda
+    +-assoc : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
+    +-assoc zero y z = refl
+    +-assoc (suc x) y z = begin
+      suc x + y + z      ≡⟨⟩
+      suc (x + y + z)    ≡⟨ cong suc (+-assoc x y z) ⟩
+      suc (x + (y + z))  ≡⟨⟩
+      suc x + (y + z)    ∎
+      where open ≡-Reasoning
+```
+
+I quite like this approach for tackling proofs. I introduce a `\begin` snippet,
+use [Solve](AgdaCmd) to fill in the top and bottom, insert new calls to `_≡⟨⟩_`
+the top and bottom, fill them via [Solve/Normalise](AgdaCmd), and then use
+`\step` to help fill in the middle.
+
+Let's do another proof together, this time a less-trivial one. First, we will
+dash out a quick lemma:
+
+```agda
+    +-suc : (x y : ℕ) → x + suc y ≡ suc (x + y)
+    +-suc zero y = refl
+    +-suc (suc x) y = cong suc (+-suc x y)
+```
+
+and now would like to show the *commutativity* of addition, which is,
+symbolically, the following law:
 
 $$
 a + b = b + a
 $$
 
-In general, a binary operator is commutative if we can swap its arguments
-without changing the result. We can prove this about `_∨_` by pattern matching
-on every argument:
+By this point you should be able to put together the type, and show the zero
+case.
+
+
+Exercise
+
+:   State the type of, perform induction on the first argument, and solve the
+    zero case for `+-comm`.
+
+
+Solution
+
+:     ```agda
+    +-comm⅋₀ : (x y : ℕ) → x + y ≡ y + x
+    +-comm⅋₀ zero y = sym (+-identityʳ y)
+    +-comm⅋₀ (suc x) y = ?
+      ```
+
+Let's start with a `\begin` snippet, this time filling the top and bottom holes
+via [Solve/Normalise](AgdaCmd) directly:
 
 ```agda
-  -- ∨-comm : (x y : Bool) → x ∨ y ≡ y ∨ x
-  -- ∨-comm false false = refl
-  -- ∨-comm false true  = refl
-  -- ∨-comm true  false = refl
-  -- ∨-comm true  true  = refl
+    +-comm⅋₁ : (x y : ℕ) → x + y ≡ y + x
+    +-comm⅋₁ zero y = sym (+-identityʳ y)
+    +-comm⅋₁ (suc x) y = begin
+      suc (x + y)  ≡⟨ ? ⟩
+      y + suc x    ∎
+      where open ≡-Reasoning
 ```
 
-While such a thing works, this is clearly a very tedious proof. The amount of
-effort grows exponentially with the number of arguments, which feels especially
-silly when the right hand side is always just `refl`. Thankfully, Agda has a
-tactic for this. A *tactic* is a generic algorithm for producing a proof term;
-and in this case, we're looking for the `case-bash!` tactic. Using `case-bash!`,
-we can rewrite `∨-comm` as:
+Here we have our choice of working top-down, or bottom up. Let's work bottom-up,
+for fun. Add a `\step`, which will make things temporarily go all yellow as Agda
+now has too many degrees of freedom to work out what you mean:
 
 ```agda
-  -- ∨-comm⅋ : (x y : Bool) → x ∨ y ≡ y ∨ x
-  -- ∨-comm⅋ = case-bash!
-  --   -- TODO(sandy): find the right module
-  --   where open import case-bash
+    +-comm⅋₂ : (x y : ℕ) → x + y ≡ y + x
+    +-comm⅋₂ zero y = sym (+-identityʳ y)
+    +-comm⅋₂ (suc x) y = begin
+      suc (x + y)  ≡⟨ ? ⟩
+      ?            ≡⟨ ? ⟩
+      y + suc x    ∎
+      where open ≡-Reasoning
 ```
 
-Similarly, we can case bash our way through `∧-comm`, though if we'd like, we
-can import `case-bash` into the global scope:
+Nevertheless, we can persevere and fill in the bottom hole using our `+-suc`
+lemma from just now:
 
 ```agda
-  -- open import case-bash
-
-  -- ∧-comm : (x y : Bool) → x ∧ y ≡ y ∧ x
-  -- ∧-comm = case-bash!
+    +-comm⅋₃ : (x y : ℕ) → x + y ≡ y + x
+    +-comm⅋₃ zero y = sym (+-identityʳ y)
+    +-comm⅋₃ (suc x) y = begin
+      suc (x + y)  ≡⟨ ? ⟩
+      ?            ≡⟨ sym (+-suc y x) ⟩
+      y + suc x    ∎
+      where open ≡-Reasoning
 ```
 
-We've now had some experience proving theorems about our code. Of course, the
-finiteness of the booleans has dramatically simplified the problem, requiring no
-creativity in finding the proofs; indeed the fact that the computer can write
-them for us via `case-bash!` is a little disheartening. Nevertheless, it's a
-great opportunity to get a feel for proving in a safe environment. We'll have to
-learn some new tricks if we'd like to succeed in proving things about the
-natural numbers.
+With this justification in place, we can now ask Agda to fill the remaining
+term-level hole, again via [Solve/Normalise](AgdaCmd):
 
-In the future, if you need any properties about the booleans, you don't need to
-prove them for yourself; most things you could possibly want are already proven
-for you under `Data.Bool.Properties`.
+```agda
+    +-comm⅋₄ : (x y : ℕ) → x + y ≡ y + x
+    +-comm⅋₄ zero y = sym (+-identityʳ y)
+    +-comm⅋₄ (suc x) y = begin
+      suc (x + y)  ≡⟨ ? ⟩
+      suc (y + x)  ≡⟨ sym (+-suc y x) ⟩
+      y + suc x    ∎
+      where open ≡-Reasoning
+```
+
+which makes the solution obvious:
+
+```agda
+    +-comm : (x y : ℕ) → x + y ≡ y + x
+    +-comm zero y = sym (+-identityʳ y)
+    +-comm (suc x) y = begin
+      suc (x + y)  ≡⟨ cong suc (+-comm x y) ⟩
+      suc (y + x)  ≡⟨ sym (+-suc y x) ⟩
+      y + suc x    ∎
+      where open ≡-Reasoning
+```
+
 
 
 ## Facts About Natural Numbers
-
-```agda
-module Nat-Properties where
-```
-
-In this section, our goal is to prove associativity and commutativity of both
-addition and multiplication of natural numbers. Now that we are working in an
-infinite universe, with more naturals than we can enumerate, we find ourselves
-lost in the dark. Our proof knowledge learned from boolean exposure is simply
-not powerful to help us here. We are going to need to learn some new tricks.
-
-The first and most important new technique we will need is `cong`, which you
-already have available to you via `PropositionalEquality`. Nevertheless, its
-definition is the rather overwhelming:
-
-```agda
-  cong⅋
-      : {A B : Set} {x y : A}
-      → (f : A → B)
-      → x ≡ y
-      → f x ≡ f y
-  cong⅋ f refl = refl
-```
-
-This peculiar function's name is short for *congruence,* which is the property
-that functions preserve equality. That is, given some function `f`, we know that
-if `x ≡ y`, then it is surely the case that `f x ≡ f y`. It has to be, because
-`x` and `y` are the same thing, so the function must map the one thing to one
-place. Congruence is a real workhorse in proving, as it allows us to "move" a
-proof of a smaller claim into the right place in a larger theorem. We will see
-an example of it shortly.
-
-Proving associativity of multiplication over the natural numbers is a very tall
-order; this is not a fact that comes lightly to us. In fact, we will need to
-prove nine smaller theorems first, gradually working our way up to the eventual
-goal. This is not unlike software, where we decompose hard problems into easier
-problems, solve them, and then recombine the solutions. A small theorem, proven
-along the way of a bigger theorem, is often called a *lemma.*
-
-Our first lemma is `+-identityʳ`, which is to say, that 0 acts as a right
-identity to addition. That is, we're looking to show the following:
-
-```agda
-  -- +-identityʳ : (x : ℕ) → x + 0 ≡ x
-```
-
-We begin as we did for booleans; pattern matching on the argument. If it's zero,
-we're already done:
-
-```agda
-  -- +-identityʳ zero = refl
-```
-
-If our parameter isn't zero, then it must be `suc x` for some `x`. In this case,
-our goal is refined as `suc (x + 0) ≡ suc x`, which you will notice is very
-close to `x + 0 ≡ x` --- that is, the thing we're trying to prove in the first
-place! Recursion is almost certainly the answer, but it's not quite the right
-shape; somehow we need to pin a `suc` on both sides.
-
-Fortunately, this is exactly what `cong` does. Recursion will give us a proof of
-`x + 0 ≡ x`, which we need to somehow massage into a proof that `suc (x + 0) ≡
-suc x`. Therefore, our lemma is completed as:
-
-```agda
-  -- +-identityʳ (suc x) = cong suc (+-identityʳ x)
-```
-
-
-Exercise
-
-: Determine the appropriate type of `*-identityʳ` and prove it.
-
-
-Solution
-
-:   ```agda
-  -- *-identityʳ : (x : ℕ) → x * 1 ≡ x
-  -- *-identityʳ zero = refl
-  -- *-identityʳ (suc x) = cong suc (*-identityʳ x)
-    ```
-
-
-Exercise
-
-: Use a similar technique to prove `+-suc : (x y : ℕ) → x + suc y ≡ suc (x + y)`.
-
-
-Solution
-
-:   ```agda
-  -- +-suc : (x y : ℕ) → x + suc y ≡ suc (x + y)
-  -- +-suc zero y = refl
-  -- +-suc (suc x) y = cong suc (+-suc x y)
-    ```
-
-
-Believe it or not, but we now have enough lemmas in place to successfully be
-able to prove the associativity and commutativity of `_+_`. We will do
-associativity together, because the approach comes with a new proof technique:
-*equational reasoning.* Whenever you are proving facts about `_≡_, you can `open
-≡-Reasoning`, which brings some nice syntax for reasoning into scope. Consider
-`+-assoc`:
-
-```agda
-  -- +-assoc : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
-  -- +-assoc zero y z = refl
-  -- +-assoc (suc x) y z = begin
-  --   (suc x + y) + z    ≡⟨⟩
-  --   suc (x + y) + z    ≡⟨⟩
-  --   suc ((x + y) + z)  ≡⟨ cong suc (+-assoc x y z) ⟩  -- ! 1
-  --   suc (x + (y + z))  ≡⟨⟩
-  --   suc x + (y + z)    ∎
-  --   where open ≡-Reasoning
-```
-
-In the second clause of `+-assoc`, we did `where open ≡-Reasoning`, which allows
-us to write the series of equations above. Equational reasoning is an essential
-technique for proofs; our human brains simply aren't sophisticated enough to
-hold all the relevant details in mind. Instead, we can start with the left-
-and right- hand sides of what we're trying to prove, and try to meet in the
-middle. An equational reasoning block is started via `begin`, ended with the
-"tombstone" character `∎`, and inside allows us to separate values via the
-`_≡⟨⟩_` operator. If you look closely, you'll notice two separators here:
-`_≡⟨⟩_` which helps the reader follow Agda's computational rewriting (but does
-nothing to help Agda.) The other separator is `_≡⟨_⟩_` as used at  1 (Ann),
-which allows us to put a *justification* for the rewrite in between the
-brackets. This form is necessary whenever you'd like to invoke a lemma to help
-prove the goal.
-
-
-Exercise
-
-: Prove `+-comm : (x y : ℕ) → x + y ≡ y + x` using the equational reasoning
-  style.
-
-
-Solution
-
-:   ```agda
-  -- +-comm : (x y : ℕ) → x + y ≡ y + x
-  -- +-comm zero y = sym (+-identityʳ y)
-  -- +-comm (suc x) y = begin
-  --   suc x + y    ≡⟨⟩
-  --   suc (x + y)  ≡⟨ cong suc (+-comm x y) ⟩
-  --   suc (y + x)  ≡⟨ sym (+-suc y x) ⟩
-  --   y + suc x    ∎
-  --   where open ≡-Reasoning
-    ```
 
 Often, a huge amount of the work to prove something is simply in manipulating
 the expression to be of the right form so that you can apply the relevant lemma.
@@ -1695,72 +1598,62 @@ This is the case in `*-suc`, which allows us to expand a `suc` on the right side
 of a multiplication term:
 
 ```agda
-  -- *-suc : (x y : ℕ) → x * suc y ≡ x + x * y
-  -- *-suc zero y = refl
-  -- *-suc (suc x) y = begin
-  --   suc x * suc y          ≡⟨⟩
-  --   suc y + x * suc y      ≡⟨ cong (λ φ → suc y + φ) (*-suc x y) ⟩
-  --   suc y + (x + x * y)    ≡⟨⟩
-  --   suc (y + (x + x * y))
-  --                        ≡⟨ cong suc (sym (+-assoc y x (x * y))) ⟩
-  --   suc ((y + x) + x * y)
-  --               ≡⟨ cong (λ φ → suc (φ + x * y)) (+-comm y x) ⟩
-  --   suc ((x + y) + x * y)  ≡⟨ cong suc (+-assoc x y (x * y)) ⟩
-  --   suc (x + (y + x * y))  ≡⟨⟩
-  --   suc x + (y + x * y)    ≡⟨⟩
-  --   suc x + (suc x * y)    ∎
-  --   where open ≡-Reasoning
+    *-suc : (x y : ℕ) → x * suc y ≡ x + x * y
+    *-suc zero y = refl
+    *-suc (suc x) y = begin
+      suc x * suc y          ≡⟨⟩
+      suc y + x * suc y      ≡⟨ cong (λ φ → suc y + φ) (*-suc x y) ⟩
+      suc y + (x + x * y)    ≡⟨⟩
+      suc (y + (x + x * y))
+                           ≡⟨ cong suc (sym (+-assoc y x (x * y))) ⟩
+      suc ((y + x) + x * y)
+                  ≡⟨ cong (λ φ → suc (φ + x * y)) (+-comm y x) ⟩
+      suc ((x + y) + x * y)  ≡⟨ cong suc (+-assoc x y (x * y)) ⟩
+      suc (x + (y + x * y))  ≡⟨⟩
+      suc x + (y + x * y)    ≡⟨⟩
+      suc x + (suc x * y)    ∎
+      where open ≡-Reasoning
 ```
 
-We're now on the homestretch. As a simple lemma, we can show that `_* zero` is
-equal to zero:
-
-```agda
-  -- *-zeroʳ : (x : ℕ) → x * 0 ≡ 0
-  -- *-zeroʳ zero = refl
-  -- *-zeroʳ (suc x) = *-zeroʳ x
-```
-
-and we are now ready to prove `*-comm`, one of our major results in this
-chapter.
+We are now ready to prove `*-comm`, one of our major results in this chapter.
 
 
 Exercise
 
-: Prove the commutativity of multiplication of the natural numbers.
+:   Prove the commutativity of multiplication of the natural numbers.
 
 
 Solution
 
-  : ```agda
-  -- *-comm : (x y : ℕ) → x * y ≡ y * x
-  -- *-comm zero y = sym (*-zeroʳ y)
-  -- *-comm (suc x) y = begin
-  --   suc x * y  ≡⟨⟩
-  --   y + x * y  ≡⟨ cong (y +_) (*-comm x y) ⟩
-  --   y + y * x  ≡⟨ sym (*-suc y x) ⟩
-  --   y * suc x  ∎
-  --   where open ≡-Reasoning
-    ```
+:       ```agda
+    *-comm : (x y : ℕ) → x * y ≡ y * x
+    *-comm zero y = sym (*-zeroʳ y)
+    *-comm (suc x) y = begin
+      suc x * y  ≡⟨⟩
+      y + x * y  ≡⟨ cong (y +_) (*-comm x y) ⟩
+      y + y * x  ≡⟨ sym (*-suc y x) ⟩
+      y * suc x  ∎
+      where open ≡-Reasoning
+        ```
 
 ```agda
-  -- *-distribʳ-+ : (x y z : ℕ) → (y + z) * x ≡ y * x + z * x
-  -- *-distribʳ-+ x zero z = refl
-  -- *-distribʳ-+ x (suc y) z = begin
-  --   (suc y + z) * x      ≡⟨⟩
-  --   x + (y + z) * x      ≡⟨ cong (x +_) (*-distribʳ-+ x y z) ⟩
-  --   x + (y * x + z * x)  ≡⟨ sym (+-assoc x (y * x) (z * x)) ⟩
-  --   (x + y * x) + z * x  ≡⟨⟩
-  --   suc y * x + z * x    ∎
-  --   where open ≡-Reasoning
+    *-distribʳ-+ : (x y z : ℕ) → (y + z) * x ≡ y * x + z * x
+    *-distribʳ-+ x zero z = refl
+    *-distribʳ-+ x (suc y) z = begin
+      (suc y + z) * x      ≡⟨⟩
+      x + (y + z) * x      ≡⟨ cong (x +_) (*-distribʳ-+ x y z) ⟩
+      x + (y * x + z * x)  ≡⟨ sym (+-assoc x (y * x) (z * x)) ⟩
+      (x + y * x) + z * x  ≡⟨⟩
+      suc y * x + z * x    ∎
+      where open ≡-Reasoning
 
-  -- *-assoc : (x y z : ℕ) → (x * y) * z ≡ x * (y * z)
-  -- *-assoc zero y z = refl
-  -- *-assoc (suc x) y z = begin
-  --   suc x * y * z        ≡⟨⟩
-  --   (y + x * y) * z      ≡⟨ *-distribʳ-+ z y (x * y) ⟩
-  --   y * z + (x * y) * z  ≡⟨ cong (λ φ → y * z + φ) (*-assoc x y z) ⟩
-  --   y * z + x * (y * z)  ≡⟨⟩
-  --   suc x * (y * z)      ∎
-  --   where open ≡-Reasoning
+    *-assoc : (x y z : ℕ) → (x * y) * z ≡ x * (y * z)
+    *-assoc zero y z = refl
+    *-assoc (suc x) y z = begin
+      suc x * y * z        ≡⟨⟩
+      (y + x * y) * z      ≡⟨ *-distribʳ-+ z y (x * y) ⟩
+      y * z + (x * y) * z  ≡⟨ cong (λ φ → y * z + φ) (*-assoc x y z) ⟩
+      y * z + x * (y * z)  ≡⟨⟩
+      suc x * (y * z)      ∎
+      where open ≡-Reasoning
 ```
