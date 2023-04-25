@@ -7,7 +7,7 @@ Hidden
     ```
 
 ```agda
-module 2-proofs where
+module 3-proofs where
 ```
 
 In this chapter we will take our first looks at what constitutes a mathematical

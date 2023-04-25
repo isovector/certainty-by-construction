@@ -1,7 +1,7 @@
 # Quotients
 
 ```agda
-module 6-setoids where
+module 4-setoids where
 open import Data.Nat
 open import Data.Nat.Properties
 ```
