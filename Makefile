@@ -2,6 +2,7 @@ RULES := pdf
 CONTENT := book
 
 PANDOC_OPTS := --citeproc \
+               --filter design-tools-exe \
                --from markdown+fancy_lists+raw_tex \
                -t latex+lagda \
                --tab-stop=100 \

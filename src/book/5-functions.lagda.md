@@ -1,9 +1,10 @@
 # Functions, Big and Small
 
 ```agda
-module functions where
+module 5-functions where
 
-open import Level using (Level)
+open import Level
+  using (Level)
 ```
 
 Computer science is chocked full of data structures. A great many come from the

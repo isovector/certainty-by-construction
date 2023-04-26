@@ -82,7 +82,7 @@ machinery again to describe the problem:
 module _ (n : ℕ) where
   open import Relation.Binary.PropositionalEquality
   open import Data.Nat
-  open import 6-setoids
+  open import 4-setoids
   open mod-def
 
 
