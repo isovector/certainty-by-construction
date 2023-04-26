@@ -560,116 +560,437 @@ _≟ℕ_ = Nat-Properties._≟_
 ```
 
 
-## Lists
+## Binary Trees
+
+Perhaps you are tired of always working with numbers. After all, isn't this
+supposed to be a book about applying mathematical techniques to computer
+science? As it happens, all the techniques we have explored so far are
+applicable to data structures just as much as they are to numbers and the
+more mathematical purviews.
+
+It is a matter of tradition to begin every exploration of data structures in
+functional programming with lists. The author is personally exhausted of this
+tradition, and suspects the audience is as well. Therefore, we will instead
+touch upon the binary trees: how to construct them, and how to prove things
+about them.
+
+A binary tree is either empty, or it is a branching node containing a value and two
+subtrees. We can codify this as follows:
+
+```agda
+module Trees where
+  data BinTree (A : Set) : Set where
+    empty : BinTree A
+    branch : BinTree A → A → BinTree A → BinTree A
+```
+
+For convenience, it's often helpful to be able to talk about a single-element
+tree, which we can encode as a `branch` with two `empty` children. Agda lets us
+define pseudo-constructors called *patterns* for cases like these. The following
+defines a new pattern called `leaf : A → BinTree A`:
+
+```agda
+  pattern leaf a = branch empty a empty
+```
+
+You might wonder why we use a `pattern` here rather than just a regular old
+function:
+
+```agda
+  leaf⅋ : {A : Set} → A → BinTree A
+  leaf⅋ a = branch empty a empty
+```
+
+The difference is all in the colors. Literally. The reason is that, as the name
+implies, we can *pattern match* when `leaf` is defined as pattern:
+
+```agda
+  open import Data.Bool
+    using (Bool; true; false)
+
+  is-singleton : {A : Set} → BinTree A → Bool
+  is-singleton (leaf _) = true
+  is-singleton _ = false
+```
+
+In addition, we can use patterns as expressions, as in:
+
+```agda
+  five-tree : BinTree ℕ
+  five-tree = leaf 5
+```
+
+Patterns don't buy us anything we couldn't do otherwise, but they are often
+convenient when you have interesting special cases that you'd like to sometimes
+highlight, without baking them directly into the definition of the type.
+
+The first thing we might want to prove about a tree is whether it contains a
+particular element. As usual, we do so by considering the base case, and the
+inductive cases. The base case is that the thing you're looking for is at the
+root:
+
+```agda
+  data _∈⅋_ {A : Set} : A → BinTree A → Set where
+    here : {a : A} {l r : BinTree A} → a ∈⅋ branch l a r
+```
+
+Otherwise, the element you're looking for might be in the left subtree:
+
+```agda
+    left : {a b : A} {l r : BinTree A} → a ∈⅋ l → a ∈⅋ branch l b r
+```
+
+and of course, it could also be in the right subtree:
+
+```agda
+    right : {a b : A} {l r : BinTree A} → a ∈⅋ r → a ∈⅋ branch l b r
+```
+
+This definition works perfectly well, but it's a bit wordy. Notice that over
+half of it is just bringing implicit bindings into scope. This is a perfect
+use-case for Agda's `variable` block, which allows us to define implicit
+bindings that should exist for the remainder of the scope.
+
+Variable blocks are started with the keywords `private variable`, and then begin
+a new layout. We can create a few variables:
+
+```agda
+  private variable
+    A : Set
+    a b : A
+    l r : BinTree A
+```
+
+The definitions in a variable block are just type signatures. The semantics here
+are that whenever we use an otherwise-undeclared variable `l` in our code, Agda
+will instead look it up from the variable block, and insert it as an implicit
+argument. With this feature, we can rewrite `_∈_` in a much terser, but
+*completely-equivalent* way:
+
+```agda
+  data _∈_ : A → BinTree A → Set where
+    here  :         a ∈ branch l a r
+    left  : a ∈ l → a ∈ branch l b r
+    right : a ∈ r → a ∈ branch l b r
+```
+
+Just to demonstrate that everything works, we can make a little tree:
+
+```agda
+  tree : BinTree ℕ
+  tree = branch (branch (leaf 0) 0 (leaf 2)) 4 (leaf 6)
+```
+
+and then show that six is somewhere in this `tree`, as per the very assertive
+definition:
+
+```agda
+  6∈tree : 6 ∈ tree
+  6∈tree = right here
+```
+
+It might also be desirable to show that every element in the tree satisfies some
+property. Perhaps we'd like to build a binary tree consisting only of odd
+numbers, for example. It's unclear why, but nevertheless it's something we
+*might* want to do. There is no finger pointing here!
+
+Building `All` is easy. We can replace every instance of `A` with `P A`, and
+every instance of `BinTree` with `All`. Modulo a few indices at the end, we're
+left with a reminiscent definition:
+
+```agda
+  data All (P : A → Set) : BinTree A → Set where
+    empty : All P empty
+    branch : All P l → P a → All P r → All P (branch l a r)
+```
+
+A pattern definition doesn't come with a type signature, and thus it only works
+with whatever constructors existed when it was defined. Since in `All` we have
+reused the constructor names `empty` and `branch`, we can redefine `leaf` again
+so that it also works over `All`:
+
+-- TODO(sandy): fact check
 
 
 ```agda
-data List (A : Set) : Set where
-  [] : List A
-  _∷_ : A → List A → List A
-infixr 5 _∷_
+  pattern leaf a = branch empty a empty
+```
 
-module List-Properties {A : Set} (_≟A_ : DecidableEquality A) where
-  _≟_ : DecidableEquality (List A)
-  [] ≟ [] = yes refl
-  [] ≟ (y ∷ ys) = no λ ()
-  (x ∷ xs) ≟ [] = no λ ()
-  (x ∷ xs) ≟ (y ∷ ys) with x ≟A y
-  ... | no x≠y = no λ { refl → x≠y refl }
-  ... | yes refl with xs ≟ ys
-  ... | no xs≠ys = no λ { refl → xs≠ys refl }
-  ... | yes refl = yes refl
+In the `branch` case, we must show that everything holds in both subtrees, as
+well as that the property holds for the value at the root. By induction, we have
+now covered every element in the tree. We can show it works by coming up with a
+quick predicate, maybe the evenness of a number. We defined a similar thing back
+in @sec:even, however we cannot reuse it here, as it was defined over our custom
+natural numbers, and does not exist in the standard library.
 
+```agda
+  open Data.Nat
+    using (_+_)
 
+  data IsEven : ℕ → Set where
+    z-even : IsEven 0
+    ss-even : {n : ℕ} → IsEven n → IsEven (2 + n)
+```
 
-data _∈_ {A : Set} (a : A) : List A → Set where
-  here : {xs : List A} → a ∈ (a ∷ xs)
-  there : {x : A} → {xs : List A} → a ∈ xs → a ∈ (x ∷ xs)
+It's now possible to show every element in `tree` is even. In fact, Agda can
+prove it for us, via [Auto](AgdaCmd):
 
-decide-membership
-    : {A : Set}
-    → DecidableEquality A
-    → (a : A)
-    → (xs : List A)
-    → Dec (a ∈ xs)
-decide-membership _≟_ a [] = no λ ()
-decide-membership _≟_ a (x ∷ xs)
-  with a ≟ x
-... | yes refl = yes here
-... | no a≠x
-  with decide-membership _≟_ a xs
-... | yes a∈xs = yes (there a∈xs)
-... | no ¬a∈xs = no λ { here → a≠x refl
-                      ; (there a∈xs) → ¬a∈xs a∈xs
-                      }
+```agda
+  tree-all-even : All IsEven tree
+  tree-all-even =
+    branch
+      (branch
+        (branch empty z-even empty)
+        z-even
+        (branch empty (ss-even z-even) empty))
+      (ss-even (ss-even z-even))
+      (branch empty (ss-even (ss-even (ss-even z-even))) empty)
+```
 
+Of course, a little cleanup goes a long way:
 
-data All {A : Set} (P : A → Set) : List A → Set where
-  [] : All P []
-  _∷_ : {x : A} {xs : List A} → P x → All P xs → All P (x ∷ xs)
-
-decide-all
-    : {A : Set} {P : A → Set}
-    → (p? : (a : A) → Dec (P a))
-    → (xs : List A)
-    → Dec (All P xs)
-decide-all p? [] = yes []
-decide-all p? (x ∷ xs)
-  with p? x
-... | no ¬px = no λ { (px ∷ _) → ¬px px }
-... | yes px
-  with decide-all p? xs
-... | yes all = yes (px ∷ all)
-... | no ¬all = no λ { (_ ∷ all) → ¬all all }
+```agda
+  tree-all-even⅋ : All IsEven tree
+  tree-all-even⅋ =
+    branch
+      (branch
+        (leaf z-even)
+        z-even
+        (leaf (ss-even z-even)))
+      (ss-even (ss-even z-even))
+      (leaf (ss-even (ss-even (ss-even z-even))))
+```
 
 
-record Σ (A : Set) (B : A → Set) : Set where
-  constructor _,_
-  field
-    proj₁ : A
-    proj₂ : B proj₁
+## Binary Search Trees
 
-infixr 4 _,_
+Binary search trees (BSTs) are a refinement of binary trees, with the property
+that everything in the left subtree is less than or equal to the root, and
+everything in the right subtree is greater than or equal to the root.
 
-_×_ : Set → Set → Set
-A × B = Σ A (λ _ → B)
+This one is a bit harder to encode, since it requires a notion of ordering. Of
+course, we can always just add it as a parameter, as in:
+
+```agda
+  data IsBST (_≤_ : A → A → Set) : BinTree A → Set where
+```
+
+An empty BST is still a BST, so the base case is simple:
+
+```agda
+    bst-empty : IsBST _≤_ empty
+```
+
+The recursive case requires us to show several things, however. First, we
+require that our invariants hold---everything in the left tree is smaller, and
+everything in the right tree is larger:
+
+```agda
+    bst-branch
+        : All (_≤ a) l →
+          All (a ≤_) r →
+```
+
+Then, we require that both trees are themselves BSTs:
+
+```agda
+          IsBST _≤_ l →
+          IsBST _≤_ r →
+```
+
+which is sufficient to show that the binary tree is itself a BST:
+
+```agda
+          IsBST _≤_ (branch l a r)
+```
+
+-- TODO(sandy): put this sooner in the book!
+
+Given the standard notion of ordering over the natural numbers:
+
+```agda
+  data _≤_ : ℕ → ℕ → Set where
+    z≤n : {n : ℕ} → zero ≤ n
+    s≤s : {m n : ℕ} → m ≤ n → suc m ≤ suc n
+```
+
+we can again ask Agda for a proof that `tree` is a BST:
+
+```agda
+  tree-is-bst : IsBST _≤_ tree
+  tree-is-bst =
+    bst-branch
+      (branch (leaf z≤n) z≤n (leaf (s≤s (s≤s z≤n))))
+      (leaf (s≤s (s≤s (s≤s (s≤s z≤n)))))
+      (bst-branch
+        (leaf z≤n)
+        (leaf z≤n)
+        (bst-branch empty empty bst-empty bst-empty)
+        (bst-branch empty empty bst-empty bst-empty))
+      (bst-branch empty empty bst-empty bst-empty)
+```
+
+You'll notice several subexpressions of the form `bst-branch empty empty
+bst-empty bst-empty`, which is the proof that a `leaf` is a BST. This is a good
+opportunity for another pattern:
+
+```agda
+  pattern bst-leaf =
+    bst-branch empty empty bst-empty bst-empty
+```
+
+which cleans up the above:
+
+```agda
+  tree-is-bst⅋ : IsBST _≤_ tree
+  tree-is-bst⅋ =
+    bst-branch
+      (branch (leaf z≤n) z≤n (leaf (s≤s (s≤s z≤n))))
+      (leaf (s≤s (s≤s (s≤s (s≤s z≤n)))))
+      (bst-branch (leaf z≤n) (leaf z≤n) bst-leaf bst-leaf)
+      bst-leaf
+```
+
+Proofs like this are an awful lot of work, but thankfully we never need to write
+them by hand. For concrete values, we can always ask Agda to solve them for us,
+and for parameterized values, we can build them by induction.
+
+```agda
+module Lists where
+  data List (A : Set) : Set where
+    [] : List A
+    _∷_ : A → List A → List A
+  infixr 5 _∷_
+
+  module Deque where
+    data Deque (A : Set) : Set where
+      empty : Deque A
+      [_] : A → Deque A
+      _◁_▷_ : A → Deque A → A → Deque A
+
+    push-front : {A : Set} → A → Deque A → Deque A
+    push-front x empty       = [ x ]
+    push-front x [ y ]     = x ◁ empty ▷ y
+    push-front x (l ◁ q ▷ r) = x ◁ push-front l q ▷ r
+
+    push-back : {A : Set} → A → Deque A → Deque A
+    push-back x empty       = [ x ]
+    push-back x [ y ]     = y ◁ empty ▷ x
+    push-back x (l ◁ q ▷ r) = l ◁ push-front r q ▷ x
+
+    open import Data.Maybe
+      using (Maybe; nothing; just)
+
+    open import Data.Product
+      using (_×_; _,_)
+
+    pop-front : {A : Set} → Deque A → Maybe (A × Deque A)
+    pop-front empty = nothing
+    pop-front [ x ] = just (x , empty)
+    pop-front (l ◁ q ▷ r) = just (l , push-back r q)
+
+    test : Deque ℕ
+    test = 0 ◁ 1 ◁ [ 2 ] ▷ 3 ▷ 4
 
 
-filter
-    : {A : Set} {P : A → Set}
-    → ((x : A) → Dec (P x))
-    → (xs : List A)
-    → Σ (List A) (All P)
-filter p? [] = [] , []
-filter p? (x ∷ xs)
-  with p? x  | filter p? xs
-...  | yes p | ls , all = (x ∷ ls) , (p ∷ all)
-...  | no ¬p | ls , all = ls , all
+  module List-Properties {A : Set} (_≟A_ : DecidableEquality A) where
+    _≟_ : DecidableEquality (List A)
+    [] ≟ [] = yes refl
+    [] ≟ (y ∷ ys) = no λ ()
+    (x ∷ xs) ≟ [] = no λ ()
+    (x ∷ xs) ≟ (y ∷ ys) with x ≟A y
+    ... | no x≠y = no λ { refl → x≠y refl }
+    ... | yes refl with xs ≟ ys
+    ... | no xs≠ys = no λ { refl → xs≠ys refl }
+    ... | yes refl = yes refl
 
 
 
-weaken
-    : {A : Set} {P : A → Set} {Q : A → Set} {ls : List A}
-    → (P→Q : {a : A} → P a → Q a)
-    → All P ls
-    → All Q ls
-weaken Q→P [] = []
-weaken Q→P (x ∷ xs) = Q→P x ∷ weaken Q→P xs
+  data _∈_ {A : Set} (a : A) : List A → Set where
+    here : {xs : List A} → a ∈ (a ∷ xs)
+    there : {x : A} → {xs : List A} → a ∈ xs → a ∈ (x ∷ xs)
+
+  decide-membership
+      : {A : Set}
+      → DecidableEquality A
+      → (a : A)
+      → (xs : List A)
+      → Dec (a ∈ xs)
+  decide-membership _≟_ a [] = no λ ()
+  decide-membership _≟_ a (x ∷ xs)
+    with a ≟ x
+  ... | yes refl = yes here
+  ... | no a≠x
+    with decide-membership _≟_ a xs
+  ... | yes a∈xs = yes (there a∈xs)
+  ... | no ¬a∈xs = no λ { here → a≠x refl
+                        ; (there a∈xs) → ¬a∈xs a∈xs
+                        }
 
 
-filter′
-    : {A : Set} {P : A → Set}
-    → ((x : A) → Dec (P x))
-    → (xs : List A)
-    → Σ (List A) λ l → All P l × All (_∈ xs) l
-filter′ p? [] = [] , [] , []
-filter′ p? (x ∷ xs)
-  with p? x | filter′ p? xs
-... | yes p | ls , all-P , all-in
-    = (x ∷ ls) , p ∷ all-P , here ∷ weaken there all-in
-... | no ¬p | ls , all-P , all-in
-    = ls , all-P , weaken there all-in
+  data All {A : Set} (P : A → Set) : List A → Set where
+    [] : All P []
+    _∷_ : {x : A} {xs : List A} → P x → All P xs → All P (x ∷ xs)
+
+  decide-all
+      : {A : Set} {P : A → Set}
+      → (p? : (a : A) → Dec (P a))
+      → (xs : List A)
+      → Dec (All P xs)
+  decide-all p? [] = yes []
+  decide-all p? (x ∷ xs)
+    with p? x
+  ... | no ¬px = no λ { (px ∷ _) → ¬px px }
+  ... | yes px
+    with decide-all p? xs
+  ... | yes all = yes (px ∷ all)
+  ... | no ¬all = no λ { (_ ∷ all) → ¬all all }
+
+
+  record Σ (A : Set) (B : A → Set) : Set where
+    constructor _,_
+    field
+      proj₁ : A
+      proj₂ : B proj₁
+
+  infixr 4 _,_
+
+  _×_ : Set → Set → Set
+  A × B = Σ A (λ _ → B)
+
+
+  filter
+      : {A : Set} {P : A → Set}
+      → ((x : A) → Dec (P x))
+      → (xs : List A)
+      → Σ (List A) (All P)
+  filter p? [] = [] , []
+  filter p? (x ∷ xs)
+    with p? x  | filter p? xs
+  ...  | yes p | ls , all = (x ∷ ls) , (p ∷ all)
+  ...  | no ¬p | ls , all = ls , all
 
 
 
+  weaken
+      : {A : Set} {P : A → Set} {Q : A → Set} {ls : List A}
+      → (P→Q : {a : A} → P a → Q a)
+      → All P ls
+      → All Q ls
+  weaken Q→P [] = []
+  weaken Q→P (x ∷ xs) = Q→P x ∷ weaken Q→P xs
+
+
+  filter′
+      : {A : Set} {P : A → Set}
+      → ((x : A) → Dec (P x))
+      → (xs : List A)
+      → Σ (List A) λ l → All P l × All (_∈ xs) l
+  filter′ p? [] = [] , [] , []
+  filter′ p? (x ∷ xs)
+    with p? x | filter′ p? xs
+  ... | yes p | ls , all-P , all-in
+      = (x ∷ ls) , p ∷ all-P , here ∷ weaken there all-in
+  ... | no ¬p | ls , all-P , all-in
+      = ls , all-P , weaken there all-in
 ```
