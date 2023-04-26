@@ -1,5 +1,11 @@
 # Decidability
 
+Hidden
+
+:   ```agda
+{-# OPTIONS --allow-unsolved-metas #-}
+    ```
+
 ```agda
 module 4-decidability where
 ```
@@ -180,8 +186,8 @@ which there are none in the first place) are equal:
 
 We have now shown that bottom is a satisfactory definition of false, and that
 functions into bottom are therefore a good definition of the falseness of their
-input type considered as a proposition. Hence, we can define `¬_`, which states
-that a given proposition is false:
+input type considered as a proposition. Hence, we can define `¬_` (\neg), which
+states that a given proposition is false:
 
 ```agda
 open import Level
@@ -192,57 +198,389 @@ open import Level
 infix 3 ¬_
 ```
 
-and then define inequality:
+Again, ignore this `Level` stuff for the time being (although you can input `ℓ`
+via `\ell`.)
+
+
+## Inequality
+
+With a satisfactory definition for propositional negation, we can
+define inequality (input as `\neq`):
+
+
 
 ```agda
 _≢_ : {A : Set} → A → A → Set
 x ≢ y = ¬ x ≡ y
+infix 4 _≢_
 ```
+
+When defining new relations, it's always a reward experience to investigate
+which properties hold of the new construction. As you might expect, inequality
+is symmetric:
 
 ```agda
 ≢-sym : {A : Set} {x y : A} → x ≢ y → y ≢ x
 ≢-sym x≠y y=x = x≠y (sym y=x)
+```
 
+and it is obviously *not* reflexive. Why obviously? Because reflexivity would
+require that `x ≢ x` for any `x`, which is exactly the opposite of what we're
+trying to encode here. Interestingly, however, we can prove that `_≢_` isn't
+reflexive, but showing that if there were such a `refl : x ≢ x` construction, it
+would lead to contradiction.
+
+Let's show this in a few steps. First, we will define a type `Reflexive` which
+will state the reflexivity property. This isn't strictly necessary, but it
+lessens the cognitive burden later down the line:
+
+```agda
+Reflexive : {A : Set} → (A → A → Set) → Set
+Reflexive {A} _≈_ = {x : A} → x ≈ x
+```
+
+Having a value of `Reflexive _≈_` states that `_≈_` is a reflexive relation.
+Note that `_≈_` is on the left side of the equals sign, and is thus just a
+parameter---allowing us to state *which* relation is reflexive. To illustrate
+exactly what's happening here, we can show that propositional equality is
+reflexive:
+
+```agda
+≡-refl : {A : Set} → Reflexive {A} _≡_
+≡-refl = refl
+```
+
+Notice how the type `Reflexive _≡_` expands to the type of `refl : {x : A} → x ≡
+x`. We are required to bind `A : Set` here, so that we can pass it over to
+`Reflexive`, which could in principle infer it from the type of `_≡_`, but Agda
+has no way of knowing if you'd like to talk about `_≡_` in its fully-general
+polymorphic type, or about `_≡_` when specialized to something about the natural
+numbers. The distinction isn't extremely poignant in this example, but there do
+exist monomorphic relations which we might still want to say are reflexive.
+Nevertheless, we have shown that `_≡_` is reflexive by giving a proof that
+`refl` exists.
+
+Contrasting against this is the proof that `_≢_` is *not* reflexive. The type of
+such a statement is a very subtle thing:
+
+```agda
+¬≢-refl⅋₀ : ¬ ({A : Set} → Reflexive {A} _≢_)  -- ! 1
+¬≢-refl⅋₀ = ?
+```
+
+Compare this type to the more "obvious" type:
+
+```agda
+¬≢-refl-bad⅋₀ : {A : Set} → ¬ Reflexive {A} _≢_  -- ! 2
+¬≢-refl-bad⅋₀ = ?
+```
+
+The difference between [1](Ann) and [2](Ann) is that in the latter, we receive a
+specific `A`, and are then required to give back a proof that there is no
+`≢-refl` *for that specific type.* In [1](Ann) however, we are required to show
+that there does not exist a `≢-refl` that works for *every* type `A`. End users
+of `¬≢-refl` don't care one way or another, but the difference here is
+absolutely crucial for actually *proving* the notion. Let's look at this more
+closely.
+
+At a high level, the proof here is "`≢-refl` must be false because it's the
+negation of `≡-refl`, which is easily shown to be true." While the type of the
+argument to `¬≢-refl` is `Reflexive _≢_`, we can use
+[TypeContext/Normalise](AgdaCmd) to ask Agda to expand out this definition,
+resulting in `x ≡ x → ⊥`. Under the lens of this expanded type, it seems
+reasonable to call the argument `¬≡-refl`, as in the following:
+
+```agda
+¬≢-refl⅋₁ : ¬ ({A : Set} → Reflexive {A} _≢_)
+¬≢-refl⅋₁ ¬≡-refl = {! !}
+```
+
+Of course, we do in fact have a proof of `x ≡ x`, namely `refl`, so we can try
+solving the hole as:
+
+```agda
+¬≢-refl⅋₂ : ¬ ({A : Set} → Reflexive {A} _≢_)
+¬≢-refl⅋₂ ¬≡-refl = ¬≡-refl refl
+```
+
+Uh oh, something went wrong. This yellow background means that elaboration
+failed, which means that Agda was unable to determine some of the implicit
+arguments. We can help it out by explicitly introducing holes for each implicit
+argument and solving them ourselves:
+
+```agda
+¬≢-refl⅋₃ : ¬ ({A : Set} → Reflexive {A} _≢_)
+¬≢-refl⅋₃ ¬≡-refl = ¬≡-refl {?} {?} refl
+```
+
+You'll notice that the yellow warning has disappeared, and we're left only with
+some holes to fill. The first hole has type `Set`, while the second has type
+`?0`, meaning its type depends on the answer to our first hole. We're free to
+choose any type we'd like for this first hole, so let's try `ℕ`:
+
+```agda
+¬≢-refl⅋₄ : ¬ ({A : Set} → Reflexive {A} _≢_)
+¬≢-refl⅋₄ ¬≡-refl = ¬≡-refl {ℕ} {?} refl
+```
+
+and now all we need is to pick an arbitrary value of type `ℕ`:
+
+```agda
+¬≢-refl : ¬ ({A : Set} → Reflexive {A} _≢_)
+¬≢-refl ≢-refl = ≢-refl {ℕ} {0} refl
+```
+
+What was to be demonstrated has thus been proved. But let's see what goes wrong
+if we try the same approach on `¬≢-refl-bad`. Since `A` is now a top-level
+parameter, we can bind it in the function body, meaning we have one fewer
+implicit to fill in:
+
+```agda
+¬≢-refl-bad : {A : Set} → ¬ Reflexive {A} _≢_
+¬≢-refl-bad {A} ¬≡-refl = ¬≡-refl {?} refl
+```
+
+This hole unfortunately has type `A`, *for some unknown type `A`!* We can't
+possibly fill this in, because we don't know what type `A` is. In fact, `A`
+could be `⊥`, in which case there aren't any values we could put here even in
+principle.
+
+The takeaway from this is that it really matters where you put your quantifiers.
+When the necessary parameters are *inside* the negation, we are able to
+instantiate them at our convenience in order to find a counterexample. But if
+they are outside, we are at the whim of the proof-caller, which might
+dramatically change how we'd go about showing a counterexample, and often
+precludes it entirely.
+
+
+## Negation Considered as a Callback
+
+There is an apt computational perspective to this problem of negating
+quantifiers, which comes when we expand out all of our types. After fully
+normalizing (expanding out) the types of both `¬≢-refl` and `¬≢-refl-bad`, we
+are left with this:
+
+```type
+¬≢-refl     : ({A : Set} → {x : A} → x ≡ x → ⊥) → ⊥
+¬≢-refl-bad : {A : Set} → ({x : A} → x ≡ x → ⊥) → ⊥
+```
+
+These types have much more going on, but the important thing to notice is that
+they both take functions as arguments. Whenever you see a function as an
+argument, you should immediately think "callback." Viewed as a callback, the
+question becomes *who is responsible for providing the parameters?* In the first
+case, it is `¬≢-refl` which gets to pick `A`, while in the second, it
+is the *caller* of `¬≢-refl-bad` who gets to pick `A`. And true to the name,
+this caller might pick an antagonistic `A` in an attempt to thwart us!
+
+
+## Intransitivity of Inequality
+
+In the same vein as `¬≢-refl`, we can also show that `_≢_` doesn't satisfy
+transitivity. The pen and paper proof is straightforward, since if inequality
+were transitive we could show:
+
+$$
+\begin{align}
+2 &\neq 3 \\
+&\neq 2
+\end{align}
+$$
+
+This is known in the business as a "whoopsie daisy." Such a counterexample shows
+inequality cannot be transitive, and we can prove it more formally in Agda by
+giving a definition for transitivity:
+
+```agda
 Transitive : {A : Set} → (A → A → Set) → Set
 Transitive {A} _≈_ = {x y z : A} → x ≈ y → y ≈ z → x ≈ z
-
-
-no-≢-trans : ¬ ({A : Set} → Transitive {A} _≢_)
-no-≢-trans ≢-trans = ≢-trans {A = ℕ} 2≠3 (≢-sym 2≠3) refl
 ```
+
+Giving the counterexample is easy, since we already have a proof `2≠3`. Given a
+hypothetical `≢-trans`, we could combine this with `sym 3≠2`, to get a proof
+that `2 ≢ 2`. Such a thing is in direct contradiction with `refl : 2 ≡ 2`, and
+thus we are done:
+
+```agda
+¬≢-trans : ¬ ({A : Set} → Transitive {A} _≢_)
+¬≢-trans ≢-trans = ≢-trans {ℕ} 2≠3 (≢-sym 2≠3) refl
+```
+
+
+## Decidability
+
+It is now time to return to the question of how does one combine dependent types
+with the "real world." That is, the proofs we've seen so far work swell when
+everything is known statically, but things begin to fall apart when you want to
+get input from a user, or read from a file, or something of this nature. What do
+we do when we don't have all of our information known statically?
+
+The answer is unsurprising: we just compute it.
+
+Recall that every concrete proof we've given is represented by a value. That
+means it has a representation in memory, and therefore, that it's the sort of
+thing we can build at runtime. The types shade the techniques that you already
+know how to do from a career of elbow grease computing things.
+
+In a language with a less powerful system, how do you check if the number the
+user input is less than five? You just do a runtime check to see if it's less
+than five before continuing. We can do exactly the same thing in Agda, except
+that we'd like to return a *proof* that our number is equal to five, rather than
+just a boolean. To a first approximation, you can imagine we could implement
+such a thing like this:
+
+```agda
+module Sandbox-Decidability where
+
+  open import Data.Maybe
+    using (Maybe; just; nothing)
+
+  n=5? : (n : ℕ) → Maybe (n ≡ 5)
+  n=5? 5 = just refl
+  n=5? _ = nothing
+```
+
+Given `n=5?`, we can call this function and branch on its result. If the result
+is a `just`, we now have a proof that the argument was indeed 5, and can use it
+as we'd please.
+
+Of course, if the argument wasn't five, this definition doesn't allow us to
+learn anything at all. When instead, it would be much more useful to learn that
+`¬ (n ≡ 5)`, in case we'd like to do something with that information! From this,
+we conclude that returning `Maybe` isn't quite the right choice. Instead, we'd
+like a slightly-more structured type corresponding to *decisions*:
 
 ```agda
 data Dec (P : Set) : Set where
   yes : P  → Dec P
   no : ¬ P → Dec P
+```
 
+`Dec` is a type which states if we know for sure that either `P` holds, or that
+`P` *doesn't* hold. Of course, only one of these can ever be true at once, and
+thus `Dec P` corresponds to an answer that we can definitively compute. For
+example, given two numbers, it's not too hard to determine if the two are equal.
 
-open import Data.Nat
-  using (ℕ; zero; suc)
+```agda
+module Nat-Properties where
+  open import Data.Nat
+    using (ℕ; zero; suc)
 
-open import Relation.Binary.PropositionalEquality
+  open import Data.Bool
+    using (Bool; true; false)
 
-_≟ℕ_ : (x y : ℕ) → Dec (x ≡ y)
-zero ≟ℕ zero = yes refl
-zero ≟ℕ suc y = no λ ()
-suc x ≟ℕ zero = no λ ()
-suc x ≟ℕ suc y with x ≟ℕ y
-... | yes x=y = yes (cong suc x=y)
-... | no  x≠y = no λ { refl → x≠y refl }
+  _==_ : ℕ → ℕ → Bool
+  zero  == zero  = true
+  zero  == suc y = false
+  suc x == zero  = false
+  suc x == suc y = x == y
+```
 
+While `_==_` *is* a decision procedure, it doesn't give us back any
+proof-relevant term. The goal is slightly modify this definition such that
+whenever it returns `true` we instead give back a `yes`, and likewise replace
+`false` with `no`. Giving back the `yes`es is easy enough, but the `no`s take a
+little more thought:
+
+```agda
+  open import Relation.Binary.PropositionalEquality
+
+  _≟⅋₀_ : (x y : ℕ) → Dec (x ≡ y)
+  zero ≟⅋₀ zero = yes refl
+  zero ≟⅋₀ suc y = no ?
+  suc x ≟⅋₀ zero = no ?
+  suc x ≟⅋₀ suc y with x ≟⅋₀ y
+  ... | yes refl = yes refl
+  ... | no x≠y   = no ?
+```
+
+The first hole here has type `zero ≡ suc y → ⊥`, which we can [Refine](AgdaCmd)
+to a lambda:
+
+```agda
+  _≟⅋₁_ : (x y : ℕ) → Dec (x ≡ y)
+  zero ≟⅋₁ zero = yes refl
+  zero ≟⅋₁ suc y = no λ { x → {! !} }
+  suc x ≟⅋₁ zero = no ?
+  suc x ≟⅋₁ suc y with x ≟⅋₁ y
+  ... | yes refl = yes refl
+  ... | no x≠y   = no ?
+```
+
+Inside our lambda we have `x : zero ≡ suc y`, which can never happen, since
+`zero` and `suc` are different constructors. Therefore, we can solve this (and
+the next) hole with absurd pattern matches inside of the lambda:
+
+```agda
+  _≟⅋₂_ : (x y : ℕ) → Dec (x ≡ y)
+  zero ≟⅋₂ zero = yes refl
+  zero ≟⅋₂ suc y = no λ ()
+  suc x ≟⅋₂ zero = no λ ()
+  suc x ≟⅋₂ suc y with x ≟⅋₂ y
+  ... | yes refl = yes refl
+  ... | no x≠y   = no ?
+```
+
+We are left with only one hole, but it is `suc x ≡ suc y → ⊥`, and thus our
+absurd pattern trick can't work here. However, we do have a proof that `x ≢ y`,
+from which we must derive a contradiction. The idea is that if refine our hole
+to a lambda, it will have a parameter of type `suc x ≡ suc y`, which if we
+pattern match on, Agda will learn that `x ≡ y`. From there, we can invoke the
+fact that `x ≢ y`, and we have the contradiction we've been looking for:
+
+```agda
+  _≟_ : (x y : ℕ) → Dec (x ≡ y)
+  zero ≟ zero = yes refl
+  zero ≟ suc y = no λ ()
+  suc x ≟ zero = no λ ()
+  suc x ≟ suc y with x ≟ y
+  ... | yes refl = yes refl
+  ... | no x≠y   = no λ { refl → x≠y refl }
+```
+
+Take a moment to reflect on this. Where before `_==_` simply returned `false`,
+we are now responsible for *deriving a contradiction.* Alternatively said, we
+must now *reify* our reasoning, and *prove* that our algorithm does what it
+says. The advantage of returning a proof of the negation is that downstream
+callers can use it to show impossible codepaths of their own.
+
+We can package up decidable equality into its own type:
+
+```agda
 DecidableEquality : (A : Set) → Set
 DecidableEquality A = (x y : A) → Dec (x ≡ y)
+```
 
-_≟ℕ′_ : DecidableEquality ℕ
-_≟ℕ′_ = _≟ℕ_
+and give a more "semantically-inclined" type to our old function:
 
 
+```agda
+_≟ℕ_ : DecidableEquality ℕ
+_≟ℕ_ = Nat-Properties._≟_
+```
 
+
+## Lists
+
+
+```agda
 data List (A : Set) : Set where
   [] : List A
   _∷_ : A → List A → List A
-
 infixr 5 _∷_
+
+module List-Properties {A : Set} (_≟A_ : DecidableEquality A) where
+  _≟_ : DecidableEquality (List A)
+  [] ≟ [] = yes refl
+  [] ≟ (y ∷ ys) = no λ ()
+  (x ∷ xs) ≟ [] = no λ ()
+  (x ∷ xs) ≟ (y ∷ ys) with x ≟A y
+  ... | no x≠y = no λ { refl → x≠y refl }
+  ... | yes refl with xs ≟ ys
+  ... | no xs≠ys = no λ { refl → xs≠ys refl }
+  ... | yes refl = yes refl
+
+
 
 data _∈_ {A : Set} (a : A) : List A → Set where
   here : {xs : List A} → a ∈ (a ∷ xs)
