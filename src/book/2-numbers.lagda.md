@@ -116,7 +116,7 @@ this chapter.
 But enough talk. It's time to conjure up the natural numbers. In the
 mathematical literature, the naturals are denoted by the *blackboard bold*
 symbol `ℕ`---a convention we too will adopt. You can input this symbol via
-`\bN`.
+[`bN`](AgdaMode).
 
 ```agda
 module Naturals where

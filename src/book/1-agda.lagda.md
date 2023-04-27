@@ -325,8 +325,8 @@ all the booleans. There are no others. When written like this, we often call
 After all of this foreplay, you are probably itching to write a program in Agda.
 As a first step, let's write the `not` function, which transforms `false` into
 `true` and vice-versa. Functions in Agda begin with a typing judgment using a
-*function* arrow (which you can type in your editor via `\to`), and are
-immediately followed by a *definition* of the function:
+*function* arrow (which you can type in your editor via [`to`](AgdaMode)), and
+are immediately followed by a *definition* of the function:
 
 ```agda
   not⅋₀ : Bool → Bool  -- ! 1
@@ -439,7 +439,7 @@ small results, we can instead write a small unit test. Breaking our "don't
 import it before you define it" rule for the last time, we can write two unit
 tests as follows[^equals-sign]:
 
-[^equals-sign]: You can input `≡` by typing `\==`.
+[^equals-sign]: You can input `≡` by typing [`==`](AgdaMode).
 
 ```agda
   open import Relation.Binary.PropositionalEquality
@@ -522,35 +522,37 @@ When writing Agda, you can input Unicode characters by typing a backslash, and
 then a mnemonic for the character you'd like. There are a few different naming
 schemes used by Agda, but for abstract symbols like `⊎` a good bet is to try to
 press a series of characters that together build the one you want. For example,
-`≈` is input by typing `\~~`, and `≋` is similarly just `\~~~`. We can write `≗`
-via `\=o`, and `≟` via `\=?`. Some characters require only one additional
-keypress. We can write `∙` by typing `\.` and `∘` with `\o`.
+`≈` is input by typing [`~~`](AgdaMode), and `≋` is similarly just
+[`~~~`](AgdaMode). We can write `≗` via [`=o`](AgdaMode), and `≟` via
+[`=?`](AgdaMode). Some characters require only one additional keypress. We can
+write `∙` by typing [`.`](AgdaMode) and `∘` with [`o`](AgdaMode).
 
 One common binding you'll need is that for function arrows, `→`. This is typed
-in the obvious way, `\->`, but can also be written in fewer keystrokes as `\to`.
-As it happens, this is the same mnemonic that LaTeX uses to type the arrow
-symbol. If you're familiar with LaTeX, most bindings you know from there will
-also work in Agda.
+in the obvious way, [`->`](AgdaMode), but can also be written in fewer
+keystrokes as [`to`](AgdaMode). As it happens, this is the same mnemonic that
+LaTeX uses to type the arrow symbol. If you're familiar with LaTeX, most
+bindings you know from there will also work in Agda.
 
 Similarly to LaTeX, we can prefix bindings with `_` or `^` to make subscript or
-superscript versions of characters. That means we can get `₁` via `\_1`, and get
-a squared symbol `²` via `\^2`. All numbers have sub- and superscript versions,
-but only some letters do. This is not Agda's fault; address your complaints to
-the Unicode Consortium regarding the lack of subscript `f`.
+superscript versions of characters. That means we can get `₁` via
+[`_1`](AgdaMode), and get a squared symbol `²` via [`^2`](AgdaMode). All numbers
+have sub- and superscript versions, but only some letters do. This is not Agda's
+fault; address your complaints to the Unicode Consortium regarding the lack of
+subscript `f`.
 
 Mathematicians, and thus Agda-users, are also particularly fond of Greek
 letters. You can type Greek letters by prefixing the Latin-equivalent letter
-with `\G`. That is, if you'd like a `λ` (and what good functional programmer
-wouldn't?) you'd type `\Gl`, because `λ` is the Greek version of the Latin
-letter `l`. And if you want an uppercase lambda `Λ`, well, that one is just
-`\GL`. As you can see, the system is quite well organized when you wrap your
-head around it.
+with [`G`](AgdaMode). That is, if you'd like a `λ` (and what good functional
+programmer wouldn't?) you'd type [`Gl`](AgdaMode), because `λ` is the Greek
+version of the Latin letter `l`. And if you want an uppercase lambda `Λ`, well,
+that one is just [`GL`](AgdaMode). As you can see, the system is quite well
+organized when you wrap your head around it.
 
 The other block of symbols you'll probably need at first are the so-called
 *blackboard bold* letters, which are often used in mathematics to describe sets
 of numbers --- the natural numbers being `ℕ`, the reals being `ℝ`, the rationals
 being `ℚ` (short for "quotients"), and so on. You can type blackboard bold
-numbers with the `\b` prefix.
+numbers with the [`b`](AgdaMode) prefix.
 
 Suspend your disbelief; programming in Unicode really is quite delightful if you
 can push through the first few hours. Having orders of magnitude more symbols
@@ -641,7 +643,7 @@ symbol $\vee$ (pronounced "vel") for this operation, which we will follow, since
 the goal is to define the same interface as is present in the Agda standard
 library. This operator is used infix, which we can communicate to Agda by naming
 the OR function `_∨_`; note that this is not a latin `v`, but the unicode
-character `\or`. Note also the underscores on either side of it!
+character [`or`](AgdaMode). Note also the underscores on either side of it!
 
 ```agda
   _∨⅋⅋_ : Bool → Bool → Bool
@@ -867,7 +869,7 @@ There is quite a lot going on here, which we will tackle one step at a time. At
 and `B`. This is because we'd like to be able to form tuples of any two types,
 whether they be integers and booleans, tuples of tuples, or more exotic things
 still. Note that this name `_×_` is not the Latin letter `x`, but is instead the
-*times symbol,* input via `\x`.
+*times symbol,* input via [`x`](AgdaMode).
 
 At [2](Ann) we say "inside of the `_×_` type, there are two fields." These two
 fields are named `proj₁` and `proj₂`, and have types `A` and `B`, respectively.
@@ -1364,7 +1366,7 @@ import in order to get our sandbox into an equivalent state as the one above:
 ```
 
 Note that these are *primes* at the end of `curry` and `uncurry`, not
-apostrophes. Primes can be input via `\'`.
+apostrophes. Primes can be input via [`'`](AgdaMode).
 
 It is now time to investigate the mysterious curly braces that prefix several of
 our functions. As a reminder, we have the following functions in scope, with

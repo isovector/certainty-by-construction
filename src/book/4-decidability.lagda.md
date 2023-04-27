@@ -143,7 +143,7 @@ principle of explosion if you'd like, but in practice means your type signatures
 and negative proofs become simpler to work with.
 
 The "pre-explosive" type we'll work with is called the *bottom* type, written
-`⊥` and input as `\bot`. It's definition is short and sweet:
+`⊥` and input as [`bot`](AgdaMode). It's definition is short and sweet:
 
 ```agda
 data ⊥ : Set where
@@ -199,13 +199,13 @@ infix 3 ¬_
 ```
 
 Again, ignore this `Level` stuff for the time being (although you can input `ℓ`
-via `\ell`.)
+via [`ell`](AgdaMode).)
 
 
 ## Inequality
 
 With a satisfactory definition for propositional negation, we can
-define inequality (input as `\neq`):
+define inequality (input as [`neq`](AgdaMode)):
 
 
 

@@ -259,7 +259,7 @@ module REMOVE-ME where
   data _≡_ {A : Set} : A → A → Set where
 ```
 
-The `≡` symbol is input via `\==`.
+The `≡` symbol is input via [`==`](AgdaMode).
 
 Remember that the type corresponds to the proposition, while the constructors
 are the primitive ways by which we can prove the proposition. In this case,
@@ -542,19 +542,19 @@ familiar with these idioms, we can give new our existing proofs:
     +-identityʳ = x+0≡x
 ```
 
-The superscript `l` and `r` here are input as `\^l` and `\^r`, respectively. The
-attentive reader might question why exactly we need `+-identityˡ`, since it's
-fully-normalized definition is just `refl`, which is to say that it's something
-Agda can work out for itself without explicitly using `+-identityˡ`. While that
-is true, it is an *implementation detail.* If we were to not expose
-`+-identityˡ`, the user of our proof library would be required to understand for
-themselves exactly how addition is computed, which can be an onerous mental
-burden. Instead, we content ourselves with exposing "trivial" proofs like
-`+-identityˡ` with the understanding that it is the *name* of this proof that is
-important, more so than its contents. Throughout your exposure to the Agda
-standard library, you will find many such-named functions, and the convention
-can help you find the lemmas you need without needing to dig deeply into the
-implementation of the mathematical object at study.
+The superscript `l` and `r` here are input as [`^l`](AgdaMode) and [`^r`](AgdaMode),
+respectively. The attentive reader might question why exactly we need
+`+-identityˡ`, since it's fully-normalized definition is just `refl`, which is
+to say that it's something Agda can work out for itself without explicitly using
+`+-identityˡ`. While that is true, it is an *implementation detail.* If we were
+to not expose `+-identityˡ`, the user of our proof library would be required to
+understand for themselves exactly how addition is computed, which can be an
+onerous mental burden. Instead, we content ourselves with exposing "trivial"
+proofs like `+-identityˡ` with the understanding that it is the *name* of this
+proof that is important, more so than its contents. Throughout your exposure to
+the Agda standard library, you will find many such-named functions, and the
+convention can help you find the lemmas you need without needing to dig deeply
+into the implementation of the mathematical object at study.
 
 In addition to addition, multiplication also enjoys both left and right
 identities. A good exercise is to find and prove both.
@@ -890,10 +890,10 @@ remainder of the expression alone. We can introduce a function via a lambda:
       )
 ```
 
-The lambda here is input as `\Gl`, while the phi is $\Gf$. A useful trick for
-filling in the body of `cong`'s targeting function is to copy the expression you
-had before, and replace the bit you'd like to change with the function's input.
-Thus:
+The lambda here is input as [`Gl`](AgdaMode), while the phi is [`Gf`](AgdaMode).
+A useful trick for filling in the body of `cong`'s targeting function is to copy
+the expression you had before, and replace the bit you'd like to change with the
+function's input. Thus:
 
 ```agda
     a^1≡a+b*0 : (a b : ℕ) → a ^ one ≡ a + (b * zero)
@@ -971,7 +971,7 @@ with associativity. For example, while it's tedious to write `five` out of
 
 where each of these sets of parentheses is mandatory, we can instead embrace the
 nature of counting in unary and define a right-associative prefix "tick mark"
-(input as `\|`):
+(input as [`|`](AgdaMode)):
 
 ```agda
     ∣_ : ℕ → ℕ
@@ -997,10 +997,10 @@ lessen the ugliness by introducing some different syntax for `zero`, as in:
     five⅋₁ = ∣ ∣ ∣ ∣ ∣ □
 ```
 
-The square `□` can be input as `\sq`. Whether or not this syntax is better than
-our previous attempt is in the eye of the beholder. Suffice it to say that we
-will always need some sort of terminal value when doing this style of
-associativity to build values.
+The square `□` can be input as [`sq`](AgdaMode). Whether or not this syntax is
+better than our previous attempt is in the eye of the beholder. Suffice it to
+say that we will always need some sort of terminal value when doing this style
+of associativity to build values.
 
 Mixfix parsing gets even more interesting, however. We can make *delimited
 operators* by enclosing an underscore with syntax on either side. For example,
@@ -1017,9 +1017,10 @@ $\lfloor{x}\rfloor$, which we can replicate in Agda:
     three′ = ⌊ π ⌋
 ```
 
-The floor bars are input via `\clL` and `\clR`, while `ℝ` is written as `\bR`
-and `π` is `\Gp`. We don't dare define the real numbers here, as they are a
-tricky construction and would distract from the point.
+The floor bars are input via [``clL``](AgdaMode) and [clR](AgdaMode), while `ℝ`
+is written as [`bR`](AgdaMode) and `π` is [`Gp`](AgdaMode). We don't dare define
+the real numbers here, as they are a tricky construction and would distract from
+the point.
 
 Agda's profoundly flexible syntax means we are capable of defining many built-in
 language features for ourselves. For example, many ALGOL-style languages come
@@ -1029,7 +1030,7 @@ to do with conditional evaluation. Mixfix parsing means we can define true
 ternary operators, with whatever semantics we'd like. However, just to
 demonstrate the approach, we can define it here. Because both `?` and `:`
 (the traditional syntax of the "ternary operator") have special meaning in Agda,
-we will instead use `‽` (`\?!`) and `⦂` (`\z:`):
+we will instead use `‽` ([`?!`](AgdaMode)) and `⦂` ([`z:`](AgdaMode)):
 
 ```agda
     _‽_⦂_ : {A : Set} → Bool → A → A → A
@@ -1159,12 +1160,12 @@ it's a great choice to terminate our right-associative chain of equalities.
       infix 3 _∎
 ```
 
-The tombstone marker is input in Agda via `\qed`. Note that the `x` parameter
-here is unused in the definition, and exists only to point out exactly which on
-object we'd like to show reflexivity. This gives us a convenient ending piece,
-so let's now work backwards. The simplest piece of reasoning we can do is an
-equality that requires no justification. If we already have the proof we'd like,
-we can simply return it:
+The tombstone marker is input in Agda via [`qed`](AgdaMode). Note that the `x`
+parameter here is unused in the definition, and exists only to point out exactly
+which on object we'd like to show reflexivity. This gives us a convenient ending
+piece, so let's now work backwards. The simplest piece of reasoning we can do is
+an equality that requires no justification. If we already have the proof we'd
+like, we can simply return it:
 
 ```agda
       _≡⟨⟩_ : {A : Set} → (x : A) → {y : A} → x ≡ y → x ≡ y
@@ -1386,9 +1387,9 @@ and
   where open ≡-Reasoning
 ```
 
-I have bound the first to `\step`, and the latter to `\begin`. Let's put these
-to work writing something more useful. We'd like to prove that addition is
-*associative,* which is to say, that it satisfies the following law:
+I have bound the first to [`step`](AgdaMode), and the latter to [`begin`](AgdaMode).
+Let's put these to work writing something more useful. We'd like to prove that
+addition is *associative,* which is to say, that it satisfies the following law:
 
 $$
 (a + b) + c = a + (b  + c)
@@ -1409,7 +1410,8 @@ us to this step:
     +-assoc⅋₀ (suc x) y z = ?
 ```
 
-We're ready to start a reasoning block, and thus we can use our `\begin` snippet:
+We're ready to start a reasoning block, and thus we can use our
+[`begin`](AgdaMode) snippet:
 
 ```agda
     +-assoc⅋₁ : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
@@ -1485,10 +1487,10 @@ invoke [Auto](AgdaCmd) to search for the remainder of the proof:
       where open ≡-Reasoning
 ```
 
-I quite like this approach for tackling proofs. I introduce a `\begin` snippet,
-use [Solve](AgdaCmd) to fill in the top and bottom, insert new calls to `_≡⟨⟩_`
-the top and bottom, fill them via [Solve/Normalise](AgdaCmd), and then use
-`\step` to help fill in the middle.
+I quite like this approach for tackling proofs. I introduce a [`begin`](AgdaMode)
+snippet, use [Solve](AgdaCmd) to fill in the top and bottom, insert new calls to
+`_≡⟨⟩_` the top and bottom, fill them via [Solve/Normalise](AgdaCmd), and then
+use [`step`](AgdaMode) to help fill in the middle.
 
 Let's do another proof together, this time a less-trivial one. First, we will
 dash out a quick lemma:
@@ -1524,8 +1526,8 @@ Solution
     +-comm⅋₀ (suc x) y = ?
       ```
 
-Let's start with a `\begin` snippet, this time filling the top and bottom holes
-via [Solve/Normalise](AgdaCmd) directly:
+Let's start with a [`begin`](AgdaMode) snippet, this time filling the top and
+bottom holes via [Solve/Normalise](AgdaCmd) directly:
 
 ```agda
     +-comm⅋₁ : (x y : ℕ) → x + y ≡ y + x
@@ -1537,8 +1539,8 @@ via [Solve/Normalise](AgdaCmd) directly:
 ```
 
 Here we have our choice of working top-down, or bottom up. Let's work bottom-up,
-for fun. Add a `\step`, which will make things temporarily go all yellow as Agda
-now has too many degrees of freedom to work out what you mean:
+for fun. Add a [`step`](AgdaMode), which will make things temporarily go all
+yellow as Agda now has too many degrees of freedom to work out what you mean:
 
 ```agda
     +-comm⅋₂ : (x y : ℕ) → x + y ≡ y + x
