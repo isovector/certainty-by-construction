@@ -578,7 +578,7 @@ A binary tree is either empty, or it is a branching node containing a value and 
 subtrees. We can codify this as follows:
 
 ```agda
-module Trees where
+module BinaryTrees where
   data BinTree (A : Set) : Set where
     empty : BinTree A
     branch : BinTree A → A → BinTree A → BinTree A
@@ -761,6 +761,59 @@ Of course, a little cleanup goes a long way:
       (leaf (ss-even (ss-even (ss-even z-even))))
 ```
 
+We've given decidability proofs for equality; can we also give one for `All P`?
+Certainly we can; given a decidable procedure for `P`, we can just try it at
+every node in the tree and see what shakes out. But before we write it, the
+following definition will be useful to help corral the types:
+
+```agda
+  -- TODO(sandy): decidable in stdlib is over TWO arguments
+
+  Decidable : (A → Set) → Set
+  Decidable {A} P = (a : A) → Dec (P a)
+
+  Decidable₂ : (A → A → Set) → Set
+  Decidable₂ {A} _~_ = (x y : A) → Dec (x ~ y)
+```
+
+The `Dec` type corresponds to a particular *decision*, while `Decidable` states
+that we can make a decision for *every input.* It's the difference between
+saying that I, personally, have an age and saying that *everyone* has an age.
+
+Notice that we used the variable `A` in our type definition for `Decidable`. In
+order to bring `A` into scope in the *body* of `Decidable`, we need to bind it
+as an implicit argument. This is the general way that variables are
+used---implicitly (in the usual, non-technical sense) in the type, and
+implicitly (in the Agda sense) in the definition.
+
+
+Exercise
+
+:   Show that `All P` is `Decidable`, given a decision procedure for `P`.
+
+
+Solution
+
+:   ```agda
+  all? : {P : A → Set} → Decidable P → Decidable (All P)
+  all? p? empty = yes empty
+  all? p? (branch l a r) with p? a
+  ... | no ¬pa = no λ { (branch _ pa _) → ¬pa pa }
+  ... | yes pa
+    with all? p? l
+  ... | no ¬all-l =
+          no λ { (branch all-l _ _) → ¬all-l all-l }
+  ... | yes all-l
+    with all? p? r
+  ... | no ¬all-r =
+          no λ { (branch _ _ all-r) → ¬all-r all-r }
+  ... | yes all-r = yes (branch all-l pa all-r)
+    ```
+
+As this exercise shows, decision procedures are often extremely formulaic. You
+decide each individual piece, and combine them together if you can, or witness a
+contradiction from the bigger structure if you can't.
+
 
 ## Binary Search Trees
 
@@ -855,142 +908,562 @@ Proofs like this are an awful lot of work, but thankfully we never need to write
 them by hand. For concrete values, we can always ask Agda to solve them for us,
 and for parameterized values, we can build them by induction.
 
+Speaking of induction, can we decide whether a given tree is a BST? Sure! The
+pattern is exactly the same, decide each piece, derive contradictions on `no`,
+and assemble the final proof if everything is `yes`:
+
 ```agda
-module Lists where
-  data List (A : Set) : Set where
-    [] : List A
-    _∷_ : A → List A → List A
-  infixr 5 _∷_
-
-  module Deque where
-    data Deque (A : Set) : Set where
-      empty : Deque A
-      [_] : A → Deque A
-      _◁_▷_ : A → Deque A → A → Deque A
-
-    push-front : {A : Set} → A → Deque A → Deque A
-    push-front x empty       = [ x ]
-    push-front x [ y ]     = x ◁ empty ▷ y
-    push-front x (l ◁ q ▷ r) = x ◁ push-front l q ▷ r
-
-    push-back : {A : Set} → A → Deque A → Deque A
-    push-back x empty       = [ x ]
-    push-back x [ y ]     = y ◁ empty ▷ x
-    push-back x (l ◁ q ▷ r) = l ◁ push-front r q ▷ x
-
-    open import Data.Maybe
-      using (Maybe; nothing; just)
-
-    open import Data.Product
-      using (_×_; _,_)
-
-    pop-front : {A : Set} → Deque A → Maybe (A × Deque A)
-    pop-front empty = nothing
-    pop-front [ x ] = just (x , empty)
-    pop-front (l ◁ q ▷ r) = just (l , push-back r q)
-
-    test : Deque ℕ
-    test = 0 ◁ 1 ◁ [ 2 ] ▷ 3 ▷ 4
-
-
-  module List-Properties {A : Set} (_≟A_ : DecidableEquality A) where
-    _≟_ : DecidableEquality (List A)
-    [] ≟ [] = yes refl
-    [] ≟ (y ∷ ys) = no λ ()
-    (x ∷ xs) ≟ [] = no λ ()
-    (x ∷ xs) ≟ (y ∷ ys) with x ≟A y
-    ... | no x≠y = no λ { refl → x≠y refl }
-    ... | yes refl with xs ≟ ys
-    ... | no xs≠ys = no λ { refl → xs≠ys refl }
-    ... | yes refl = yes refl
-
-
-
-  data _∈_ {A : Set} (a : A) : List A → Set where
-    here : {xs : List A} → a ∈ (a ∷ xs)
-    there : {x : A} → {xs : List A} → a ∈ xs → a ∈ (x ∷ xs)
-
-  decide-membership
-      : {A : Set}
-      → DecidableEquality A
-      → (a : A)
-      → (xs : List A)
-      → Dec (a ∈ xs)
-  decide-membership _≟_ a [] = no λ ()
-  decide-membership _≟_ a (x ∷ xs)
-    with a ≟ x
-  ... | yes refl = yes here
-  ... | no a≠x
-    with decide-membership _≟_ a xs
-  ... | yes a∈xs = yes (there a∈xs)
-  ... | no ¬a∈xs = no λ { here → a≠x refl
-                        ; (there a∈xs) → ¬a∈xs a∈xs
-                        }
-
-
-  data All {A : Set} (P : A → Set) : List A → Set where
-    [] : All P []
-    _∷_ : {x : A} {xs : List A} → P x → All P xs → All P (x ∷ xs)
-
-  decide-all
-      : {A : Set} {P : A → Set}
-      → (p? : (a : A) → Dec (P a))
-      → (xs : List A)
-      → Dec (All P xs)
-  decide-all p? [] = yes []
-  decide-all p? (x ∷ xs)
-    with p? x
-  ... | no ¬px = no λ { (px ∷ _) → ¬px px }
-  ... | yes px
-    with decide-all p? xs
-  ... | yes all = yes (px ∷ all)
-  ... | no ¬all = no λ { (_ ∷ all) → ¬all all }
-
-
-  record Σ (A : Set) (B : A → Set) : Set where
-    constructor _,_
-    field
-      proj₁ : A
-      proj₂ : B proj₁
-
-  infixr 4 _,_
-
-  _×_ : Set → Set → Set
-  A × B = Σ A (λ _ → B)
-
-
-  filter
-      : {A : Set} {P : A → Set}
-      → ((x : A) → Dec (P x))
-      → (xs : List A)
-      → Σ (List A) (All P)
-  filter p? [] = [] , []
-  filter p? (x ∷ xs)
-    with p? x  | filter p? xs
-  ...  | yes p | ls , all = (x ∷ ls) , (p ∷ all)
-  ...  | no ¬p | ls , all = ls , all
-
-
-
-  weaken
-      : {A : Set} {P : A → Set} {Q : A → Set} {ls : List A}
-      → (P→Q : {a : A} → P a → Q a)
-      → All P ls
-      → All Q ls
-  weaken Q→P [] = []
-  weaken Q→P (x ∷ xs) = Q→P x ∷ weaken Q→P xs
-
-
-  filter′
-      : {A : Set} {P : A → Set}
-      → ((x : A) → Dec (P x))
-      → (xs : List A)
-      → Σ (List A) λ l → All P l × All (_∈ xs) l
-  filter′ p? [] = [] , [] , []
-  filter′ p? (x ∷ xs)
-    with p? x | filter′ p? xs
-  ... | yes p | ls , all-P , all-in
-      = (x ∷ ls) , p ∷ all-P , here ∷ weaken there all-in
-  ... | no ¬p | ls , all-P , all-in
-      = ls , all-P , weaken there all-in
+  is-bst?
+      : {_≤_ : A → A → Set}
+      → Decidable₂ _≤_
+      → Decidable (IsBST _≤_)
+  is-bst? _≤?_ empty = yes bst-empty
+  is-bst? _≤?_ (branch l a r)
+    with all? (_≤? a) l
+  ... | no ¬all≤a-l =
+          no λ { (bst-branch all≤a-l _ _ _)
+                    → ¬all≤a-l all≤a-l }
+  ... | yes all≤a-l
+    with all? (a ≤?_) r
+  ... | no ¬arr≤a-r =
+          no λ { (bst-branch _ arr≤a-r _ _)
+                    → ¬arr≤a-r arr≤a-r }
+  ... | yes arr≤a-r
+    with is-bst? _≤?_ l
+  ... | no ¬bst-l =
+          no λ { (bst-branch _ _ bst-l _) → ¬bst-l bst-l }
+  ... | yes bst-l
+    with is-bst? _≤?_ r
+  ... | no ¬bst-r =
+          no λ { (bst-branch _ _ _ bst-r) → ¬bst-r bst-r }
+  ... | yes bst-r =
+          yes (bst-branch all≤a-l arr≤a-r bst-l bst-r)
 ```
+
+You might be wondering whether there is an easier way to assemble these proofs.
+Unfortunately, there is no. It's not theoretically impossible by any means, but
+at time of writing, there is no automatic means of deriving these proofs.
+
+
+## Insertion into BSTs
+
+What we have done thus far is show that there exist things called binary search
+trees, and we have given a definition of what properties we mean when we say
+something is---or isn't---a binary search tree. This is a great start,
+prescriptively speaking, but this is not exactly where most computer science
+textbooks go when they discuss BSTs. Instead, they immediately dive into the
+meat of "what can you do with a BST."
+
+Insertion is something you can do with a BST, and lest we be left behind by the
+traditional pedagogical material, let's now turn our discussion to insertion.
+The algorithm is easy enough---if the tree is empty, add a leaf. Otherwise,
+compare the value you'd like to insert with the value at the root. If they're
+equal, you're done. Otherwise, recursively insert the value into the correct of
+the subtree.
+
+The implicit claim here is that this algorithm preserves the `IsBST` invariant,
+but that is never explicitly pointed out. For posterity, this algorithm *does*
+indeed preserve the `IsBST` invariant. However, this poses some challenges for
+us, since in order to show this we must necessarily derive a proof, which is
+going to depend on a proof that we picked the correct subtree to recurse on.
+
+What we have to work with thus far is only the fact that `_<_` is decidable. But
+if we were to work directly with the decidability `_<_`, our algorithm would
+need to first check whether `a < x`, and if it isn't, check that `x < a`, and if
+it isn't check that `x ≡ y`, and if *that isn't,* well then we definitely have a
+problem. This doesn't sound like an enjoyable experience though; as we have seen
+above, every invocation of decidability doubles the amount of work we need to
+do, since we need to use the proof or show a subsequent contradiction.
+
+Instead, we can generalize the idea of decidability to a *trichotomy*, which is
+the idea that exactly one of three choices must hold. From this perspective,
+`Dec` is merely a type that states exactly one of `P` or `¬ P` holds, and so the
+notion of trichotomy shouldn't be earth-shattering. We can define `Tri`
+(analogous to `Dec`) as as proof that exactly one of `A`, `B` or `C` holds:
+
+```agda
+  data Tri (A B C : Set) : Set where
+    tri< : A → ¬ B → ¬ C → Tri A B C
+    tri≈ : ¬ A → B → ¬ C → Tri A B C
+    tri> : ¬ A → ¬ B → C → Tri A B C
+```
+
+and we can lift this notion to `Trichotomous`, stating that for two relations,
+one equality-like, and one less-than-like, we can always determine which holds:
+
+```agda
+  Trichotomous
+      : (_≈_ : A → A → Set)
+      → (_<_ : A → A → Set)
+      → Set
+  Trichotomous {A} _≈_ _<_ =
+    (x y : A) → Tri (x < y) (x ≈ y) (y < x)
+```
+
+Working directly with `Tri`, rather than several invocations to `Decidable₂
+_<_` will dramatically reduce the proof effort necessary to define `insert` and
+show that it preserves `IsBST`.
+
+We are going to require a `_<_` relation, and a proof that it forms a trichotomy
+with `_≡_` in order to work through the implementation details here. Rather than
+pollute all of our type signatures with the necessary plumbing, we can instead
+define an anonymous module and add the common parameters to that instead, as in:
+
+```agda
+  -- TODO(sandy): this requires strict <, unlike the previous
+  -- section; clean up previous
+  module _
+    {_<_ : A → A → Set}
+    (<-cmp : Trichotomous _≡_ _<_) where
+```
+
+Anything defined in this module will now automatically inherit `{_<_ : A → A →
+Set}` and `Trichotomous _≡_ _<_` arguments, which saves us some effort in
+getting all the necessary arguments from one place to another.
+
+Defining `insert` follows exactly the same template as our in-writing algorithm
+above:
+
+```agda
+    insert
+        : A
+        → BinTree A
+        → BinTree A
+    insert a empty = leaf a
+    insert a (branch l x r) with <-cmp a x
+    ... | tri< _ _ _ = branch (insert a l) x r
+    ... | tri≈ _ _ _ = branch l x r
+    ... | tri> _ _ _ = branch l x (insert a r)
+```
+
+We would now like to show that `insert` preserves the `IsBST` invariant. That
+is, we'd like to define the following function:
+
+```agda
+    bst-insert⅋
+        : (a : A)
+        → {t : BinTree A}
+        → IsBST _<_ t
+        → IsBST _<_ (insert a t)
+    bst-insert⅋ = ?
+```
+
+Before diving into this proper, we will do a little thinking ahead and realize
+that showing `IsBST` for a `branch` constructor requires showing that all
+elements in either subtree are properly bounded by the root. Therefore, before
+we show that `insert` preserves `IsBST`, we must first prove that `insert`
+preserves `All`! The type we need to show is that if `P a` and `All P t` hold
+(for any `P`), then so too must `All P (insert a t)`:
+
+```agda
+    all-insert⅋₀
+        : {P : A → Set}
+        → (a : A)
+        → P a
+        → {t : BinTree A}  -- ! 1
+        → All P t
+        → All P (insert a t)
+    all-insert⅋₀ = ?
+```
+
+In this type, we have carefully chosen to position the implicit parameter `t` at
+[1](Ann). In placing it directly before the `All P t` parameter, we can
+simultaneously pattern match on both, which gives us easy bindings for the tree
+being manipulated, as you can see here. After binding our variables:
+
+```agda
+    all-insert⅋₁
+        : {P : A → Set} → (a : A) → P a → {t : BinTree A}
+        → All P t → All P (insert a t)
+    all-insert⅋₁ a pa {t} all-pt = {! !}
+```
+
+we can now ask for a [MakeCase:all-pt](AgdaCmd):
+
+```agda
+    all-insert⅋₂
+        : {P : A → Set} → (a : A) → P a → {t : BinTree A}
+        → All P t → All P (insert a t)
+    all-insert⅋₂ a pa {.empty} empty = {! !}
+    all-insert⅋₂ a pa {.(branch _ _ _)}
+                     (branch all-pt x all-pt₁) = {! !}
+```
+
+Notice that when we pattern matched on `all-pt`, Agda realized that this fully
+determines the results of `t` as well, and it happily expanded them out into
+these funny `.empty` and `.(branch...)` patterns. These are called *dot
+patterns,* and they correspond to patterns whose form has been fully determined
+by pattern matching on something else. However, whenever there's a dot pattern
+we're allowed to replace it with a regular pattern match, as in:
+
+```agda
+    all-insert⅋₃
+        : {P : A → Set} → (a : A) → P a → {t : BinTree A}
+        → All P t → All P (insert a t)
+    all-insert⅋₃ a pa {empty} empty = {! !}
+    all-insert⅋₃ a pa {branch _ _ _}
+                     (branch all-pt x all-pt₁) = {! !}
+```
+
+The point of this is really to get the pieces of the `t : BinTree` into scope,
+so we can replace those underscores with real names, and clean up the
+automatically generated other bindings at the same time:
+
+```agda
+    all-insert⅋₄
+        : {P : A → Set} → (a : A) → P a → {t : BinTree A}
+        → All P t → All P (insert a t)
+    all-insert⅋₄ a pa {empty} empty = {! !}
+    all-insert⅋₄ a pa {branch l x r}
+                     (branch l<x px x<r) = {! !}
+```
+
+Finally, there is no reason to pattern match on the `{empty}`, since it doesn't
+help us bring any new variables into scope.
+
+```agda
+    all-insert⅋₅
+        : {P : A → Set} → (a : A) → P a → {t : BinTree A}
+        → All P t → All P (insert a t)
+    all-insert⅋₅ a pa empty = {! !}
+    all-insert⅋₅ a pa {branch l x r}
+                     (branch l<x px x<r) = {! !}
+```
+
+Filling the first hole is merely showing that we have `All` for a singleton,
+which is our `leaf` constructor:
+
+```agda
+    all-insert⅋₆
+        : {P : A → Set} → (a : A) → P a → {t : BinTree A}
+        → All P t → All P (insert a t)
+    all-insert⅋₆ a pa empty = leaf pa
+    all-insert⅋₆ a pa {branch l x r}
+                     (branch l<x px x<r) = {! !}
+```
+
+A funny thing happens here. We know this remaining hole must be a `branch`, but
+Agda will refuse to [Refine](AgdaCmd) it. If you ask for the type of the goal,
+we see something peculiar:
+
+```info
+Goal: All P (insert <-cmp a (branch l x r) | <-cmp a x)
+```
+
+The vertical bar is not anything that you're allowed to write for yourself, but
+the meaning here is that the result of `insert` is stuck until Agda knows the
+result of `<-cmp a`. Our only means of unsticking it is to also do a `with`
+abstraction over `<-cmp a x` and subsequently pattern match on the result:
+
+```agda
+    all-insert⅋₇
+        : {P : A → Set} → (a : A) → P a → {t : BinTree A}
+        → All P t → All P (insert a t)
+    all-insert⅋₇ a pa empty = leaf pa
+    all-insert⅋₇ a pa {branch l x r}
+                     (branch l<x px x<r)
+      with <-cmp a x
+    ... | tri< a<x _ _ = {! !}
+    ... | tri≈ _ a=x _ = {! !}
+    ... | tri> _ _ x<a = {! !}
+```
+
+Looking at this new set of goals, we see that they are no longer stuck and have
+now computed to things we're capable of implementing. By now you should be able
+to complete the function on your own:
+
+```agda
+    all-insert
+        : {P : A → Set} → (a : A) → P a → {t : BinTree A}
+        → All P t → All P (insert a t)
+    all-insert a pa empty = leaf pa
+    all-insert a pa {branch l x r} (branch all-l px all-r)
+      with <-cmp a x
+    ... | tri< a<x _ _ =
+            branch (all-insert a pa all-l) px all-r
+    ... | tri≈ _ a=x _ =
+            branch all-l px all-r
+    ... | tri> _ _ x<a =
+            branch all-l px (all-insert a pa all-r)
+```
+
+Now that we've finished the `all-insert` lemma, we're ready to show that
+`insert` preserves `IsBST`. Again, when implementing this you will see that the
+type will get stuck on `insert x t | <-cmp a x`, and will require another
+pattern match on `<-cmp a x`. This will always be the case, and it is for this
+reason that we say the proof has the same shape as the computation. In many ways
+it is like poetry: it rhymes.
+
+Implementing `bst-insert` isn't much more of a cognitive challenge than
+`all-insert` was; just pattern match and then build a proof term via induction:
+
+```agda
+    bst-insert
+        : (a : A)
+        → {t : BinTree A}
+        → IsBST _<_ t
+        → IsBST _<_ (insert a t)
+    bst-insert a bst-empty = bst-leaf
+    bst-insert a {branch l x r} (bst-branch l<x x<r lbst rbst)
+      with <-cmp a x
+    ... | tri< a<x _ _ =
+            bst-branch
+              (all-insert a a<x l<x)
+              x<r
+              (bst-insert a lbst)
+              rbst
+    ... | tri≈ _ a=x _ = bst-branch l<x x<r lbst rbst
+    ... | tri> _ _ x<a =
+            bst-branch
+              l<x
+              (all-insert a x<a x<r)
+              lbst
+              (bst-insert a rbst)
+```
+
+
+## Intrinsic vs Extrinsic Proofs
+
+This style of proof we have demonstrated, is called an *extrinsic* proof. The
+idea here is that we have defined a type `BinTree A` and an operation `insert :
+A → BinTree A → BinTree A` in such a way that they are not guaranteed to be
+correct. In order to subsequently prove them correct, we added an additional
+layer on top, namely `IsBST` and `bst-insert` which assert our invariants after
+the fact. This is a very natural way of proving things, and is a natural
+extension of the way we usually do computer science: do the implementation, and
+tack the tests on afterwards.
+
+However, extrinsic proofs are not the only possibility! We can instead make a
+`BST A` type which satisfies the binary search tree invariant *by construction.*
+By virtue of this being by construction, we are not required to tack on any
+additional proof, since the existence of the thing itself is proof enough. We
+call this notion of proof *intrisic*, as it is intrinsic to what the object is
+in the first place.
+
+Intrinsic proofs are desirable because they only require you to do the work
+once. Recall that when defining both `bst-insert` and `all-insert`, we
+essentially had to mirror the definition of `insert` modulo a few changes. It
+was quite a lot of work, and you can imagine that this effort would multiply
+substantially for each additional operations we'd like to define over BSTs.
+Extrinsic proofs make you shoulder this burden.
+
+However, intrinsic proofs do come with a downside, namely that every algorithm
+you have ever seen is given with an extrinsic proof, if it comes with a proof at
+all. Which is to say, not only are we as computer scientists better primed for
+thinking about extrinsic proof, but worse: the field itself is riddled with
+them. Almost every algorithm you have ever heard of isn't amenable to intrinsic
+proof. This is because usually the invariant is a macro-level property, which
+isn't preserved *inside* of operations.
+
+For example, consider a heap data structure, which is a particular
+implementation of a priority queue---at any time, you can get the
+highest-priority thing in the queue. Heaps are binary trees (or sometimes,
+clever encodings of binary trees as arrays) with the *heap property:* the root
+node is larger than everything else in the tree. The heap property is also
+satisfied recursively, so that we have a partial ordering over all elements in
+the heap.
+
+Now imagine we'd like to insert something new into the heap. We don't know where
+it should go, so we insert it into the first empty leaf we can find, and then
+recursively "bubble" it up. That is to say, you put it at a leaf, and then check
+to see if it's larger than its parent. If so, you swap the two, and then recurse
+upwards. Eventually the newly-insert element is somewhere in the tree such that
+the heap invariant is met.
+
+This algorithm works just fine, but it *cannot* be used in an intrinsic heap,
+because when we first insert the new element into a bottom-most leaf, the heap
+property is immediately broken! It doesn't matter if we eventually fix the
+invariant; the intrinsic encoding means it's impossible to insert an element
+somewhere it doesn't belong.
+
+-- TODO(sandy): conflating between intrinsic proofs and objects defined
+-- intrinsically
+
+It is for reasons like these that intrinsic proofs are really hard for computer
+scientists. Fully embracing them requires unlearning a great deal of what our
+discipline has taught us, and that is a notoriously hard position to adopt.
+
+
+## An Intrinsic BST
+
+-- TODO(sandy): cite mcbride here
+
+
+In order to define an intrinsic binary search tree, we will proceed in two
+steps. First, we will define a BST indexed by its upper and lower bounds, which
+we can subsequently use to ensure everything is in its right place, without
+resorting to extrinsic techniques like `All`. We begin with a new module to
+sandbox our first step:
+
+```agda
+module Intrinsic-BST-Impl {A : Set} (_<_ : A → A → Set) where
+```
+
+As before, we make a `BST` type, but this time parameterized by a `lo` and `hi`
+bound. In the `empty` constructor we require a proof that `lo < hi`:
+
+```agda
+  data BST (lo hi : A) : Set where
+    empty : lo < hi → BST lo hi
+```
+
+Our other constructor, `branch`, now restricts the bounds of its left and right
+subtrees so their top and bottom bounds are the root, respectively:
+
+```agda
+    xbranch  -- ! 2
+        : (a : A)  -- ! 1
+        → BST lo a
+        → BST a hi
+        → BST lo hi
+```
+
+Notice at [1](Ann) that the root of the tree comes as the first argument! This
+is unlike our extrinsic `branch`, but is necessary here so that `a` is in scope
+when we build our subtrees. The discrepancy in argument order is why this
+constructor has been named `xbranch`, as indicated at [2](Ann).
+
+Fortunately, we can use a pattern synonym to shuffle our parameters back into
+the correct shape:
+
+```agda
+  pattern branch lo a hi = xbranch a lo hi
+```
+
+And just as before, we will also add a `leaf` pattern:
+
+```agda
+  pattern leaf lo<a a a<hi = branch (empty lo<a) a (empty a<hi)
+```
+
+Returning to the issue of `insert`, we notice one big problem with putting the
+bounds in the type index: it means that `insert` could *change the type* of the
+`BST` if it is outside the original bounds! This is a bad state of affairs, and
+will dramatically harm our desired ergonomics. For the time being, we will
+sidestep the issue and merely require proofs that `a` is already in bounds.
+
+
+The implementation of `insert` is nearly identical to our original,
+extrinsically proven version:
+
+```agda
+  open BinaryTrees using (Trichotomous; Tri)
+  open Tri
+
+  insert
+      : {lo hi : A}
+      → (<-cmp : Trichotomous _≡_ _<_)
+      → (a : A)
+      → lo < a
+      → a < hi
+      → BST lo hi
+      → BST lo hi
+  insert <-cmp a lo<a a<hi (empty _) = leaf lo<a a a<hi
+  insert <-cmp a lo<a a<hi (branch l x r)
+    with <-cmp a x
+  ... | tri< a<x _ _ = branch (insert <-cmp a lo<a a<x l) x r
+  ... | tri≈ _ a=x _ = branch l x r
+  ... | tri> _ _ x<a = branch l x (insert <-cmp a x<a a<hi r)
+```
+
+This concludes our first step of the problem. We now have an
+intrinsically-proven BST---all that remains is to deal with the type-changing
+problem, and put an ergonomic facade in front.
+
+A cheeky solution to the problem of `insert` possibly changing the type is to
+bound all BSTs by the equivalent of negative and positive infinity. This is, in
+essence, throwing away the bounds---at least at the top level. If we can hide
+those details, we will simultaneously have solved the problem of changing types
+and the ergonomics of needing to juggle the bounds.
+
+The first step is to define a type which *extends* `A` with the notions of
+positive and negative infinity:
+
+```agda
+open BinaryTrees using (Trichotomous)
+
+module Intrinsic-BST
+          {A : Set}
+          {_<_ : A → A → Set}
+          (<-cmp : Trichotomous _≡_ _<_) where
+
+  data ∞ : Set where
+    -∞ +∞ : ∞
+    [_] : A → ∞
+```
+
+The `[_]` constructor lifts an `A` into `∞`, and it is through this mechanism by
+which we are justified in saying that `∞` extends `A`. From here, it's not too
+hard to define a `_<_` relationship over `∞`:
+
+```agda
+  data _<∞_ : ∞ → ∞ → Set where
+    -∞<[] : {x : A} → -∞ <∞ [ x ]
+    []<[] : {x y : A} → x < y → [ x ] <∞ [ y ]
+    []<+∞ : {x : A} → [ x ] <∞ +∞
+    -∞<+∞ : -∞ <∞ +∞
+```
+
+This has all the properties you'd expect, that `-∞` is less than everything
+else, `+∞` is more than everything else, and that we can lift `_<_` over `A`.
+The trick should be clear: we are not going to instantiate the
+`Intrinsic-BST-Impl` module at type `A`, but rather at `∞`!
+
+Before we can do that, however, we must show that our new `_<∞_` is
+trichotomous. This is quite a lot of work, but the details are uninteresting to
+us by now, and indeed Agda can do the first several cases for us automatically:
+
+```agda
+  open BinaryTrees using (Tri)
+  open Tri
+
+  <∞-cmp : Trichotomous _≡_ _<∞_
+  <∞-cmp -∞ -∞ = tri≈ (λ ()) refl (λ ())
+  <∞-cmp -∞ +∞ = tri< -∞<+∞ (λ ()) (λ ())
+  <∞-cmp -∞ [ _ ] = tri< -∞<[] (λ ()) (λ ())
+  <∞-cmp +∞ -∞ = tri> (λ ()) (λ ()) -∞<+∞
+  <∞-cmp +∞ +∞ = tri≈ (λ ()) refl (λ ())
+  <∞-cmp +∞ [ _ ] = tri> (λ ()) (λ ()) []<+∞
+  <∞-cmp [ _ ] -∞ = tri> (λ ()) (λ ()) -∞<[]
+  <∞-cmp [ _ ] +∞ = tri< []<+∞ (λ ()) (λ ())
+```
+
+All that's left is lifting `<-cmp`, which we must do by hand:
+
+```agda
+  <∞-cmp [ x ] [ y ]
+    with <-cmp x y
+  ... | tri< x<y ¬x=y ¬y<x =
+          tri<
+            ([]<[] x<y)
+            (λ { refl → ¬x=y refl })
+            (λ { ([]<[] y<x) → ¬y<x y<x })
+  ... | tri≈ ¬x<x refl _ =
+          tri≈
+            (λ { ([]<[] x<x) → ¬x<x x<x })
+            refl
+            (λ { ([]<[] x<x) → ¬x<x x<x })
+  ... | tri> ¬x<y ¬x=y y<x =
+          tri>
+            (λ { ([]<[] x<y) → ¬x<y x<y })
+            (λ { refl → ¬x=y refl })
+            ([]<[] y<x)
+```
+
+The end is nigh! We can now define a `BST` as one bounded by `-∞` and `+∞`:
+
+```agda
+  open module Impl = Intrinsic-BST-Impl _<∞_
+    hiding (BST; insert)
+
+  BST : Set
+  BST = Impl.BST -∞ +∞
+```
+
+and finally, define insertion by merely plugging in some trivial proofs:
+
+```agda
+  insert : (a : A) → BST → BST
+  insert a t = Impl.insert <∞-cmp [ a ] -∞<[] []<+∞ t
+```
+
