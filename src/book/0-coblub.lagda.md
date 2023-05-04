@@ -164,10 +164,10 @@ in the workmanship.
 
 ## A World Without Execution?
 
-It's worth stopping and asking ourselves in what way an unexecutable programming
-language might be useful. If the end result of a coding endeavor is the eventual
-result, whether that be an answer (as in a computation) or series of
-side-effects (as in most real-world programs,) non-execution seems useless at
+It's worth stopping and asking ourselves in what way a non-executable
+programming language might be useful. If the end result of a coding endeavor is
+the eventual result, whether that be an answer (as in a computation) or series
+of side-effects (as in most real-world programs,) non-execution seems useless at
 best and masturbatory at worst.
 
 Consider the case of rewriting a program from scratch. Even though none of the

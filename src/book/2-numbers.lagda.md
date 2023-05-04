@@ -1,4 +1,4 @@
-# The Glory of Numbers
+# An Exploration of Numbers
 
 In this chapter, we will get our hands dirty, implementing some basic number
 systems in Agda. The goal is threefold: to get some experience thinking about

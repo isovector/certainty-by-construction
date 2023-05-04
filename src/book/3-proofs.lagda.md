@@ -1,4 +1,4 @@
-# Proofs
+# Proof Objects
 
 Hidden
 
