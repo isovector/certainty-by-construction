@@ -1,8 +1,8 @@
 ---
-title: Math for Programmers
-subtitle: A Journey into Madness
+title: Certainty by Construction
+subtitle: Doing Software and Mathematics in Agda
 author: Sandy Maguire
-rights: © 2022 Sandy Maguire
+rights: © 2023 Sandy Maguire
 language: en-US
 book: true
 numbersections: true
