@@ -454,6 +454,8 @@ require addition and multiplication over `HNF`. Addition is straightforward:
   ⊘ +H y = y
   (a *x+ b) +H ⊘ = a *x+ b
   (a *x+ b) +H (c *x+ d) = (a +H c) *x+ (b + d)
+
+  infixl 5 _+H_
 ```
 
 and multiplication isn't much more work, after we take advantage of the
@@ -463,14 +465,17 @@ $$
 (ax + b)(cx + d) = acx^2 + (bc + ad)x + bd
 $$
 
-> TODO(sandy): this is in fact a stupid amount of work. We need a better
-> definition of HNF
-
 ```agda
+  _*S_ : A → HNF → HNF
+  k *S ⊘ = ⊘
+  k *S (hnf *x+ x) = (k *S hnf) *x+ (k * x)
+  infixl 6 _*S_
+
   _*H_ : HNF → HNF → HNF
   ⊘ *H _ = ⊘
   (a *x+ b) *H ⊘ = ⊘
-  (a *x+ b) *H (c *x+ d) = (? *x+ {! _+H_ !}) *x+ (b * d)
+  (a *x+ b) *H (c *x+ d) = (((a *H c) *x+ 0#) +H (b *S c) +H (d *S a)) *x+ (b * d)
+  infixl 6 _*H_
 ```
 
 With all of this machinery out of the way, we can implement `normalize`, which
@@ -492,6 +497,67 @@ different representation of the same expression. This function has type:
 ```agda
   open import Relation.Binary.Reasoning.Setoid setoid
 
+  postulate
+    …algebra… : {x y : A} → x ≈ y
+    …via… : {ℓ : Level} {B : Set ℓ} {x y : A} → B → x ≈ y
+
+
+
+  +H-+-hom : ∀ x y v → ⟦ x +H y ⟧H v ≈ ⟦ x ⟧H v + ⟦ y ⟧H v
+  +H-+-hom ⊘ ⊘ v = sym (+-identityʳ 0#)
+  +H-+-hom (x *x+ x₁) ⊘ v =
+    begin
+      ⟦ x ⟧H v * v + x₁
+    ≈⟨ …algebra… ⟩
+      ⟦ x ⟧H v * v + x₁ + 0#
+    ∎
+  +H-+-hom ⊘ (y *x+ x₁) v = sym (+-identityˡ _)
+  +H-+-hom (x *x+ x₂) (y *x+ x₁) v =
+    begin
+      ⟦ x +H y ⟧H v * v + (x₂ + x₁)
+    ≈⟨ +-cong (*-cong (+H-+-hom x y v) refl) refl ⟩
+      (⟦ x ⟧H v + ⟦ y ⟧H v) * v + (x₂ + x₁)
+    ≈⟨ …algebra… ⟩
+      ⟦ x ⟧H v * v + x₂ + (⟦ y ⟧H v * v + x₁)
+    ∎
+
+  *S-*-hom : ∀ k x v → ⟦ k *S x ⟧H v ≈ k * ⟦ x ⟧H v
+  *S-*-hom k ⊘ v = sym (zeroʳ _)
+  *S-*-hom k (x *x+ x₁) v =
+    begin
+      ⟦ k *S x ⟧H v * v + k * x₁
+    ≈⟨ +-congʳ (*-congʳ (*S-*-hom k x v)) ⟩
+      k * ⟦ x ⟧H v * v + k * x₁
+    ≈⟨ …algebra… ⟩
+      k * (⟦ x ⟧H v * v + x₁)
+    ∎
+
+  foil : ∀ a b c d → (a + b) * (c + d) ≈ (a * c) + (b * c) + (a * d) + (b * d)
+  foil a b c d = …algebra…
+
+  *H-*-hom : ∀ x y v → ⟦ x *H y ⟧H v ≈ ⟦ x ⟧H v * ⟦ y ⟧H v
+  *H-*-hom ⊘ y v = sym (zeroˡ _)
+  *H-*-hom (x *x+ x₁) ⊘ v = sym (zeroʳ _)
+  *H-*-hom (a *x+ b) (c *x+ d) x =
+    let ⌊_⌋ a = ⟦ a ⟧H x in
+    begin
+      ⟦ ((a *H c) *x+ 0#) +H b *S c +H d *S a ⟧H x * x + b * d
+    ≈⟨ +-congʳ (*-congʳ (+H-+-hom (((a *H c) *x+ 0#) +H b *S c) (d *S a) x)) ⟩
+      (⟦ ((a *H c) *x+ 0#) +H b *S c ⟧H x + ⟦ d *S a ⟧H x) * x + b * d
+    ≈⟨ +-congʳ (*-congʳ (+-congʳ (+H-+-hom ((a *H c) *x+ 0#) (b *S c) x))) ⟩
+      (⌊ a *H c ⌋ * x + 0# + ⌊ b *S c ⌋ + ⌊ d *S a ⌋) * x + b * d
+    ≈⟨ …via… *S-*-hom ⟩
+      (⌊ a *H c ⌋ * x + (b * ⌊ c ⌋) + (d * ⌊ a ⌋)) * x + (b * d)
+    ≈⟨ +-congʳ (*-congʳ (+-congʳ (+-congʳ (*-congʳ (*H-*-hom a c x))))) ⟩
+      (⌊ a ⌋ * ⌊ c ⌋ * x + b * ⌊ c ⌋ + d * ⌊ a ⌋) * x + (b * d)
+    ≈⟨ …via… distribʳ ⟩
+      (⌊ a ⌋ * ⌊ c ⌋ * x * x) + (b * ⌊ c ⌋ * x) + (d * ⌊ a ⌋ * x) + (b * d)
+    ≈⟨ …algebra… ⟩
+      (⌊ a ⌋ * x * (⌊ c ⌋ * x)) + (b * (⌊ c ⌋ * x)) + (⌊ a ⌋ * x * d) + (b * d)
+    ≈⟨ sym (foil (⌊ a ⌋ * x) b (⌊ c ⌋ * x) d) ⟩
+      (⌊ a ⌋ * x + b) * (⌊ c ⌋ * x + d)
+    ∎
+
   sems : (s : Syn) → (v : A) → ⟦ s ⟧ v ≈ ⟦ normalize s ⟧H v
 ```
 
@@ -499,18 +565,19 @@ and is sketched out:
 
 ```agda
   sems var v = begin
-    v                       ≈⟨ ? ⟩
+    v                       ≈⟨ …algebra… ⟩
     (0# * v + 1#) * v + 0#  ∎
   sems (con c) v = begin
-    c           ≡⟨ ? ⟩
+    c           ≈⟨ sym (+-identityˡ _) ⟩
+    0# + c      ≈⟨ sym (+-congʳ (zeroˡ _)) ⟩
     0# * v + c  ∎
   sems (x :+ y) v = begin
     ⟦ x ⟧ v + ⟦ y ⟧ v                        ≈⟨ +-cong (sems x v) (sems y v) ⟩
-    ⟦ normalize x ⟧H v + ⟦ normalize y ⟧H v  ≈⟨ {! +H-+-hom !} ⟩
+    ⟦ normalize x ⟧H v + ⟦ normalize y ⟧H v  ≈⟨ sym (+H-+-hom (normalize x) (normalize y) v) ⟩
     ⟦ normalize x +H normalize y ⟧H v        ∎
   sems (x :* y) v = begin
     ⟦ x ⟧ v * ⟦ y ⟧ v                        ≈⟨ *-cong (sems x v) (sems y v) ⟩
-    ⟦ normalize x ⟧H v * ⟦ normalize y ⟧H v  ≈⟨ {! *H-*-hom !} ⟩
+    ⟦ normalize x ⟧H v * ⟦ normalize y ⟧H v  ≈⟨ sym (*H-*-hom (normalize x) (normalize y) v) ⟩
     ⟦ normalize x *H normalize y ⟧H v        ∎
 ```
 
