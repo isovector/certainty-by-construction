@@ -558,6 +558,47 @@ different representation of the same expression. This function has type:
       (⌊ a ⌋ * x + b) * (⌊ c ⌋ * x + d)
     ∎
 
+  _≈nested_>_<_ : A → {f : A → A} → (cong : {x y : A} → x ≈ y → f x ≈ f y) → {x y z : A} → x IsRelatedTo y → f y IsRelatedTo z → f x IsRelatedTo z
+  _ ≈nested cong > relTo x=y < (relTo fy=z) = relTo (trans (cong x=y) fy=z)
+  infixr 2 _≈nested_>_<_
+
+  _□ : (x : A) → x IsRelatedTo x
+  _□ = _∎
+
+  infix  3 _□
+
+
+
+  open import Function using (_∘_)
+
+  *H-*-hom' : ∀ x y v → ⟦ x *H y ⟧H v ≈ ⟦ x ⟧H v * ⟦ y ⟧H v
+  *H-*-hom' ⊘ y v = sym (zeroˡ _)
+  *H-*-hom' (x *x+ x₁) ⊘ v = sym (zeroʳ _)
+  *H-*-hom' (a *x+ b) (c *x+ d) x =
+    let ⌊_⌋ a = ⟦ a ⟧H x in
+    begin
+      ⟦ ((a *H c) *x+ 0#) +H b *S c +H d *S a ⟧H x * x + b * d
+    ≈nested (+-congʳ ∘ *-congʳ)
+      >
+        ⌊ ((a *H c) *x+ 0#) +H b *S c +H d *S a ⌋
+      ≈⟨ +H-+-hom (((a *H c) *x+ 0#) +H b *S c) (d *S a) x ⟩
+        ⌊((a *H c) *x+ 0#) +H b *S c ⌋ + ⌊ d *S a ⌋
+      ≈⟨ +-congʳ (+H-+-hom ((a *H c) *x+ 0#) (b *S c) x) ⟩
+        ⌊ a *H c ⌋ * x + 0# + ⌊ b *S c ⌋ + ⌊ d *S a ⌋
+      ≈⟨ …via… *S-*-hom ⟩
+        ⌊ a *H c ⌋ * x + (b * ⌊ c ⌋) + (d * ⌊ a ⌋)
+      ≈⟨ +-congʳ (+-congʳ (*-congʳ (*H-*-hom a c x))) ⟩
+        ⌊ a ⌋ * ⌊ c ⌋ * x + b * ⌊ c ⌋ + d * ⌊ a ⌋
+    □ <
+      (⌊ a ⌋ * ⌊ c ⌋ * x + b * ⌊ c ⌋ + d * ⌊ a ⌋) * x + (b * d)
+    ≈⟨ …via… distribʳ ⟩
+      (⌊ a ⌋ * ⌊ c ⌋ * x * x) + (b * ⌊ c ⌋ * x) + (d * ⌊ a ⌋ * x) + (b * d)
+    ≈⟨ …algebra… ⟩
+      (⌊ a ⌋ * x * (⌊ c ⌋ * x)) + (b * (⌊ c ⌋ * x)) + (⌊ a ⌋ * x * d) + (b * d)
+    ≈⟨ sym (foil (⌊ a ⌋ * x) b (⌊ c ⌋ * x) d) ⟩
+      (⌊ a ⌋ * x + b) * (⌊ c ⌋ * x + d)
+    ∎
+
   sems : (s : Syn) → (v : A) → ⟦ s ⟧ v ≈ ⟦ normalize s ⟧H v
 ```
 
