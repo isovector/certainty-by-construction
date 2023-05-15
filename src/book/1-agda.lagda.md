@@ -148,7 +148,7 @@ hope to do a reasonably good job of parsing the program. In many ways, thus,
 it's more correct to call this *semantic highlighting*. Since Agda's parser is
 so flexible, getting trustworthy highlighting information from the compiler is a
 necessity for quickly parsing what's going on. This, along with the lack of
-[GotoDefinition](AgdaCmd), is the main reason Agda is challenging to read
+[`GotoDefinition`](AgdaCmd), is the main reason Agda is challenging to read
 outside of a text editor.
 
 Because this book is a literate Agda document, all of the syntax highlighting
@@ -259,10 +259,10 @@ postulate block:
     illegal : false
 ```
 
-If you attempt to load this definition into Agda (TODO: how?), you'll get an
-angry error message stating:
+If you attempt to load this definition into Agda (via [`Load`](AgdaCmd)), you'll
+get an angry error message stating:
 
-```response
+```info
 Bool should be a sort, but it isn't
 when checking that the expression false has type _4
 ```
@@ -358,7 +358,7 @@ left, and then your program will be complete.
 
 The question mark above at [2](Ann) is one of these holes. After reloading the
 file in Agda (TODO: how?), we can ask it for help in implementing `not`.
-Position your cursor on the hole and invoke the [MakeCase](AgdaCmd), which will
+Position your cursor on the hole and invoke the [`MakeCase`](AgdaCmd), which will
 replace our definition with:
 
 ```agda
@@ -373,13 +373,13 @@ for a human to type for themselves. The reader playing along at home will also
 have noticed the "visible goal" in the info panel has changed from `?1 : Bool →
 Bool` to `?1 : Bool`.
 
-The changes engendered by invoking [MakeCase](AgdaCmd) like we did have a lot to
+The changes engendered by invoking [`MakeCase`](AgdaCmd) like we did have a lot to
 teach us about how Agda works. Our first hole, way back at [1](Ann) had type
 `Bool → Bool`, because we had written `not = ?`, and we knew already that `not`
 had type `Bool → Bool`. In giving a definition for `not`, we had better give a
 definition that has the same type as the one we claimed!
 
-After [MakeCase](AgdaCmd) however, we instead had `not x = {! !}`, with the hole
+After [`MakeCase`](AgdaCmd) however, we instead had `not x = {! !}`, with the hole
 now having type `Bool`. Somehow we lost the `Bool →` part of the type---but
 where did it go? The answer is that the `Bool →` corresponded to the function's
 parameter. In addition to the type of the hole changing, we also obtained an `x`
@@ -387,22 +387,22 @@ on the left of the equals sign. It's a good bet that this `x` is indeed our
 parameter.
 
 To verify this, we can put the cursor in the whole and this time invoke the
-[TypeContext](AgdaCmd) command, which will replace the info window with the
+[`TypeContext`](AgdaCmd) command, which will replace the info window with the
 following:
 
 ```info
 Goal: Bool
-————————————————————————————————————————————————————————————
+———————————————————
 x : Bool
 ```
 
-[TypeContext](AgdaCmd) is useful whenever you'd like to "drill down" into a
+[`TypeContext`](AgdaCmd) is useful whenever you'd like to "drill down" into a
 hole. Not only does it tell us what the type of the hole is, it also tells us
 everything else we have in scope. In this case, the only thing we have is `x :
 Bool`. Thus it's confirmed: `x` is indeed our function parameter.
 
 We can ask Agda for more help. This time, if we put our cursor in the hole and
-invoke [MakeCase:x](AgdaCmd), we will instead get:
+invoke [`MakeCase:x`](AgdaCmd), we will instead get:
 
 ```agda
   not⅋⅋ : Bool → Bool
@@ -431,10 +431,10 @@ and give a result for each on the right side of the equals sign.
 
 In implementing this little function, we learned quite a lot about how Agda's
 interactivity can help. We can admire our handiwork by interactively running
-[Normalize:not false](AgdaCmd), which will leave the computed answer (`true`) in
+[`Normalize:not false`](AgdaCmd), which will leave the computed answer (`true`) in
 the info window.
 
-While [Normalize](AgdaCmd) is a nice little tool for interactively computing
+While [`Normalize`](AgdaCmd) is a nice little tool for interactively computing
 small results, we can instead write a small unit test. Breaking our "don't
 import it before you define it" rule for the last time, we can write two unit
 tests as follows[^equals-sign]:
@@ -461,7 +461,7 @@ by writing another test with an intentionally wrong result:
   _ = refl
 ```
 
-which results in an error message after running [Load](AgdaCmd):
+which results in an error message after running [`Load`](AgdaCmd):
 
 ```info
 false != true of type Bool
@@ -493,29 +493,30 @@ distinguish when placed beside one another, but much harder when they're in the
 wild. When you're reading code, how do you know which symbol is which? And how
 do you assign names to them?
 
-Agda provides [DescribeChar](AgdaCmd) to help with this problem, which when run
-with the cursor over `⊎` will produce the following output:
+Agda provides [`DescribeChar`](AgdaCmd) to help with this problem, which when
+run with the cursor over `⊎` will produce the following output:
 
-```verbatim
-            character: ⊎ (displayed as ⊎) (codepoint 8846, #o21216, #x228e)
-              charset: unicode (Unicode (ISO10646))
+```info
+            character: ⊎ (displayed as ⊎)
+              charset: unicode
 code point in charset: 0x228E
                script: symbol
-               syntax: w    which means: word
+               syntax: w
              category: .:Base
              to input: type "\u+" with Agda input method
 
-Character code properties: customize what to show
+Character code properties:
   name: MULTISET UNION
   general-category: Sm (Symbol, Math)
   decomposition: (8846) ('⊎')
 ```
+
 In particular, we see the name of this symbol is *multiset union*, which is
 significantly more pronounceable than `⊎`.
 
 The second problem that beginners have with Unicode is the problem of how the
 heck do you actually type these strange characters? As you can see in the
-response from [DescribeChar](AgdaCmd) above, there's a little section labeled
+response from [`DescribeChar`](AgdaCmd) above, there's a little section labeled
 "to input."
 
 When writing Agda, you can input Unicode characters by typing a backslash, and
@@ -651,7 +652,7 @@ character [`or`](AgdaMode). Note also the underscores on either side of it!
 ```
 
 We will again interactively ask for Agda's help here. Place your cursor in the
-hole and run [MakeCase](AgdaCmd). Agda will respond:
+hole and run [`MakeCase`](AgdaCmd). Agda will respond:
 
 ```agda
   _∨⅋⅋⅋_ : Bool → Bool → Bool
@@ -661,7 +662,7 @@ hole and run [MakeCase](AgdaCmd). Agda will respond:
 You will notice that `_∨_` has been replaced with `x ∨ x₁`. The underscores are
 not literal underscores, but instead mark placeholders for the operator's
 syntax. If we fill the resulting hole with the names of both arguments `x` and
-`x₁`, we can again ask Agda to `[MakeCase](AgdaCmd)`:
+`x₁`, we can again ask Agda to [`MakeCase`](AgdaCmd):
 
 ```agda
   _∨⅋⅋⅋⅋_ : Bool → Bool → Bool
@@ -760,26 +761,24 @@ At its root, [2](Ann) is a better program *because* it needs to inspect less
 data in order to make a decision. `_∨₂_` is able to make meaningful progress
 towards an answer, even when the second argument isn't yet known, while `_v₁_`
 is required to wait for both arguments. We can observe this in action with the
-[Normalise](AgdaCmd) command, which asks Agda to evaluate an expression for us.
+[`Normalise`](AgdaCmd) command, which asks Agda to evaluate an expression for us.
 
 We can fill in only one argument to an operator by removing only one of the
 underscores. Thus, we can see what happens when we invoke `_v₂_` with only its
-first argument. Try invoking [Normalise:true v₂_](AgdaCmd), to which Agda will
+first argument. Try invoking [`Normalise:true v₂_`](AgdaCmd), to which Agda will
 respond:
 
 ```info
 λ other → true
 ```
 
-[]
-
 This response is Agda's syntax for an anonymous (lambda) function. It takes an
 argument, called `other`, ignores it, and immediately returns `true`. Writing
 lambdas like this is valid Agda code, but this syntax is often reserved for
 niche circumstances.
 
-Nevertheless, let's compare this output to the result of [Normalise:true
-∨₁_](AgdaCmd):
+Nevertheless, let's compare this output to the result of [`Normalise:true
+∨₁_`](AgdaCmd):
 
 ```info
 true ∨₁_
@@ -801,27 +800,27 @@ values are always stuck, and thus `stuck` is an apt name for one:
 ```
 
 Our new `stuck` is always stuck. For example, we can learn nothing more about it
-with [Normalise:stuck](AgdaCmd):
+with [`Normalise:stuck`](AgdaCmd):
 
 ```info
 stuck
 ```
 
-Nor can we reduce [Normalise:not stuck](AgdaCmd) to a value:
+Nor can we reduce [`Normalise:not stuck`](AgdaCmd) to a value:
 
 ```info
 not stuck
 ```
 
 Don't believe the response, this is indeed stuck~ Rather, the entire call to
-`not` with argument `stuck` is stuck. And, as you might expect, [Normalise:true
-∨₁ stuck](AgdaCmd) is also stuck:
+`not` with argument `stuck` is stuck. And, as you might expect, [`Normalise:true
+∨₁ stuck`](AgdaCmd) is also stuck:
 
 ```info
 true ∨₁ stuck
 ```
 
-Fascinatingly however, [Normalise:true ∨₂ stuck](AgdaCmd) computes just fine:
+Fascinatingly however, [`Normalise:true ∨₂ stuck`](AgdaCmd) computes just fine:
 
 ```info
 true
@@ -884,8 +883,8 @@ hand side of the equals sign:
   my-tuple⅋⅋ = ?
 ```
 
-This time we will use the [Refine](AgdaCmd) command, which asks Agda to build us
-a value of the correct type, leaving holes for every argument. The result is:
+This time we will use the [`Refine`](AgdaCmd) command, which asks Agda to build
+us a value of the correct type, leaving holes for every argument. The result is:
 
 ```agda
   my-tuple⅋ : Bool ×⅋ Bool
@@ -965,14 +964,14 @@ in more detail in @sec:implicits.
 
 Implementing `_,_` isn't hard to do by hand; but we can be lazy and ask Agda to
 do it for us. Begin as usual by getting Agda to bind our arguments, via
-[MakeCase](AgdaCmd) in the hole:
+[`MakeCase`](AgdaCmd) in the hole:
 
 ```agda
   _,⅋⅋_  : {A B : Set} → A → B → A ×⅋ B
   x ,⅋⅋ x₁ = {! !}
 ```
 
-and follow up by invoking [Auto](AgdaCmd), which asks Agda to just write the
+and follow up by invoking [`Auto`](AgdaCmd), which asks Agda to just write the
 function for you. Of course, this doesn't always work, but it's surprisingly
 good for little functions like this. The result is exactly what we'd expect it
 to be:
@@ -1191,7 +1190,7 @@ panic. The first step is always to parse out exactly what's going on. Let's look
 at `curry`. Let's ignore the `{A B C : Set} →` part, which you'll recall exists
 only to bring the type variables into scope:
 
-```illegal
+```type
   curry : (A × B → C) → (A → B → C)
 ```
 
@@ -1199,14 +1198,14 @@ After inserting the parentheses arising from the interaction of
 `_→_` as the lowest precedence operator, we obtain some parentheses around the
 tuple:
 
-```illegal
+```type
   curry : ((A × B) → C) → (A → B → C)
 ```
 
 We can then insert the parentheses from the function arrow's right-associativity
 to the innermost parentheses:
 
-```illegal
+```type
   curry : ((A × B) → C) → (A → (B → C))
 ```
 
@@ -1215,7 +1214,7 @@ Written like this, we see that `curry` is a function which itself takes a
 Alternatively, we can drop the last two pairs of parentheses, and think about
 `curry` like this:
 
-```illegal
+```type
   curry : ((A × B) → C) → A → B → C
 ```
 
@@ -1229,9 +1228,9 @@ exactly you're trying to accomplish.
 Exercise
 
 :   Implement the `curry` function for yourself. If you get stuck, don't forget
-    you can always ask Agda for help by using [TypeContext](AgdaCmd) to inspect
-    what you have lying around in scope, [MakeCase](AgdaCmd) to bind arguments
-    and [Refine](AgdaCmd) to construct values for you.
+    you can always ask Agda for help by using [`TypeContext`](AgdaCmd) to inspect
+    what you have lying around in scope, [`MakeCase`](AgdaCmd) to bind arguments
+    and [`Refine`](AgdaCmd) to construct values for you.
 
 
 Solution
@@ -1272,7 +1271,7 @@ having just bound your arguments:
 ```
 
 From here, we can ask Agda to pattern match on `ab` directly by invoking
-[MakeCase:ab](AgdaCmd), which results in:
+[`MakeCase:ab`](AgdaCmd), which results in:
 
 ```agda
   uncurry⅋⅋ : {A B C : Set} → (A → B → C) → (A × B → C)
@@ -1292,7 +1291,7 @@ have different types. I prefer to rename them:
 ```
 
 and from here, Agda will happily write the remainder of the function via
-[Auto](AgdaCmd).
+[`Auto`](AgdaCmd).
 
 Because we were able to implement `curry` and `uncurry`, we have shown that
 curried functions (used in Agda) are equivalent in power to uncurried functions
@@ -1315,14 +1314,14 @@ judgment:
   _ = uncurry _∨_
 ```
 
-and then ask Agda to fill it in for us via [Solve](AgdaCmd):
+and then ask Agda to fill it in for us via [`Solve`](AgdaCmd):
 
 ```agda
   _ : Bool × Bool → Bool
   _ = uncurry _∨_
 ```
 
-The [Solve](AgdaCmd) command asks Agda to infer the contents of a hole based on
+The [`Solve`](AgdaCmd) command asks Agda to infer the contents of a hole based on
 information it already knows from somewhere else. In this case, Agda knows the
 type of `_∨_` (that is, `Bool → Bool → Bool`,) and so it can infer the type of
 `uncurry _∨_` as `Bool × Bool → Bool`. Since this is the entire expression, the
@@ -1402,14 +1401,14 @@ visible arguments:
   mk-tuple⅋ = ?
 ```
 
-We will do the usual ceremony to bind our arguments via [MakeCase:](AgdaCmd):
+We will do the usual ceremony to bind our arguments via [`MakeCase:`](AgdaCmd):
 
 ```agda
   mk-tuple⅋⅋ : (A : Set) → (B : Set) → A → B → A × B
   mk-tuple⅋⅋ A B x x₁ = {! !}
 ```
 
-And then run [Auto](AgdaCmd) to implement the function for us.
+And then run [`Auto`](AgdaCmd) to implement the function for us.
 
 ```agda
   mk-tuple : (A : Set) → (B : Set) → A → B → A × B
@@ -1432,7 +1431,7 @@ we can type `mk-tuple` *inside the hole:*
   _ = {! mk-tuple !}
 ```
 
-and then invoke [Refine](AgdaCmd), asking Agda to use the given function to try
+and then invoke [`Refine`](AgdaCmd), asking Agda to use the given function to try
 to fill the hole:
 
 ```agda
@@ -1443,7 +1442,7 @@ to fill the hole:
 This expression now has four holes for the four arguments to `mk-tuple`. The
 first two are the type parameters of the tuple, while the last two are the
 actual values we'd like to fill our tuple with. Thankfully, Agda can
-[Solve](AgdaCmd) the first two holes for us:
+[`Solve`](AgdaCmd) the first two holes for us:
 
 ```agda
   _ : Bool × Bool

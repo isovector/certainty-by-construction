@@ -251,6 +251,9 @@ $endif$
 \newcommand{\hidestart}{}
 \newcommand{\hideend}{}
 
+\usepackage{comment}
+\excludecomment{hidden}
+
 \usepackage{tex/agda}
 
 \setlength{\agdaindent}{0cm}
@@ -284,6 +287,11 @@ $endif$
 
 \newfontfamily{\substitutefont}[Scale=MatchLowercase]{Noto Sans}
 
+\usepackage[tikz]{bclogo}
+
+\newenvironment{AgdaInfo}{\vquad\begin{bclogo}[arrondi=0.5,logo=\bcloupe,barre=snake,tailleOndu=1.5,noborder=true,couleurBarre=gray]{\quad Response}}{\end{bclogo}}
+
+
 
 
 \pagestyle{fancy}
@@ -296,7 +304,12 @@ $endif$
 % \fancyfoot[C]{\footnotesize revision \texttt{\input{.current-revision}}}
 \fancyfoot[C]{}
 
-\newcommand{\agdacmd}[1]{\tcbox[enhanced, box align=base, nobeforeafter, colframe=black, size=small, boxsep=2pt]{\tt agda:#1}}
+\newcommand{\agdainput}[1]{\tcbox[enhanced, box align=base, nobeforeafter, colframe=black, size=small, boxsep=2pt]{#1}}
+
+\newcommand{\AgdaCmd}[1]{{\tt#1}}
+\newcommand{\AgdaEmacsInput}[1]{ (\agdainput{\tt #1} in Emacs and VS Code)}
+\newcommand{\AgdaCmdArg}[1]{ with argument \agdainput{\tt #1}}
+\newcommand{\AgdaCmdNoArg}[1]{ without any argument}
 \newcommand{\agdamode}[1]{\tcbox[enhanced, box align=base, nobeforeafter, colframe=black, size=small, boxsep=2pt]{\tt \textbackslash{#1}}}
 
 \newcommand{\anncirc}[1]{\raisebox{-0.5mm}{\tikz\node[text=white,
