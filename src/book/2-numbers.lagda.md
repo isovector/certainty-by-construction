@@ -856,10 +856,10 @@ What's left is where we can dig into our mental cache of algebra facts. Recall
 that `suc x` is how we write $1 + x$ in Agda, thus:
 
 $$
-\begin{align}
+\begin{aligned}
 (1 + x) \times y &= 1 \times y + x \times y \\
 &= y + x \times y
-\end{align}
+\end{aligned}
 $$
 
 Therefore, our final implementation of multiplication is just:
@@ -935,10 +935,10 @@ $$
 Instantiating this gives us:
 
 $$
-\begin{align}
+\begin{aligned}
 x^{1 + y} &= x^1 \times x^y \\
 &= x \times x^y
-\end{align}
+\end{aligned}
 $$
 
 and thus:
@@ -1174,10 +1174,10 @@ positive, and vice versa. `-_` is a natural name for this operation, but its
 implementation is not particularly natural:
 
 ```agda
-  ⅋-_ : ℤ → ℤ
-  ⅋- (+ ℕ.zero)  = 0ℤ
-  ⅋- (+ ℕ.suc x) = -[1+ x ]
-  ⅋- -[1+ x ]    = + ℕ.suc x
+  -⅋_ : ℤ → ℤ
+  -⅋ (+ ℕ.zero)  = 0ℤ
+  -⅋ (+ ℕ.suc x) = -[1+ x ]
+  -⅋ -[1+ x ]    = + ℕ.suc x
 ```
 
 When converting back and forth from positive to negative, there's this annoying

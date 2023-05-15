@@ -381,10 +381,10 @@ transitivity. The pen and paper proof is straightforward, since if inequality
 were transitive we could show:
 
 $$
-\begin{align}
+\begin{aligned}
 2 &\neq 3 \\
 &\neq 2
-\end{align}
+\end{aligned}
 $$
 
 This is known in the business as a "whoopsie daisy." Such a counterexample shows

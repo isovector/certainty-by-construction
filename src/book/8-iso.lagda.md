@@ -345,11 +345,11 @@ injectivity when doing mathematics informally and in school. For example, you
 will probably get the marks if you write:
 
 $$
-\begin{align}
+\begin{aligned}
 x^2 &= 16 \\
 x^2 &= 4^2 \\
 x &= 4
-\end{align}
+\end{aligned}
 $$
 
 While $x = 4$ is a valid solution to this problem, it's not the unique solution.

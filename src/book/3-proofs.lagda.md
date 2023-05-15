@@ -368,8 +368,8 @@ Try as we might, however, Agda will refuse to type check the analogous equality
 `x+0≡x`:
 
 ```illegal
-    x+0≡x : (x : ℕ) → x + zero ≡ x
-    x+0≡x _ = refl
+    x+0≡x⅋ : (x : ℕ) → x + zero ≡ x
+    x+0≡x⅋ _ = refl
 ```
 
 ```info
@@ -610,8 +610,8 @@ to prove `x ≡ one * x`? The obvious idea is to try simply to reuse our
 `*-identityˡ` proof, as in:
 
 ```illegal
-    *-identityˡ′ : (x : ℕ) → x ≡ one * x
-    *-identityˡ′ = *-identityˡ
+    *-identityˡ′⅋ : (x : ℕ) → x ≡ one * x
+    *-identityˡ′⅋ = *-identityˡ
 ```
 
 Unfortunately, Agda is unhappy with this definition, and it complains:
@@ -744,22 +744,22 @@ slightest of margins. Blatant in its absence, however, is the ability to
 know it. For example, consider the following symbolic proof:
 
 $$
-\begin{align}
+\begin{aligned}
 (a + b) \times c &= a \times c + b \times c \\
 &= a \times c + c \times b \\
 &= c \times b + a \times c
-\end{align}
+\end{aligned}
 $$
 
 The omission of the left-hand sides of the equalities on subsequent lines is a
 notional convenience, but we can explicitly elaborate it out:
 
 $$
-\begin{align}
+\begin{aligned}
 (a + b) \times c &= a \times c + b \times c \\
 a \times c + b \times c &= a \times c + c \times b \\
 a \times c + c \times b &= c \times b + a \times c
-\end{align}
+\end{aligned}
 $$
 
 Note that the right side of each equality is identical to the left side of the
@@ -790,11 +790,11 @@ things. For example, we might like to show $a ^ 1 = a + (b \times 0)$. This
 isn't too tricky to do with pen and paper:
 
 $$
-\begin{align}
+\begin{aligned}
 a^1 &= a \\
 &= a + 0 \\
 &= a + (b \times 0)
-\end{align}
+\end{aligned}
 $$
 
 
@@ -1114,11 +1114,11 @@ Recall, we'd like to develop some syntax amenable to doing "pen and paper" style
 proofs. That is, we'd like to write something in Agda equivalent to:
 
 $$
-\begin{align}
+\begin{aligned}
 (a + b) \times c &= a \times c + b \times c \\
 &= a \times c + c \times b \\
 &= c \times b + a \times c
-\end{align}
+\end{aligned}
 $$
 
 The bits written in this syntax are equivalent to the `x` and `y` in the type `x
@@ -1128,7 +1128,7 @@ allowed to say each step of the proof follows. In order to make room, we will
 use *Bird notation,* attaching justification to the equals sign:
 
 $$
-\begin{align}
+\begin{aligned}
 & (a + b) \times c \\
 & \quad = (\text{distributivity}) \\
 & a \times c + b \times c \\
@@ -1136,7 +1136,7 @@ $$
 & a \times c + c \times b \\
 & \quad = (\text{commutativity of $+$}) \\
 & c \times b + a \times c
-\end{align}
+\end{aligned}
 $$
 
 The construction of our domain specific language is a little finicky and deserve
