@@ -33,10 +33,10 @@ applicable outside of the ivory tower, too!
 ## Negation
 
 Recall that we've now seen how to express that two values are (propositionally)
-equal, via the `_≡_` type, proven via `refl`. We'd now like to determine a means
+equal, via the `type:_≡_` type, proven via `ctor:refl`. We'd now like to determine a means
 of discussing *inequality!*
 
-Perhaps you might think we can make a slight tweak to the `_≡_` construction.
+Perhaps you might think we can make a slight tweak to the `type:_≡_` construction.
 While `refl : x ≡ x`, perhaps we could try something along the lines of:
 
 ```agda
@@ -93,9 +93,9 @@ module Sandbox-Explosion where
   False P = P → {A : Set} → A
 ```
 
-You'll notice at [1](Ann) that the type of `False` is `Set → Set₁`, which is a
+You'll notice at [1](Ann) that the type of `type:False` is `type:Set → Set₁`, which is a
 feature of Agda's type system we haven't yet covered, but will later this
-chapter. For the time being, pretend this says `Set → Set`. We can now try to
+chapter. For the time being, pretend this says `type:Set → Set`. We can now try to
 find a proof that 2 is not equal to three, as per:
 
 ```agda
@@ -103,7 +103,7 @@ find a proof that 2 is not equal to three, as per:
   2≠3⅋₀ = ?
 ```
 
-Since `False` expands to a function type, we can (rather unintuitively) do a
+Since `type:False` expands to a function type, we can (rather unintuitively) do a
 [MakeCase:](AgdaCmd) here to get a *parameter* of type `2 ≡ 3`:
 
 ```agda
@@ -143,13 +143,13 @@ principle of explosion if you'd like, but in practice means your type signatures
 and negative proofs become simpler to work with.
 
 The "pre-explosive" type we'll work with is called the *bottom* type, written
-`⊥` and input as [`bot`](AgdaMode). It's definition is short and sweet:
+`type:⊥` and input as [`bot`](AgdaMode). It's definition is short and sweet:
 
 ```agda
 data ⊥ : Set where
 ```
 
-That's it. There are no constructors for `⊥`. Besides a slightly different type
+That's it. There are no constructors for `type:⊥`. Besides a slightly different type
 signature, we can show `2≠3` with an identical proof, this time using bottom:
 
 ```agda
@@ -166,7 +166,7 @@ elements in the domain with nowhere to map them to in the codomain.
 By this argument, any function we can successfully define which maps into bottom
 necessarily constrains at least one of its parameters to also have no elements.
 
-We still need to show that an element of `⊥` leads to the principle of
+We still need to show that an element of `type:⊥` leads to the principle of
 explosion, which is another easy proof:
 
 ```agda
@@ -186,7 +186,7 @@ which there are none in the first place) are equal:
 
 We have now shown that bottom is a satisfactory definition of false, and that
 functions into bottom are therefore a good definition of the falseness of their
-input type considered as a proposition. Hence, we can define `¬_` (\neg), which
+input type considered as a proposition. Hence, we can define `type:¬_` ([`neg`](AgdaMode)), which
 states that a given proposition is false:
 
 ```agda
@@ -198,7 +198,7 @@ open import Level
 infix 3 ¬_
 ```
 
-Again, ignore this `Level` stuff for the time being (although you can input `ℓ`
+Again, ignore this `type:Level` stuff for the time being (although you can input `ℓ`
 via [`ell`](AgdaMode).)
 
 
@@ -226,11 +226,11 @@ is symmetric:
 
 and it is obviously *not* reflexive. Why obviously? Because reflexivity would
 require that `x ≢ x` for any `x`, which is exactly the opposite of what we're
-trying to encode here. Interestingly, however, we can prove that `_≢_` isn't
+trying to encode here. Interestingly, however, we can prove that `type:_≢_` isn't
 reflexive, but showing that if there were such a `refl : x ≢ x` construction, it
 would lead to contradiction.
 
-Let's show this in a few steps. First, we will define a type `Reflexive` which
+Let's show this in a few steps. First, we will define a type `type:Reflexive` which
 will state the reflexivity property. This isn't strictly necessary, but it
 lessens the cognitive burden later down the line:
 
@@ -252,15 +252,15 @@ reflexive:
 
 Notice how the type `Reflexive _≡_` expands to the type of `refl : {x : A} → x ≡
 x`. We are required to bind `A : Set` here, so that we can pass it over to
-`Reflexive`, which could in principle infer it from the type of `_≡_`, but Agda
-has no way of knowing if you'd like to talk about `_≡_` in its fully-general
-polymorphic type, or about `_≡_` when specialized to something about the natural
+`type:Reflexive`, which could in principle infer it from the type of `type:_≡_`, but Agda
+has no way of knowing if you'd like to talk about `type:_≡_` in its fully-general
+polymorphic type, or about `type:_≡_` when specialized to something about the natural
 numbers. The distinction isn't extremely poignant in this example, but there do
 exist monomorphic relations which we might still want to say are reflexive.
-Nevertheless, we have shown that `_≡_` is reflexive by giving a proof that
-`refl` exists.
+Nevertheless, we have shown that `type:_≡_` is reflexive by giving a proof that
+`ctor:refl` exists.
 
-Contrasting against this is the proof that `_≢_` is *not* reflexive. The type of
+Contrasting against this is the proof that `type:_≢_` is *not* reflexive. The type of
 such a statement is a very subtle thing:
 
 ```agda
@@ -295,7 +295,7 @@ reasonable to call the argument `¬≡-refl`, as in the following:
 ¬≢-refl⅋₁ ¬≡-refl = {! !}
 ```
 
-Of course, we do in fact have a proof of `x ≡ x`, namely `refl`, so we can try
+Of course, we do in fact have a proof of `x ≡ x`, namely `ctor:refl`, so we can try
 solving the hole as:
 
 ```agda
@@ -316,14 +316,14 @@ argument and solving them ourselves:
 You'll notice that the yellow warning has disappeared, and we're left only with
 some holes to fill. The first hole has type `Set`, while the second has type
 `?0`, meaning its type depends on the answer to our first hole. We're free to
-choose any type we'd like for this first hole, so let's try `ℕ`:
+choose any type we'd like for this first hole, so let's try `type:ℕ`:
 
 ```agda
 ¬≢-refl⅋₄ : ¬ ({A : Set} → Reflexive {A} _≢_)
 ¬≢-refl⅋₄ ¬≡-refl = ¬≡-refl {ℕ} {?} refl
 ```
 
-and now all we need is to pick an arbitrary value of type `ℕ`:
+and now all we need is to pick an arbitrary value of type `type:ℕ`:
 
 ```agda
 ¬≢-refl : ¬ ({A : Set} → Reflexive {A} _≢_)
@@ -342,7 +342,7 @@ implicit to fill in:
 
 This hole unfortunately has type `A`, *for some unknown type `A`!* We can't
 possibly fill this in, because we don't know what type `A` is. In fact, `A`
-could be `⊥`, in which case there aren't any values we could put here even in
+could be `type:⊥`, in which case there aren't any values we could put here even in
 principle.
 
 The takeaway from this is that it really matters where you put your quantifiers.
@@ -357,7 +357,7 @@ precludes it entirely.
 
 There is an apt computational perspective to this problem of negating
 quantifiers, which comes when we expand out all of our types. After fully
-normalizing (expanding out) the types of both `¬≢-refl` and `¬≢-refl-bad`, we
+normalizing (expanding out) the types of both `def:¬≢-refl` and `def:¬≢-refl-bad`, we
 are left with this:
 
 ```type
@@ -369,14 +369,14 @@ These types have much more going on, but the important thing to notice is that
 they both take functions as arguments. Whenever you see a function as an
 argument, you should immediately think "callback." Viewed as a callback, the
 question becomes *who is responsible for providing the parameters?* In the first
-case, it is `¬≢-refl` which gets to pick `A`, while in the second, it
-is the *caller* of `¬≢-refl-bad` who gets to pick `A`. And true to the name,
+case, it is `def:¬≢-refl` which gets to pick `A`, while in the second, it
+is the *caller* of `def:¬≢-refl-bad` who gets to pick `A`. And true to the name,
 this caller might pick an antagonistic `A` in an attempt to thwart us!
 
 
 ## Intransitivity of Inequality
 
-In the same vein as `¬≢-refl`, we can also show that `_≢_` doesn't satisfy
+In the same vein as `def:¬≢-refl`, we can also show that `type:_≢_` doesn't satisfy
 transitivity. The pen and paper proof is straightforward, since if inequality
 were transitive we could show:
 
@@ -396,8 +396,8 @@ Transitive : {A : Set} → (A → A → Set) → Set
 Transitive {A} _≈_ = {x y z : A} → x ≈ y → y ≈ z → x ≈ z
 ```
 
-Giving the counterexample is easy, since we already have a proof `2≠3`. Given a
-hypothetical `≢-trans`, we could combine this with `sym 3≠2`, to get a proof
+Giving the counterexample is easy, since we already have a proof `def:2≠3`. Given a
+hypothetical `def:≢-trans`, we could combine this with `sym 3≠2`, to get a proof
 that `2 ≢ 2`. Such a thing is in direct contradiction with `refl : 2 ≡ 2`, and
 thus we are done:
 
@@ -440,14 +440,14 @@ module Sandbox-Decidability where
   n=5? _ = nothing
 ```
 
-Given `n=5?`, we can call this function and branch on its result. If the result
-is a `just`, we now have a proof that the argument was indeed 5, and can use it
+Given `def:n=5?`, we can call this function and branch on its result. If the result
+is a `ctor:just`, we now have a proof that the argument was indeed 5, and can use it
 as we'd please.
 
 Of course, if the argument wasn't five, this definition doesn't allow us to
 learn anything at all. When instead, it would be much more useful to learn that
 `¬ (n ≡ 5)`, in case we'd like to do something with that information! From this,
-we conclude that returning `Maybe` isn't quite the right choice. Instead, we'd
+we conclude that returning `type:Maybe` isn't quite the right choice. Instead, we'd
 like a slightly-more structured type corresponding to *decisions*:
 
 ```agda
@@ -456,7 +456,7 @@ data Dec (P : Set) : Set where
   no : ¬ P → Dec P
 ```
 
-`Dec` is a type which states if we know for sure that either `P` holds, or that
+`type:Dec` is a type which states if we know for sure that either `P` holds, or that
 `P` *doesn't* hold. Of course, only one of these can ever be true at once, and
 thus `Dec P` corresponds to an answer that we can definitively compute. For
 example, given two numbers, it's not too hard to determine if the two are equal.
@@ -476,10 +476,10 @@ module Nat-Properties where
   suc x == suc y = x == y
 ```
 
-While `_==_` *is* a decision procedure, it doesn't give us back any
+While `def:_==_` *is* a decision procedure, it doesn't give us back any
 proof-relevant term. The goal is slightly modify this definition such that
-whenever it returns `true` we instead give back a `yes`, and likewise replace
-`false` with `no`. Giving back the `yes`es is easy enough, but the `no`s take a
+whenever it returns `true` we instead give back a `ctor:yes`, and likewise replace
+`false` with `ctor:no`. Giving back the `ctor:yes`es is easy enough, but the `ctor:no`s take a
 little more thought:
 
 ```agda
@@ -508,7 +508,7 @@ to a lambda:
 ```
 
 Inside our lambda we have `x : zero ≡ suc y`, which can never happen, since
-`zero` and `suc` are different constructors. Therefore, we can solve this (and
+`ctor:zero` and `ctor:suc` are different constructors. Therefore, we can solve this (and
 the next) hole with absurd pattern matches inside of the lambda:
 
 ```agda
@@ -538,7 +538,7 @@ fact that `x ≢ y`, and we have the contradiction we've been looking for:
   ... | no x≠y   = no λ { refl → x≠y refl }
 ```
 
-Take a moment to reflect on this. Where before `_==_` simply returned `false`,
+Take a moment to reflect on this. Where before `def:_==_` simply returned `false`,
 we are now responsible for *deriving a contradiction.* Alternatively said, we
 must now *reify* our reasoning, and *prove* that our algorithm does what it
 says. The advantage of returning a proof of the negation is that downstream
@@ -585,7 +585,7 @@ module BinaryTrees where
 ```
 
 For convenience, it's often helpful to be able to talk about a single-element
-tree, which we can encode as a `branch` with two `empty` children. Agda lets us
+tree, which we can encode as a `ctor:branch` with two `ctor:empty` children. Agda lets us
 define pseudo-constructors called *patterns* for cases like these. The following
 defines a new pattern called `leaf : A → BinTree A`:
 
@@ -593,7 +593,7 @@ defines a new pattern called `leaf : A → BinTree A`:
   pattern leaf a = branch empty a empty
 ```
 
-You might wonder why we use a `pattern` here rather than just a regular old
+You might wonder why we use a `data:pattern` here rather than just a regular old
 function:
 
 ```agda
@@ -602,7 +602,7 @@ function:
 ```
 
 The difference is all in the colors. Literally. The reason is that, as the name
-implies, we can *pattern match* when `leaf` is defined as pattern:
+implies, we can *pattern match* when `ctor:leaf` is defined as pattern:
 
 ```agda
   open import Data.Bool
@@ -648,10 +648,10 @@ and of course, it could also be in the right subtree:
 
 This definition works perfectly well, but it's a bit wordy. Notice that over
 half of it is just bringing implicit bindings into scope. This is a perfect
-use-case for Agda's `variable` block, which allows us to define implicit
+use-case for Agda's `keyword:variable` block, which allows us to define implicit
 bindings that should exist for the remainder of the scope.
 
-Variable blocks are started with the keywords `private variable`, and then begin
+Variable blocks are started with the keywords `keyword:private variable`, and then begin
 a new layout. We can create a few variables:
 
 ```agda
@@ -664,7 +664,7 @@ a new layout. We can create a few variables:
 The definitions in a variable block are just type signatures. The semantics here
 are that whenever we use an otherwise-undeclared variable `l` in our code, Agda
 will instead look it up from the variable block, and insert it as an implicit
-argument. With this feature, we can rewrite `_∈_` in a much terser, but
+argument. With this feature, we can rewrite `type:_∈_` in a much terser, but
 *completely-equivalent* way:
 
 ```agda
@@ -694,8 +694,8 @@ property. Perhaps we'd like to build a binary tree consisting only of odd
 numbers, for example. It's unclear why, but nevertheless it's something we
 *might* want to do. There is no finger pointing here!
 
-Building `All` is easy. We can replace every instance of `A` with `P A`, and
-every instance of `BinTree` with `All`. Modulo a few indices at the end, we're
+Building `type:All` is easy. We can replace every instance of `A` with `P A`, and
+every instance of `type:BinTree` with `type:All`. Modulo a few indices at the end, we're
 left with a reminiscent definition:
 
 ```agda
@@ -705,9 +705,9 @@ left with a reminiscent definition:
 ```
 
 A pattern definition doesn't come with a type signature, and thus it only works
-with whatever constructors existed when it was defined. Since in `All` we have
-reused the constructor names `empty` and `branch`, we can redefine `leaf` again
-so that it also works over `All`:
+with whatever constructors existed when it was defined. Since in `type:All` we have
+reused the constructor names `ctor:empty` and `ctor:branch`, we can redefine `ctor:leaf` again
+so that it also works over `type:All`:
 
 -- TODO(sandy): fact check
 
@@ -716,12 +716,15 @@ so that it also works over `All`:
   pattern leaf a = branch empty a empty
 ```
 
-In the `branch` case, we must show that everything holds in both subtrees, as
+In the `ctor:branch` case, we must show that everything holds in both subtrees, as
 well as that the property holds for the value at the root. By induction, we have
 now covered every element in the tree. We can show it works by coming up with a
 quick predicate, maybe the evenness of a number. We defined a similar thing back
 in @sec:even, however we cannot reuse it here, as it was defined over our custom
 natural numbers, and does not exist in the standard library.
+
+-- TODO(sandy): just fix this
+
 
 ```agda
   open Data.Nat
@@ -776,12 +779,12 @@ following definition will be useful to help corral the types:
   Decidable₂ {A} _~_ = (x y : A) → Dec (x ~ y)
 ```
 
-The `Dec` type corresponds to a particular *decision*, while `Decidable` states
+The `type:Dec` type corresponds to a particular *decision*, while `type:Decidable` states
 that we can make a decision for *every input.* It's the difference between
 saying that I, personally, have an age and saying that *everyone* has an age.
 
-Notice that we used the variable `A` in our type definition for `Decidable`. In
-order to bring `A` into scope in the *body* of `Decidable`, we need to bind it
+Notice that we used the variable `A` in our type definition for `type:Decidable`. In
+order to bring `A` into scope in the *body* of `type:Decidable`, we need to bind it
 as an implicit argument. This is the general way that variables are
 used---implicitly (in the usual, non-technical sense) in the type, and
 implicitly (in the Agda sense) in the definition.
@@ -789,7 +792,7 @@ implicitly (in the Agda sense) in the definition.
 
 Exercise
 
-:   Show that `All P` is `Decidable`, given a decision procedure for `P`.
+:   Show that `All P` is `type:Decidable`, given a decision procedure for `P`.
 
 
 Solution
@@ -884,7 +887,7 @@ we can again ask Agda for a proof that `tree` is a BST:
 ```
 
 You'll notice several subexpressions of the form `bst-branch empty empty
-bst-empty bst-empty`, which is the proof that a `leaf` is a BST. This is a good
+bst-empty bst-empty`, which is the proof that a `ctor:leaf` is a BST. This is a good
 opportunity for another pattern:
 
 ```agda
@@ -909,8 +912,8 @@ them by hand. For concrete values, we can always ask Agda to solve them for us,
 and for parameterized values, we can build them by induction.
 
 Speaking of induction, can we decide whether a given tree is a BST? Sure! The
-pattern is exactly the same, decide each piece, derive contradictions on `no`,
-and assemble the final proof if everything is `yes`:
+pattern is exactly the same, decide each piece, derive contradictions on `ctor:no`,
+and assemble the final proof if everything is `ctor:yes`:
 
 ```agda
   is-bst?
@@ -961,14 +964,14 @@ compare the value you'd like to insert with the value at the root. If they're
 equal, you're done. Otherwise, recursively insert the value into the correct of
 the subtree.
 
-The implicit claim here is that this algorithm preserves the `IsBST` invariant,
+The implicit claim here is that this algorithm preserves the `type:IsBST` invariant,
 but that is never explicitly pointed out. For posterity, this algorithm *does*
-indeed preserve the `IsBST` invariant. However, this poses some challenges for
+indeed preserve the `type:IsBST` invariant. However, this poses some challenges for
 us, since in order to show this we must necessarily derive a proof, which is
 going to depend on a proof that we picked the correct subtree to recurse on.
 
-What we have to work with thus far is only the fact that `_<_` is decidable. But
-if we were to work directly with the decidability `_<_`, our algorithm would
+What we have to work with thus far is only the fact that `type:_<_` is decidable. But
+if we were to work directly with the decidability `type:_<_`, our algorithm would
 need to first check whether `a < x`, and if it isn't, check that `x < a`, and if
 it isn't check that `x ≡ y`, and if *that isn't,* well then we definitely have a
 problem. This doesn't sound like an enjoyable experience though; as we have seen
@@ -977,9 +980,9 @@ do, since we need to use the proof or show a subsequent contradiction.
 
 Instead, we can generalize the idea of decidability to a *trichotomy*, which is
 the idea that exactly one of three choices must hold. From this perspective,
-`Dec` is merely a type that states exactly one of `P` or `¬ P` holds, and so the
-notion of trichotomy shouldn't be earth-shattering. We can define `Tri`
-(analogous to `Dec`) as as proof that exactly one of `A`, `B` or `C` holds:
+`type:Dec` is merely a type that states exactly one of `P` or `¬ P` holds, and so the
+notion of trichotomy shouldn't be earth-shattering. We can define `type:Tri`
+(analogous to `type:Dec`) as as proof that exactly one of `A`, `B` or `C` holds:
 
 ```agda
   data Tri (A B C : Set) : Set where
@@ -988,7 +991,7 @@ notion of trichotomy shouldn't be earth-shattering. We can define `Tri`
     tri> : ¬ A → ¬ B → C → Tri A B C
 ```
 
-and we can lift this notion to `Trichotomous`, stating that for two relations,
+and we can lift this notion to `type:Trichotomous`, stating that for two relations,
 one equality-like, and one less-than-like, we can always determine which holds:
 
 ```agda
@@ -1000,12 +1003,12 @@ one equality-like, and one less-than-like, we can always determine which holds:
     (x y : A) → Tri (x < y) (x ≈ y) (y < x)
 ```
 
-Working directly with `Tri`, rather than several invocations to `Decidable₂
-_<_` will dramatically reduce the proof effort necessary to define `insert` and
-show that it preserves `IsBST`.
+Working directly with `type:Tri`, rather than several invocations to `Decidable₂
+_<_` will dramatically reduce the proof effort necessary to define `def:insert` and
+show that it preserves `type:IsBST`.
 
-We are going to require a `_<_` relation, and a proof that it forms a trichotomy
-with `_≡_` in order to work through the implementation details here. Rather than
+We are going to require a `type:_<_` relation, and a proof that it forms a trichotomy
+with `type:_≡_` in order to work through the implementation details here. Rather than
 pollute all of our type signatures with the necessary plumbing, we can instead
 define an anonymous module and add the common parameters to that instead, as in:
 
@@ -1021,7 +1024,7 @@ Anything defined in this module will now automatically inherit `{_<_ : A → A �
 Set}` and `Trichotomous _≡_ _<_` arguments, which saves us some effort in
 getting all the necessary arguments from one place to another.
 
-Defining `insert` follows exactly the same template as our in-writing algorithm
+Defining `def:insert` follows exactly the same template as our in-writing algorithm
 above:
 
 ```agda
@@ -1036,7 +1039,7 @@ above:
     ... | tri> _ _ _ = branch l x (insert a r)
 ```
 
-We would now like to show that `insert` preserves the `IsBST` invariant. That
+We would now like to show that `def:insert` preserves the `type:IsBST` invariant. That
 is, we'd like to define the following function:
 
 ```agda
@@ -1049,10 +1052,10 @@ is, we'd like to define the following function:
 ```
 
 Before diving into this proper, we will do a little thinking ahead and realize
-that showing `IsBST` for a `branch` constructor requires showing that all
+that showing `type:IsBST` for a `ctor:branch` constructor requires showing that all
 elements in either subtree are properly bounded by the root. Therefore, before
-we show that `insert` preserves `IsBST`, we must first prove that `insert`
-preserves `All`! The type we need to show is that if `P a` and `All P t` hold
+we show that `def:insert` preserves `type:IsBST`, we must first prove that `def:insert`
+preserves `type:All`! The type we need to show is that if `P a` and `All P t` hold
 (for any `P`), then so too must `All P (insert a t)`:
 
 ```agda
@@ -1118,7 +1121,7 @@ automatically generated other bindings at the same time:
                      (branch l<x px x<r) = {! !}
 ```
 
-Finally, there is no reason to pattern match on the `{empty}`, since it doesn't
+Finally, there is no reason to pattern match on the `ctor:{empty}`, since it doesn't
 help us bring any new variables into scope.
 
 ```agda
@@ -1130,8 +1133,8 @@ help us bring any new variables into scope.
                      (branch l<x px x<r) = {! !}
 ```
 
-Filling the first hole is merely showing that we have `All` for a singleton,
-which is our `leaf` constructor:
+Filling the first hole is merely showing that we have `type:All` for a singleton,
+which is our `ctor:leaf` constructor:
 
 ```agda
     all-insert⅋₆
@@ -1142,7 +1145,7 @@ which is our `leaf` constructor:
                      (branch l<x px x<r) = {! !}
 ```
 
-A funny thing happens here. We know this remaining hole must be a `branch`, but
+A funny thing happens here. We know this remaining hole must be a `ctor:branch`, but
 Agda will refuse to [Refine](AgdaCmd) it. If you ask for the type of the goal,
 we see something peculiar:
 
@@ -1151,7 +1154,7 @@ Goal: All P (insert <-cmp a (branch l x r) | <-cmp a x)
 ```
 
 The vertical bar is not anything that you're allowed to write for yourself, but
-the meaning here is that the result of `insert` is stuck until Agda knows the
+the meaning here is that the result of `def:insert` is stuck until Agda knows the
 result of `<-cmp a`. Our only means of unsticking it is to also do a `with`
 abstraction over `<-cmp a x` and subsequently pattern match on the result:
 
@@ -1187,15 +1190,15 @@ to complete the function on your own:
             branch all-l px (all-insert a pa all-r)
 ```
 
-Now that we've finished the `all-insert` lemma, we're ready to show that
-`insert` preserves `IsBST`. Again, when implementing this you will see that the
+Now that we've finished the `def:all-insert` lemma, we're ready to show that
+`def:insert` preserves `type:IsBST`. Again, when implementing this you will see that the
 type will get stuck on `insert x t | <-cmp a x`, and will require another
 pattern match on `<-cmp a x`. This will always be the case, and it is for this
 reason that we say the proof has the same shape as the computation. In many ways
 it is like poetry: it rhymes.
 
-Implementing `bst-insert` isn't much more of a cognitive challenge than
-`all-insert` was; just pattern match and then build a proof term via induction:
+Implementing `def:bst-insert` isn't much more of a cognitive challenge than
+`def:all-insert` was; just pattern match and then build a proof term via induction:
 
 ```agda
     bst-insert
@@ -1228,7 +1231,7 @@ This style of proof we have demonstrated, is called an *extrinsic* proof. The
 idea here is that we have defined a type `BinTree A` and an operation `insert :
 A → BinTree A → BinTree A` in such a way that they are not guaranteed to be
 correct. In order to subsequently prove them correct, we added an additional
-layer on top, namely `IsBST` and `bst-insert` which assert our invariants after
+layer on top, namely `type:IsBST` and `def:bst-insert` which assert our invariants after
 the fact. This is a very natural way of proving things, and is a natural
 extension of the way we usually do computer science: do the implementation, and
 tack the tests on afterwards.
@@ -1241,8 +1244,8 @@ call this notion of proof *intrisic*, as it is intrinsic to what the object is
 in the first place.
 
 Intrinsic proofs are desirable because they only require you to do the work
-once. Recall that when defining both `bst-insert` and `all-insert`, we
-essentially had to mirror the definition of `insert` modulo a few changes. It
+once. Recall that when defining both `def:bst-insert` and `def:all-insert`, we
+essentially had to mirror the definition of `def:insert` modulo a few changes. It
 was quite a lot of work, and you can imagine that this effort would multiply
 substantially for each additional operations we'd like to define over BSTs.
 Extrinsic proofs make you shoulder this burden.
@@ -1292,22 +1295,22 @@ discipline has taught us, and that is a notoriously hard position to adopt.
 In order to define an intrinsic binary search tree, we will proceed in two
 steps. First, we will define a BST indexed by its upper and lower bounds, which
 we can subsequently use to ensure everything is in its right place, without
-resorting to extrinsic techniques like `All`. We begin with a new module to
+resorting to extrinsic techniques like `type:All`. We begin with a new module to
 sandbox our first step:
 
 ```agda
 module Intrinsic-BST-Impl {A : Set} (_<_ : A → A → Set) where
 ```
 
-As before, we make a `BST` type, but this time parameterized by a `lo` and `hi`
-bound. In the `empty` constructor we require a proof that `lo < hi`:
+As before, we make a `type:BST` type, but this time parameterized by a `lo` and `hi`
+bound. In the `ctor:empty` constructor we require a proof that `lo < hi`:
 
 ```agda
   data BST (lo hi : A) : Set where
     empty : lo < hi → BST lo hi
 ```
 
-Our other constructor, `branch`, now restricts the bounds of its left and right
+Our other constructor, `ctor:branch`, now restricts the bounds of its left and right
 subtrees so their top and bottom bounds are the root, respectively:
 
 ```agda
@@ -1319,9 +1322,9 @@ subtrees so their top and bottom bounds are the root, respectively:
 ```
 
 Notice at [1](Ann) that the root of the tree comes as the first argument! This
-is unlike our extrinsic `branch`, but is necessary here so that `a` is in scope
+is unlike our extrinsic `ctor:branch`, but is necessary here so that `a` is in scope
 when we build our subtrees. The discrepancy in argument order is why this
-constructor has been named `xbranch`, as indicated at [2](Ann).
+constructor has been named `ctor:xbranch`, as indicated at [2](Ann).
 
 Fortunately, we can use a pattern synonym to shuffle our parameters back into
 the correct shape:
@@ -1330,20 +1333,20 @@ the correct shape:
   pattern branch lo a hi = xbranch a lo hi
 ```
 
-And just as before, we will also add a `leaf` pattern:
+And just as before, we will also add a `ctor:leaf` pattern:
 
 ```agda
   pattern leaf lo<a a a<hi = branch (empty lo<a) a (empty a<hi)
 ```
 
-Returning to the issue of `insert`, we notice one big problem with putting the
-bounds in the type index: it means that `insert` could *change the type* of the
-`BST` if it is outside the original bounds! This is a bad state of affairs, and
+Returning to the issue of `def:insert`, we notice one big problem with putting the
+bounds in the type index: it means that `def:insert` could *change the type* of the
+`type:BST` if it is outside the original bounds! This is a bad state of affairs, and
 will dramatically harm our desired ergonomics. For the time being, we will
 sidestep the issue and merely require proofs that `a` is already in bounds.
 
 
-The implementation of `insert` is nearly identical to our original,
+The implementation of `def:insert` is nearly identical to our original,
 extrinsically proven version:
 
 ```agda
@@ -1370,7 +1373,7 @@ This concludes our first step of the problem. We now have an
 intrinsically-proven BST---all that remains is to deal with the type-changing
 problem, and put an ergonomic facade in front.
 
-A cheeky solution to the problem of `insert` possibly changing the type is to
+A cheeky solution to the problem of `def:insert` possibly changing the type is to
 bound all BSTs by the equivalent of negative and positive infinity. This is, in
 essence, throwing away the bounds---at least at the top level. If we can hide
 those details, we will simultaneously have solved the problem of changing types
@@ -1392,9 +1395,9 @@ module Intrinsic-BST
     [_] : A → ∞
 ```
 
-The `[_]` constructor lifts an `A` into `∞`, and it is through this mechanism by
-which we are justified in saying that `∞` extends `A`. From here, it's not too
-hard to define a `_<_` relationship over `∞`:
+The `ctor:[_]` constructor lifts an `A` into `type:∞`, and it is through this mechanism by
+which we are justified in saying that `type:∞` extends `A`. From here, it's not too
+hard to define a `type:_<_` relationship over `type:∞`:
 
 ```agda
   data _<∞_ : ∞ → ∞ → Set where
@@ -1404,12 +1407,12 @@ hard to define a `_<_` relationship over `∞`:
     -∞<+∞ : -∞ <∞ +∞
 ```
 
-This has all the properties you'd expect, that `-∞` is less than everything
-else, `+∞` is more than everything else, and that we can lift `_<_` over `A`.
+This has all the properties you'd expect, that `ctor:-∞` is less than everything
+else, `ctor:+∞` is more than everything else, and that we can lift `type:_<_` over `A`.
 The trick should be clear: we are not going to instantiate the
-`Intrinsic-BST-Impl` module at type `A`, but rather at `∞`!
+`module:Intrinsic-BST-Impl` module at type `A`, but rather at `type:∞`!
 
-Before we can do that, however, we must show that our new `_<∞_` is
+Before we can do that, however, we must show that our new `type:_<∞_` is
 trichotomous. This is quite a lot of work, but the details are uninteresting to
 us by now, and indeed Agda can do the first several cases for us automatically:
 
@@ -1450,7 +1453,7 @@ All that's left is lifting `<-cmp`, which we must do by hand:
             ([]<[] y<x)
 ```
 
-The end is nigh! We can now define a `BST` as one bounded by `-∞` and `+∞`:
+The end is nigh! We can now define a `type:BST` as one bounded by `ctor:-∞` and `ctor:+∞`:
 
 ```agda
   open module Impl = Intrinsic-BST-Impl _<∞_
