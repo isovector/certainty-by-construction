@@ -147,9 +147,9 @@ We will play around with our new numeric toys in a moment after two asides to
 pique your interest. We also saw the `data` keyword when we defined the
 booleans, and indeed, we will need it whenever we'd like to build a type whose
 values are *apart*---that is, new symbols whose meaning is in their
-distinctiveness from one another. The boolean values `false` and `true` are
+distinctiveness from one another. The boolean values `ctor:false` and `ctor:true` are
 *just symbols,* which, by convention, we assign meaning to. And this meaning is
-justified exactly because `false` and `true` are *different symbols.*
+justified exactly because `ctor:false` and `ctor:true` are *different symbols.*
 
 Such is true also of numbers; the reason we care about numbers is exactly
 because they are a collection of symbols, all distinct from one another.
@@ -406,11 +406,11 @@ unusable types:
 ```
 
 You will notice the definition of `type:IsEven` is identical to that of `def:even?`
-except that we replaced `Bool` with `Set`, `true` with `Usable`, and `false`
-with `Unusable`. Which, really, is what you would expect; `def:even?` was already a
+except that we replaced `type:Bool` with `type:Set`, `ctor:true` with `type:Usuable`, and `ctor:false`
+with `type:Unusuable`. Which, really, is what you would expect; `def:even?` was already a
 function that computed whether a given number is even! While we could flesh this
-idea out in full by finding specific (non-postulated) types to use for `Usable`
-and `Unusable`, constructing subsets in this way isn't often fruitful. Though
+idea out in full by finding specific (non-postulated) types to use for `type:Usuable`
+and `type:Unusuable`, constructing subsets in this way isn't often fruitful. Though
 it occasionally comes in handy, and it's nice to know you can compute types
 directly in this way.
 
@@ -455,7 +455,7 @@ now like to first recurse, and then *add* two `ctor:suc`s!
     suc-suc-even : {n : ℕ} → IsEven n → IsEven (suc (suc n))
 ```
 
-Here we're saying, `suc-suc-even` takes a proof that `n : ℕ` is even, and
+Here we're saying, `ctor:suc-suc-even` takes a proof that `n : ℕ` is even, and
 transforms it into a proof that `suc (suc n))` is even. The result is an
 inductive way to show that a given number is even!
 
@@ -520,12 +520,12 @@ Object (fromList [("kind",String "IntroNotFound")])
 ```
 
 What's (correctly) going wrong here is that Agda is trying to find a constructor
-for `IsEven (suc zero)`, but no such thing exists. We have `zero-even` for
-`IsEven zero`, and we have `suc-suc-even` for `IsEven (suc (suc n))`. But there
-is no such constructor when we have only one `ctor:suc`! Thus neither `zero-even` nor
-`suc-suc-even` will typecheck in our hole. Since these are the *only*
+for `IsEven (suc zero)`, but no such thing exists. We have `ctor:zero-even` for
+`IsEven zero`, and we have `ctor:suc-suc-even` for `IsEven (suc (suc n))`. But there
+is no such constructor when we have only one `ctor:suc`! Thus neither `ctor:zero-even` nor
+`ctor:suc-suc-even` will typecheck in our hole. Since these are the *only*
 constructors, and neither fits, it's fair to say that *nothing can fill this
-hole!* That is, `three-is-even` is *unimplementable,* which means it's
+hole!* That is, `def:three-is-even` is *unimplementable,* which means it's
 impossible to construct an `IsEven n` whenever `n` isn't even!
 
 This is truly a miraculous result, and perhaps might give you a glimpse at why
@@ -536,7 +536,7 @@ actually true.* But we will have much more to say about that later.
 
 Exercise
 
-:   Build an indexed type for `IsOdd`.
+:   Build an indexed type for `type:IsOdd`.
 
 
 Solution
@@ -570,10 +570,10 @@ When we originally implemented `def:even?`, I mentioned that functions which
 return booleans are generally a bad habit in Agda. The reason is that you have
 done a bunch of computation in order to computer an answer, and then you end up
 throwing all that work away to say merely "yes" or "no." Instead of returning a
-`Bool`, we could instead return an `type:IsEven`, proving the number is indeed even!
+`type:Bool`, we could instead return an `type:IsEven`, proving the number is indeed even!
 
 However, not all numbers are even, so we will first need some notion of failure.
-Enter the `Maybe` type, which is a container that contains exactly zero or one
+Enter the `type:Maybe` type, which is a container that contains exactly zero or one
 element of some type `A`.
 
 ```agda
@@ -582,8 +582,8 @@ element of some type `A`.
     nothing : Maybe A
 ```
 
-Here, `just` is the constructor for when the `Maybe` *does* contain an element,
-and `nothing` is for when it doesn't. `Maybe` is a good type for representing
+Here, `ctor:just` is the constructor for when the `type:Maybe` *does* contain an element,
+and `ctor:nothing` is for when it doesn't. `type:Maybe` is a good type for representing
 *partial functions*---those which don't always give back a result. Our desired
 improvement to `def:even?` is one such function, since there are naturals in the
 input which do not have a corresponding value in the output.
@@ -609,7 +609,7 @@ we can do [MakeCase](AgdaCmd) a few times:
 ```
 
 Then, everywhere we know there is definitely not an answer, we can fill in the
-hole with `nothing`:
+hole with `ctor:nothing`:
 
 ```agda
   evenEv⅋₂ : (n : ℕ) → Maybe (IsEven n)
@@ -619,7 +619,7 @@ hole with `nothing`:
 ```
 
 In the zero case, where we know there is an answer, we refine our hole with
-`just`:
+`ctor:just`:
 
 ```agda
   evenEv⅋₃ : (n : ℕ) → Maybe (IsEven n)
@@ -628,7 +628,7 @@ In the zero case, where we know there is an answer, we refine our hole with
   evenEv⅋₃ (suc (suc n)) = {! !}
 ```
 
-but `just` what? The type `IsEven zero` of the goal tells us, but we can also
+but `ctor:just` what? The type `IsEven zero` of the goal tells us, but we can also
 elicit an answer from Agda via [Refine:](AgdaCmd):
 
 ```agda
@@ -642,7 +642,7 @@ At this step in `def:even?` we just recursed and we were done. However, that can
 work here. The problem is that if we were to recurse, we'd get a result of type
 `Maybe (IsEven n)`, but we need a result of type `Maybe (IsEven (suc (suc n)))`.
 What needs to happen then is for us to recurse, *inspect the answer,* and then,
-if it's `just`, insert a `suc-suc-even` on the inside. It seems a little
+if it's `ctor:just`, insert a `suc-suc-even` on the inside. It seems a little
 convoluted, but the types are always there to guide you if you ever lose the
 forest for the trees.
 
@@ -676,8 +676,8 @@ run [MakeCase:result](AgdaCmd) in the hole to pattern match on `result`:
 ```
 
 In the case that `result` is nothing, we know that our recursive call failed,
-and thus that $n - 2$ is not even. Therefore, we too should return `nothing`.
-Similarly for the `just` case:
+and thus that $n - 2$ is not even. Therefore, we too should return `ctor:nothing`.
+Similarly for the `ctor:just` case:
 
 ```agda
   evenEv⅋₇ : (n : ℕ) → Maybe (IsEven n)
@@ -957,7 +957,7 @@ and thus:
 The natural numbers don't support subtraction, because we might try to take too
 much away and be forced to go negative, but there are no negative natural
 numbers. However, we have a closely related operation, subtraction with
-*truncation* at zero --- that is, if the result should be negative, it is
+*truncation* at zero---that is, if the result should be negative, it is
 instead zero. We call this operation "monus", and use the symbol `def:_∸_`.
 
 
@@ -1003,8 +1003,8 @@ library's `Data.Nat` module. Additionally, you also get support for natural
 literals, that is, you get digital representations for every number. No more
 `four : ℕ`; just use `4 : ℕ`!
 
-By this point, you should be starting to get a good handle on the basics of Agda
---- both syntactically, as well as how we think about modeling and solving
+By this point, you should be starting to get a good handle on the basics of
+Agda---both syntactically, as well as how we think about modeling and solving
 problems. In the next section we will tackle the integers, which have much more
 interesting mathematical structure, and subsequently, present many more
 challenges.
@@ -1102,8 +1102,8 @@ Note that the spaces separating `-` from `2`, and `+` from `6` are *necessary.*
 Agda will complain very loudly, and rather incoherently, if you forget them.
 
 While our second approach dramatically improves on the syntax of integers and
-eliminates most problems from `Naive-Integers₁`, there is still one small issue
---- there are now two (and exactly two) representations of zero:
+eliminates most problems from `Naive-Integers₁`, there is still one small
+issue---there are now two (and exactly two) representations of zero:
 
 ```agda
   _ : ℤ
@@ -1210,7 +1210,7 @@ elegant implementation:
 ```
 
 Finally, the moment we've all been waiting for; it's time to implement addition
-over integers. Doing so is a particularly finicky thing --- there are lots of
+over integers. Doing so is a particularly finicky thing---there are lots of
 ways in which positive and negative integers can interact! Fortunately, a lot of
 the work is duplicated by virtue of addition being commutative, that is, the
 answer is the same regardless of whether we write $a + b$ or $b + a$. Therefore,
@@ -1228,7 +1228,7 @@ First, adding zero to anything doesn't change the result:
 ```
 
 These last two cases would be more naturally written as `x + +0 = x`, but we are
-forced to expand out `x` for technical reasons. Continuing on, we come across
+forced to expand out `x` for technical reasons (TODO(sandy): not true!). Continuing on, we come across
 the case in which we're adding negative one to positive one:
 
 ```agda
