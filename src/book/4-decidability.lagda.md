@@ -886,7 +886,7 @@ we can again ask Agda for a proof that `tree` is a BST:
       (bst-branch empty empty bst-empty bst-empty)
 ```
 
-You'll notice several subexpressions of the form `bst-branch empty empty
+You'll notice several subexpressions of the form `ctor:bst-branch empty empty
 bst-empty bst-empty`, which is the proof that a `ctor:leaf` is a BST. This is a good
 opportunity for another pattern:
 
@@ -1094,7 +1094,7 @@ we can now ask for a [MakeCase:all-pt](AgdaCmd):
 
 Notice that when we pattern matched on `all-pt`, Agda realized that this fully
 determines the results of `t` as well, and it happily expanded them out into
-these funny `.empty` and `.(branch...)` patterns. These are called *dot
+these funny `ctor:.empty` and `ctor:.(branch...)` patterns. These are called *dot
 patterns,* and they correspond to patterns whose form has been fully determined
 by pattern matching on something else. However, whenever there's a dot pattern
 we're allowed to replace it with a regular pattern match, as in:
