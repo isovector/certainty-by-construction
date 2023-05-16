@@ -370,8 +370,17 @@ You will notice two things have happened; Agda wrote `x` on the left side of the
 equals sign, and it replaced our `?` with `{! !}`. The latter is slightly
 different syntax for a hole that has some benefits, but is a few more keystrokes
 for a human to type for themselves. The reader playing along at home will also
-have noticed the "visible goal" in the info panel has changed from `?1 : Bool →
-Bool` to `?1 : Bool`.
+have noticed the "visible goal" in the info panel has changed from
+
+```info
+?1 : Bool → Bool
+```
+
+to
+
+```info
+?1 : Bool
+```
 
 The changes engendered by invoking [`MakeCase`](AgdaCmd) like we did have a lot to
 teach us about how Agda works. Our first hole, way back at [1](Ann) had type

@@ -138,7 +138,7 @@ particularly strong claim. Under a constructive lens, we can prove the
 proposition merely by proving a boolean, thus proving at least one exists.
 
 For further illustration, with a more complicated example, let's bring back our
-`IsEven` type from @sec:numbers. First we can import the chapter module:
+`type:IsEven` type from @sec:numbers. First we can import the chapter module:
 
 ```agda
 open import 2-numbers
@@ -234,7 +234,7 @@ is better than perfect.
 
 All of this is fine and dandy, but how do we go about actually building types
 corresponding to mathematical propositions? Usually the technique is to use an
-indexed type, like we did with `IsEven`.
+indexed type, like we did with `type:IsEven`.
 
 One of the most common mathematical propositions---indeed, often synonymous with
 math in school---is the *equation.* Equality is the proposition that two
@@ -259,7 +259,7 @@ module REMOVE-ME where
   data _≡_ {A : Set} : A → A → Set where
 ```
 
-The `≡` symbol is input via [`==`](AgdaMode).
+The `type:≡` symbol is input via [`==`](AgdaMode).
 
 Remember that the type corresponds to the proposition, while the constructors
 are the primitive ways by which we can prove the proposition. In this case,
@@ -270,22 +270,22 @@ equal only if they are the same thing in the first place!
     refl : {x : A} → x ≡ x
 ```
 
-The type here, `{x : A} → x ≡ x` says that for any value `x` we'd like, we know
-that `x` is equal to itself. The constructor is called `refl`, which is short
+The type here, `type:{x : A} → x ≡ x` says that for any value `x` we'd like, we know
+that `x` is equal to itself. The constructor is called `ctor:refl`, which is short
 for *reflexivity,* which is the technical jargon for the property that all
 things are equal to themselves. We shorten "reflexivity" because we end up
 writing this constructor *a lot.*
 
-In order to play nicely with standard mathematical notation, we'd like `_≡_` to
+In order to play nicely with standard mathematical notation, we'd like `type:_≡_` to
 bind very loosely, that is to say, to have a low precedence. Furthermore, we do
-not want `_≡_` to associate at all, so we can use `infix` without a left or
+not want `type:_≡_` to associate at all, so we can use `infix` without a left or
 right suffix to prevent this behavior:
 
 ```agda
   infix 4 _≡_
 ```
 
-We have already encountered `_≡_` and `refl` in @sec:chapter1 where we called
+We have already encountered `type:_≡_` and `ctor:refl` in @sec:chapter1 where we called
 them "unit tests." This was a little white-lie, about which I am now coming
 clean. In fact, what we were doing before with our "unit tests" was proposing
 the equality of two terms, and giving a proof saying that were already the same
@@ -343,14 +343,14 @@ We can write this proposition as a type rather directly:
 ```
 
 In order to give a proof of this fact, we must bind the parameter on the left
-side of the equals (in fact, we don't even need to give it a name), but `refl`
+side of the equals (in fact, we don't even need to give it a name), but `ctor:refl`
 is sufficient on the right side:
 
 ```agda
     0+x≡x _ = refl
 ```
 
-There are two equally valid interpretations of `0+x≡x`. The first is exactly the
+There are two equally valid interpretations of `def:0+x≡x`. The first is exactly the
 equation we wrote earlier, namely:
 
 $$
@@ -358,14 +358,14 @@ $$
 $$
 
 However, you can also train your keen computer-science eye at this and take the
-type of `0+x≡x` more literally---that is, as a function. Namely: a function
+type of `def:0+x≡x` more literally---that is, as a function. Namely: a function
 which takes some `x` and gives you back a proof that *for that particular `x`*,
 it is the case that $0 + x = x$.
 
-Our examples thus far seem to indicate that `_≡_` can automatically show all of
+Our examples thus far seem to indicate that `type:_≡_` can automatically show all of
 the equalities we'd like. But this has been a careful ruse on my part.
 Try as we might, however, Agda will refuse to type check the analogous equality
-`x+0≡x`:
+`def:x+0≡x`:
 
 ```illegal
     x+0≡x⅋ : (x : ℕ) → x + zero ≡ x
@@ -380,8 +380,8 @@ when checking that the expression refl has type x + zero ≡ x
 Inspecting the error message here is quite informative; Agda tells us that `x +
 zero` is not the same thing as `x`. This should be quite reminiscent of our
 investigations into stuck values in @sec:stuck, which it is. The problem in this
-case is that `x` is stuck and `_+_` is defined by induction on its first
-argument. Therefore, `_+_` is also stuck, and we are unable to make any progress
+case is that `x` is stuck and `def:_+_` is defined by induction on its first
+argument. Therefore, `def:_+_` is also stuck, and we are unable to make any progress
 on this equality until we can unstick `x`. Like always, the solution to
 stuckness is pattern matching:
 
@@ -402,14 +402,14 @@ Immediately, Agda gets unstuck, and tells us now the type of the first hole is
 
 This second goal here is `suc (x + zero) ≡ suc x`, which has arisen from
 instantiating the original type at `suc x`. Thus we are trying to show `suc x +
-zero ≡ suc x`, which Agda has reduced by noticing the leftmost argument to `_+_`
-is a `suc` constructor.
+zero ≡ suc x`, which Agda has reduced by noticing the leftmost argument to `def:_+_`
+is a `ctor:suc` constructor.
 
 Looking closely, this goal is almost exactly the type of `x+0≡x` itself, albeit
-with a `suc` tacked onto either side. If we were to recurse, we could get a
+with a `ctor:suc` tacked onto either side. If we were to recurse, we could get a
 proof of `x + zero ≡ x`, which then seems plausible that we could massage into
 the right shape. Let's backtrack on our definition of `x+0≡x` for a moment in
-order to work out this problem of fitting a `suc` into a proof-shaped hole.
+order to work out this problem of fitting a `ctor:suc` into a proof-shaped hole.
 
 
 ## Congruence
@@ -449,9 +449,9 @@ distinguish between them, including making a function call. Therefore, we can
 make the much stronger claim that "if `x` and `y` are equal, then so too are `f
 x` and `f y` *for any function* `f`!"
 
-This is a property known as *congruence*, which we again shorten to `cong` due
+This is a property known as *congruence*, which we again shorten to `def:cong` due
 to the frequency with which we will use this technique in the field. The type of
-`cong` is rather involved, but most of the work involved is binding the
+`def:cong` is rather involved, but most of the work involved is binding the
 relevant variables.
 
 ```agda
@@ -464,7 +464,7 @@ relevant variables.
     cong⅋₀ f x≡y = ?
 ```
 
-Proving `cong` is straightforward. We already have a proof that `x ≡ y`. If we
+Proving `def:cong` is straightforward. We already have a proof that `x ≡ y`. If we
 pattern match on this value, Agda is smart enough to rewrite every `y` in the
 type as `x`. Thus, after a [MakeCase:x≡y](AgdaCmd):
 
@@ -478,7 +478,7 @@ type as `x`. Thus, after a [MakeCase:x≡y](AgdaCmd):
     cong⅋₁ f refl = {! !}
 ```
 
-our new goal has type `f x ≡ f y`, which is trivially a call to `refl`.
+our new goal has type `f x ≡ f y`, which is trivially a call to `ctor:refl`.
 
 ```agda
     cong
@@ -504,7 +504,7 @@ proof:
     x+0≡x⅋₂ (suc x) = {! !}
 ```
 
-Our new `cong` function fits nicely into this hole:
+Our new `def:cong` function fits nicely into this hole:
 
 ```agda
     x+0≡x⅋₃ : (x : ℕ) → x + zero ≡ x
@@ -522,7 +522,7 @@ which [Auto](AgdaCmd) will now happily fill for us using recursion:
 
 Congruence is an excellent tool for doing induction in proofs. You can do
 induction as normal, but the resulting proof from the recursive step is usually
-not quite be what you need. Luckily, the solution is often just a `cong` away.
+not quite be what you need. Luckily, the solution is often just a `def:cong` away.
 
 
 ## Identities
@@ -544,13 +544,13 @@ familiar with these idioms, we can give new our existing proofs:
 
 The superscript `l` and `r` here are input as [`^l`](AgdaMode) and [`^r`](AgdaMode),
 respectively. The attentive reader might question why exactly we need
-`+-identityˡ`, since it's fully-normalized definition is just `refl`, which is
+`def:+-identityˡ`, since it's fully-normalized definition is just `ctor:refl`, which is
 to say that it's something Agda can work out for itself without explicitly using
-`+-identityˡ`. While that is true, it is an *implementation detail.* If we were
-to not expose `+-identityˡ`, the user of our proof library would be required to
+`def:+-identityˡ`. While that is true, it is an *implementation detail.* If we were
+to not expose `def:+-identityˡ`, the user of our proof library would be required to
 understand for themselves exactly how addition is computed, which can be an
 onerous mental burden. Instead, we content ourselves with exposing "trivial"
-proofs like `+-identityˡ` with the understanding that it is the *name* of this
+proofs like `def:+-identityˡ` with the understanding that it is the *name* of this
 proof that is important, more so than its contents. Throughout your exposure to
 the Agda standard library, you will find many such-named functions, and the
 convention can help you find the lemmas you need without needing to dig deeply
@@ -562,7 +562,7 @@ identities. A good exercise is to find and prove both.
 
 Exercise
 
-:   Find and prove a right identity for `_*_`:
+:   Find and prove a right identity for `def:_*_`:
 
 
 Solution
@@ -576,7 +576,7 @@ Solution
 
 Exercise
 
-:   Find and prove a left identity for `_*_`:
+:   Find and prove a left identity for `def:_*_`:
 
 
 Solution
@@ -622,7 +622,7 @@ x + zero * x != x of type ℕ
 
 This approach clearly isn't going to work. Instead, we might consider just
 writing the proof again, pattern-match and all. But we notice upon trying that
-the proof delegates out to `+-identityʳ`, which puts us in a recursive
+the proof delegates out to `def:+-identityʳ`, which puts us in a recursive
 bind---surely we shouldn't have to rewrite the entire proof hierarchy just to
 switch what's on the left of the equals sign!
 
@@ -630,7 +630,7 @@ But a propositional equality shows that the two things on either side of an
 equals sign are identical. That is, once we've pattern matched on `refl : x ≡
 x`, there is no longer a distinction between the left and right sides of the
 equals sign. We can exploit this fact to reverse every propositional equality
-proof via `sym`:
+proof via `def:sym`:
 
 ```agda
     sym : {A : Set} → {x y : A} → x ≡ y → y ≡ x
@@ -638,16 +638,16 @@ proof via `sym`:
 ```
 
 Rather underwhelming once you see it, isn't it? After we pattern match on
-`refl`, we learn that `x` and `y` are the same thing, so our goal becomes `x ≡
-x`, which we can solve with `refl`. And from there, Agda is happy to rewrite the
+`ctor:refl`, we learn that `x` and `y` are the same thing, so our goal becomes `x ≡
+x`, which we can solve with `ctor:refl`. And from there, Agda is happy to rewrite the
 left side as `y`, since it knows that's just a different name for `x` anyway.
 
-What's with the name `sym` anyway? It's short for *symmetry,* which is the idea
+What's with the name `def:sym` anyway? It's short for *symmetry,* which is the idea
 that a relation doesn't distinguish between its left and right arguments. We
-shorten it to `sym` as always because of the sheer ubiquity with which this
+shorten it to `def:sym` as always because of the sheer ubiquity with which this
 proof combinator gets used.
 
-With `sym`, we now have a satisfying, general-purpose tool for implementing
+With `def:sym`, we now have a satisfying, general-purpose tool for implementing
 `*-identityˡ′`:
 
 ```agda
@@ -655,8 +655,8 @@ With `sym`, we now have a satisfying, general-purpose tool for implementing
     *-identityˡ′ x = sym (*-identityˡ x)
 ```
 
-Because `sym` swaps which of its arguments is on the left and which is on the
-right, we should expect that applying `sym` twice should get us back to where we
+Because `def:sym` swaps which of its arguments is on the left and which is on the
+right, we should expect that applying `def:sym` twice should get us back to where we
 started. Is this so? We could try to ponder the question deeply, but instead we
 remember that we're now capable of doing computer-aided mathematics, and the
 more interesting question is whether we can prove it. And in fact we can! The
@@ -776,9 +776,9 @@ thus:
       → x ≡ z
 ```
 
-In other words, `trans` takes a proof that `x ≡ y` and a proof that `y ≡ z`, and
+In other words, `def:trans` takes a proof that `x ≡ y` and a proof that `y ≡ z`, and
 gives us back a proof that `x ≡ z`. To prove such a thing, we take a page out of
-the `sym` book, and pattern match on both proofs, allowing Agda to unify `z` and
+the `def:sym` book, and pattern match on both proofs, allowing Agda to unify `z` and
 `y`, before subsequently unifying `y` and `x`:
 
 ```agda
@@ -822,7 +822,7 @@ usually leaves you deep in the weeds. Proof by pattern matching is much akin to
 programming in assembly---you can get the job done, but it requires paying
 attention to much more detail than we'd like. Instead, we can prove the above
 proposition out of reusable pieces that we've already developed. Because we'd
-like to glue together some existing proofs, we begin with a call to `trans`:
+like to glue together some existing proofs, we begin with a call to `def:trans`:
 
 ```agda
     a^1≡a+b*0⅋₀ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
@@ -830,7 +830,7 @@ like to glue together some existing proofs, we begin with a call to `trans`:
       = trans ? ?
 ```
 
-This call to `trans` shows up with a yellow background because we haven't yet
+This call to `def:trans` shows up with a yellow background because we haven't yet
 given Agda enough information to infer all the necessary types. This is nothing
 to worry about, as our next step will sort everything out. We will follow our
 "pen and paper" proof above, where our first step was that $a^1 = a$, which we
@@ -843,7 +843,7 @@ called `^-identityʳ a`:
 ```
 
 Our goal now has the type `a ≡ a + b * zero`, which we'd like to simplify and
-implement in two steps. Thus, we use another call to `trans`, this time to
+implement in two steps. Thus, we use another call to `def:trans`, this time to
 assert the fact that $a = a + 0$. We don't have a proof of this directly, but we
 do have the opposite direction via `+-identityʳ a`. Symmetry can help us out:
 
@@ -860,7 +860,7 @@ We are left with a goal with the type `a + zero ≡ a + b * zero`. While we know
 that `*-zeroʳ b` could show $b \times 0 = 0$ for us, and thus that `sym (*-zeroʳ
 b)` will give us $0 = b \times 0$ , we are left with the problem of getting this
 evidence into the right place. Whenever you have a proof for a subexpression,
-you should think `cong`:
+you should think `def:cong`:
 
 ```agda
     -- TODO(sandy): rewrite me with the targeting idea first, so we can avoid
@@ -877,8 +877,8 @@ you should think `cong`:
 
 This final hole, recall, moves the given proof to the desired place in the
 expression. Here we have `a + zero` and would like to replace it with `a + b *
-zero`, meaning we need to target the `zero` in our original expression.
-Therefore, we must give a function that *targets* the `zero`, leaving the
+zero`, meaning we need to target the `ctor:zero` in our original expression.
+Therefore, we must give a function that *targets* the `ctor:zero`, leaving the
 remainder of the expression alone. We can introduce a function via a lambda:
 
 ```agda
@@ -891,7 +891,7 @@ remainder of the expression alone. We can introduce a function via a lambda:
 ```
 
 The lambda here is input as [`Gl`](AgdaMode), while the phi is [`Gf`](AgdaMode).
-A useful trick for filling in the body of `cong`'s targeting function is to copy
+A useful trick for filling in the body of `def:cong`'s targeting function is to copy
 the expression you had before, and replace the bit you'd like to change with the
 function's input. Thus:
 
@@ -925,9 +925,9 @@ choose whichever you prefer in your own code. However, by virtue of this
 presentation being a book, we are limited by physical page widths, and thus will
 opt for the terser form whenever it will simplify the presentation.
 
-Composing proofs directly via `trans` does indeed work, but it leaves a lot to
+Composing proofs directly via `def:trans` does indeed work, but it leaves a lot to
 be desired. Namely, the proof we wrote out "by hand" looks nothing like the pile
-of `trans` calls we ended up using to implement `a^1≡a+b*0`. Thankfully, Agda's
+of `def:trans` calls we ended up using to implement `a^1≡a+b*0`. Thankfully, Agda's
 syntax is sufficiently versatile that we can build a miniature *domain specific
 language* in order to get more natural looking proofs. We will explore this idea
 in the next section.
@@ -936,7 +936,7 @@ in the next section.
 ## Mixfix Parsing
 
 As we saw in @sec:chapter1, we can define binary operators in Agda by sticking
-underscores on either side, like in `_+_`. You might be surprised to learn that
+underscores on either side, like in `def:_+_`. You might be surprised to learn that
 these underscores are a much more general feature. The underscore corresponds to
 a syntactic hole, hinting to Agda's parser that the underscore is a reasonable
 place to allow an expression.
@@ -955,14 +955,14 @@ operator with an underscore, as in the factorial function:
 One important thing to note is that function application binds most tightly of
 all, thus the `suc n !` at [1](Ann) is parsed `(suc n) !`, rather than the
 more obvious seeming `suc (n !)`. Recall that by default, operators get
-precedence 20, which is what `_!` gets in this case. And since we defined `_*_`
+precedence 20, which is what `def:_!` gets in this case. And since we defined `def:_*_`
 with precedence 7, [1](Ann) correctly parses as `suc n * (n !)`.
 
 Sometimes it's desirable to make *prefix* operators, where the symbol comes
 before the argument. While Agda parses regular functions as prefix operators,
 writing an explicit underscore on the end of an identifier means we can play
 with associativity. For example, while it's tedious to write `five` out of
-`suc`s:
+`ctor:suc`s:
 
 ```agda
     five⅋₀ : ℕ
@@ -983,11 +983,11 @@ nature of counting in unary and define a right-associative prefix "tick mark"
     five = ∣ ∣ ∣ ∣ ∣ zero
 ```
 
-The presence of `zero` here is unfortunate, but necessary. When nesting
+The presence of `ctor:zero` here is unfortunate, but necessary. When nesting
 operators like this, we always need some sort of *terminal* in
 order to tell Agda we're done this expression. Therefore, we will never be able
 to write "true" tick marks which are merely to be counted. However, we can
-lessen the ugliness by introducing some different syntax for `zero`, as in:
+lessen the ugliness by introducing some different syntax for `ctor:zero`, as in:
 
 ```agda
     □ : ℕ
@@ -997,7 +997,7 @@ lessen the ugliness by introducing some different syntax for `zero`, as in:
     five⅋₁ = ∣ ∣ ∣ ∣ ∣ □
 ```
 
-The square `□` can be input as [`sq`](AgdaMode). Whether or not this syntax is
+The square `def:□` can be input as [`sq`](AgdaMode). Whether or not this syntax is
 better than our previous attempt is in the eye of the beholder. Suffice it to
 say that we will always need some sort of terminal value when doing this style
 of associativity to build values.
@@ -1017,8 +1017,8 @@ $\lfloor{x}\rfloor$, which we can replicate in Agda:
     three′ = ⌊ π ⌋
 ```
 
-The floor bars are input via [``clL``](AgdaMode) and [clR](AgdaMode), while `ℝ`
-is written as [`bR`](AgdaMode) and `π` is [`Gp`](AgdaMode). We don't dare define
+The floor bars are input via [``clL``](AgdaMode) and [clR](AgdaMode), while `type:ℝ`
+is written as [`bR`](AgdaMode) and `def:π` is [`Gp`](AgdaMode). We don't dare define
 the real numbers here, as they are a tricky construction and would distract from
 the point.
 
@@ -1103,7 +1103,7 @@ which is nearly as good.
 
 As you can see, Agda's parser offers us a great deal of flexibility, and we can
 use this to great advantage when defining domain specific languages. Returning
-to our problem of making `trans`-style proofs easier to think about, we can
+to our problem of making `def:trans`-style proofs easier to think about, we can
 explore how to use mixfix parsing to construct valid syntax more amenable to
 equational reasoning.
 
@@ -1148,7 +1148,7 @@ some thought. Let's go slowly, but start with a new module:
 
 The idea here is that we will make a series of right-associative syntax
 operators, in the style of our tick marks in the previous section. We will
-terminate the syntax using `refl`, that is, showing that we've already proven
+terminate the syntax using `ctor:refl`, that is, showing that we've already proven
 what we set out to. You'll often see a formal proof ended with a black square,
 called a *tombstone* marker. Since proofs already end with this piece of syntax,
 it's a great choice to terminate our right-associative chain of equalities.
@@ -1178,7 +1178,7 @@ Again, `x` is unused in the definition, and exists only in the type. You might
 think this is a good opportunity for an implicit argument, but we'd actually
 *prefer* it to be visible. Recall that the justifications (that is, the proofs)
 fully specify which two things we are stating are equal. The `x` arguments we've
-written in `_≡⟨⟩_` and `_∎` are unnecessary for the implementations, but act as
+written in `def:_≡⟨⟩_` and `def:_∎` are unnecessary for the implementations, but act as
 a guide for the *human* writing the thing in the first place! These `x`s mark
 the current state of the computation. Let's illustrate the point:
 
@@ -1211,7 +1211,7 @@ what's going on:
               ( suc (one + two) ∎ )))
 ```
 
-Replacing `_∎` with its definition, we get:
+Replacing `def:_∎` with its definition, we get:
 
 ```agda
       _ : four ≡ suc (one + two)
@@ -1221,7 +1221,7 @@ Replacing `_∎` with its definition, we get:
             ( suc one + two ≡⟨⟩ refl ))
 ```
 
-We can then replace the innermost `_≡⟨⟩_` with *its* definition, which you will
+We can then replace the innermost `def:_≡⟨⟩_` with *its* definition, which you will
 remember is to just return its second argument:
 
 ```agda
@@ -1256,7 +1256,7 @@ make an error in our proof, as in:
           ∎
 ```
 
-At [1](Ann) we accidentally dropped a `suc`. But, Agda is smart enough to catch
+At [1](Ann) we accidentally dropped a `ctor:suc`. But, Agda is smart enough to catch
 the mistake:
 
 ```info
@@ -1271,7 +1271,7 @@ While all of this syntax construction itself is rather clever, there is nothing
 magical going on here. It's all just smoke and mirrors abusing Agda's mixfix
 parsing and typechecker in order to get nice notation for what we want.
 
-Of course, `_≡⟨⟩_` is no good for providing justifications. Instead, we will use
+Of course, `def:_≡⟨⟩_` is no good for providing justifications. Instead, we will use
 the same idea, but this time leave a hole for the justification.
 
 ```agda
@@ -1287,9 +1287,9 @@ the same idea, but this time leave a hole for the justification.
       infixr 2 _≡⟨_⟩_
 ```
 
-`_≡⟨_⟩_` works exactly in the same way as `_≡⟨⟩_`, except that it takes a
+`def:_≡⟨_⟩_` works exactly in the same way as `def:_≡⟨⟩_`, except that it takes a
 proof justification as its middle argument, and glues it together with its last
-argument as per `trans`. We have one piece of syntax left to introduce, and will
+argument as per `def:trans`. We have one piece of syntax left to introduce, and will
 then play with this machinery in full.
 
 Finally, by way of symmetry and to top things off, we will add a starting
@@ -1303,8 +1303,8 @@ to let the reader know that an equational reasoning proof is coming up:
       infix 1 begin_
 ```
 
-The `begin_` function does nothing, it merely returns the proof given. And since
-its precedence is lower than any of our other `≡-Reasoning` pieces, it binds
+The `def:begin_` function does nothing, it merely returns the proof given. And since
+its precedence is lower than any of our other `module:≡-Reasoning` pieces, it binds
 after any of our other syntax, ensuring the proof is already complete by the
 time we get here. The purpose really is just for decoration.
 
@@ -1402,7 +1402,7 @@ We can write this in Agda with the type:
     +-assoc⅋₀ : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
 ```
 
-A quick binding of variables, induction on `x`, and obvious use of `refl` gets
+A quick binding of variables, induction on `x`, and obvious use of `ctor:refl` gets
 us to this step:
 
 ```agda
@@ -1456,7 +1456,7 @@ I always like to subsequently extend the top and bottom sides like this:
 ```
 
 which recall says that the newly added lines are already equal to the other side
-of the `_≡⟨⟩_` operator. We can fill in these holes with
+of the `def:_≡⟨⟩_` operator. We can fill in these holes with
 [Solve/Normalise](AgdaCmd), which asks Agda to fully-evaluate both holes. This
 will expand as many definitions as it can while still making progress. Sometimes
 it goes too far, but for our simple examples here, this will always be helpful.
@@ -1489,7 +1489,7 @@ invoke [Auto](AgdaCmd) to search for the remainder of the proof:
 
 I quite like this approach for tackling proofs. I introduce a [`begin`](AgdaMode)
 snippet, use [Solve](AgdaCmd) to fill in the top and bottom, insert new calls to
-`_≡⟨⟩_` the top and bottom, fill them via [Solve/Normalise](AgdaCmd), and then
+`def:_≡⟨⟩_` the top and bottom, fill them via [Solve/Normalise](AgdaCmd), and then
 use [`step`](AgdaMode) to help fill in the middle.
 
 Let's do another proof together, this time a less-trivial one. First, we will
@@ -1515,7 +1515,7 @@ case.
 Exercise
 
 :   State the type of, perform induction on the first argument, and solve the
-    zero case for `+-comm`.
+    zero case for `def:+-comm`.
 
 
 Solution
@@ -1552,7 +1552,7 @@ yellow as Agda now has too many degrees of freedom to work out what you mean:
       where open ≡-Reasoning
 ```
 
-Nevertheless, we can persevere and fill in the bottom hole using our `+-suc`
+Nevertheless, we can persevere and fill in the bottom hole using our `def:+-suc`
 lemma from just now:
 
 ```agda
@@ -1596,7 +1596,7 @@ which makes the solution obvious:
 
 Often, a huge amount of the work to prove something is simply in manipulating
 the expression to be of the right form so that you can apply the relevant lemma.
-This is the case in `*-suc`, which allows us to expand a `suc` on the right side
+This is the case in `def:*-suc`, which allows us to expand a `ctor:suc` on the right side
 of a multiplication term:
 
 ```agda
@@ -1617,7 +1617,7 @@ of a multiplication term:
       where open ≡-Reasoning
 ```
 
-We are now ready to prove `*-comm`, one of our major results in this chapter.
+We are now ready to prove `def:*-comm`, one of our major results in this chapter.
 
 
 Exercise

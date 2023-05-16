@@ -246,7 +246,7 @@ constructors:
 Interestingly, at [1](Ann), Agda has given us a new form, something we didn't
 see in the case of booleans. It gave us a pattern match `(suc x)`, which after
 some mental type-checking, makes sense. We said `n` was a `ℕ`, but `ctor:suc` has
-type `ℕ → ℕ`. That means, `n` can only be a natural number of the `ctor:suc` form *if
+type `type:ℕ → ℕ`. That means, `n` can only be a natural number of the `ctor:suc` form *if
 that function has already been applied to some other number.*
 
 The interpretation you should give to this expression is that if $n$ is of the
@@ -358,14 +358,14 @@ We can transform an `Evenℕ` into a `ℕ` by induction:
 ```
 
 This approach, however, feels slightly underwhelming. The attentive reader will
-recall that in a `data` type, the *meaning* of the constructors comes only from
+recall that in a `keyword:data` type, the *meaning* of the constructors comes only from
 their types and the suggestive names we give them. A slight renaming of
 `ctor:suc-suc` to `ctor:suc` makes the definition of `Evenℕ` look very similar indeed to
 that of `ℕ`. In fact, the two types are completely equivalent, modulo the names
 we picked.
 
 As such, there is nothing stopping us from writing an incorrect (but not
-*obviously* wrong) version of the `toℕ` function. In fact, did you notice that
+*obviously* wrong) version of the `def:toℕ` function. In fact, did you notice that
 the definition given above *was* wrong? Oops! Instead, the correct
 implementation should be this:
 
@@ -419,8 +419,8 @@ different way.
 
 The situation here is analogous to our first venture into typing judgments.
 While we realized we could get away working directly in typing judgments, things
-became much easier when we used a more principled structure---namely, the `data`
-type. Amazingly, here too we can use a `data` type to solve our problem. The
+became much easier when we used a more principled structure---namely, the `keyword:data`
+type. Amazingly, here too we can use a `keyword:data` type to solve our problem. The
 trick is to add an *index* to our type. Let's begin just with the `data`
 declaration:
 
@@ -429,10 +429,10 @@ declaration:
 ```
 
 Every type we have seen so far has been of the form `data X : Set`, but at
-[1](Ann) we have `ℕ → Set` on the right side of the colon. Reading this as a
+[1](Ann) we have `type:ℕ → Set` on the right side of the colon. Reading this as a
 type declaration directly, it says that this type `type:IsEven` we're currently
-defining *is exactly* that function we were looking for earlier with type `ℕ →
-Set`. We `type:IsEven` an *indexed type*, and the `ℕ` to be its index.
+defining *is exactly* that function we were looking for earlier with type `type:ℕ →
+Set`. We `type:IsEven` an *indexed type*, and the `type:ℕ` to be its index.
 
 Every constructor of an indexed type must fully fill in every index. But to a
 first approximation, constructors of an indexed type are *statements* about the
@@ -445,7 +445,7 @@ reflect directly as a constructor:
 
 Notice that this constructor is equivalent to the base case `even? zero =
 true`. We would like to exclude odd numbers from `type:IsEven`, so we can ignore the
-`suc zero` case. Which brings us to the inductive case, where in `def:even?` we
+`ctor:suc zero` case. Which brings us to the inductive case, where in `def:even?` we
 peeled off two `ctor:suc`s and then recursed. In a very real way that we will make
 precise later, constructing this subset is the "opposite" of implementing the
 decision function. Thus, where we used to pull off two `ctor:suc`s and recurse, we'd
@@ -496,8 +496,8 @@ Our new hole has type `IsEven zero`, which again Agda will refine for us:
   four-is-even = suc-suc-even (suc-suc-even zero-even)
 ```
 
-We have successfully proven that `four` is in fact even. Let's see what happens
-when we go down a less happy case. Can we prove that `three` is even?
+We have successfully proven that `def:four` is in fact even. Let's see what happens
+when we go down a less happy case. Can we also prove that `def:three` is even?
 
 ```agda
   three-is-even⅋₀ : IsEven three
