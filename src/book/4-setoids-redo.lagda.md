@@ -632,9 +632,9 @@ $m = n$. This is not very hard to show:
 ```
 
 In addition, we can generalize this type to something more reusable, like we did
-with `Reflexive`, `Symmetric` and `Transitive`. This one is a little trickier,
-since it's really a property of *two* relations: one corresponding to equality,
-and another to the ordering:
+with `type:Reflexive`, `type:Symmetric` and `type:Transitive`. This one is a
+little trickier, since it's really a property of *two* relations: one
+corresponding to equality, and another to the ordering:
 
 ```agda
   private variable

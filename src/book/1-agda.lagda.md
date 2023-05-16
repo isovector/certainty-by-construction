@@ -43,18 +43,18 @@ similar blocks of code at the beginning of each chapter.
 -- TODO(sandy): CHANGE ME WHEN PUBLISHING
 
 Every Agda source file must begin with a module declaration corresponding to the
-file name. Since this module is called `1-agda`, if you want to follow
+file name. Since this module is called `module:1-agda`, if you want to follow
 along at home, you will have to save your file as `1-agda.agda`.
 
 Agda modules can contain other modules, in which case they act as namespacing
-tools. For example, we can make a submodule inside of `1-agda`:
+tools. For example, we can make a submodule inside of `module:1-agda`:
 
 ```agda
 module example where
   -- I am an example
 ```
 
-This introduces a new module `example` inside of `1-agda`. Unlike many
+This introduces a new module `module:example` inside of `module:1-agda`. Unlike many
 programming languages, Agda doesn't use delimiters to indicate blocks; instead,
 it uses *significant whitespace.* That is, in order to show that the comment `I
 am an example` is inside the module `example`, it must be indented relative to
@@ -70,10 +70,10 @@ module foo where
 
 Here, we have defined four sub-modules, which have the *fully-qualified* names:
 
-- `1-agda.foo`
-- `1-agda.foo.bar`
-- `1-agda.foo.bar.qux`
-- `1-agda.foo.zaz`
+- `module:1-agda.foo`
+- `module:1-agda.foo.bar`
+- `module:1-agda.foo.bar.qux`
+- `module:1-agda.foo.zaz`
 
 We will use many modules throughout this book---albeit ones which are much more
 interesting than the ones presented thus far. Our primary use for them will be
@@ -106,7 +106,7 @@ module Sandbox-Bool where
   import Data.Bool
 ```
 
-This line tells Agda to go find a module called `Data.Bool` somewhere (which it
+This line tells Agda to go find a module called `module:Data.Bool` somewhere (which it
 will do by looking in the current project and any globally-installed libraries
 for a file called `Data/Bool.agda`.) Just importing it, however, is rarely what
 we want, as all the identifiers have come in fully-qualified:
@@ -128,8 +128,8 @@ current environment:
   _ = false
 ```
 
-Of course, this is quite a lot of work, so we can combine the `import` and
-`open` statements together rather than doing them separately:
+Of course, this is quite a lot of work, so we can combine the `keyword:import` and
+`keyword:open` statements together rather than doing them separately:
 
 ```agda
   open import Data.Bool
@@ -181,7 +181,7 @@ module Sandbox-Judgments where
 ```
 
 Because this is a book about mathematics for programmers, it bears discussing a
-great deal around *data* --- that of the utmost importance to programmers. On a
+great deal around *data*---that of the utmost importance to programmers. On a
 physical machine, all data is stored as small valences of electrical charge,
 arranged into a matrix of cells laid out onto physical wafers, mapped by the
 operating system into a logical view that we pretend is laid out linearly into
@@ -221,16 +221,16 @@ But let's not get ahead of ourselves.
 
 Of utmost importance in Agda is the notion of a *typing judgment:* the (static)
 assertion that a particular value has a particular type. A typing judgment is
-the fancy, academic name for a type declaration. Because `true` is a `Bool`, we
+the fancy, academic name for a type declaration. Because `true` is a `type:Bool`, we
 would write the judgment `true : Bool`, where the colon can be read aloud as
 "has the type," or "is of type." We can't yet write this judgment down, since we
 are in a new module and thus have lost our imports that brought `true` and
-`Bool` into scope.
+`type:Bool` into scope.
 
 In Agda, we can assert the existence of things without having to give them a
 definition by using the `postulate` keyword. This is an extremely useful tool,
 as we will see later. For now, we can use it to explicitly write down some
-typing judgments. First, we assert that the type `Bool` exists:
+typing judgments. First, we assert that the type `type:Bool` exists:
 
 ```agda
   postulate
@@ -245,13 +245,13 @@ existence by giving them typing judgments as well:
     true  : Bool
 ```
 
-You will have noticed that `Bool : Set` itself looks a great deal like a typing
+You will have noticed that `type:Bool : Set` itself looks a great deal like a typing
 judgment. And in fact, it is. `Set` is one of the few built-in things in Agda,
 and it corresponds, as a first approximation, to "the type of all types." That
-is, the judgment `Bool : Set` says "`Bool` is a type."
+is, the judgment `type:Bool : Set` says "`type:Bool` is a type."
 
-Since `Bool` is a type, we are now *justified* in saying that `false` and `true`
-are of type `Bool`. However, we can't just put any old thing on the right side
+Since `type:Bool` is a type, we are now *justified* in saying that `def:false` and `def:true`
+are of type `type:Bool`. However, we can't just put any old thing on the right side
 of the typing colon. Try, for example, adding the following judgment to our
 postulate block:
 
@@ -268,9 +268,9 @@ when checking that the expression false has type _4
 ```
 
 This is not the easiest thing to decipher, but what Agda is trying to tell you
-is that `false` is not a type, and thus it has no business being on the
-right-hand side of a colon. The general rule here is that you can only put `X`
-on the right side of a colon if you have earlier put it on the left of `: Set`,
+is that `def:false` is not a type, and thus it has no business being on the
+right-hand side of a colon. The general rule here is that you can only put `type:X`
+on the right side of a colon if you have earlier put it on the left of `type:Set`,
 as in:
 
 ```agda
@@ -285,7 +285,7 @@ directly, but instead using `if` and `while` and so forth, we will note that
 real programming does not get done by writing typing judgments directly (nor
 does mathematics, for that matter.) Why is this?
 
-One problem is, we'd like to say that `false` and `true` are *the only*
+One problem is, we'd like to say that `def:false` and `def:true` are *the only*
 booleans. But of course, nothing stops us from further postulating additional
 booleans, perhaps:
 
@@ -303,7 +303,7 @@ once, without needing to worry about what the future will bring.
 In short, working directly with postulates is dangerous and, in general, an
 anti-pattern. We will return to postulates in @sec:postulates and see how they
 can be useful as mathematical tools. Instead, we will investigate a tool that
-instead allows us to simultaneously define `Bool`, `false` and `true` into a
+instead allows us to simultaneously define `type:Bool`, `def:false` and `def:true` into a
 *closed theory.* That is, we'd like to say that these are *the only* two
 booleans, allowing us and Agda to reason about that fact.
 
@@ -316,15 +316,15 @@ module Booleans where
     true : Bool
 ```
 
-which simultaneously asserts the three typing judgments `Bool : Set`, `false :
-Bool` and `true : Bool`, and further, states that this is an exhaustive list of
-all the booleans. There are no others. When written like this, we often call
-`false` and `true` the ** *data constructors* or the *introductory forms* of
-`Bool`.
+which simultaneously asserts the three typing judgments `type:Bool` `:`
+type:Set`, `ctor:false` `:` `type:Bool` and `ctor:true` `:` `type:Bool`, and
+further, states that this is an exhaustive list of all the booleans. There are
+no others. When written like this, we often call `ctor:false` and `ctor:true`
+the *data constructors* or the *introductory forms* of `type:Bool`.
 
 After all of this foreplay, you are probably itching to write a program in Agda.
-As a first step, let's write the `not` function, which transforms `false` into
-`true` and vice-versa. Functions in Agda begin with a typing judgment using a
+As a first step, let's write the `not` function, which transforms `ctor:false` into
+`ctor:true` and vice-versa. Functions in Agda begin with a typing judgment using a
 *function* arrow (which you can type in your editor via [`to`](AgdaMode)), and
 are immediately followed by a *definition* of the function:
 
@@ -333,9 +333,9 @@ are immediately followed by a *definition* of the function:
   not⅋₀ = ?  -- ! 2
 ```
 
-Line [1](Ann) should be read aloud as "`not` is a function that takes a `Bool`
-argument and returns a `Bool`," or, alternatively, as "`not` has type `Bool` to
-`Bool`." The question mark on line [2](Ann) says to Agda "we're not sure how to
+Line [1](Ann) should be read aloud as "`def:not` is a function that takes a `type:Bool`
+argument and returns a `type:Bool`," or, alternatively, as "`def:not` has type `type:Bool` to
+`type:Bool`." The question mark on line [2](Ann) says to Agda "we're not sure how to
 implement this function."
 
 Agda acknowledges that most of the time you're writing a program, it's an
@@ -380,7 +380,7 @@ had type `Bool → Bool`. In giving a definition for `not`, we had better give a
 definition that has the same type as the one we claimed!
 
 After [`MakeCase`](AgdaCmd) however, we instead had `not x = {! !}`, with the hole
-now having type `Bool`. Somehow we lost the `Bool →` part of the type---but
+now having type `type:Bool`. Somehow we lost the `Bool →` part of the type---but
 where did it go? The answer is that the `Bool →` corresponded to the function's
 parameter. In addition to the type of the hole changing, we also obtained an `x`
 on the left of the equals sign. It's a good bet that this `x` is indeed our
@@ -412,9 +412,9 @@ invoke [`MakeCase:x`](AgdaCmd), we will instead get:
 
 You'll notice where once there was one hole there are now two. We asked Agda to
 "pattern match" on `x`, which means it looked at `x`, determined it had type
-`Bool`, and subsequently split our goal into two---one for if the argument is
-`false`, and one for if it's `true`. From here, we know how to complete the
-function without any help from Agda; we'd like `false` to map to `true`, and
+`type:Bool`, and subsequently split our goal into two---one for if the argument is
+`ctor:false`, and one for if it's `ctor:true`. From here, we know how to complete the
+function without any help from Agda; we'd like `ctor:false` to map to `ctor:true`, and
 vice versa:
 
 ```agda
@@ -431,7 +431,7 @@ and give a result for each on the right side of the equals sign.
 
 In implementing this little function, we learned quite a lot about how Agda's
 interactivity can help. We can admire our handiwork by interactively running
-[`Normalize:not false`](AgdaCmd), which will leave the computed answer (`true`) in
+[`Normalize:not false`](AgdaCmd), which will leave the computed answer (`ctor:true`) in
 the info window.
 
 While [`Normalize`](AgdaCmd) is a nice little tool for interactively computing
@@ -468,8 +468,8 @@ false != true of type Bool
 when checking that the expression refl has type not true ≡ true
 ```
 
-This error is telling us that our unit test failed; that `not true` is actually
-`false`, but we said it was `true`! We will discuss these strange `≡` and `refl`
+This error is telling us that our unit test failed; that `def:not` `ctor:true` is actually
+`ctor:false`, but we said it was `ctor:true`! We will discuss these strange `type:≡` and `ctor:refl`
 things in great detail soon enough.
 
 
@@ -624,7 +624,7 @@ recall:
 
 we can now mentally parse these definitions differently, that is, reading them
 literally. The first of which, says "the function call `not false` is equal to
-`true`". Thus, this equals sign is really and truly an *equals* sign. It is
+`ctor:true`". Thus, this equals sign is really and truly an *equals* sign. It is
 *not* the "assignment" operator found in all stateful descendants of ALGOL, nor
 is it some sort of test-for-equality that usually gets called `==`. No, we are
 saying the thing on the left side is exactly the same thing as on the right!
@@ -643,7 +643,7 @@ true if at least one of its arguments is true. Mathematicians often use the
 symbol $\vee$ (pronounced "vel") for this operation, which we will follow, since
 the goal is to define the same interface as is present in the Agda standard
 library. This operator is used infix, which we can communicate to Agda by naming
-the OR function `_∨_`; note that this is not a latin `v`, but the unicode
+the OR function `def:_∨_`; note that this is not a latin `v`, but the unicode
 character [`or`](AgdaMode). Note also the underscores on either side of it!
 
 ```agda
@@ -659,7 +659,7 @@ hole and run [`MakeCase`](AgdaCmd). Agda will respond:
   x ∨⅋⅋⅋ x₁ = {! !}
 ```
 
-You will notice that `_∨_` has been replaced with `x ∨ x₁`. The underscores are
+You will notice that `def:_∨_` has been replaced with `x ∨ x₁`. The underscores are
 not literal underscores, but instead mark placeholders for the operator's
 syntax. If we fill the resulting hole with the names of both arguments `x` and
 `x₁`, we can again ask Agda to [`MakeCase`](AgdaCmd):
@@ -682,7 +682,7 @@ write for ourselves:
   true  ∨⅋⅋⅋⅋⅋ true  = {! !}
 ```
 
-We can finish the definition of `_∨_` by giving filling in the desired answers
+We can finish the definition of `def:_∨_` by giving filling in the desired answers
 in each hole:
 
 ```agda
@@ -693,21 +693,21 @@ in each hole:
   true  ∨⅋ true  = true
 ```
 
-Here we have taken the same approach as in `not`: for each argument, we
+Here we have taken the same approach as in `def:not`: for each argument, we
 enumerate every possibilities, giving the answer on the right side of the equals
 sign. You will notice that this strategy grows enormously; a function of five
 booleans would require 32 clauses to enumerate every possibility. Fortunately,
-this is not the only way to define `_∨_`. We can instead throw some thought at
+this is not the only way to define `def:_∨_`. We can instead throw some thought at
 the problem, and realize the goal is to identify whether or not one of the
-arguments is `true`. This doesn't require pattern matching on *both*
+arguments is `ctor:true`. This doesn't require pattern matching on *both*
 parameters---some clever thought indicates we can get away with matching only on
 one.
 
-If the argument we matched on is `true`, we're done, without looking at the
-other argument. If our matched argument is `false`, then the result is `true`
-only when the second argument is `true`. In neither case do we need to inspect
+If the argument we matched on is `ctor:true`, we're done, without looking at the
+other argument. If our matched argument is `ctor:false`, then the result is `ctor:true`
+only when the second argument is `ctor:true`. In neither case do we need to inspect
 both of the arguments! We can take advantage of this fact by using a variable to
-abstract over the second parameter. Instead, let us define `_∨_` in this way:
+abstract over the second parameter. Instead, let us define `def:_∨_` in this way:
 
 ```agda
   _∨_ : Bool → Bool → Bool
@@ -715,11 +715,11 @@ abstract over the second parameter. Instead, let us define `_∨_` in this way:
   true  ∨ other = true
 ```
 
-Because we wrote `other`---rather than any of the constructors of `Bool`--- Agda
+Because we wrote `other`---rather than any of the constructors of `type:Bool`--- Agda
 knows we don't want to perform a pattern match. Instead, this introduces a new
-variable `other : Bool`. In the `false` case, we simply return this argument,
-and in the `true` case we ignore it completely because we've already found the
-`true` we're looking for.
+variable `other : Bool`. In the `ctor:false` case, we simply return this argument,
+and in the `ctor:true` case we ignore it completely because we've already found the
+`ctor:true` we're looking for.
 
 Note that we call `other` a variable, but **it is a variable in the mathematical
 sense rather than in the usual programming sense.** This variable is a way of
@@ -734,7 +734,7 @@ don't know what that value is. For this reason, we sometimes call variables
 
 ## Agda's Computational Model
 
-Let's compare our two definitions of `_∨_`, reproduced here with slightly
+Let's compare our two definitions of `def:_∨_`, reproduced here with slightly
 different names:
 
 ```agda
@@ -758,13 +758,13 @@ Besides the amount of code we needed to write, is there a reason to prefer
 different computational properties as Agda programs. Let's explore why that is.
 
 At its root, [2](Ann) is a better program *because* it needs to inspect less
-data in order to make a decision. `_∨₂_` is able to make meaningful progress
-towards an answer, even when the second argument isn't yet known, while `_v₁_`
+data in order to make a decision. `def:_∨₂_` is able to make meaningful progress
+towards an answer, even when the second argument isn't yet known, while `def:_v₁_`
 is required to wait for both arguments. We can observe this in action with the
 [`Normalise`](AgdaCmd) command, which asks Agda to evaluate an expression for us.
 
 We can fill in only one argument to an operator by removing only one of the
-underscores. Thus, we can see what happens when we invoke `_v₂_` with only its
+underscores. Thus, we can see what happens when we invoke `def:_v₂_` with only its
 first argument. Try invoking [`Normalise:true v₂_`](AgdaCmd), to which Agda will
 respond:
 
@@ -773,7 +773,7 @@ respond:
 ```
 
 This response is Agda's syntax for an anonymous (lambda) function. It takes an
-argument, called `other`, ignores it, and immediately returns `true`. Writing
+argument, called `other`, ignores it, and immediately returns `ctor:true`. Writing
 lambdas like this is valid Agda code, but this syntax is often reserved for
 niche circumstances.
 
@@ -788,7 +788,7 @@ Here, Agda simply returns what we gave it, because it is unable to make any
 progress towards evaluating this value. Terms like this are called *stuck*, and
 can make no progress in evaluation until something unsticks them. In this case,
 because we don't know the value of the second argument, it is stuck, and thus
-the pattern match on it in `_∨₁_` is *also* stuck. When the second argument is
+the pattern match on it in `def:_∨₁_` is *also* stuck. When the second argument is
 provided, the pattern match will unstick, and so too will the final result.
 
 We can see this behavior more clearly by postulating a boolean value. Postulated
@@ -812,7 +812,7 @@ Nor can we reduce [`Normalise:not stuck`](AgdaCmd) to a value:
 not stuck
 ```
 
-Don't believe the response, this is indeed stuck~ Rather, the entire call to
+Don't believe the response, this is indeed stuck! Rather, the entire call to
 `not` with argument `stuck` is stuck. And, as you might expect, [`Normalise:true
 ∨₁ stuck`](AgdaCmd) is also stuck:
 
@@ -827,7 +827,7 @@ true
 ```
 
 This progress of computation even when the second argument is stuck (`stuck`, or
-otherwise) is the reason by which we prefer `_∨₂_` over `_∨₁_`. While this
+otherwise) is the reason by which we prefer `def:_∨₂_` over `def:_∨₁_`. While this
 example might seem somewhat contrived, it isn't, in fact. Avoiding a pattern
 match in an implementation means you can avoid a pattern match in every
 subsequent proof *about* the implementation, and can be the difference between a
@@ -842,12 +842,12 @@ In this section, we will play around with record types, as a lead up to
 discussing functions. These two seemingly disparate ideas have a surprising
 amount of interplay between them. We would like to motivate an answer to the
 question of "what's up with the funny arrow `→` in function types?" Why does
-`_∨_` have type `Bool → Bool → Bool`, instead of a more "standard" type like it
+`def:_∨_` have type `type:Bool → Bool → Bool`, instead of a more "standard" type like it
 would in most everyday programming languages. For example, we might write
-`_∨_`'s type as `(Bool, Bool) → Bool`, which makes it very clear which are the
+`def:_∨_`'s type as `type:(Bool, Bool) → Bool`, which makes it very clear which are the
 parameters and which is the return.
 
-Types like `(Bool, Bool)` are known as *tuple* types, which we can encode to a
+Types like `type:(Bool, Bool)` are known as *tuple* types, which we can encode to a
 in Agda as record types. Record types are types with a number of subfields. A
 special case of records are tuples, which we can think of as anonymous records
 with only two fields. As a first approximation, we can write the tuple type like
@@ -864,14 +864,14 @@ module Sandbox-Tuples where
 ```
 
 There is quite a lot going on here, which we will tackle one step at a time. At
-[1](Ann) we parameterize the entire type `_×_` by two other types, call them `A`
+[1](Ann) we parameterize the entire type `type:_×_` by two other types, call them `A`
 and `B`. This is because we'd like to be able to form tuples of any two types,
 whether they be integers and booleans, tuples of tuples, or more exotic things
-still. Note that this name `_×_` is not the Latin letter `x`, but is instead the
+still. Note that this name `type:_×_` is not the Latin letter `x`, but is instead the
 *times symbol,* input via [`x`](AgdaMode).
 
-At [2](Ann) we say "inside of the `_×_` type, there are two fields." These two
-fields are named `proj₁` and `proj₂`, and have types `A` and `B`, respectively.
+At [2](Ann) we say "inside of the `type:_×_` type, there are two fields." These two
+fields are named `field:proj₁` and `field:proj₂`, and have types `A` and `B`, respectively.
 This is what you would expect; if we have a record corresponding to a tuple of
 two things, *it should have two things in it.*
 
@@ -891,7 +891,7 @@ us a value of the correct type, leaving holes for every argument. The result is:
   my-tuple⅋ = record { proj₁ = ? ; proj₂ = ? }
 ```
 
-Note that these two holes both have type `Bool`, corresponding exactly to the
+Note that these two holes both have type `type:Bool`, corresponding exactly to the
 type of the tuple (`Bool × Bool`.) We can fill them in with arbitrary boolean
 expressions:
 
@@ -929,7 +929,7 @@ In reading the above, it cannot have escaped your attention that these two call
 sites are *ugly.* What is this `_×_.proj₁` nonsense? Do we really need to use a
 fully-qualified name every time we want to access a field? Fortunately, we do
 not. Believe it or not, every `record` creates a new `module` with the same
-name. Thus, we can bring `proj₁` and `proj₂` into the top-level scope by opening
+name. Thus, we can bring `field:proj₁` and `field:proj₂` into the top-level scope by opening
 our new module, allowing us to rewrite the previous two definitions as such:
 
 
@@ -954,15 +954,15 @@ us.
   _,⅋_  = ?
 ```
 
-The type of `_,_` should really be `A → B → A × B`, however, recall that `A` and
+The type of `def:_,_` should really be `A → B → A × B`, however, recall that `A` and
 `B` are variables standing in for *whatever type the user wants.* But those
 variables are not in scope, so we must bind them ourselves. This is the meaning
-of the `{A B : Set} →` prefix of the type at [1](Ann)---it's responsible for
+of the `type:{A B : Set} →` prefix of the type at [1](Ann)---it's responsible for
 bringing `A` and `B` both into scope and letting Agda know they are both types
-(that is, they are both of type `Set`.) We will discuss Agda's scoping mechanism
+(that is, they are both of type `type:Set`.) We will discuss Agda's scoping mechanism
 in more detail in @sec:implicits.
 
-Implementing `_,_` isn't hard to do by hand; but we can be lazy and ask Agda to
+Implementing `def:_,_` isn't hard to do by hand; but we can be lazy and ask Agda to
 do it for us. Begin as usual by getting Agda to bind our arguments, via
 [`MakeCase`](AgdaCmd) in the hole:
 
@@ -981,7 +981,7 @@ to be:
   x ,⅋⅋⅋ x₁ = record { proj₁ = x ; proj₂ = x₁ }
 ```
 
-Move the definition of `_,_` above the definition of `my-tuple`, which we can
+Move the definition of `def:_,_` above the definition of `def:my-tuple`, which we can
 now reimplement:
 
 ```agda
@@ -1021,23 +1021,23 @@ addition:
   open _×_
 ```
 
-The keyword `constructor` at [1](Ann) tells Agda we'd like to avoid the whole
-`record { ... }` nonsense we had to deal with last on the go-around, instead
-asking it to just automate writing the `_,_` function for us. Sorry to have
+The keyword `keyword:constructor` at [1](Ann) tells Agda we'd like to avoid the whole
+`keyword:record { ... }` nonsense we had to deal with last on the go-around, instead
+asking it to just automate writing the `def:_,_` function for us. Sorry to have
 led you down the garden path, but it's nice to see for ourselves what tedium
 each language feature can assuage.
 
 We can return to the problem of getting Agda to correctly parse `true ∨ true ,
-false` with the implied parentheses on the left. Infix operators like `_∨_` and
-`_,_` are parsed, in every language, according to rules of *precedence* and
+false` with the implied parentheses on the left. Infix operators like `def:_∨_` and
+`ctor:_,_` are parsed, in every language, according to rules of *precedence* and
 *associativity.*
 
 The *precedence* of an operator lets the parser know how "tightly" an operator
 should bind with respect to other operators. In this case, because we'd like the
-parentheses to go around `_∨_`, we would like `_∨_` to have a higher precedence
-than `_,_`. Agda assumes a precedence of 20 (on a scale from 0 to 100) by
-default for any operator, so we must give `_,_` a *lower* precedence than 20. By
-convention, we give `_,_` a precedence of 4, which makes it play nicely with the
+parentheses to go around `def:_∨_`, we would like `def:_∨_` to have a higher precedence
+than `ctor:_,_`. Agda assumes a precedence of 20 (on a scale from 0 to 100) by
+default for any operator, so we must give `ctor:_,_` a *lower* precedence than 20. By
+convention, we give `ctor:_,_` a precedence of 4, which makes it play nicely with the
 conventions for the more usual mathematic operators like addition and
 subtraction.
 
@@ -1045,9 +1045,9 @@ The *associativity* of an operator describes how to insert parentheses into
 repeated applications of the operator. That is, should we parse `x , y , z` as
 `(x , y) , z` or as `x , (y , z)`? The former here is said to be
 *left-associative*, while the latter is, appropriately, *right-associative.* For
-reasons that will make sense later, we'd like `_,_` to be right-associative.
+reasons that will make sense later, we'd like `ctor:_,_` to be right-associative.
 
-We can tell Agda's parser about our preferences, that `_,_` be right-associative
+We can tell Agda's parser about our preferences, that `ctor:_,_` be right-associative
 with precedence 4 with the following declaration:
 
 ```agda
@@ -1060,12 +1060,12 @@ left-associativity (although you don't in this case.) Of course, if you ever
 *do* want an explicit left-nested tuple, you are free to insert the parentheses
 on the left yourself!
 
-While `_,_` is the operator for building *values* of tuple types, `_×_` is the
+While `ctor:_,_` is the operator for building *values* of tuple types, `type:_×_` is the
 operator for building the tuple type itself. The values and their types should
 be in one-to-one correspondence. That is to say, if we have `a : A`, `b : B` and
-`c : C`, we'd like it to be the case that `a , b , c` have type `A × B × C`. And
-thus, we must also choose right-associativity for `_×_`. For mysterious reasons,
-however, `_×_` is traditionally given a preference of 2:
+`c : C`, we'd like it to be the case that `a , b , c` have type `type:A × B × C`. And
+thus, we must also choose right-associativity for `type:_×_`. For mysterious reasons,
+however, `type:_×_` is traditionally given a preference of 2:
 
 ```agda
   infixr 2 _×_
@@ -1079,22 +1079,22 @@ started.
 
 It is now time to tackle the question of what's up with the funny syntax for
 functions with multiple arguments. Most programming languages assign a type of
-the form `(A × B) → C` to functions with two arguments, while in Agda we instead
-write `A → B → C`. The reason for this is, in short, that they are equivalent,
+the form `type:(A × B) → C` to functions with two arguments, while in Agda we instead
+write `type:A → B → C`. The reason for this is, in short, that they are equivalent,
 but that the latter is more useful.
 
 In order to see this equivalence directly, we can stop for a moment to think
 about the issue of parsing again. Although the function arrow is intrinsically
 magical and built-in to Agda, we can ask ourselves how it ought to work.
-Spiritually, `_→_` is a binary operator, which means we can ask about its
+Spiritually, `type:_→_` is a binary operator, which means we can ask about its
 precedence and associativity. In Agda, the typing judgment `_:_` binds with the
-lowest precedence of all, while `_→_` comes in just after as the second-lowest
-precedence in the language. What this means is that in practice, `_→_` always
+lowest precedence of all, while `type:_→_` comes in just after as the second-lowest
+precedence in the language. What this means is that in practice, `type:_→_` always
 acts as a separator between types, and we don't need to worry ourselves about
 where the parentheses should go.
 
-The associativity for `_→_`, on the other hand, is to the right. That means,
-given the type `A → B → C`, we must read it as `A → (B → C)`. A literal
+The associativity for `type:_→_`, on the other hand, is to the right. That means,
+given the type `type:A → B → C`, we must read it as `type:A → (B → C)`. A literal
 interpretation of such a thing is a function that takes an `A` argument and
 *returns a function.* That returned function itself takes a `B` argument and
 returns a `C`. At the end of the day, we did take two arguments, an `A` and a
@@ -1124,26 +1124,26 @@ call by slowly fixing its parameters as in this example:
     makeBird age name = makeAnimal bird age name
 ```
 
-Here, we've made a new `data` type at [1](Ann), enumerating possible sorts of
+Here, we've made a new `keyword:data` type at [1](Ann), enumerating possible sorts of
 animals one might have. At [2](Ann) we postulate the existence of some other
 types with suggestive names, in order to give our postulated function
-`makeAnimal` a suggestive type at [3](Ann). Finally, at [4](Ann) we specialize
-the `makeAnimal` function into `makeBird`, where we always decide the animal
+`def:makeAnimal` a suggestive type at [3](Ann). Finally, at [4](Ann) we specialize
+the `def:makeAnimal` function into `def:makeBird`, where we always decide the animal
 variety should be a `bird`.
 
 This doesn't yet exhibit the desirability of one-at-a-time functions we'd like
-to showcase. But we will note that `makeBird` is a function whose definition
+to showcase. But we will note that `def:makeBird` is a function whose definition
 binds two arguments (`age` and `name`), and simply passes them off to
-`makeAnimal`. If you were to drop a hole on the right side of this equation,
-you'd see that the type of the hole is `SpecificAnimal`. By the law of equality,
-this means the left-hand side must also have type `SpecificAnimal`. If we were
-to drop the `name` binding on the left side, the hole now has type `Name →
-SpecificAnimal`. Dropping now the `age` parameter too, we see the resulting hole
-now has type `Age → Name → SpecificAnimal`, exactly what we expect from the type
+`def:makeAnimal`. If you were to drop a hole on the right side of this equation,
+you'd see that the type of the hole is `type:SpecificAnimal`. By the law of equality,
+this means the left-hand side must also have type `type:SpecificAnimal`. If we were
+to drop the `name` binding on the left side, the hole now has type `type:Name →
+type:SpecificAnimal`. Dropping now the `age` parameter too, we see the resulting hole
+now has type `type:Age → Name → SpecificAnimal`, exactly what we expect from the type
 definition.
 
 Are you ready for the cool part? If we insert the implicit parentheses into the
-type of `makeAnimal`, we get `AnimalVariety → (Age → (Name → SpecificAnimal))`;
+type of `def:makeAnimal`, we get `type:AnimalVariety → (Age → (Name → SpecificAnimal))`;
 a creative reading of which will suggest to us that we can fill the hole with
 less ceremony:
 
@@ -1170,8 +1170,8 @@ isomorphism around, it means the two types you're transforming between are
 So as to convince any potential doubters that our one-at-a-time function
 encoding (also known as *curried functions*) are equivalent to the usual "take
 all your arguments at once as a big tuple," we can show an isomorphism between
-the two. That is, we'd like to be able to transform functions of the shape `A ×
-B → C` into `A → B → C` and vice versa. We'll work through the first half of
+the two. That is, we'd like to be able to transform functions of the shape `type:A ×
+B → C` into `type:A → B → C` and vice versa. We'll work through the first half of
 this isomorphism together, and leave the other direction as an exercise to try
 your hand at writing some Agda for yourself (or talking Agda into writing it for
 you!)
@@ -1187,7 +1187,7 @@ In particular, the first function we'd like to write has this types:
 
 If this is your first time looking at function arrows, avoid the temptation to
 panic. The first step is always to parse out exactly what's going on. Let's look
-at `curry`. Let's ignore the `{A B C : Set} →` part, which you'll recall exists
+at `def:curry`. Let's ignore the `{A B C : Set} →` part, which you'll recall exists
 only to bring the type variables into scope:
 
 ```type
@@ -1209,16 +1209,16 @@ to the innermost parentheses:
   curry : ((A × B) → C) → (A → (B → C))
 ```
 
-Written like this, we see that `curry` is a function which itself takes a
+Written like this, we see that `def:curry` is a function which itself takes a
 *function* as an *argument,* and also produces a function as its *return type.*
 Alternatively, we can drop the last two pairs of parentheses, and think about
-`curry` like this:
+`def:curry` like this:
 
 ```type
   curry : ((A × B) → C) → A → B → C
 ```
 
-That is, `curry` is a function that takes *three* inputs, one is a function, and
+That is, `def:curry` is a function that takes *three* inputs, one is a function, and
 the other two are an `A` and a `B` respectively, at the end of the day returning
 a `C`. Written in this form, it's a little easier to see how you would go about
 implementing such a thing, while the previous form gives a better sense of what
@@ -1227,7 +1227,7 @@ exactly you're trying to accomplish.
 
 Exercise
 
-:   Implement the `curry` function for yourself. If you get stuck, don't forget
+:   Implement the `def:curry` function for yourself. If you get stuck, don't forget
     you can always ask Agda for help by using [`TypeContext`](AgdaCmd) to inspect
     what you have lying around in scope, [`MakeCase`](AgdaCmd) to bind arguments
     and [`Refine`](AgdaCmd) to construct values for you.
@@ -1240,7 +1240,7 @@ Solution
     ```
 
 
-Going the other direction and implementing `uncurry` is slightly harder, since
+Going the other direction and implementing `def:uncurry` is slightly harder, since
 it requires you to remember how to project fields out of record types. The type
 you want is:
 
@@ -1250,7 +1250,7 @@ you want is:
 
 Exercise
 
-:   Implement `uncurry`. Remember that you can use `proj₁` and `proj₂` to get
+:   Implement `def:uncurry`. Remember that you can use `field:proj₁` and `field:proj₂` to get
     the fields out of a tuple.
 
 
@@ -1262,7 +1262,7 @@ Solution
 
 
 It's slightly annoying needing to project both fields out of `ab` in the
-implementation of `uncurry`. This leads us to one last trick. Start again,
+implementation of `def:uncurry`. This leads us to one last trick. Start again,
 having just bound your arguments:
 
 ```agda
@@ -1278,10 +1278,10 @@ From here, we can ask Agda to pattern match on `ab` directly by invoking
   uncurry⅋⅋ f (proj₃ , proj₄) = {! !}
 ```
 
-Agda has replaced `ab` with the `_,_` constructor that is used to build the
-tuple type `_×_`, and then bound the two projections that result from tearing
-apart `_,_`. It's debatable whether or not the names it chose (`proj₁` and
-`proj₂`) are good or bad---on one hand, those are the names we said the fields
+Agda has replaced `ab` with the `ctor:_,_` constructor that is used to build the
+tuple type `type:_×_`, and then bound the two projections that result from tearing
+apart `ctor:_,_`. It's debatable whether or not the names it chose (`field:proj₁` and
+`field:proj₂`) are good or bad---on one hand, those are the names we said the fields
 have, on the other, they shadow the projections that are already in scope and
 have different types. I prefer to rename them:
 
@@ -1293,7 +1293,7 @@ have different types. I prefer to rename them:
 and from here, Agda will happily write the remainder of the function via
 [`Auto`](AgdaCmd).
 
-Because we were able to implement `curry` and `uncurry`, we have shown that
+Because we were able to implement `def:curry` and `def:uncurry`, we have shown that
 curried functions (used in Agda) are equivalent in power to uncurried functions
 (used in most programming languages.) But the oddity of our choice leads to our
 ability to "cancel" arguments that are duplicated on either side of a function
@@ -1304,8 +1304,8 @@ more-specific functions.
 
 ## Implicit Arguments
 
-Let's try using our `uncurry` function from before. As a first example, we can
-uncurry the `_∨_` function. If we don't want to do the work to figure out what
+Let's try using our `def:uncurry` function from before. As a first example, we can
+uncurry the `def:_∨_` function. If we don't want to do the work to figure out what
 type this thing should have, we can simply leave behind a hole in its type
 judgment:
 
@@ -1323,7 +1323,7 @@ and then ask Agda to fill it in for us via [`Solve`](AgdaCmd):
 
 The [`Solve`](AgdaCmd) command asks Agda to infer the contents of a hole based on
 information it already knows from somewhere else. In this case, Agda knows the
-type of `_∨_` (that is, `Bool → Bool → Bool`,) and so it can infer the type of
+type of `def:_∨_` (that is, `Bool → Bool → Bool`,) and so it can infer the type of
 `uncurry _∨_` as `Bool × Bool → Bool`. Since this is the entire expression, the
 type of our definition is fully known to Agda, and it will happily fill it in
 for us.
@@ -1351,10 +1351,10 @@ The tuple type exists under `Data.Product`:
     using (_×_; proj₁; proj₂)
 ```
 
-In addition, `Data.Product` also supplies `_,_`, `curry` and `uncurry`. However,
+In addition, `Data.Product` also supplies `ctor:_,_`, `def:curry` and `def:uncurry`. However,
 the ones it implements are slightly more general than the ones we have looked
-at. The exact functions we wrote above are instead named `_,′_`, `curry′` and
-`uncurry′` in the standard library, so we can use a `renaming` modifier on our
+at. The exact functions we wrote above are instead named `type:_,′_`, `def:curry′` and
+`def:uncurry′` in the standard library, so we can use a `renaming` modifier on our
 import in order to get our sandbox into an equivalent state as the one above:
 
 ```agda
@@ -1364,7 +1364,7 @@ import in order to get our sandbox into an equivalent state as the one above:
              )
 ```
 
-Note that these are *primes* at the end of `curry` and `uncurry`, not
+Note that these are *primes* at the end of `def:curry` and `def:uncurry`, not
 apostrophes. Primes can be input via [`'`](AgdaMode).
 
 It is now time to investigate the mysterious curly braces that prefix several of
@@ -1384,14 +1384,14 @@ exactly is going on here?
 
 The first thing to realize is that the notation `{A B : Set}` is syntactic sugar
 for `{A : Set} → {B : Set}`, and so on for more variables. We can therefore
-rewrite the type of `_,_` in its full glory:
+rewrite the type of `ctor:_,_` in its full glory:
 
 ```agda
     ⅋⅋_,_ : {A : Set} → {B : Set} → A → B → A × B
 ```
 
 In this form, it looks a lot like `A : Set` and `B : Set` are *arguments* to
-`_,_`. And rather amazingly, *they are!* The curly braces around them make these
+`ctor:_,_`. And rather amazingly, *they are!* The curly braces around them make these
 *invisible* arguments. Something interesting happens if we replace them with
 parentheses instead. Let's make a new function called `mk-tuple` using regular,
 visible arguments:
@@ -1451,7 +1451,7 @@ actual values we'd like to fill our tuple with. Thankfully, Agda can
 
 and we are free to fill in the latter two to our heart's content. Perhaps more
 interestingly, we can see what happens if we fill in one of these types
-*incorrectly*---that is to say, with a type which *isn't* `Bool`. Thankfully,
+*incorrectly*---that is to say, with a type which *isn't* `type:Bool`. Thankfully,
 it's easy to spin up new types at will:
 
 ```agda
@@ -1475,9 +1475,9 @@ when checking that the expression mk-tuple PrimaryColor Bool ? ?
 has type Bool × Bool
 ```
 
-Agda is telling us off, for writing down `PrimaryColor` when we should have
-written `Bool`. The language knows this should be a `Bool` since our type claims
-to be a `Bool × Bool`. You will notice this is all a bit stupid. If Agda knows
+Agda is telling us off, for writing down `type:PrimaryColor` when we should have
+written `type:Bool`. The language knows this should be a `type:Bool` since our type claims
+to be a `type:Bool × Bool`. You will notice this is all a bit stupid. If Agda knows
 what exactly what we should write into this hole, and yells at us if we don't do
 it properly, why do we have to do it at all? As it happens, we don't!
 
@@ -1491,7 +1491,7 @@ following:
 ```
 
 and Agda will (silently, without changing our file) fill in the two underscores
-as `PrimaryColor` and `Bool`, respectively. Filling in arguments in this way is
+as `type:PrimaryColor` and `type:Bool`, respectively. Filling in arguments in this way is
 known as *elaboration,* as it offloads the work of figuring out exactly what
 your program should be to the compiler. No human input necessary.
 
@@ -1517,7 +1517,7 @@ fill only one:
 Of course, implicit elaboration is not magic. It cannot write your entire
 program for you; it can only elucidate specific details that are already true,
 but which you would prefer not to write out. To illustrate, Agda can't solve the
-following, because it doesn't know whether you want `false` or `true`:
+following, because it doesn't know whether you want `ctor:false` or `ctor:true`:
 
 ```agda
   ambiguous : Bool

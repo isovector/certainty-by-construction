@@ -78,7 +78,7 @@ the form "X ought to be enough for anyone."
 
 How can we hope to generate an infinite set of numbers? The trick isn't very
 impressive---in fact, I've already pointed it out. You start at zero, and then
-you go up one at a time, forever. In Agda, we can encode this by saying `zero`
+you go up one at a time, forever. In Agda, we can encode this by saying `ctor:zero`
 is a natural number, and that, given some number `n`, we can construct the next
 number up---its *successor*---as `suc n`. Such an encoding gives rise to a
 rather elegant (if *inefficient*, but, remember, we don't care) specification of
@@ -126,19 +126,19 @@ module Naturals where
     suc  : ℕ → ℕ  -- ! 1
 ```
 
-Here we use the `data` keyword to construct a type consisting of several
-different constructors. In this case, a natural is either a `zero` or it is a
-`suc` of some other natural number. You will notice that we must give explicit
+Here we use the `keyword:data` keyword to construct a type consisting of several
+different constructors. In this case, a natural is either a `ctor:zero` or it is a
+`ctor:suc` of some other natural number. You will notice that we must give explicit
 types to constructors of a `data` type, and at [1](Ann) we give the type of
-`suc` as `ℕ → ℕ`. This is the precise meaning that a `suc` is "of some other
-natural number." You can think of `suc` as the mathematical function:
+`ctor:suc` as `ℕ → ℕ`. This is the precise meaning that a `ctor:suc` is "of some other
+natural number." You can think of `ctor:suc` as the mathematical function:
 
 $$
 x \mapsto x + 1
 $$
 
 although this is just a mental shortcut, since we can define the 1 in this
-function *only* via `suc`, and we do not yet have a definition of addition.
+function *only* via `ctor:suc`, and we do not yet have a definition of addition.
 
 
 ## A Note on Algebraic Data Types
@@ -154,16 +154,16 @@ justified exactly because `false` and `true` are *different symbols.*
 Such is true also of numbers; the reason we care about numbers is exactly
 because they are a collection of symbols, all distinct from one another.
 
-Contrast this to the tuple type (a type defined via `record` instead of `data`)
+Contrast this to the tuple type (a type defined via `keyword:record` instead of `keyword:data`)
 we defined earlier, which in some sense, exists only for bookkeeping. The tuple
 type doesn't build new things, it just lets you simultaneously move around two
 things that already exist. Another way to think about this is that `record`
 are made up of things that already exist, while `data` types create new things
 *ex nihilo.*
 
-Most programming languages have a concept of `record` types (whether they be
-called *structures*, *tuples*, or *classes*), but very few support `data` types.
-Booleans and numbers are the canonical examples of `data` types, and the lack of
+Most programming languages have a concept of `keyword:record` types (whether they be
+called *structures*, *tuples*, or *classes*), but very few support `keyword:data` types.
+Booleans and numbers are the canonical examples of `keyword:data` types, and the lack of
 support for them is exactly why these two types are usually baked-in to a
 language.
 
@@ -173,7 +173,7 @@ language.
 ## Playing with Naturals
 
 Let's return now to our discussion of the naturals. By repeated application of
-`suc`, we can build an infinite tower of natural numbers, the first four of
+`ctor:suc`, we can build an infinite tower of natural numbers, the first four of
 which are built like this:
 
 ```agda
@@ -226,7 +226,7 @@ As always, we begin with our type signature, and a hole.
   n=0?⅋₁ = ?
 ```
 
-After [MakeCase:](AgdaCmd), our argument is bound for us:
+After [MakeCase](AgdaCmd), our argument is bound for us:
 
 ```agda
   n=0?⅋₂ : ℕ → Bool
@@ -234,7 +234,7 @@ After [MakeCase:](AgdaCmd), our argument is bound for us:
 ```
 
 and, like when writing functions over the booleans, we can immediately
-[MakeCase:x](AgdaCmd) to split `x` apart into its distinct possible
+[`MakeCase:x`](AgdaCmd) to split `x` apart into its distinct possible
 constructors:
 
 ```agda
@@ -245,12 +245,12 @@ constructors:
 
 Interestingly, at [1](Ann), Agda has given us a new form, something we didn't
 see in the case of booleans. It gave us a pattern match `(suc x)`, which after
-some mental type-checking, makes sense. We said `n` was a `ℕ`, but `suc` has
-type `ℕ → ℕ`. That means, `n` can only be a natural number of the `suc` form *if
+some mental type-checking, makes sense. We said `n` was a `ℕ`, but `ctor:suc` has
+type `ℕ → ℕ`. That means, `n` can only be a natural number of the `ctor:suc` form *if
 that function has already been applied to some other number.*
 
 The interpretation you should give to this expression is that if $n$ is of the
-form `suc x`, then $x = n - 1$.
+form `ctor:suc` `x`, then $x = n - 1$.
 
 In our case, we care only if `n` is equal to zero, which we can immediately
 solve from here, without needing to do anything with `x`.
@@ -333,14 +333,14 @@ recursive steps as "induction" and non-recursive steps as "base cases."
 
 ## Two Notions of Evenness
 
-We have now defined `isEven`, a function which determines where a given natural
+We have now defined `def:even?` a function which determines where a given natural
 number is even. A related question is whether we can define a type for *only*
 the even numbers. That is, a type which contains 0, 2, 4, and so on, but not 1
 or 3 or any of the odd numbers.
 
 In a monkey-see-monkey-do fashion, we can define a new type called `Evenℕ` with
-a constructor for `zero`, but unlike `ℕ`, no `suc`. Instead, we will give a
-constructor called `suc-suc`, intending to be suggestive of taking two
+a constructor for `ctor:zero`, but unlike `ℕ`, no `ctor:suc`. Instead, we will give a
+constructor called `ctor:suc-suc`, intending to be suggestive of taking two
 successors simultaneously:
 
 ```agda
@@ -360,7 +360,7 @@ We can transform an `Evenℕ` into a `ℕ` by induction:
 This approach, however, feels slightly underwhelming. The attentive reader will
 recall that in a `data` type, the *meaning* of the constructors comes only from
 their types and the suggestive names we give them. A slight renaming of
-`suc-suc` to `suc` makes the definition of `Evenℕ` look very similar indeed to
+`ctor:suc-suc` to `ctor:suc` makes the definition of `Evenℕ` look very similar indeed to
 that of `ℕ`. In fact, the two types are completely equivalent, modulo the names
 we picked.
 
@@ -388,7 +388,7 @@ The idea that we can compute types in this way is rare in programming languages,
 even those with strong type systems. The ability to do so is known as *dependent
 typing.*
 
-In order to use `IsEven` as a subset, it must return some sort of "usable" type
+In order to use `type:IsEven` as a subset, it must return some sort of "usable" type
 when its argument is even, and an of "unusable" type otherwise. We can take this
 function idea literally if we'd please, given the existence of some usable and
 unusable types:
@@ -405,16 +405,16 @@ unusable types:
     IsEven (suc (suc x)) = IsEven x
 ```
 
-You will notice the definition of `IsEven` is identical to that of `isEven`,
+You will notice the definition of `type:IsEven` is identical to that of `def:even?`
 except that we replaced `Bool` with `Set`, `true` with `Usable`, and `false`
-with `Unusable`. Which, really, is what you would expect; `isEven` was already a
+with `Unusable`. Which, really, is what you would expect; `def:even?` was already a
 function that computed whether a given number is even! While we could flesh this
 idea out in full by finding specific (non-postulated) types to use for `Usable`
 and `Unusable`, constructing subsets in this way isn't often fruitful. Though
 it occasionally comes in handy, and it's nice to know you can compute types
 directly in this way.
 
-Let's drop out of the `Sandbox-Usable` module, and try defining `IsEven` in a
+Let's drop out of the `Sandbox-Usable` module, and try defining `type:IsEven` in a
 different way.
 
 The situation here is analogous to our first venture into typing judgments.
@@ -430,26 +430,26 @@ declaration:
 
 Every type we have seen so far has been of the form `data X : Set`, but at
 [1](Ann) we have `ℕ → Set` on the right side of the colon. Reading this as a
-type declaration directly, it says that this type `IsEven` we're currently
+type declaration directly, it says that this type `type:IsEven` we're currently
 defining *is exactly* that function we were looking for earlier with type `ℕ →
-Set`. We `IsEven` an *indexed type*, and the `ℕ` to be its index.
+Set`. We `type:IsEven` an *indexed type*, and the `ℕ` to be its index.
 
 Every constructor of an indexed type must fully fill in every index. But to a
 first approximation, constructors of an indexed type are *statements* about the
-index. For example, it is an axiom that `zero` is an even number, which we can
+index. For example, it is an axiom that `ctor:zero` is an even number, which we can
 reflect directly as a constructor:
 
 ```agda
     zero-even : IsEven zero
 ```
 
-Notice that this constructor is equivalent to the base case `isEven zero =
-true`. We would like to exclude odd numbers from `IsEven`, so we can ignore the
-`suc zero` case. Which brings us to the inductive case, where in `isEven` we
-peeled off two `suc`s and then recursed. In a very real way that we will make
+Notice that this constructor is equivalent to the base case `even? zero =
+true`. We would like to exclude odd numbers from `type:IsEven`, so we can ignore the
+`suc zero` case. Which brings us to the inductive case, where in `def:even?` we
+peeled off two `ctor:suc`s and then recursed. In a very real way that we will make
 precise later, constructing this subset is the "opposite" of implementing the
-decision function. Thus, where we used to pull off two `suc`s and recurse, we'd
-now like to first recurse, and then *add* two `suc`s!
+decision function. Thus, where we used to pull off two `ctor:suc`s and recurse, we'd
+now like to first recurse, and then *add* two `ctor:suc`s!
 
 ```agda
     suc-suc-even : {n : ℕ} → IsEven n → IsEven (suc (suc n))
@@ -522,7 +522,7 @@ Object (fromList [("kind",String "IntroNotFound")])
 What's (correctly) going wrong here is that Agda is trying to find a constructor
 for `IsEven (suc zero)`, but no such thing exists. We have `zero-even` for
 `IsEven zero`, and we have `suc-suc-even` for `IsEven (suc (suc n))`. But there
-is no such constructor when we have only one `suc`! Thus neither `zero-even` nor
+is no such constructor when we have only one `ctor:suc`! Thus neither `zero-even` nor
 `suc-suc-even` will typecheck in our hole. Since these are the *only*
 constructors, and neither fits, it's fair to say that *nothing can fill this
 hole!* That is, `three-is-even` is *unimplementable,* which means it's
@@ -566,11 +566,11 @@ Solution
 
 ## Constructing Evidence
 
-When we originally implemented `isEvent`, I mentioned that functions which
+When we originally implemented `def:even?`, I mentioned that functions which
 return booleans are generally a bad habit in Agda. The reason is that you have
 done a bunch of computation in order to computer an answer, and then you end up
 throwing all that work away to say merely "yes" or "no." Instead of returning a
-`Bool`, we could instead return an `IsEven`, proving the number is indeed even!
+`Bool`, we could instead return an `type:IsEven`, proving the number is indeed even!
 
 However, not all numbers are even, so we will first need some notion of failure.
 Enter the `Maybe` type, which is a container that contains exactly zero or one
@@ -585,7 +585,7 @@ element of some type `A`.
 Here, `just` is the constructor for when the `Maybe` *does* contain an element,
 and `nothing` is for when it doesn't. `Maybe` is a good type for representing
 *partial functions*---those which don't always give back a result. Our desired
-improvement to `isEven` is one such function, since there are naturals in the
+improvement to `def:even?` is one such function, since there are naturals in the
 input which do not have a corresponding value in the output.
 
 Our new function is called `evenEv`, to be suggestive of the fact that it
@@ -598,7 +598,7 @@ the type:
 ```
 
 The type here says "for some `n : ℕ`, I can maybe provide a proof that it is an
-even number." The implementation will look very reminiscent of `isEven`. First,
+even number." The implementation will look very reminiscent of `def:even?`. First,
 we can do [MakeCase](AgdaCmd) a few times:
 
 ```agda
@@ -638,7 +638,7 @@ elicit an answer from Agda via [Refine:](AgdaCmd):
   evenEv⅋₄ (suc (suc n)) = {! !}
 ```
 
-Here, in `isEven`, we just recursed and we were done. However, that can't quite
+At this step in `def:even?` we just recursed and we were done. However, that can't quite
 work here. The problem is that if we were to recurse, we'd get a result of type
 `Maybe (IsEven n)`, but we need a result of type `Maybe (IsEven (suc (suc n)))`.
 What needs to happen then is for us to recurse, *inspect the answer,* and then,
@@ -769,7 +769,7 @@ which translates back to Agda as our final definition of addition:
 ```
 
 With a little thought, it's clear that this function really does implement
-addition. By induction, the first argument is either of the form `zero`, in
+addition. By induction, the first argument is either of the form `ctor:zero`, in
 which case it adds nothing to the result, or it is of the form `suc x`, in which
 case we assume `x + y` to properly implement addition, and we observe the fact
 that $(m + n) + p = m + (n + p)$. This is our first mathematical proof, although
@@ -777,10 +777,10 @@ it is a rather "loose" one: argued out in words, rather than being *checked* by
 the computer. Nevertheless, it is a great achievement on our path towards
 mathematical fluency and finesse.
 
-To wrap things up, we will add a fixity declaration for `_+_` so that it behaves
+To wrap things up, we will add a fixity declaration for `def:_+_` so that it behaves
 nicely as an infix operator. We must choose a direction for repeated additions
 to associate. In fact, it doesn't matter one way or another, and we used that
-fact in the inductive case of `_+_`. But, looking forwards, we realize that
+fact in the inductive case of `def:_+_`. But, looking forwards, we realize that
 subtraction *must* be left-associative in order to get the right answer, and
 therefore it makes sense that addition have the same associativity. And, as a
 matter of convention, we will pick precedence 6 for this operator.
@@ -792,7 +792,7 @@ matter of convention, we will pick precedence 6 for this operator.
 
 ## Termination Checking
 
-There is a subtle point to be made about our implementation of `_+_`, namely
+There is a subtle point to be made about our implementation of `def:_+_`, namely
 that the parentheses are extremely important. Our last line is written as `suc x
 + y = suc (x + y)`, but if you were to omit the parentheses, the last line
 becomes `suc x + y = suc x + y`. Such a statement is unequivocally *true*, but
@@ -815,7 +815,7 @@ Problematic calls:
 
 By putting in the parentheses, `suc (x + y)` is now recursive, and, importantly,
 it is recursive on *structurally smaller* inputs than it was given. Since the
-recursive call must be smaller (in the sense of there is one fewer `suc` to
+recursive call must be smaller (in the sense of there is one fewer `ctor:suc` to
 worry about,) eventually this recursion must terminate, and thus Agda is happy.
 
 
@@ -871,10 +871,10 @@ Therefore, our final implementation of multiplication is just:
 ```
 
 of course, we need to add a fixity definition for everything to work out
-properly. Since `_*_` is just repeated addition (as you can see from our
+properly. Since `def:_*_` is just repeated addition (as you can see from our
 implementation,) it makes sense to give it the same associativity as addition
 (left.) However, we'd like the expression `y + x * y` to parse as `y + (x * y)`,
-and so we need to give `_*_` a *higher* precedence, to make it bind more
+and so we need to give `def:_*_` a *higher* precedence, to make it bind more
 tightly. Thus we settle on
 
 ```agda
@@ -911,7 +911,7 @@ $$
 $$
 
 Due to this lack of commutativity, we must be careful when doing induction on
-`_^_`. The standard definition of exponentiation, known to you---not necessarily
+`def:_^_`. The standard definition of exponentiation, known to you---not necessarily
 consciously---requires that we pattern match on `y`.
 
 ```agda
@@ -958,7 +958,7 @@ The natural numbers don't support subtraction, because we might try to take too
 much away and be forced to go negative, but there are no negative natural
 numbers. However, we have a closely related operation, subtraction with
 *truncation* at zero --- that is, if the result should be negative, it is
-instead zero. We call this operation "monus", and use the symbol `_∸_`.
+instead zero. We call this operation "monus", and use the symbol `def:_∸_`.
 
 
 Exercise
@@ -1016,7 +1016,7 @@ The integers extend the natural numbers by reflecting them onto the negative
 side of the axis as well. Our number line now goes off to infinity in two
 directions, towards infinity and towards negative infinity. Some of the
 integers then, are $\dots, -3, -2, -1, 0, 1, \dots$. We use the blackboard bold
-notation `ℤ` to represent the set of integers, which might seem like a strange
+notation `type:ℤ` to represent the set of integers, which might seem like a strange
 choice until you learn the German word for "number" is *Zahl.*
 
 Mathematically, we say the integers are an *extension* of the natural numbers.
@@ -1028,8 +1028,8 @@ from scratch. Before building integers the right way, we will first take an
 intentional wrong turn, to clarify some issues around data modeling in Agda.
 
 Let's put our misstep in a new module so as to not confuse ourselves when we
-"rollback" the idea. By analogy with `ℕ`, which contains `zero` and `suc`,
-perhaps `ℤ` also has a constructor `pred` which we interpret as "subtracting
+"rollback" the idea. By analogy with `type:ℕ`, which contains `ctor:zero` and `ctor:suc`,
+perhaps `type:ℤ` also has a constructor `pred` which we interpret as "subtracting
 one:"
 
 ```agda
@@ -1042,9 +1042,9 @@ module Naive-Integers₁ where
 
 The problem with this approach, is that numbers no longer have a unique
 representation. For example, there are now infinitely many ways of representing
-`zero`, the first three of which are:
+`ctor:zero`, the first three of which are:
 
-* `zero`
+* `ctor:zero`
 * `pred (suc zero)`
 * `suc (pred zero)`
 
@@ -1063,8 +1063,8 @@ try to fix this problem by writing a function `normalize`:
   normalize (pred (pred x)) = pred (normalize x)
 ```
 
-which attempts to recursively "cancel out" subsequent applications of `pred` and
-`suc`. However, it's unclear prima facie whether this function correctly
+which attempts to recursively "cancel out" subsequent applications of `ctor:pred` and
+`ctor:suc`. However, it's unclear prima facie whether this function correctly
 normalizes all integers (it doesn't,) and, even if it did, the resulting
 ergonomics would be too atrocious to use in the real world. The important
 takeaway from this wrong turn is to strive for unique representations of data
@@ -1129,8 +1129,8 @@ module Sandbox-Integers where
     -[1+_] : ℕ → ℤ
 ```
 
-You'll notice this definition of `ℤ` is identical to the one from
-`Naive-Integers₂`; the only difference is that we've renamed `-_` to `-[1+_]`.
+You'll notice this definition of `type:ℤ` is identical to the one from
+`module:Naive-Integers₂`; the only difference is that we've renamed `ctor:-_` to `ctor:-[1+_]`.
 This new name suggests the numbers are one "more negative" than the wrapped
 natural would otherwise indicate. We can then name three particularly
 interesting integers:
@@ -1147,8 +1147,8 @@ interesting integers:
 ```
 
 The constructed form of `-1ℤ` is a little wordy, but successfully eliminates the
-"double zero" problem we had before. Of course, we'd still like our `suc` and
-`pred` functions that we postulated our first time around, and we can now
+"double zero" problem we had before. Of course, we'd still like our `def:suc` and
+`def:pred` functions that we postulated our first time around, and we can now
 articulate these as computations:
 
 ```agda
@@ -1158,9 +1158,9 @@ articulate these as computations:
   suc -[1+ ℕ.suc x ] = -[1+ x ]
 ```
 
-If `suc`'s argument is positive, it makes it more positive. If it's negative, it
+If `def:suc`'s argument is positive, it makes it more positive. If it's negative, it
 makes it less negative, possibly producing zero in the process. Dually, we can
-define `pred` which makes its argument more negative:
+define `def:pred` which makes its argument more negative:
 
 ```agda
   pred : ℤ → ℤ
@@ -1170,7 +1170,7 @@ define `pred` which makes its argument more negative:
 ```
 
 It might be desirable to negate an integer; turning it negative if it's
-positive, and vice versa. `-_` is a natural name for this operation, but its
+positive, and vice versa. `def:-_` is a natural name for this operation, but its
 implementation is not particularly natural:
 
 ```agda
@@ -1181,13 +1181,13 @@ implementation is not particularly natural:
 ```
 
 When converting back and forth from positive to negative, there's this annoying
-`ℕ.suc` that we need to be careful to not forget about. This annoyance is an
+`ctor:ℕ.suc` that we need to be careful to not forget about. This annoyance is an
 artifact of the encoding we chose; which has the benefit of having unique
 representations of all numbers, at the cost of not being *symmetric* in how it
 treats positive and negative numbers. To work around this problem, Agda has
 support for writing custom patterns, that is, other ways of deconstructing data.
 
-We can define these pattern synonyms via the `pattern` keyword, and give a
+We can define these pattern synonyms via the `keyword:pattern` keyword, and give a
 rewrite rule with the desired name of the pattern on the left, and what it
 should expand to on the right:
 
@@ -1197,8 +1197,8 @@ should expand to on the right:
 ```
 
 These two patterns give us symmetry when working with integers. While before we
-had to pattern match into two cases, `+_` and `-[1+_]`, we can now instead
-choose to match into *three* cases: `+0`, `+[1+_]` and `-[1+_]`. We can rewrite
+had to pattern match into two cases, `ctor:+_` and `ctor:-[1+_]`, we can now instead
+choose to match into *three* cases: `ctor:+0`, `ctor:+[1+_]` and `ctor:-[1+_]`. We can rewrite
 the `-_` function with this new capability, which provides a significantly more
 elegant implementation:
 
@@ -1217,7 +1217,7 @@ answer is the same regardless of whether we write $a + b$ or $b + a$. Therefore,
 we present addition of integers in pairs that are easy to check the equivalence
 of.
 
-First, additing zero to anything doesn't change the result:
+First, adding zero to anything doesn't change the result:
 
 ```agda
   infixl 5 _+⅋_
@@ -1237,7 +1237,7 @@ the case in which we're adding negative one to positive one:
 ```
 
 Otherwise, both arguments are positive or both negative, in which case we just
-add their underlying naturals (being careful to `ℕ.suc` the result, since we
+add their underlying naturals (being careful to `ctor:ℕ.suc` the result, since we
 have two `1+`s on the left side!)
 
 ```agda
@@ -1246,7 +1246,7 @@ have two `1+`s on the left side!)
 ```
 
 The next pair of cases is what happens if we are adding a negative one, in which
-case it must cancel out a positive `ℕ.suc`:
+case it must cancel out a positive `ctor:ℕ.suc`:
 
 ```agda
   +[1+ ℕ.suc x ] +⅋ -[1+ ℕ.zero  ] = +[1+ x ]
@@ -1260,7 +1260,7 @@ Analogously, if we're adding a positive one:
   -[1+ ℕ.suc x ] +⅋ +[1+ ℕ.zero  ] = -[1+ x ]
 ```
 
-The final case, is if we are adding a positive `ℕ.suc` to a negative `ℕ.suc`, in
+The final case, is if we are adding a positive `ctor:ℕ.suc` to a negative `ctor:ℕ.suc`, in
 which case the two cancel each other out and we add the remaining terms:
 
 ```agda
@@ -1275,8 +1275,8 @@ the problem from there. If I could, great! If I couldn't, I asked Agda to split
 one of the variables for me, which generated some new, more specific cases.
 Rinse and repeat until all the holes are filled and everyone is happy.
 
-While this is the most straightforward way to write `_+_` it falls somewhat
-flat. The problem is that `_+_`, as written, needs to perform significant
+While this is the most straightforward way to write `def:_+_` it falls somewhat
+flat. The problem is that `def:_+_`, as written, needs to perform significant
 inspection of its arguments in order to compute the result. As a general
 principle, significant inspection is an antipattern, as it will require
 duplicating all of that same effort in every subsequent proof. A better
@@ -1291,7 +1291,7 @@ its own function:
   _⊝_ (ℕ.suc m) (ℕ.suc n) = m ⊝ n
 ```
 
-By implementing `_+_` in terms of `_⊝_`, we can factor out a significant portion
+By implementing `def:_+_` in terms of `def:_⊝_`, we can factor out a significant portion
 of the logic:
 
 ```agda
@@ -1304,10 +1304,10 @@ of the logic:
   -[1+ x ] + -[1+ y ] = -[1+ x ℕ.+ ℕ.suc y ]
 ```
 
-This new definition of `_+_` is significantly shorter and more regular. As a
+This new definition of `def:_+_` is significantly shorter and more regular. As a
 bonus, it shows the addition of positive and negative cases are both calls to
-`_⊝_`, albeit with the order of the arguments flipped. This will make our lives
-significantly easier when we go to prove facts about `_+_` in the next chapter.
+`def:_⊝_`, albeit with the order of the arguments flipped. This will make our lives
+significantly easier when we go to prove facts about `def:_+_` in the next chapter.
 
 Having implemented addition is the hard part. We can implement subtraction
 trivially, via addition of the negative:
