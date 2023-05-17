@@ -51,7 +51,7 @@ the same place in memory. But this is unsatisfying on many levels. First and
 foremost, it is an abstraction leak. Functions are mathematical ideas,
 completely separate from the hardware they run on. There exist models of
 computation that don't have memory, and thus such a decision allows you to
-deduce properties of the hardware you're running on --- which ought to be a
+deduce properties of the hardware you're running on---which ought to be a
 no-no. Mathematics doesn't run on any hardware; it just *is.* Equally abhorrent
 in pointer equality of functions is that it means two identical, syntactically
 byte-for-byte source identical functions might not compare equal, due to
@@ -317,13 +317,13 @@ We've discussed *propositional equality,* that is, that two things are equal
 when they are defined in exactly the same way. We've also looked at
 *constructions over equality,* which allow us to derive new notions of equality
 out of others, like we did with function extensionality. But in this chapter we
-will discuss the notion of *quotients* --- that is, asserting by fiat that two
+will discuss the notion of *quotients*---that is, asserting by fiat that two
 non-propositionally-equal things are in fact, equal.
 
 A favorite example of quotienting for mathematicians are the so-called "ring of
 natural numbers modulo $n$," more tersely written as $\mathbb{N}/n\mathbb{N}$.
 But what is this ring? This ring is the mathematical way of saying "clock
-addition" --- that is, we pick some $n$, maybe $n = 12$ for an example, and say
+addition"---that is, we pick some $n$, maybe $n = 12$ for an example, and say
 that whenever our arithmetic gets to $n$ it overflows back to 0. This is the
 peculiar fact that, on an analog clock, we have the fact that $11 + 2 = 1
 (\text{mod} 12)$.
@@ -360,7 +360,7 @@ We can now show that our clock example works as expected:
 Pretty nice, if you ask me.
 
 My claim is that our use of the `≈` in `_≈_⟨mod_⟩` is valid; this relationship
-truly is an equivalence relation --- that is to say, it's interchangeable with
+truly is an equivalence relation---that is to say, it's interchangeable with
 equality, and behaves in an identical manner, mathematically speaking. Recall
 that to show an equivalence relationship, we need to show the relation satisfies
 reflexivity, symmetry, and transitivity. As usual, we can reify these
@@ -392,7 +392,7 @@ module mod-base (n : ℕ) where
       a b c d : ℕ
 ```
 
-Show `refl` is trivial --- the two numbers are already equal:
+Show `refl` is trivial---the two numbers are already equal:
 
 ```agda
   mod-refl : a ≈ a ⟨mod n ⟩
