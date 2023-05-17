@@ -593,6 +593,7 @@ states that if `m ≤ n`, then `suc m ≤ suc n`:
   data _≤_ : Rel ℕ lzero where
     z≤n : zero ≤ n
     s≤s : m ≤ n → suc m ≤ suc n
+  infix 4 _≤_
 ```
 
 With only constructors to be found in our indices, we have successfully fended
@@ -758,13 +759,13 @@ Exercise
 
 Solution
 
-:     ```agda
+:       ```agda
   equiv→preorder
       : {_~_ : Rel A ℓ}
       → IsEquivalence _~_ → IsPreorder _~_
   IsPreorder.refl (equiv→preorder x) = IsEquivalence.refl x
   IsPreorder.trans (equiv→preorder x) = IsEquivalence.trans x
-      ```
+        ```
 
 
 ## Graph Reachability
@@ -778,9 +779,9 @@ telltale phrase
 
 > Let $G = (V, E)$ be a graph with vertices $V$ and edges $E$.
 
-Unsaid in this introduction is that $E$ is in fact a *relation* on $V$; given a
-graph with vertices $V$, it really ought to be the case that the edges are
-actually between the vertices!
+Left completely unsaid in this introduction is that $E$ is in fact a *relation*
+on $V$; given a graph with vertices $V$, it really ought to be the case that the
+edges are actually between the vertices!
 
 As a computer scientist, you probably have implemented a graph before at some
 point, whether it be via pointer-chasing or an adjacency matrix. These are
@@ -789,7 +790,7 @@ need not pay attention to. In order to work with graphs in Agda, all we need is
 some set `type:V` and an edge relation `type:_⇒_` over it:
 
 ```agda
-  module Example-Graph
+  module Reachability
         {e ℓ : Level} {V : Set ℓ} (_⇒_ : Rel V e)
       where
 ```
@@ -823,21 +824,21 @@ gives rise to a very straightforward definition:
     private variable
       v v₁ v₂ v₃ : V
 
-    data Reachable : Rel V (e ⊔ ℓ) where
-      here : Reachable v v
-      follow : v₁ ⇒ v₂ → Reachable v₁ v₂
+    data Path : Rel V (e ⊔ ℓ) where
+      here : Path v v
+      follow : v₁ ⇒ v₂ → Path v₁ v₂
       connect
-        : Reachable v₁ v₂
-        → Reachable v₂ v₃
-        → Reachable v₁ v₃
+        : Path v₁ v₂
+        → Path v₂ v₃
+        → Path v₁ v₃
 ```
 
-It is not difficult to show that `Reachable` forms a preorder:
+It is not difficult to show that `type:Path` forms a preorder:
 
 ```agda
-    Reachable-preorder : IsPreorder Reachable
-    IsPreorder.refl Reachable-preorder = here
-    IsPreorder.trans Reachable-preorder = connect
+    Path-preorder : IsPreorder Path
+    IsPreorder.refl Path-preorder = here
+    IsPreorder.trans Path-preorder = connect
 ```
 
 This technique is very general and reusable. We were given some arbitrary
@@ -849,47 +850,187 @@ in the original domain, if anything. This is a problem we will return to when we
 discuss *free constructions* in @sec:free.
 
 
-##
+## Preorder Reasoning
+
+Recall that in this chapter, we have looked at equivalence relations as a
+special case of equality, and further noted that preorders are equivalence
+relations that don't require symmetry. In @sec:equational-reasoning, we built
+equational reasoning tools for working with propositional equality. However,
+that reasoning machinery used only `def:refl` and `def:trans`, without a hint of
+`def:sym` to be seen! Thus, our previously-defined equational reasoning
+machinery has too-specific types, since it will work for any preorder
+whatsoever!
+
+Begin with a new module for the reasoning, parameterized by a `type:IsPreorder`.
 
 ```agda
-  module Reasoning {_~_ : Rel A ℓ} (~-preorder : IsPreorder _~_) where
+  module PreorderReasoning
+        {_~_ : Rel A ℓ} (~-preorder : IsPreorder _~_)
+        where
+```
+
+We can bring the record fields of `type:IsPreorder` into scope by opening it as
+a module:
+
+```agda
     open IsPreorder ~-preorder public
+```
+
+This will bring the `field:refl` and `field:trans` fields from `~-preorder` into
+scope. Additionally, postfixing the module directive with `keyword:public` means
+that `field:refl` and `field:trans` will also be brought into scope for anyone
+who opens `module:PreorderReasoning`. In essence, `keyword:public` makes it as
+if we explicitly defined the imported identifiers in this module.
+
+The rest of this machinery will be presented without further commentary, as
+there is nothing new here, except that we have replaced `type:_≡_` with `~`, and
+renamed `def:_≡⟨_⟩_` to `def:_≈⟨_⟩_`.
+
+```agda
+    begin_ : {x y : A} → x ~ y → x ~ y
+    begin_ x~y = x~y
+    infix 1 begin_
 
     _∎ : (x : A) → x ~ x
     _∎ x = refl
     infix 3 _∎
 
-    import Relation.Binary.PropositionalEquality
-      as PropEq
-    open PropEq using (_≡_)
-
-    begin_ : {x y : A} → x ~ y → x ~ y
-    begin_ x~y = x~y
-    infix 1 begin_
-
     _≡⟨⟩_ : (x : A) → {y : A} → x ~ y → x ~ y
     x ≡⟨⟩ p = p
     infixr 2 _≡⟨⟩_
 
-    _≡⟨_⟩_ : (x : A) → ∀ {y z} → x ≡ y → y ~ z → x ~ z
-    _ ≡⟨ PropEq.refl ⟩ y~z = y~z
-    infixr 2 _≡⟨_⟩_
-
     _≈⟨_⟩_ : (x : A) → ∀ {y z} → x ~ y → y ~ z → x ~ z
     _ ≈⟨ x~y ⟩ y~z = trans x~y y~z
     infixr 2 _≈⟨_⟩_
+```
 
-  -- module ≤-Reasoning where
-  --   import Data.Nat.Properties as ℕ
-  --   ≤-preorder : IsPreorder (_≤_)
-  --   IsPreorder.refl ≤-preorder = ℕ.≤-refl
-  --   IsPreorder.trans ≤-preorder = ℕ.≤-trans
+However, we would like to make one additional change to this interface, which is
+to make it play nicely with propositional equality. If we happen to know that
+two terms are propositionally equal, it would be nice to be able to use that
+fact in a reasoning block. Thus, we also include `def:_≡⟨_⟩_`:
 
-  --   open Reasoning ≤-preorder
-  --     renaming (_≈⟨_⟩_ to _≤⟨_⟩_)
-      -- public
+```agda
+    open import Relation.Binary.PropositionalEquality
+      using (_≡_; refl)
+
+    _≡⟨_⟩_ : (x : A) → ∀ {y z} → x ≡ y → y ~ z → x ~ z
+    _ ≡⟨ refl ⟩ y~z = y~z
+    infixr 2 _≡⟨_⟩_
+```
+
+Any code wanting to do equational reasoning over a preorder is now able to, it
+need only `keyword:open` the `module:PreorderReasoning` module using its proof
+of being a preorder (that is, `type:IsPreorder`) as an argument.
 
 
+## Example from a Film
+
+We can use this new preorder equational reasoning in order to show how two
+people might know one another across a social graph. Rather than incriminate any
+real group of humans, we can instead use the excellent early noughties' film
+"About a Boy" as a case study. If you haven't seen the film, you should consider
+remedying that as soon as possible. But don't worry, there will be no spoilers
+here so it's safe to continue.
+
+The first thing to do is to define the vertices of the social graph, which of
+course are the people involved:
+
+```agda
+  module Example-AboutABoy where
+    data Person : Set where
+      ellie fiona marcus rachel susie will : Person
+```
+
+Some of these people are friends, which we can use as edges in our graph:
+
+```agda
+    private variable
+      p₁ p₂ : Person
+
+    data AreFriends : Rel Person lzero where
+      marcus-will : AreFriends marcus will
+      fiona-marcus : AreFriends fiona marcus
+      fiona-susie : AreFriends fiona susie
+```
+
+and of course, friendship is symmetric, which we can encode as another
+constructor:
+
+```agda
+      sym : AreFriends p₁ p₂ → AreFriends p₂ p₁
+```
+
+What excellent romantic comedy from the early noughties is complete without a
+series of potential love interests? We can enumerate who likes whom as another
+source of edges in our graph:
+
+```agda
+    data _IsInterestedIn_ : Rel Person lzero where
+      marcus-ellie : marcus IsInterestedIn ellie
+      will-rachel : will IsInterestedIn rachel
+      rachel-will : rachel IsInterestedIn will
+      susie-will : susie IsInterestedIn will
+```
+
+Finally, we can tie together `type:AreFriends` and `type:_IsInterestedIn_` with
+`type:SocialTie` which serves as the definitive set of edges in our graph.
+
+```agda
+    data SocialTie : Rel Person lzero where
+      friendship : AreFriends p₁ p₂ → SocialTie p₁ p₂
+      interest : p₁ IsInterestedIn p₂ → SocialTie p₁ p₂
+```
+
+There is no preorder on `type:SocialTie`, but we can get one for free by using
+`type:Path`. Then it's possible to ask how `ctor:will` and `ctor:fiona` are
+related:
+
+```agda
+    open Reachability SocialTie
+
+    will-fiona : Path will fiona
+    will-fiona = begin
+      will    ≈⟨ follow (friendship (sym marcus-will)) ⟩
+      marcus  ≈⟨ follow (friendship (sym fiona-marcus)) ⟩
+      fiona   ∎
+      where open PreorderReasoning (Path-preorder)
+```
+
+or how `ctor:rachel` and `ctor:ellie` are:
+
+```agda
+    rachel-ellie : Path rachel ellie
+    rachel-ellie = begin
+      rachel  ≈⟨ follow (interest rachel-will) ⟩
+      will    ≈⟨ follow (friendship (sym marcus-will)) ⟩
+      marcus  ≈⟨ follow (interest marcus-ellie) ⟩
+      ellie   ∎
+      where open PreorderReasoning (Path-preorder)
+```
+
+
+## Reasoning over `≤`
+
+```agda
+  module ≤-Reasoning where
+    open PreorderReasoning ≤-preorder
+      renaming (_≈⟨_⟩_ to _≤⟨_⟩_)
+      public
+
+  n≤1+n : (n : ℕ) → n ≤ 1 + n
+  n≤1+n zero = z≤n
+  n≤1+n (suc n) = s≤s (n≤1+n n)
+
+  n≤n+1 : (n : ℕ) → n ≤ n + 1
+  n≤n+1 n = begin
+    n      ≤⟨ n≤1+n n ⟩
+    1 + n  ≡⟨ ℕ.+-comm 1 n ⟩
+    n + 1  ∎
+    where open ≤-Reasoning
+          import Data.Nat.Properties as ℕ
+```
+
+```agda
 open import Data.Nat
 import Relation.Binary.PropositionalEquality
   as PropEq
@@ -968,24 +1109,17 @@ module ℕ/nℕ (n : ℕ) where
     IsPreorder.trans ≈-preorder = ≈-trans
 
     open IsEquivalence ≈-equiv using (sym) public
-    open Reasoning ≈-preorder public
+    open PreorderReasoning ≈-preorder public
 
 
   +-cong₂-mod : a ≈ b → c ≈ d → a + c ≈ b + d
-  +-cong₂-mod {zero} {b} {c} {d} a=b c=d =
-    begin
-      zero + c
-    ≡⟨⟩
-      c
-    ≈⟨ c=d ⟩
-      d
-    ≈⟨ ? ⟩
+  +-cong₂-mod {zero} {b} {c} {d} a=b c=d = begin
+      zero + c  ≡⟨⟩
+      c         ≈⟨ c=d ⟩
+      d         ≡⟨⟩
+      zero + d  ≈⟨ ? ⟩
       b + d
     ∎
     where open ≈-Reasoning
   +-cong₂-mod {suc a} {b} {c} {d} a=b c=d = {! !}
-
-
-
-
 ```
