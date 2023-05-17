@@ -1,6 +1,98 @@
 # Quotients
 
 ```agda
+-- open import Data.Nat
+-- import Relation.Binary.PropositionalEquality
+--   as PropEq
+-- open PropEq using (_≡_; module ≡-Reasoning; cong)
+
+-- module ModularArithmetic where
+--   infix 4 _≈_⟨mod_⟩
+--   data _≈_⟨mod_⟩ (a b n : ℕ) : Set where
+--     ≈-mod
+--       : (x y : ℕ)
+--       → a + x * n ≡ b + y * n  -- ! 1
+--       → a ≈ b ⟨mod n ⟩
+
+-- open ModularArithmetic
+
+-- _ : 11 + 2 ≈ 1 ⟨mod 12 ⟩
+-- _ = ≈-mod 0 1 PropEq.refl
+
+-- module ℕ/nℕ (n : ℕ) where
+--   open Sandbox-Relations
+--   open Sandbox-Orderings
+
+--   infix 4 _≈_
+--   _≈_ : Rel ℕ _
+--   _≈_ = _≈_⟨mod n ⟩
+
+--   private variable
+--     a b c d : ℕ
+
+
+--   ≈-refl : Reflexive _≈_
+--   ≈-refl = ≈-mod 0 0 PropEq.refl
+
+--   ≈-sym : Symmetric _≈_
+--   ≈-sym (≈-mod x y p) = ≈-mod y x (PropEq.sym p)
+
+--   open import Data.Nat.Solver
+
+--   ≈-trans : Transitive _≈_
+--   ≈-trans {a} {b} {c} (≈-mod x y pxy) (≈-mod z w pzw) =
+--     ≈-mod (x + z) (w + y) ( begin
+--       a + (x + z) * n      ≡⟨ lemma₁ ⟩
+--       (a + x * n) + z * n  ≡⟨ cong (_+ z * n) pxy ⟩
+--       (b + y * n) + z * n  ≡⟨ lemma₂ ⟩
+--       (b + z * n) + y * n  ≡⟨ cong (_+ y * n) pzw ⟩
+--       c + w * n + y * n    ≡⟨ lemma₃ ⟩
+--       c + (w + y) * n      ∎
+--     )
+--     where
+--       open ≡-Reasoning
+--       open +-*-Solver
+
+--       lemma₁ = solve 4
+--         (λ a n x z → a :+ (x :+ z) :* n
+--                   := (a :+ x :* n) :+ z :* n)
+--         PropEq.refl a n x z
+
+--       lemma₂ = solve 4
+--         (λ b n y z → (b :+ y :* n) :+ z :* n
+--                   := (b :+ z :* n) :+ y :* n)
+--         PropEq.refl b n y z
+
+--       lemma₃ = solve 4
+--         (λ c n w y → c :+ w :* n :+ y :* n
+--                   := c :+ (w :+ y) :* n)
+--         PropEq.refl c n w y
+
+--   ≈-equiv : IsEquivalence _≈_
+--   IsEquivalence.refl ≈-equiv = ≈-refl
+--   IsEquivalence.sym ≈-equiv = ≈-sym
+--   IsEquivalence.trans ≈-equiv = ≈-trans
+
+--   module ≈-Reasoning where
+--     ≈-preorder : IsPreorder _≈_
+--     IsPreorder.refl ≈-preorder = ≈-refl
+--     IsPreorder.trans ≈-preorder = ≈-trans
+
+--     open IsEquivalence ≈-equiv using (sym) public
+--     open PreorderReasoning ≈-preorder public
+
+
+--   +-cong₂-mod : a ≈ b → c ≈ d → a + c ≈ b + d
+--   +-cong₂-mod {zero} {b} {c} {d} a=b c=d = begin
+--       zero + c  ≡⟨⟩
+--       c         ≈⟨ c=d ⟩
+--       d         ≡⟨⟩
+--       zero + d  ≈⟨ ? ⟩
+--       b + d
+--     ∎
+--     where open ≈-Reasoning
+--   +-cong₂-mod {suc a} {b} {c} {d} a=b c=d = {! !}
+
 module 4-setoids where
 open import Data.Nat
 open import Data.Nat.Properties
