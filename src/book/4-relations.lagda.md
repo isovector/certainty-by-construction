@@ -1,4 +1,4 @@
-# Structured Sets
+# Relations
 
 Hidden
 
@@ -7,8 +7,11 @@ Hidden
     ```
 
 ```agda
-module 4-setoids-redo where
+module 4-relations where
 ```
+
+-- TODO(sandy): this intro doesn't make much sense anymore
+
 
 One exceptionally common notion in mathematics is the notion of a "set equipped
 with some structure." In this chapter, we will discuss what this means, how to
@@ -86,7 +89,7 @@ module Sandbox-Relations where
   REL A B ℓ = A → B → Set ℓ
 ```
 
-This `REL` is the type of *heterogeneous* relations, that is, relationships
+This `type:REL` is the type of *heterogeneous* relations, that is, relationships
 between two distinct sets. The most salient relationship of this sort is the
 usual way that functions are defined as mathematical objects---namely, as a
 relation between the input and output types. Thus, we can assert that `f` is a
@@ -115,7 +118,7 @@ The relations we're much more familiar with, however, are *homogeneous*---those
 which relate two elements of the same type. It is under this category that
 things like equality and orderings fall. You will not be surprised to learn that
 homogeneous relations are a special case of heterogeneous ones. In the Agda
-standard library, this is known as `Rel`:
+standard library, this is known as `type:Rel`:
 
 ```agda
   Rel : Set a → (ℓ : Level) → Set (a ⊔ lsuc ℓ)
@@ -200,12 +203,12 @@ given relation, to show that it is indeed an equivalence relation.
       trans : Transitive _~_
 ```
 
-It's easy to show that `_≡_` forms an equivalence relation, since we came up
-with the idea by thinking about `_≡_` in the first place. The hardest part here
-is wrangling the namespacing, since we now have two things called `refl`: the
-specific definition for `_≡_`, and the abstract property from `IsEquivalence`.
-We can dodge the issue by renaming the `PropositionalEquality` module down to
-`PropEq`:
+It's easy to show that `type:_≡_` forms an equivalence relation, since we came up
+with the idea by thinking about `type:_≡_` in the first place. The hardest part here
+is wrangling the namespacing, since we now have two things called `ctor:refl`: the
+specific definition for `type:_≡_`, and the abstract property from `type:IsEquivalence`.
+We can dodge the issue by renaming the `module:PropositionalEquality` module down to
+`module:PropEq`:
 
 ```agda
   module Example₃ where
@@ -214,7 +217,7 @@ We can dodge the issue by renaming the `PropositionalEquality` module down to
     open PropEq using (_≡_)
 ```
 
-at which point, building the proof that `_≡_` is an equivalence relationship is
+at which point, building the proof that `type:_≡_` is an equivalence relationship is
 trivial:
 
 ```agda
@@ -258,7 +261,7 @@ module Sandbox-Orderings where
 ```
 
 With surprising prescience, I can tell you that our first attempt at
-implementing `_≤_` is going to fail, so let's make a new module and define our
+implementing `type:_≤_` is going to fail, so let's make a new module and define our
 type:
 
 ```agda
@@ -276,7 +279,7 @@ To a first approximation, it seems to work:
 ```
 
 Indeed, Agda can even solve this for us via [`Auto`](AgdaCmd). One of the few
-things we can prove about `_≤_` defined in this way is that `suc` is
+things we can prove about `type:_≤_` defined in this way is that `suc` is
 *monotonic*---that is, that if `x ≤ y`, then `suc x ≤ suc y`:
 
 ```agda
@@ -286,11 +289,11 @@ things we can prove about `_≤_` defined in this way is that `suc` is
 
 If you attempted to write this for yourself, you might have been surprised that
 [`Refine`](AgdaCmd) refused to fill in the fill in the right-hand side with the
-`lte` constructor, instead complaining about "no introduction forms found." This
+`ctor:lte` constructor, instead complaining about "no introduction forms found." This
 is a little surprising, but the above definition does in fact work, so we will
 not yet worry too much about it.
 
-Things however, go much more wrong when we try to show `≤-refl`:
+Things however, go much more wrong when we try to show `def:≤-refl`:
 
 ```wrong
     ≤-refl : Reflexive _≤_
@@ -304,7 +307,7 @@ x + 0 != x of type ℕ
 when checking that the expression lte x 0 has type x ≤ x
 ```
 
-Unperturbed, we can try hitting `≤-refl` with some of our other proof
+Unperturbed, we can try hitting `def:≤-refl` with some of our other proof
 techniques, and see if we can make progress on it in that way. Don't worry,
 we'll circle back to this and see what has gone wrong, but for now, let's
 proceed with naught but brute force and ignorance. Instead, we can try splitting
@@ -342,7 +345,7 @@ when checking that the expression ? has type suc x ≤ suc x
 ```
 
 Not to be discouraged, we spot that `x≤x` has a satisfactory type for us to
-invoke `suc-mono` and be done with the proof:
+invoke `def:suc-mono` and be done with the proof:
 
 ```agda
     ≤-refl : Reflexive _≤_
@@ -371,11 +374,11 @@ when checking that the expression lte x 0 has type x ≤ x
 ```
 
 The problem here is that `lte x 0` has type `x ≤ x + 0`, but we are trying to
-assign to `≤-refl` which has type `x ≤ x`. You and I know these are the same
-thing, but recall that we did have to prove `+-identityʳ` all those chapters ago
+assign to `def:≤-refl` which has type `x ≤ x`. You and I know these are the same
+thing, but recall that we did have to prove `def:+-identityʳ` all those chapters ago
 in order to convince Agda of this exact fact. There does exist standard (though
 heavy-handed) machinery for rewriting propositional equalities at the
-type-level, like is required here. This machinery is called `subst`, short for
+type-level, like is required here. This machinery is called `def:subst`, short for
 *substitution*:
 
 ```agda
@@ -390,10 +393,10 @@ type-level, like is required here. This machinery is called `subst`, short for
     subst _ refl px = px
 ```
 
-You can think of `subst` as a type-level `cong`, as it serves the same purpose.
+You can think of `def:subst` as a type-level `def:cong`, as it serves the same purpose.
 At [1](Ann) it takes an argument `P` which is responsible for pointing out where
 you'd like the substitution to happen. To illustrate this, we can implement
-`≤-refl` via `subst`, though the experience is decidedly less than wholesome:
+`def:≤-refl` via `def:subst`, though the experience is decidedly less than wholesome:
 
 ```agda
     open import Data.Nat.Properties
@@ -403,7 +406,7 @@ you'd like the substitution to happen. To illustrate this, we can implement
     ≤-refl′ {x} = subst (x ≤_) (+-identityʳ x) (lte x 0)
 ```
 
-It's nice to know about `subst`, but as a good rule of thumb, if you find
+It's nice to know about `def:subst`, but as a good rule of thumb, if you find
 yourself reaching for it more than a handful of times, you've painted yourself
 into a corner when you originally put together a definition somewhere. Requiring
 substitution is usually a symptom of an upstream problem.
@@ -411,8 +414,8 @@ substitution is usually a symptom of an upstream problem.
 
 ## Unification
 
-But not every problem we saw when implementing `≤-refl` for the first time can
-be solved via `subst`. Recall our attempt to pattern match on `x≤x` in the
+But not every problem we saw when implementing `def:≤-refl` for the first time can
+be solved via `def:subst`. Recall our attempt to pattern match on `x≤x` in the
 following:
 
 ```agda
@@ -428,17 +431,17 @@ to which Agda replies:
 I'm not sure if there should be a case for the constructor lte
 ```
 
-Of course there should be a case for the constructor `lte`, since it's *the only
+Of course there should be a case for the constructor `ctor:lte`, since it's *the only
 constructor.* But what has gone wrong here, and what can we do about it? The
 problem is that Agda usually really good at pattern matching, and elides
 impossible patterns if the constructor doesn't match. In this case, Agda can't
-decide if the `lte` constructor *should definitely* be there, or should
+decide if the `ctor:lte` constructor *should definitely* be there, or should
 definitely *not be.*
 
 Internally, Agda implements this functionality by attempting to *unify* the
 indices on type's constructors with the indices of your expression. In this
 case, we have `x≤x : x ≤ x`, which Agda needs to unify (match syntactically)
-against `lte` whose eventual indices are `?a ≤ ?a + ?b` (after some renaming to
+against `ctor:lte` whose eventual indices are `?a ≤ ?a + ?b` (after some renaming to
 avoid confusion.) This sets up the following series of equations that Agda must
 solve:
 
@@ -478,7 +481,7 @@ ways here, except to point out how to avoid the situation altogether.
 ## Overconstrained by Dot Patterns
 
 But first, one last subtle point about unification. Rather surprisingly, we
-successfully implemented `suc-mono`, without encountering the dreaded "not sure
+successfully implemented `def:suc-mono`, without encountering the dreaded "not sure
 if there should be a case" problem. How can that have happened? We can get a
 sense of the unification algorithm going on behind the scenes by explicitly
 binding our implicit arguments:
@@ -499,7 +502,7 @@ good way to see what Agda has solved.
     suc-mono′⅋₁ {x} {.(x + b)} (lte .x b) = lte (suc x) b
 ```
 
-It's worth going through the constraints being solved here. In splitting `lte`,
+It's worth going through the constraints being solved here. In splitting `ctor:lte`,
 Agda introduced two new variables, `a` and `b`, subject to the constraints:
 
 $$
@@ -519,9 +522,9 @@ y \mathrel{\sim}& x + b
 $$
 
 which corresponds exactly to how Agda filled in the dot patterns in
-`suc-mono′⅋₁` above.
+`def:suc-mono′⅋₁` above.
 
-Rather interestingly, we can implement a monomorphic version of `suc-mono′⅋₁` by
+Rather interestingly, we can implement a monomorphic version of `def:suc-mono′⅋₁` by
 restricting its type:
 
 ```agda
@@ -529,7 +532,7 @@ restricting its type:
     suc-mono-mono⅋₁ = suc-mono′⅋₁
 ```
 
-but we *cannot* inline the definition of `suc-mono′⅋₁` here, since we will get
+but we *cannot* inline the definition of `def:suc-mono′⅋₁` here, since we will get
 the "not sure" error. Looking at the constraints Agda must solve immediately
 shows us the problem:
 
@@ -575,14 +578,14 @@ The solution here is to prevent Agda from introducing dot patterns, and the
 simplest way to do *that* is to only ever use *constructors* as indices to your
 data type.
 
-What does this mean in the context of giving a `_≤_` ordering on natural
-numbers? Recall that `_≤_` is indexed by two naturals, and so we must build our
+What does this mean in the context of giving a `type:_≤_` ordering on natural
+numbers? Recall that `type:_≤_` is indexed by two naturals, and so we must build our
 indices out of only `zero` and `suc`. This is a dramatic constraint on the forms
 that our datatype can take, and it subsequently informs the entire definition.
 
 A good way to proceed here is to work backwards; starting from each constructor,
 to determine how to use that to show a less-than-or-equal-to relationship. The
-case of zero is easy, since zero is the smallest element, it must be `_≤_` any
+case of zero is easy, since zero is the smallest element, it must be `type:_≤_` any
 other number. We have already shown the `suc` case earlier, namely `≤-suc` which
 states that if `m ≤ n`, then `suc m ≤ suc n`:
 
@@ -598,8 +601,8 @@ states that if `m ≤ n`, then `suc m ≤ suc n`:
 
 With only constructors to be found in our indices, we have successfully fended
 off all of Agda's future complains that it might not know how to pattern match
-on `_≤_`. We can now return our attention to determining which of the relation
-properties hold for `_≤_`. As we have seen before, reflexivity holds, and is now
+on `type:_≤_`. We can now return our attention to determining which of the relation
+properties hold for `type:_≤_`. As we have seen before, reflexivity holds, and is now
 much easier to implement:
 
 ```agda
@@ -617,7 +620,7 @@ We also have transitivity:
 ```
 
 What about symmetry? A moment's thought convinces us that there is no symmetry
-for `_≤_`. Just because $2 \le 5$ doesn't mean that $5 \le 2$. However, this
+for `type:_≤_`. Just because $2 \le 5$ doesn't mean that $5 \le 2$. However, this
 relation does satisfy a related notion, that of *antisymmetry.* Antisymmetry
 says that if we know $m \le n$ and that $n \le m$, then the only solution is if
 $m = n$. This is not very hard to show:
@@ -650,7 +653,7 @@ corresponding to equality, and another to the ordering:
     ∀ {x y} → x ≤ y → y ≤ x → x ≈ y
 ```
 
-Because `_≤_` is not symmetric, it can't possibly be an equivalence relation.
+Because `type:_≤_` is not symmetric, it can't possibly be an equivalence relation.
 But it does have reflexivity and transitivity, which is still quite a lot of
 structure! When you start looking for relations with reflexivity and
 transitivity, but no symmetry, you immediately find a bevy of directed
