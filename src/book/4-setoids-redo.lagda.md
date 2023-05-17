@@ -251,7 +251,7 @@ our relation machinery from the standard library:
 ```agda
 module Sandbox-Orderings where
   open import Relation.Binary
-    using (Rel; Reflexive; Transitive; Symmetric)
+    using (Rel; Reflexive; Transitive; Symmetric; IsEquivalence)
 
   open import Data.Nat
     using (ℕ; _+_; zero; suc)
@@ -651,29 +651,207 @@ corresponding to equality, and another to the ordering:
 
 Because `_≤_` is not symmetric, it can't possibly be an equivalence relation.
 But it does have reflexivity and transitivity, which is still quite a lot of
-structure!
+structure! When you start looking for relations with reflexivity and
+transitivity, but no symmetry, you immediately find a bevy of directed
+relationships.
 
-
-
-
+In fact, relations of this form---namely, relations that satisfy reflexivity and
+transitivity---are so common that they have a bespoke name. We call such things
+*preorders:*
 
 
 ```agda
-
   record IsPreorder
           {A : Set a} (_~_ : Rel A ℓ) : Set (a ⊔ ℓ) where
     field
       refl : Reflexive _~_
       trans : Transitive _~_
+```
 
-  record IsEquivalence⅋
-          {A : Set a} (_~_ : Rel A ℓ) : Set (a ⊔ ℓ) where
-    field
-      is-preorder : IsPreorder _~_
-      sym : Symmetric _~_
 
-    open IsPreorder is-preorder public
+## Making Suggestions to Agsy
 
+We have already done the work to show that `type:_≤_` is a preorder, namely
+`≤-refl` and `≤-trans`. Bundling them up into a `type:IsPreorder` isn't very
+challenging, and [`Auto:≤-refl ≤-trans`](AgdaCmd) will actually write the
+necessary definition for you:
+
+```agda
+  ≤-preorder⅋₀ : IsPreorder _≤_
+  ≤-preorder⅋₀ = {! ≤-refl ≤-trans !}
+```
+
+which results in:
+
+```agda
+  ≤-preorder⅋₁ : IsPreorder _≤_
+  ≤-preorder⅋₁ = record { refl = ≤-refl ; trans = ≤-trans }
+```
+
+As you can see, we can put suggestions for [`Auto`](AgdaCmd) inside the hole,
+and Agda will attempt to use those identifiers when attempting to synthesize
+terms.
+
+
+## Copatterns
+
+The definition given for `def:≤-preorder⅋₁` above is somewhat unsatisfactory, as
+it requires us to explicitly construct an object using `keyword:record` syntax.
+This is not our only option, however. Instead of defining a product type all at
+once, we can instead define every *projection* (field) out of it. Recall that in
+Agda, a record type is *nothing more* than its constituent fields, and so this
+is less crazy of a notion than it seems.
+
+We can ask Agda to perform a copattern match for us by asking it to
+[`MakeCase`](AgdaCmd) in a hole whose type is a record. To illustrate this,
+position your cursor on the hole:
+
+```agda
+  ≤-preorder⅋₂ : IsPreorder _≤_
+  ≤-preorder⅋₂ = ?
+```
+
+and perform a [`MakeCase:`](AgdaCmd). Agda will replace the definition of
+`def:≤-preorder⅋₂` with two copattern matches: one for every field of the
+record.
+
+```agda
+  ≤-preorder⅋₃ : IsPreorder _≤_
+  IsPreorder.refl ≤-preorder⅋₃ = {! !}
+  IsPreorder.trans ≤-preorder⅋₃ = {! !}
+```
+
+These holes are easily filled, as before:
+
+```agda
+  ≤-preorder : IsPreorder _≤_
+  IsPreorder.refl ≤-preorder = ≤-refl
+  IsPreorder.trans ≤-preorder = ≤-trans
+```
+
+Agda is almost unique among programming languages in its support for copattern
+matching. Better yet, copatterns play nicely with patterns, and you can do a
+pattern match inside a copattern, or a copattern match after first splitting
+some variables into their constituent constructors.
+
+Copatterns give rise to a dualistic perspective for thinking about records.
+While building a value out of `keyword:record\{..\}` syntax, we are making an
+assertion about what that thing *is.* Contrast that against a value defined via
+copatterns, in which we are making assertions only on the *observations that can
+be made of the value.* Constraining only the observations is much less of an ask
+than defining something's entire identity. As an illustration, defining only the
+observations gives permission tot he compiler to do whatever it wants behind the
+scenes, so long as you can't "catch it in action."
+
+The Agda standard library uses copatterns to great effect, and we will not shy
+away from them henceforth. Their use allows us to separate the work of building
+an object into its constituent pieces, which can help make the task more
+manageable.
+
+
+Exercise
+
+:   As an easy exercise, show that every equivalence relation gives rise to a
+    preorder. That is, give a function `type:IsEquivalence _~_ → IsPreorder
+    _~_`. Use copattern matching to implement this function.
+
+
+Solution
+
+:     ```agda
+  equiv→preorder
+      : {_~_ : Rel A ℓ}
+      → IsEquivalence _~_ → IsPreorder _~_
+  IsPreorder.refl (equiv→preorder x) = IsEquivalence.refl x
+  IsPreorder.trans (equiv→preorder x) = IsEquivalence.trans x
+      ```
+
+
+## Graph Reachability
+
+We have shown that `type:_≤_` forms a preorder. From this you might be tempted
+to think that preorders are just tools that generalize ordering over the number
+line. Not so. Let's look at another example to break that intuition.
+
+Consider a graph. Math textbooks often begin a discussion around graphs with the
+telltale phrase
+
+> Let $G = (V, E)$ be a graph with vertices $V$ and edges $E$.
+
+Unsaid in this introduction is that $E$ is in fact a *relation* on $V$; given a
+graph with vertices $V$, it really ought to be the case that the edges are
+actually between the vertices!
+
+As a computer scientist, you probably have implemented a graph before at some
+point, whether it be via pointer-chasing or an adjacency matrix. These are
+indeed encodings of graphs, but they are concessions to computability, which we
+need not pay attention to. In order to work with graphs in Agda, all we need is
+some set `type:V` and an edge relation `type:_⇒_` over it:
+
+```agda
+  module Example-Graph
+        {e ℓ : Level} {V : Set ℓ} (_⇒_ : Rel V e)
+      where
+```
+
+What can we say about `type:_⇒_`? Does it satisfy any of the usual relation
+properties? Think on that question for a moment before continuing.
+
+Does `type:_⇒_` satisfy any relation properties? The question is not even wrong.
+`type:_⇒_` might, or it might not. But it is a *parameter* to this example,
+which means it is completely opaque to us, and all we can say about it is that
+which we asked for in the first place. Given the definition, all we can say for
+sure about `type:_⇒_` is that it's a relation over `type:V`.
+
+However, what we can do is construct a new relation on top of `type:_⇒_`, and
+stick whatever we'd like into that thing. One salient example here is the notion
+of *reachability*---given a starting vertex, is their a path to some other
+vertex? Perhaps you were already thinking about reachability when I asked
+earlier about properties over `type:_⇒_`---after all, this is a very common
+operation over graphs. The distinction between the relation `type:_⇒_` and the
+reachable relation on top of it is subtle but important: while there is no
+single road (edge) that connects Vancouver to New York, there is certainly a
+path that connects them!
+
+So when is one vertex reachable from another? The trivial case is if you're
+already where you'd like to be. Another case is to simply follow an edge.
+Finally, if we know an intermediary vertex is reachable from our starting point,
+and that the goal is reachable from there, we can connect the two paths. This
+gives rise to a very straightforward definition:
+
+```agda
+    private variable
+      v v₁ v₂ v₃ : V
+
+    data Reachable : Rel V (e ⊔ ℓ) where
+      here : Reachable v v
+      follow : v₁ ⇒ v₂ → Reachable v₁ v₂
+      connect
+        : Reachable v₁ v₂
+        → Reachable v₂ v₃
+        → Reachable v₁ v₃
+```
+
+It is not difficult to show that `Reachable` forms a preorder:
+
+```agda
+    Reachable-preorder : IsPreorder Reachable
+    IsPreorder.refl Reachable-preorder = here
+    IsPreorder.trans Reachable-preorder = connect
+```
+
+This technique is very general and reusable. We were given some arbitrary
+relation `type:_⇒_`, and built additional structure on top of it for free. The
+construction is merely *syntactic,* in that we simply added new constructors
+corresponding exactly to the desired structure. In doing so, we have deftly
+sidestepped the issue of articulating exactly what these new constructors *mean*
+in the original domain, if anything. This is a problem we will return to when we
+discuss *free constructions* in @sec:free.
+
+
+##
+
+```agda
   module Reasoning {_~_ : Rel A ℓ} (~-preorder : IsPreorder _~_) where
     open IsPreorder ~-preorder public
 
@@ -689,7 +867,7 @@ structure!
     begin_ x~y = x~y
     infix 1 begin_
 
-    _≡⟨⟩_ : (x : A) → {y : A} → x ≡ y → x ≡ y
+    _≡⟨⟩_ : (x : A) → {y : A} → x ~ y → x ~ y
     x ≡⟨⟩ p = p
     infixr 2 _≡⟨⟩_
 
@@ -797,7 +975,7 @@ module ℕ/nℕ (n : ℕ) where
   +-cong₂-mod {zero} {b} {c} {d} a=b c=d =
     begin
       zero + c
-    ≡⟨ PropEq.refl ⟩
+    ≡⟨⟩
       c
     ≈⟨ c=d ⟩
       d
