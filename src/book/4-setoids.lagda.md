@@ -213,6 +213,89 @@ dramatically improve the story, if you're willing to give up on computability
 for it.
 
 
+## Equality of Binary Trees
+
+```agda
+module _ where
+  open import Relation.Binary
+  open import Level using (Level; _⊔_)
+
+  private variable
+    a b c ℓ : Level
+    A : Set a
+    B : Set b
+    C : Set c
+
+  on : (B → B → C) → (A → B) → A → A → C
+  on g f a₁ a₂ = g (f a₁) (f a₂)
+
+  module Sandbox-Magic
+      {a b ℓ : Level} {B : Set b} {_≈_ : Rel B ℓ}
+      {A : Set a} (f : A → B) (≈-equiv : IsEquivalence _≈_) where
+
+    open IsEquivalence ≈-equiv
+
+    _≈′_ : Rel A ℓ
+    _≈′_ = on _≈_ f
+
+    ≈′-equiv : IsEquivalence _≈′_
+    IsEquivalence.refl ≈′-equiv = IsEquivalence.refl ≈-equiv
+    IsEquivalence.sym ≈′-equiv = IsEquivalence.sym ≈-equiv
+    IsEquivalence.trans ≈′-equiv = IsEquivalence.trans ≈-equiv
+```
+
+
+```agda
+module Example-BinaryTrees {E : Set} where
+  import 4-decidability
+  open 4-decidability.BinaryTrees
+
+  data List (A : Set) : Set where
+    [] : List A
+    _∷_ : A → List A → List A
+  infixr 4 _∷_
+
+  private variable
+    A : Set
+
+  _++_ : List A → List A → List A
+  [] ++ ys = ys
+  (x ∷ xs) ++ ys = x ∷ xs ++ ys
+
+  infixr 4 _++_
+
+  contents : BinTree A → List A
+  contents empty = []
+  contents (branch l a r) = contents l ++ a ∷ contents r
+
+  open import Relation.Binary
+  open import Function
+  open import Relation.Binary.PropositionalEquality
+
+  -- TODO(sandy): fix the other one so we can import it
+  postulate
+    ≡-equiv : IsEquivalence {A = A} _≡_
+
+  open Sandbox-Magic (contents {E}) ≡-equiv
+
+  postulate
+    x y z : E
+
+  ex₁ : BinTree E
+  ex₁ = branch (leaf x) y (leaf z)
+
+  ex₂ : BinTree E
+  ex₂ = branch (branch (leaf x) y empty) z empty
+
+  ex₁≈′ex₂ : ex₁ ≈′ ex₂
+  ex₁≈′ex₂ = refl
+
+
+
+
+
+```
+
 
 ```agda
 -- open import Data.Nat
