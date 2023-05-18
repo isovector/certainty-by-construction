@@ -215,9 +215,19 @@ for it.
 
 ## Equality of Binary Trees
 
+We would like to give a definition of equality for binary trees such that they
+contain the same elements in the same order, but not necessarily that the tree
+structure itself is identical. This happens to be a rather interesting example
+which generalizes well, and in exploring it we will discover a new construction
+over equality.
+
+One flaw with writing a book in the literate style is that sometimes material
+must be presented out of order so that the whole thing can compile. And so,
+before we look at equality of binary trees, we must first construct a little
+combinator. The `def:on` function is given as follows:
+
 ```agda
 module _ where
-  open import Relation.Binary
   open import Level using (Level; _⊔_)
 
   private variable
@@ -227,74 +237,158 @@ module _ where
     C : Set c
 
   on : (B → B → C) → (A → B) → A → A → C
-  on g f a₁ a₂ = g (f a₁) (f a₂)
+  on _∙_ f a₁ a₂ = f a₁ ∙ f a₂
+```
 
-  module Sandbox-Magic
+We can use `def:on` to conveniently run `f` on both arguments, and then use
+`_∙_` to combine both results. It's often used to compare two objects under a
+certain perspective. For example, we could check whether two people match, not
+by comparing them for equality, but by comparing their fingerprints for
+equality. This might be written as `on _≟_ fingerprint`.
+
+You will not be surprised to learn that given a equivalence relation over some
+type `B`, we can build an equivalence relation over `A` assuming we are given a
+"fingerprinting" function `f : A → B`. In the jargon, this *quotients* `A` by
+`f`. First, bring everything into scope as module parameters:
+
+```agda
+  open import Relation.Binary
+  module Sandbox-Quotient
       {a b ℓ : Level} {B : Set b} {_≈_ : Rel B ℓ}
       {A : Set a} (f : A → B) (≈-equiv : IsEquivalence _≈_) where
-
-    open IsEquivalence ≈-equiv
-
-    _≈′_ : Rel A ℓ
-    _≈′_ = on _≈_ f
-
-    ≈′-equiv : IsEquivalence _≈′_
-    IsEquivalence.refl ≈′-equiv = IsEquivalence.refl ≈-equiv
-    IsEquivalence.sym ≈′-equiv = IsEquivalence.sym ≈-equiv
-    IsEquivalence.trans ≈′-equiv = IsEquivalence.trans ≈-equiv
 ```
+
+We can then build the relation quotiented by `f`:
+
+```agda
+    _≈/f_ : Rel A ℓ
+    _≈/f_ = on _≈_ f
+```
+
+and then show that `def:_≈/f_` is an equivalence relation:
+
+```agda
+    ≈/f-equiv : IsEquivalence _≈/f_
+    IsEquivalence.refl ≈/f-equiv = IsEquivalence.refl ≈-equiv
+    IsEquivalence.sym ≈/f-equiv = IsEquivalence.sym ≈-equiv
+    IsEquivalence.trans ≈/f-equiv = IsEquivalence.trans ≈-equiv
+```
+
+Showing `def:≈/f-equiv` is rather annoying, in that we must copattern match and
+then define each as a projection out of `≈-equiv`. This seems as though it's
+equivalent to the following definition:
+
+```illegal
+    ≈/f-equiv⅋ : IsEquivalence _≈/f_
+    ≈/f-equiv = ≈-equiv
+```
+
+which it would be, if Agda could figure out the necessary unification.
+Unfortunately, it cannot, and thus we must do the hard work of projecting out
+each field ourselves. Alas.
+
+You will notice that `module:Sandbox-Quotient` is a very general result, and has
+absolutely nothing to do with binary trees. What it really allows us to do is to
+transform some type for which we don't have an equivalence relation into another
+type in which we do. But not to bury the lede, we can follow through with the
+remainder of the binary tree example. First, a new module, and some imports to
+get our binary trees from @sec:decidability back into scope:
 
 
 ```agda
-module Example-BinaryTrees {E : Set} where
+module Example-BinaryTrees where
   import 4-decidability
   open 4-decidability.BinaryTrees
+```
 
+We now need a fingerprinting function to quotient our trees by. Recall that we'd
+like to throw away the nesting structure of the tree, keeping only the contents
+and the order. We could do that by transforming our binary trees into *normal
+form*---finding some invariant that we hold true, such as ensuring every
+`ctor:branch` has `ctor:empty` as its left tree. Making such a transformation
+would ensure that our non-propositional notion of equality could be show via
+propositional equality proper. This is the right idea, but sounds hard to get
+right. Instead, we note that any binary tree with subtrees in only one direction
+is not *binary* whatsoever, and reduces to a linked list.
+
+It brings me distinct pleasure to have made it this far into a functional
+programming book without having talked about linked lists. But the time is now.
+Rather than dwelling on them, we assume the reader now has enough technical
+proficiency in Agda (and familiarity with computing) to understand the following
+presentation of linked lists without commentary. We first define the type
+itself:
+
+```agda
   data List (A : Set) : Set where
     [] : List A
     _∷_ : A → List A → List A
   infixr 4 _∷_
+```
 
-  private variable
-    A : Set
+Next, we give concatenation for lists:
 
-  _++_ : List A → List A → List A
+```agda
+  _++_ : {A : Set} → List A → List A → List A
   [] ++ ys = ys
   (x ∷ xs) ++ ys = x ∷ xs ++ ys
 
   infixr 4 _++_
+```
 
-  contents : BinTree A → List A
+We are now able to fingerprint our binary trees by giving a left-to-right
+traversal, collecting the results into a linked list:
+
+```agda
+  contents : {A : Set} → BinTree A → List A
   contents empty = []
   contents (branch l a r) = contents l ++ a ∷ contents r
-
-  open import Relation.Binary
-  open import Function
-  open import Relation.Binary.PropositionalEquality
-
-  -- TODO(sandy): fix the other one so we can import it
-  postulate
-    ≡-equiv : IsEquivalence {A = A} _≡_
-
-  open Sandbox-Magic (contents {E}) ≡-equiv
-
-  postulate
-    x y z : E
-
-  ex₁ : BinTree E
-  ex₁ = branch (leaf x) y (leaf z)
-
-  ex₂ : BinTree E
-  ex₂ = branch (branch (leaf x) y empty) z empty
-
-  ex₁≈′ex₂ : ex₁ ≈′ ex₂
-  ex₁≈′ex₂ = refl
-
-
-
-
-
 ```
+
+-- TODO(sandy): fix the original definition of `≡-equiv` so we can just import
+-- it here instead of postulating it
+
+```agda
+  open import Relation.Binary
+  open import Relation.Binary.PropositionalEquality
+    using (_≡_; refl; _≢_)
+
+  postulate
+    ≡-equiv : {A : Set} → IsEquivalence {A = A} _≡_
+```
+
+We can now demonstrate our quotienting machinery by building two example trees:
+
+```agda
+  module _ where
+    open import Data.Nat
+
+    ex₁ : BinTree ℕ
+    ex₁ = branch (leaf 1) 2 (leaf 3)
+
+    ex₂ : BinTree ℕ
+    ex₂ = branch (branch (leaf 1) 2 empty) 3 empty
+```
+
+It's clear that `def:ex₁` and `def:ex₂` are not *propositionally* equal, as
+illustrated thusly:
+
+```agda
+    ex₁≠ex₂ : ex₁ ≢ ex₂
+    ex₁≠ex₂ = λ ()
+```
+
+but the two do have the same elements in the same order, and thus we can show
+they are equal under quotienting by `contents`:
+
+```agda
+    open Sandbox-Quotient (contents {ℕ}) ≡-equiv
+      renaming (_≈/f_ to _≈ᴮ_)
+
+    ex₁≈ᴮex₂ : ex₁ ≈ᴮ ex₂
+    ex₁≈ᴮex₂ = refl
+```
+
+Et voila! A thing of beauty.
 
 
 ```agda
