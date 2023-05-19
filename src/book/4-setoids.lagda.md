@@ -442,7 +442,7 @@ We can now show that our clock example works as expected:
 ```
 
 Of course, it's quite a mouthful to stick in the `⟨mod_⟩` part every time, so we
-can make a new module and subsequent relation in which we hold the modulo
+can make a new module and subsequent relation in which we hold the modulus
 constant:
 
 ```agda
