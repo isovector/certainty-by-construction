@@ -113,33 +113,55 @@ postulate
   …algebra… : {x y : 𝔸} → x ≡ y
   …via… : {B : Set} {x y : 𝔸} → B → x ≡ y
 
+open ≡-Reasoning
+
+eval-coeff : (f : Fin (suc n) → 𝔸) → (h : HNF n) → eval f (coeff h) ≡ eval (f ∘ suc) h
+eval-coeff f x = refl
+
 +-hom : (f : Fin n → 𝔸) → (h₁ h₂ : HNF n) → eval f (h₁ +H h₂) ≡ eval f h₁ + eval f h₂
 +-hom f (const x) (const x₁) = refl
 +-hom f (coeff h₁) (coeff h₂) = +-hom (f ∘ suc) h₁ h₂
 +-hom f (coeff h₁) (h₂ *x+ h₃)
-  rewrite +-hom (f ∘ suc) h₁ h₃
-    = begin
-      f zero * eval f h₂ + eval f' h₁ + eval f' h₃
-    ≡⟨ …algebra… ⟩
-      eval f' h₁ + f zero * eval f h₂ + eval f' h₃
-    ∎
-  where
-    f' = f ∘ suc
-    open ≡-Reasoning
+  rewrite +-hom (f ∘ suc) h₁ h₃ = begin
+    f zero * eval f h₂ + eval f' h₁ + eval f' h₃
+  ≡⟨ …algebra… ⟩
+    eval f' h₁ + f zero * eval f h₂ + eval f' h₃
+  ∎
+  where f' = f ∘ suc
 +-hom f (h₁ *x+ h₂) (coeff h₃)
   rewrite +-hom (f ∘ suc) h₂ h₃ = sym (+-assoc _ _ _)
 +-hom f (h₁ *x+ h₂) (h₃ *x+ h₄)
   rewrite +-hom f h₁ h₃
   rewrite +-hom (f ∘ suc) h₂ h₄ = begin
-      f zero * (eval f h₁ + eval f h₃)
-        + (eval f' h₂ + eval f' h₄)
-    ≡⟨ …algebra… ⟩
-      (f zero * eval f h₁ + eval f' h₂)
-        + f zero * eval f h₃ + eval f' h₄
-    ∎
+    f zero * (eval f h₁ + eval f h₃)
+      + (eval f' h₂ + eval f' h₄)
+  ≡⟨ …algebra… ⟩
+    (f zero * eval f h₁ + eval f' h₂)
+      + f zero * eval f h₃ + eval f' h₄
+  ∎
+  where f' = f ∘ suc
+
+x*-hom : (f : Fin (suc n) → 𝔸) → (h : HNF (suc n)) → eval f (x* h) ≡ f zero * eval f h
+x*-hom f (coeff h) =
+  begin
+    f zero * eval f' h + eval f' (↪ 0#)
+  ≡⟨ cong ((f zero * eval f' h) +_) (eval-↪ f' 0#) ⟩
+    f zero * eval f' h + 0#
+  ≡⟨ +-identityʳ _ ⟩
+    f zero * eval f' h
+  ∎
   where
     f' = f ∘ suc
-    open ≡-Reasoning
+x*-hom f (h *x+ h₁) =
+  begin
+    f zero * (f zero * eval f h + eval f' h₁) + eval f' (↪ 0#)
+  ≡⟨ cong (f zero * (f zero * eval f h + eval f' h₁) +_) (eval-↪ f' 0#) ⟩
+    f zero * (f zero * eval f h + eval f' h₁) + 0#
+  ≡⟨ +-identityʳ _ ⟩
+    f zero * (f zero * eval f h + eval f' h₁)
+  ∎
+  where
+    f' = f ∘ suc
 
 *-hom : (f : Fin n → 𝔸) → (h₁ h₂ : HNF n) → eval f (h₁ *H h₂) ≡ eval f h₁ * eval f h₂
 *-hom f (const x) (const x₁) = refl
@@ -170,11 +192,54 @@ postulate
   where
     f' = f ∘ suc
     open ≡-Reasoning
--- TODO(sandy):
-*-hom f (h₁ *x+ h₂) (h₃ *x+ h₄) = …algebra…
+*-hom f (h₁ *x+ h₂) (h₃ *x+ h₄) =
+  begin
+    v * (↓ (x* (h₁ *H h₃) +H h₁ *H coeff h₄ +H h₃ *H coeff h₂)) + ↓' (↪ 0# +H ↪ 0# +H h₂ *H h₄)
+  ≡⟨ …algebra… ⟩
+    v * (↓ (x* (h₁ *H h₃) +H h₁ *H coeff h₄ +H h₃ *H coeff h₂)) + ↓' (h₂ *H h₄)
+  ≡⟨ …via… (+-hom f) ⟩
+    v * (↓ (x* (h₁ *H h₃)) + ↓ (h₁ *H coeff h₄ +H h₃ *H coeff h₂)) + ↓' (h₂ *H h₄)
+  ≡⟨ …via… (+-hom f) ⟩
+    v * (↓ (x* (h₁ *H h₃)) + ↓ (h₁ *H coeff h₄) + ↓ (h₃ *H coeff h₂)) + ↓' (h₂ *H h₄)
+  ≡⟨ …via… (*-hom f h₁ (coeff h₄)) ⟩
+    v * (↓ (x* (h₁ *H h₃)) + ↓ h₁ * ↓ (coeff h₄) + ↓ (h₃ *H coeff h₂)) + ↓' (h₂ *H h₄)
+  ≡⟨ …via… (eval-coeff f h₄) ⟩
+    v * (↓ (x* (h₁ *H h₃)) + ↓ h₁ * ↓' h₄ + ↓ (h₃ *H coeff h₂)) + ↓' (h₂ *H h₄)
+  ≡⟨ …algebra… ⟩ -- …via… (*-hom f h₃ (coeff h₂)) ⟩
+    v * (↓ (x* (h₁ *H h₃)) + ↓ h₁ * ↓' h₄ + ↓ h₃ * ↓ (coeff h₂)) + ↓' (h₂ *H h₄)
+  ≡⟨ …via… (eval-coeff f h₂) ⟩
+    v * (↓ (x* (h₁ *H h₃)) + ↓ h₁ * ↓' h₄ + ↓ h₃ * ↓' h₂) + ↓' (h₂ *H h₄)
+  ≡⟨ …via… (*-hom f' h₂ h₄) ⟩
+    v * (↓ (x* (h₁ *H h₃)) + ↓ h₁ * ↓' h₄ + ↓ h₃ * ↓' h₂) + ↓' h₂ * ↓' h₄
+  ≡⟨ …via… (x*-hom f (h₁ *H h₃)) ⟩
+    v * (v * ↓ (h₁ *H h₃) + ↓ h₁ * ↓' h₄ + ↓ h₃ * ↓' h₂) + ↓' h₂ * ↓' h₄
+  ≡⟨ …via… (*-hom f h₁ h₃) ⟩
+    v * (v * ↓ h₁ * ↓ h₃ + ↓ h₁ * ↓' h₄ + ↓ h₃ * ↓' h₂) + ↓' h₂ * ↓' h₄
+  ≡⟨ …algebra… ⟩
+    v * v * ↓ h₁ * ↓ h₃ + v * ↓ h₁ * ↓' h₄ + v * ↓ h₃ * ↓' h₂ + ↓' h₂ * ↓' h₄
+  ≡⟨ …algebra… ⟩
+    (v * ↓ h₁) * (v * ↓ h₃) + v * ↓ h₁ * ↓' h₄ +  v * ↓ h₃ * ↓' h₂ + ↓' h₂ * ↓' h₄
+  ≡⟨ …algebra… ⟩
+    (v * ↓ h₁) * (v * ↓ h₃)  + ↓' h₂ * v * ↓ h₃   + v * ↓ h₁ * ↓' h₄ + ↓' h₂ * ↓' h₄
+  ≡⟨ …algebra… ⟩
+    ((v * ↓ h₁) * (v * ↓ h₃) + ↓' h₂ * (v * ↓ h₃)) + v * ↓ h₁ * ↓' h₄ + ↓' h₂ * ↓' h₄
+  ≡⟨ …algebra… ⟩
+    ((v * ↓ h₁) * (v * ↓ h₃) + ↓' h₂ * (v * ↓ h₃)) + (v * ↓ h₁ * ↓' h₄ + ↓' h₂ * ↓' h₄)
+  ≡⟨ …via… *-distribʳ-+ ⟩
+    ((v * ↓ h₁) * (v * ↓ h₃) + ↓' h₂ * (v * ↓ h₃)) + (v * ↓ h₁ + ↓' h₂) * ↓' h₄
+  ≡⟨ cong (_+ ((v * ↓ h₁ + ↓' h₂) * ↓' h₄)) (sym (*-distribʳ-+ _ _ _)) ⟩
+    (v * ↓ h₁ + ↓' h₂) * (v * ↓ h₃) + (v * ↓ h₁ + ↓' h₂) * ↓' h₄
+  ≡⟨ sym (*-distribˡ-+ _ _ _) ⟩
+    (v * ↓ h₁ + ↓' h₂) * (v * ↓ h₃ + ↓' h₄)
+  ∎
+  where
+    f' = f ∘ suc
+    ↓ = eval f
+    ↓' = eval f'
+    v = f zero
 
 
-eval-norm : (f : Fin (n) → 𝔸) → (s : Syn n) → eval f (normalize s) ≡ ⟦ s ⟧ f
+eval-norm : (f : Fin n → 𝔸) → (s : Syn n) → eval f (normalize s) ≡ ⟦ s ⟧ f
 eval-norm f (var x) = eval-to-var f x
 eval-norm f (con x) = eval-↪ f x
 eval-norm f (s :+ s₁)
@@ -209,5 +274,4 @@ solve n x y v x=y = begin
   ⟦ y vars ⟧ f                 ∎
   where
     f = lookup v
-    open ≡-Reasoning
 
