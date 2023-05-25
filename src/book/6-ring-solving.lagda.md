@@ -148,10 +148,12 @@ is quite gnarly:
 ```agda
   open import Relation.Binary.PropositionalEquality
 
-  lemma₁
-      : (a c n x z : ℕ)
-      → a * c + (c * x + a * z + x * z * n) * n
-      ≡ c * (a + x * n) + z * n * (a + x * n)
+  -- TODO(sandy): these work, but are make interactive editing slow
+  -- uncomment them when done
+  -- lemma₁
+  --     : (a c n x z : ℕ)
+  --     → a * c + (c * x + a * z + x * z * n) * n
+  --     ≡ c * (a + x * n) + z * n * (a + x * n)
 ```
 
 Inside of `module:+-*-Solver` is `def:solve`, which is our front-end for
@@ -177,11 +179,11 @@ be used without any adjustment.
 Thus the full implementation of `def:lemma₁` is:
 
 ```agda
-  lemma₁ = solve 5
-    (λ a c n x z
-        →  a :* c :+ (c :* x :+ a :* z :+ x :* z :* n) :* n
-        := c :* (a :+ x :* n) :+ z :* n :* (a :+ x :* n)
-    ) refl
+  -- lemma₁ = solve 5
+  --   (λ a c n x z
+  --       →  a :* c :+ (c :* x :+ a :* z :+ x :* z :* n) :* n
+  --       := c :* (a :+ x :* n) :+ z :* n :* (a :+ x :* n)
+  --   ) refl
 ```
 
 It's certainly not the most beautiful sight to behold, but you must admit that
@@ -194,6 +196,12 @@ implementation of the solver, but it's there for a good reason. Recall that our
 work over `ℕ`) are computational objects; Agda will compute and reduce them if
 it is able to do so, and will make these rewrites regardless of what you
 actually write down.
+
+This syntax tree is an annoying thing to write, but is necessary to help the
+ring solver know what it's trying to solve. Remember, just because we've written
+out this expression with full syntax here doesn't mean this is the term Agda is
+working on! Agda is free to expand definitional equalities, meaning it might
+have already reduced some of these additions and multiplications away!
 
 But when you think about solving these sorts of equations on paper, what you're
 actually doing is working with the syntax, and not actually computing in any
@@ -236,7 +244,7 @@ Agda knows that the type of the hole must be `type:a + (x + z) * n ≡ (a + x * 
 inspect the type of the hole. It can then perform all of the necessary
 replacements (turning `def:_+_` into `def:_:+_` and so on) in order to write the
 ring-solving symbolic lambda for us. All that is left to do is to tell the
-solver which variables we'd like to use.
+solver which variables we'd like to use, by sticking them in a list.
 
 We can demonstrate all of this by implementing `def:≈-trans` again. This time,
 the tactical ring solver is found in `module:Data.Nat.Tactic.RingSolver`, and
@@ -252,22 +260,22 @@ module Example-Tactical where
 We can then show `def:≈-trans`:
 
 ```agda
-  open import Data.Nat
-  open import Relation.Binary.PropositionalEquality
+  -- open import Data.Nat
+  -- open import Relation.Binary.PropositionalEquality
 
-  ≈-trans
-      : (a b c n x y z w : ℕ)
-      → a + x * n ≡ b + y * n
-      → b + z * n ≡ c + w * n
-      → a + (x + z) * n ≡ c + (w + y) * n
-  ≈-trans a b c n x y z w pxy pzw = begin
-    a + (x + z) * n      ≡⟨ solve (a ∷ x ∷ z ∷ n ∷ []) ⟩
-    (a + x * n) + z * n  ≡⟨ cong (_+ z * n) pxy ⟩
-    (b + y * n) + z * n  ≡⟨ solve (b ∷ y ∷ n ∷ z ∷ []) ⟩
-    (b + z * n) + y * n  ≡⟨ cong (_+ y * n) pzw ⟩
-    c + w * n + y * n    ≡⟨ solve (c ∷ w ∷ n ∷ y ∷ []) ⟩
-    c + (w + y) * n      ∎
-    where open ≡-Reasoning
+  -- ≈-trans
+  --     : (a b c n x y z w : ℕ)
+  --     → a + x * n ≡ b + y * n
+  --     → b + z * n ≡ c + w * n
+  --     → a + (x + z) * n ≡ c + (w + y) * n
+  -- ≈-trans a b c n x y z w pxy pzw = begin
+  --   a + (x + z) * n      ≡⟨ solve (a ∷ x ∷ z ∷ n ∷ []) ⟩
+  --   (a + x * n) + z * n  ≡⟨ cong (_+ z * n) pxy ⟩
+  --   (b + y * n) + z * n  ≡⟨ solve (b ∷ y ∷ n ∷ z ∷ []) ⟩
+  --   (b + z * n) + y * n  ≡⟨ cong (_+ y * n) pzw ⟩
+  --   c + w * n + y * n    ≡⟨ solve (c ∷ w ∷ n ∷ y ∷ []) ⟩
+  --   c + (w + y) * n      ∎
+  --   where open ≡-Reasoning
 ```
 
 The `macro:solve` macro only works for terms of type `type:x ≡ y`, which means
@@ -276,11 +284,11 @@ For that, we can instead invoke `macro:solve-∀`:
 
 
 ```agda
-  lemma₁
-      : (a c n x z : ℕ)
-      → a * c + (c * x + a * z + x * z * n) * n
-      ≡ c * (a + x * n) + z * n * (a + x * n)
-  lemma₁ = solve-∀
+  -- lemma₁
+  --     : (a c n x z : ℕ)
+  --     → a * c + (c * x + a * z + x * z * n) * n
+  --     ≡ c * (a + x * n) + z * n * (a + x * n)
+  -- lemma₁ = solve-∀
 ```
 
 As you can see, ring solving is an extremely powerful technique, capable of
@@ -291,165 +299,10 @@ to explore that question, implementing our own ring solver in the process.
 
 ## The Pen and Paper Algorithm
 
-, meaning we can use the ring solver to tackle problems of this
-form. Let's set up the necessary machinery again to describe the problem:
-
-```agda
--- module _ (n : ℕ) where
---   open import Relation.Binary.PropositionalEquality
---   open import Data.Nat
---   open import 4-setoids
---   open mod-def
-
-
---   *-cong₂-mod'
---       : {a b c d : ℕ}
---       → a ≈ b ⟨mod n ⟩
---       → c ≈ d ⟨mod n ⟩
---       → a * c ≈ b * d ⟨mod n ⟩
---   *-cong₂-mod' {a} {b} {c} {d} (≈-mod x y pxy) (≈-mod z w pzw) =
-```
-
-Recall, in order to show congruence over `_*_` for modular arithmetic, we are
-required to discover $p$ and $q$ such that $ac + pn = bd + qn$. The solutions
-for $p$ and $q$ are given as:
-
-```agda
-    -- ≈-mod (c * x + a * z + x * z * n)
-    --       (d * y + b * w + y * w * n)
-    --       (begin
-```
-
-and all that's left is to give the proof. Thankfully, we did most of the work
-earlier by hand when we gave our informal proof of this fact. The ring solver
-can't do all of the work for us, but it can dramatically improve the situation.
-The left side of our equality is `a * c + (c * x + a * z + x * z * n) * n`,
-which we need to show is equal to `b * d + (d * y + b * w + y * w * n) * n`. The
-technique is to massage the left side into a form that we an easily `cong` our
-`pxy` proof, then massage the reuslt into a form we can easily `cong` our `pzw`
-proof, and then massage *that* result into the final form.
-
-The shape we need for an easy `cong` is the step immediately before the `cong`
-in our informal reasoning. That is:
-
-```arithmetic
-  -- a * c + (c * x + a * z + x * z * n) * n
--- = ...
--- = c * (a + x * n) + z * n * (a + x * n)
-```
-
-We can set up the problem by beginning our reasoning block:
-
-```agda
-      -- a * c + (c * x + a * z + x * z * n) * n
-      --   ≡⟨
-```
-
-The ring solver is invoked via a call to `solve` with its first argument being
-the number of free variables flying around needing to be solved for. In this
-case we have 5 (a, c, n, x, z):
-
-```agda
-            -- solve 5
-```
-
-Our next step is to construct a *syntax tree* corresponding to the expression
-we'd like to solve. Our goal is to show `a * c + (c * x + a * z + x * z * n) * n
-= c * (a + x * n) + z * n * (a + x * n)`, so this is almost our syntax tree; all
-that's required is to put a colon before each of `_+_`, `_*_` and `_=_`. We
-put this tree inside of a lambda that bounds each of the free variables:
-
-```agda
-    -- (λ a c n x z →
-    --     a :* c :+ (c :* x :+ a :* z :+ x :* z :* n) :* n
-    --  := (a :+ x :* n) :* c :+ (a :+ x :* n) :* z :* n
-    -- )
-```
-
-This syntax tree is an annoying thing to write, but is necessary to help the
-ring solver know what it's trying to solve. Remember, just because we've written
-out this expression with full syntax here doesn't mean this is the term Agda is
-working on! Agda is free to expand definitional equalities, meaning it might
-have already reduced some of these additions and multiplications away!
-
-Finally, all that's left is to finish calling `solve` with `refl`, and then each
-of the variables we mentioned in the lambda, in the same order, thus:
-
-```agda
-      -- refl a c n x z ⟩
-```
-
-Agda will happily accept the resulting proof, meaning we are now in a position
-to `cong` `pxy` into the right place:
-
-```agda
-      -- (a + x * n) * c + (a + x * n) * z * n
-    -- ≡⟨ cong (λ φ → φ * c + φ * z * n) pxy ⟩
-      -- (b + y * n) * c + (b + y * n) * z * n
-```
-
-We'll do the next step more quickly. We need to get the expression to a place in
-which we can apply `pzw`. Following our earlier reasoning again, the
-intermediate proof we need is:
-
-```arithmetic
-= (b + y * n) * c + (b + y * n) * z * n
-= ...
-= b * (c + zn) + yn * (c + zn)
-```
-
-which is easy enough to do with our ring solver. We identify the variables in
-play, build a lambda to create the syntax tree, and apply it:
-
-```agda
-    -- ≡⟨ solve 5 (λ b c n y z →
-    --       (b :+ y :* n) :* c :+ (b :+ y :* n) :* z :* n
-    --     := b :* (c :+ z :* n) :+ y :* n :* (c :+ z :* n)
-    --            )
-    --      refl b c n y z
-    --  ⟩
-    --   b * (c + z * n) + y * n * (c + z * n)
-```
-
-We're now back in a place we can `cong`. Rather than walk through the rest of
-the example, we will present it in its completeness:
-
-```agda
-      -- ≡⟨ cong (λ φ → b * φ + y * n * φ) pzw ⟩
-      --   b * (d + w * n) + y * n * (d + w * n)
-      -- ≡⟨ solve 5 (λ b d n w y →
-      --       b :* (d :+ w :* n) :+ y :* n :* (d :+ w :* n)
-      --    := b :* d :+ (d :* y :+ b :* w :+ y :* w :* n) :* n
-      --            )
-      --      refl b d n w y
-      --   ⟩
-      --   b * d + (d * y + b * w + y * w * n) * n
-      -- ∎ )
-```
-
-All that's left is to get our solver in scope, by importing it from
-`Data.Nat.Solver` and opening the resulting `+-*-Solver` module:
-
-```agda
-    -- where
-    --   open ≡-Reasoning
-    -- open import Data.Nat.Solver
-    --   open +-*-Solver
-```
-
-It's almost as if by magic, but we've managed to turn a 50 line proof into two
-`cong`s and three applications of the ring solver. It doesn't do all the work
-for you, but it sure does most. And even better, this machinery works for any
-sort of numbers you can throw at it, as well as many of your own types that
-happen to be rings.
-
-But the question is --- how does any of this work? Is it built-in to the
-compiler, or is it something we could have written for ourselves?
-Fascinatingly, the answer is the latter. It's the sort of thing we can build for
-ourselves, which we will explore now.
-
-
-## Canonical Forms
+The question is --- how does any of this work? Is it built-in to the compiler,
+or is it something we could have written for ourselves? Fascinatingly, the
+answer is the latter. It's the sort of thing we can build for ourselves, which
+we will explore now.
 
 An interesting insight into how to solve this problem is to use the analogy of
 solving a maze. Not not the corn-maze sort, but the variety that comes on the
@@ -504,8 +357,8 @@ $$
 $$
 
 which is equivalent, but the mere fact that it doesn't "look like a polynomial"
-is a strong indication that you have internalized the polynomial canonical form
-whether or not you were aware of it.
+is a strong indication that you have internalized the polynomial canonical
+form---whether or not you were aware of it.
 
 Given the existence of canonical forms, we can now reduce the problem of proving
 ring equality to be:
@@ -515,7 +368,45 @@ ring equality to be:
 3. If the canonical forms match, compose the earlier proofs.
 
 This is a powerful, widely-useful technique, and you would do well to add it to
-your toolbox.
+your toolbox. Let's stop for a quick illustration of the idea in action. We'd
+like to prove that $(x + 1)(x - 1)$ is equal to $x(1 + x) + 1 - x - 2$. The first step
+is to reduce each to normal form:
+
+$$
+\begin{aligned}
+(x + 1)(x - 1) &= x(x + 1) - 1(x + 1) \\
+&= x^2 + x - 1(x + 1) \\
+&= x^2 + x - x - 1 \\
+&= x^2 - 1
+\end{aligned}
+$$
+
+and
+
+$$
+\begin{aligned}
+x(1+x) + 1 - x - 2 &= x + x^2 + 1 - x - 2 \\
+&= x^2 + x - x + 1 - 2 \\
+&= x^2 + 1 - 2 \\
+&= x^2 - 1
+\end{aligned}
+$$
+
+These expressions do in fact have the same normal form, and thus they are equal
+to one another, which we can show simply by composing the two proofs:
+
+$$
+\begin{aligned}
+(x + 1)(x - 1) &= x(x + 1) - 1(x + 1) \\
+&= x^2 + x - 1(x + 1) \\
+&= x^2 + x - x - 1 \\
+&= x^2 - 1 \\
+&= x^2 + 1 - 2 \\
+&= x^2 + x - x + 1 - 2 \\
+&= x + x^2 + 1 - x - 2 \\
+&= x(1+x) + 1 - x - 2
+\end{aligned}
+$$
 
 The notion of polynomial generalizes to arbitrary rings. Why is that? We have
 addition and multiplication, both are associative and commutative, and
@@ -534,44 +425,268 @@ $$
 5x + xy
 $$
 
-which is to say, moving the additions to be the outermost nodes in the
-expression tree.
-
-Because multiplication is commutative, we can freely group together all of the
-same elements of the group. So, we can happily combine the two $x$s in
+which is to say, we can always move the additions to be the outermost nodes in
+the expression tree. Similarly, multiplication is commutative, we can freely
+group together all of the same elements of the group. So, we can happily combine
+the two $x$s in
 
 $$
 xyx = xxy = x^2y
 $$
 
-Finally, the commutativity of addition means we can reorder the addition nodes.
-For a single variable, we'd like to sort it into decreasing powers of that
-variable. For the multi-variable case, we can instead use a "list of
-lists"-style approach, and treat other variables as coefficients of another
-variable. That is, if we'd like to group the terms
+Finally, the commutativity of addition means we can reorder the outermost terms.
+This allows us to sort the terms by their descending powers of $x$. This
+collection of transformations clearly allows us to put any polynomial of one
+variable into normal form. It's not immediately clear how the approach
+generalizes to polynomials in multiple variables, but as we will see in a
+moment, there is a very elegant trick that ties everything together.
+
+Describing the canonical form in such detail also gives us an insight into why
+we have ring solvers but not semigroup solvers. Semigroups, having only a
+single, associative binary operator, simply don't have enough algebraic
+structure to require interesting proofs. If your semigroup is commutative
+("Abelian," in the jargon) then you can simply reorder all the terms so they
+appear in a row. It's exactly the interplay between addition and multiplication
+that makes the problem at all interesting.
+
+
+## Horner Normal Form
+
+In order to put a polynomial into normal form, we must have an technique for
+doing so. Of course, we could just write a function that fiddles with an
+expression tree until it is in normal form, but, in general, it's very difficult
+to prove the correctness of "fiddling." A much better technique is to build a
+type which is guaranteed to be in the desired form, and then write a
+function that produces something of that type.
+
+The natural representation of this normal form is a list of coefficients. If we
+have $x^2+5x-3$, we can use `-3 ∷ 5 ∷ 1 ∷ []` as our normal form. Why in
+reversed order, you might ask? Because we don't know what the biggest power in
+the polynomial is until we reach the end. For the sake of easier bookkeeping, if
+we store our powers as little endian, we can ensure that like terms are
+always in the same place in the list. That is, adding $x^2+5x-3$ to $2x+2$ is
+much easier to do when the lists are stored in little endian instead of big
+endian!
+
+While lists are the right intuition, they are not exactly right for our use
+case, as they don't scale well to multiple variables. Instead, we look to a very
+similar idea called *Horner's method* which expresses polynomial in a slightly
+different form. Rather than writing $x^2+5x-3$, we instead write:
 
 $$
-x^2y + x^2y^2 + xy^3 + 3xy^2 - 7yx + 10
+(1x + 5)x - 3
 $$
 
-we can first group it by descending powers of $x$, and then by powers of $y$,
-thus:
+in *Horner normal form* (henceforth HNF.) Here, every expression in HNF is
+either a constant `𝔸 → HNF`, or it is of the form `HNF → 𝔸 → HNF`. We can
+express this as a data type:
 
-$$
-(y^2 + y)x^2 + (y^3)x + (3y^2 - 7y)x + 10
-$$
+```agda
+module Sandbox-Univariate-HNF (𝔸 : Set) where
+  data HNF : Set where
+    coeff : 𝔸 → HNF
+    _*x+_ : HNF → 𝔸 → HNF
+```
 
-This approach clearly generalizes to an arbitrary number of variables, and thus,
-given any ordering of variables (perhaps "order mentioned in the call to the
-solver"), we can find a canonical form for any expression over rings.
+Looking at this, what we really have is a non-empty snoc list under a different
+guise. Despite its name, `HNF` is not truly a normal form, since we have
+infinitely many ways of expressing any given term, simply by padding it with a
+zero for its next power:
 
-Describing this canonical form also gives us an insight into why we have ring
-solvers but not semigroup solvers. Semigroups, having only a single, associative
-binary operator, simply don't have enough algebraic structure to require
-interesting proofs. If your semigroup is commutative ("Abelian," in the jargon)
-then you can simply reorder all the terms so they appear in a row. It's exactly
-the interplay between addition and multiplication that makes the problem at all
-interesting.
+```agda
+  postulate
+    0# : 𝔸
+
+  nonunique : HNF → HNF
+  nonunique (coeff a) = coeff 0# *x+ a
+  nonunique (a *x+ b) = nonunique a *x+ b
+```
+
+This is regrettable, but a very difficult thing to solve at the level of types.
+Agda's real ring solver performs a normalization stage after every computation
+to remove any highest-order zero powers, but this adds a great deal of
+complexity. Since we are only putting together a toy example, we will not
+concern ourselves with this problem, but do keep in mind its presence.
+
+Horner normal form is desirable for computation since it gives rise to an
+interpretation into `𝔸` directly, via:
+
+```agda
+  postulate
+    _+_ : 𝔸 → 𝔸 → 𝔸
+    _*_ : 𝔸 → 𝔸 → 𝔸
+
+  eval : 𝔸 → HNF → 𝔸
+  eval x (coeff a) = a
+  eval x (a *x+ b) = (eval x a * x) + b
+```
+
+This requires only $O(n)$ multiplications of $x$, where $n$ is the highest power
+in the polynomial. Compare that to the naive version in which you compute $x^3$
+as `x * x * x`, which requires $O(n^2)$ multiplications.
+
+
+## Multivariate Polynomials
+
+All of our original examples of using ring solvers involved polynomial in
+multiple variables; recall `def:lemma₁` which was a polynomial in five
+variables. Clearly multivariate polynomials are important to actually getting
+work done, and thus we must determine a means of encoding them.
+
+The trick is both delightful and simple. In all of our analyses above, we
+discussed how coefficients play into the thing, without explicitly defining what
+these coefficients were. Based on our experience with single-variable
+polynomials, we took for granted that the coefficients must be ring elements,
+but this is not a necessity.
+
+We can recover multivariate polynomials by instead insisting that our
+coefficients be polynomials in a different variable. That is, we could express
+the polynomial $x^2+y^2+xy+y+5x-3$ as $x^2+(y + 5)x+(y - 3)$. This technique
+generalizes to any number of variables, simply by sticking another polynomial on
+$z$ in as the coefficients on $y$ for example.
+
+Let's start our actual ring solver module in order to explore this idea. Since
+we would like eventual computational properties, we will add the bare minimum
+structure on `𝔸` as parameters to our module.
+
+```agda
+module Sandbox-RingSolver {𝔸 : Set}
+    (0# 1# : 𝔸)
+    (_+_ _*_ : 𝔸 → 𝔸 → 𝔸)
+    -- TODO(sandy): explain this let binding
+    (let infixr 5 _+_; _+_ = _+_)
+    (let infixr 6 _*_; _*_ = _*_) where
+```
+
+Encoding our multivariate HNF in Agda isn't too tricky; though admittedly the
+resulting syntax leaves much to be desired. We can parameterize `HNF` by a
+natural corresponding to how many distinct variables it has. Anywhere before we
+used `HNF` we now use `HNF (suc n)`, and anywhere we used a scalar `𝔸` we
+instead use `HNF n`.
+
+```agda
+  open import Data.Nat
+    using (ℕ; zero; suc)
+
+  private variable
+    n : ℕ
+
+  data HNF : ℕ → Set where
+    const : 𝔸 → HNF zero
+    coeff : HNF n → HNF (suc n)
+    _*x+_ : HNF (suc n) → HNF n → HNF (suc n)
+```
+
+Notice that we have also added `ctor:const` in order to build polynomial in zero
+variables, which corresponds to sticking in scalar values.
+
+This representation works perfectly well, but requires a little alertness when
+constructing its terms by hand. To take a concrete example, if we are working
+with an `type:HNF 2`---a polynomial in two variables, call them $a$ and $b$---then
+the `ctor:_*x+_` constructor is used to construct both the $a$ and $b$ univariate
+polynomials! For example, we would write $a^2+ab+b^2$ as:
+
+```agda
+  a²+ab+b² : HNF 2
+  a²+ab+b² =
+    ( coeff (coeff (const 1#))
+        *x+  -- x = a
+          coeff (const 1#)
+    ) *x+ (  -- x = a
+      (coeff (const 1#)
+        *x+  -- x = b
+          const 0#
+      ) *x+  -- x = b
+          const 0#)
+```
+
+Here, `ctor:_*x+_` refers both to $a$ and to $b$, depending on its type (which
+itself depends on the constructor's position in the tree.) As you can see, it is
+no great joy to construct `type:HNF` terms by hand! Thankfully, we won't need
+to, and will instead use `type:HNF` as a sort of "compilation target" for other
+operations.
+
+
+## Building a Semiring over HNF
+
+The idea of `type:HNF` is that it is a particular encoding of polynomials.
+Therefore, we should expect to be able to do anything with `type:HNF` that we
+could do with polynomials encoded some other way. Furthermore, by virtue of it
+being a normal form, we expect all of these operations to be *closed*---meaning,
+if you combine two `type:HNF`s, you should always get back another `type:HNF`.
+
+For example, we can implement addition over `type:HNF`s simply by adding like
+terms:
+
+```agda
+  _⊕_ : HNF n → HNF n → HNF n
+  const a ⊕ const b = const (a + b)
+  coeff a ⊕ coeff b = coeff (a ⊕ b)
+  coeff a ⊕ (b *x+ c) = b *x+ (a ⊕ c)
+  (a *x+ b) ⊕ coeff c = a *x+ (b ⊕ c)
+  (a *x+ b) ⊕ (c *x+ d) = (a ⊕ c) *x+ (b ⊕ d)
+  infixr 5 _⊕_
+```
+
+Does this really implement addition, you might be wondering? And if so,
+congratulations, you've acquired the correct mindset: that we should demand
+proof for anything as complicated as this. Don't worry, we will prove that
+`def:_⊕_` does in fact implement addition, although first we need to figure out
+exactly how to formally phrase that question.
+
+Another thing we'd like to be able to do is inject scalars directly into a
+polynomial, rather than faffing about with big chains of `ctor:coeff` in order
+to stick in a `ctor:const`. This is given by `def:↪`:
+
+```agda
+  ↪ : 𝔸 → HNF n
+  ↪ {zero} a = const a
+  ↪ {suc n} a = coeff (↪ a)
+```
+
+We can now lift `0#` and `1#` into any polynomial simply by injecting them:
+
+```agda
+  0H : HNF n
+  0H = ↪ 0#
+
+  1H : HNF n
+  1H = ↪ 1#
+```
+
+Working our way towards multiplication over `type:HNF`, we will first need one last
+piece in place---a helper function for multiplying by the current variable.
+
+```agda
+  x* : HNF (suc n) → HNF (suc n)
+  x* a = a *x+ 0H
+```
+
+Note the type here; this is necessarily a function over `type:HNF (suc n)`,
+since there are no variables to multiply when dealing with `type:HNF zero`.
+
+We are now ready to implement `def:_⊗_`, which takes advantage of the well-known
+foiling rule that $(ax+b)(cx+d) = acx^2 + acd + bcx + bd$.
+
+```agda
+  _⊗_ : HNF n → HNF n → HNF n
+  const a ⊗ const b = const (a * b)
+  coeff a ⊗ coeff b = coeff (a ⊗ b)
+  coeff a ⊗ (b *x+ c) = (coeff a ⊗ b) *x+ (a ⊗ c)
+  (a *x+ b) ⊗ coeff c = (a ⊗ coeff c) *x+ (b ⊗ c)
+  (a *x+ b) ⊗ (c *x+ d)
+      = x* (x* (a ⊗ c))
+     ⊕ x* ((a ⊗ coeff d)
+     ⊕ (c ⊗ coeff b))
+     ⊕ coeff (b ⊗ d)
+  infixr 6 _⊗_
+```
+
+We have now implemented `def:0H`, `def:1H`, `def:_⊕_` and `def:_⊗_` which are
+all of the necessary moving pieces for a semiring. We could construct a
+fully-blown ring instead by requiring a negation operation over `𝔸`, and closing
+`type:HNF` over this operation as well, but that is left as an exercise to the
+dedicated reader.
 
 
 ## Sketching Out a Ring Solver
@@ -698,11 +813,11 @@ With all of this machinery out of the way, we can implement `normalize`, which
 transforms a `Syn` into an `HNF`:
 
 ```agda
-  normalize : Syn → HNF
-  normalize var = (⊘ *x+ 1#) *x+ 0#
-  normalize (con x) = ⊘ *x+ x
-  normalize (x :+ y) = normalize x +H normalize y
-  normalize (x :* y) = normalize x *H normalize y
+  hnf : Syn → HNF
+  hnf var = (⊘ *x+ 1#) *x+ 0#
+  hnf (con x) = ⊘ *x+ x
+  hnf (x :+ y) = hnf x +H hnf y
+  hnf (x :* y) = hnf x *H hnf y
 ```
 
 Believe it or not, that's most of the work to write a ring solver. We have one
@@ -815,7 +930,7 @@ different representation of the same expression. This function has type:
       (⌊ a ⌋ * x + b) * (⌊ c ⌋ * x + d)
     ∎
 
-  sems : (s : Syn) → (v : A) → ⟦ s ⟧ v ≈ ⟦ normalize s ⟧H v
+  sems : (s : Syn) → (v : A) → ⟦ s ⟧ v ≈ ⟦ hnf s ⟧H v
 ```
 
 and is sketched out:
@@ -830,12 +945,12 @@ and is sketched out:
     0# * v + c  ∎
   sems (x :+ y) v = begin
     ⟦ x ⟧ v + ⟦ y ⟧ v                        ≈⟨ +-cong (sems x v) (sems y v) ⟩
-    ⟦ normalize x ⟧H v + ⟦ normalize y ⟧H v  ≈⟨ sym (+H-+-hom (normalize x) (normalize y) v) ⟩
-    ⟦ normalize x +H normalize y ⟧H v        ∎
+    ⟦ hnf x ⟧H v + ⟦ hnf y ⟧H v  ≈⟨ sym (+H-+-hom (hnf x) (hnf y) v) ⟩
+    ⟦ hnf x +H hnf y ⟧H v        ∎
   sems (x :* y) v = begin
     ⟦ x ⟧ v * ⟦ y ⟧ v                        ≈⟨ *-cong (sems x v) (sems y v) ⟩
-    ⟦ normalize x ⟧H v * ⟦ normalize y ⟧H v  ≈⟨ sym (*H-*-hom (normalize x) (normalize y) v) ⟩
-    ⟦ normalize x *H normalize y ⟧H v        ∎
+    ⟦ hnf x ⟧H v * ⟦ hnf y ⟧H v  ≈⟨ sym (*H-*-hom (hnf x) (hnf y) v) ⟩
+    ⟦ hnf x *H hnf y ⟧H v        ∎
 ```
 
 Implementing `sems` will probably be the most work if you attempt this at home;
@@ -849,12 +964,12 @@ pieces of syntax given a proof of their normalized forms:
   solve
       : (s t : Syn)
       → (v : A)
-      → ⟦ normalize s ⟧H v ≈ ⟦ normalize t ⟧H v
+      → ⟦ hnf s ⟧H v ≈ ⟦ hnf t ⟧H v
       → ⟦ s ⟧ v ≈ ⟦ t ⟧ v
   solve s t v x = begin
     ⟦ s ⟧ v             ≈⟨ sems s v ⟩
-    ⟦ normalize s ⟧H v  ≈⟨ x ⟩
-    ⟦ normalize t ⟧H v  ≈⟨ sym (sems t v) ⟩
+    ⟦ hnf s ⟧H v  ≈⟨ x ⟩
+    ⟦ hnf t ⟧H v  ≈⟨ sym (sems t v) ⟩
     ⟦ t ⟧ v             ∎
 ```
 
@@ -956,11 +1071,11 @@ module Solver {𝔸 : Set}
   to-var zero = x* 1H
   to-var (suc x) = coeff (to-var x)
 
-  normalize : Syn n → HNF n
-  normalize (var x) = to-var x
-  normalize (con x) = ↪ x
-  normalize (x :+ b) = normalize x ⊕ normalize b
-  normalize (x :* b) = normalize x ⊗ normalize b
+  hnf : Syn n → HNF n
+  hnf (var x) = to-var x
+  hnf (con x) = ↪ x
+  hnf (x :+ b) = hnf x ⊕ hnf b
+  hnf (x :* b) = hnf x ⊗ hnf b
 
   eval : (Fin n → 𝔸) → HNF n → 𝔸
   eval v (const a) = a
@@ -1109,17 +1224,17 @@ module Solver {𝔸 : Set}
       v = f zero
 
 
-  eval-normalize : (f : Fin n → 𝔸) → (s : Syn n) → eval f (normalize s) ≡ ⟦ s ⟧ f
-  eval-normalize f (var a) = eval-to-var f a
-  eval-normalize f (con a) = eval-↪ f a
-  eval-normalize f (s :+ s₁)
-    rewrite eval-⊕ f (normalize s) (normalize s₁)
-    rewrite eval-normalize f s
-    rewrite eval-normalize f s₁ = refl
-  eval-normalize f (s :* s₁)
-    rewrite eval-⊗ f (normalize s) (normalize s₁)
-    rewrite eval-normalize f s
-    rewrite eval-normalize f s₁ = refl
+  eval-hnf : (f : Fin n → 𝔸) → (s : Syn n) → eval f (hnf s) ≡ ⟦ s ⟧ f
+  eval-hnf f (var a) = eval-to-var f a
+  eval-hnf f (con a) = eval-↪ f a
+  eval-hnf f (s :+ s₁)
+    rewrite eval-⊕ f (hnf s) (hnf s₁)
+    rewrite eval-hnf f s
+    rewrite eval-hnf f s₁ = refl
+  eval-hnf f (s :* s₁)
+    rewrite eval-⊗ f (hnf s) (hnf s₁)
+    rewrite eval-hnf f s
+    rewrite eval-hnf f s₁ = refl
 
 
   open import Data.Vec using (Vec; []; _∷_; map; lookup)
@@ -1134,14 +1249,14 @@ module Solver {𝔸 : Set}
   solve₀
       : (n : ℕ)
       → (x y : Vec (Syn n) n → Syn n)
-      → normalize (x vars) ≡ normalize (y vars)
+      → hnf (x vars) ≡ hnf (y vars)
       → (v : Vec 𝔸 n)
       → ⟦ x vars ⟧ (lookup v) ≡ ⟦ y vars ⟧ (lookup v)
   solve₀ n x y x=y v = begin
-    ⟦ x vars ⟧ f                 ≡⟨ sym (eval-normalize f (x vars)) ⟩
-    eval f (normalize (x vars))  ≡⟨ cong (eval f) x=y ⟩
-    eval f (normalize (y vars))  ≡⟨ eval-normalize f (y vars) ⟩
-    ⟦ y vars ⟧ f                 ∎
+    ⟦ x vars ⟧ f           ≡⟨ sym (eval-hnf f (x vars)) ⟩
+    eval f (hnf (x vars))  ≡⟨ cong (eval f) x=y ⟩
+    eval f (hnf (y vars))  ≡⟨ eval-hnf f (y vars) ⟩
+    ⟦ y vars ⟧ f           ∎
     where
       f = lookup v
 
@@ -1171,7 +1286,7 @@ module Solver {𝔸 : Set}
       : (n : ℕ)
       → (eq : N-ary′ n (Syn n) (Syn n × Syn n))
       → (let x := y = eq $ⁿ vars {n})
-      → normalize x ≡ normalize y
+      → hnf x ≡ hnf y
       → N-ary n 𝔸 (λ v → ⟦ x ⟧ (lookup v) ≡ ⟦ y ⟧ (lookup v))
   solve n eq x=y =
     let x := y = eq $ⁿ vars {n}
