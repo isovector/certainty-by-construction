@@ -163,6 +163,7 @@ As a quick guide, you can visually spot the following pieces of Agda:
 - \AgdaField{salmon}: record fields
 - \AgdaModule{purple}: modules
 - \AgdaFunction{blue}: other definitions
+- \AgdaMacro{olive}: macro invocations
 - \AgdaHole{green background}: interactive holes
 - \AgdaUnsolvedMeta{yellow background}: underspecified elaboration
 

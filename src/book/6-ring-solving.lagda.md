@@ -12,13 +12,13 @@ can be the ones which are tryingly tedious. These are the proofs that involve
 reasoning about arithmetic---which is a feat that we humans take for granted,
 having so much experience doing it. Agda's mechanical insistence that we spell
 out every step of the tedious process by hand is indeed a barrier to its
-adoption, but thankfully, we have workarounds.
+adoption, but thankfully, there are workarounds for those willing to plumb
+deeper into the depths of the theory.
 
 Recall that when we were implementing `def:*-cong₂-mod`, that is, `def:cong` for
 modular arithmetic, we built a lot of setoid machinery and reasoning to avoid
-needing to solve these large proofs by hand.
-
-The problem if you recall, is that we're trying to solve the following:
+needing to solve these large proofs by hand. The particular problem here was
+attempting to solve the following equation:
 
 $$
 ac + (cx + az + xzn) \times n = bd + (dy + bw + ywn) \times n
@@ -36,22 +36,22 @@ can solve the equation in pen and paper:
 
 $$
 \begin{aligned}
-  ac + (cx + az + xzn) * n \\
-&= ac + cxn + azn + xznn \\
-&= c * (a + xn) + azn + xznn \\
-&= c * (a + xn) + zn * (a + xn) \\
-&= c * (b + yn) + zn * (b + yn) \\
-&= cb + cyn + zn * (b + yn) \\
-&= cb + cyn + znb + zynn \\
-&= cb + znb + cyn + zynn \\
-&= b * (c + zn) + cyn + zynn \\
-&= b * (c + zn) + yn * (c + zn) \\
-&= b * (d + wn) + yn * (d + wn) \\
-&= bd + bwn + yn * (d + wn) \\
-&= bd + bwn + dyn + ywnn \\
-&= bd + dyn + bwn + ywnn \\
-&= bd + (dyn + bwn + ywnn) \\
-&= bd + (dy + bw + ywn) * n
+ & ac + (cx + az + xzn) * n \\
+=& ac + cxn + azn + xznn \\
+=& c * (a + xn) + azn + xznn \\
+=& c * (a + xn) + zn * (a + xn) \\
+=& c * (b + yn) + zn * (b + yn) \\
+=& cb + cyn + zn * (b + yn) \\
+=& cb + cyn + znb + zynn \\
+=& cb + znb + cyn + zynn \\
+=& b * (c + zn) + cyn + zynn \\
+=& b * (c + zn) + yn * (c + zn) \\
+=& b * (d + wn) + yn * (d + wn) \\
+=& bd + bwn + yn * (d + wn) \\
+=& bd + bwn + dyn + ywnn \\
+=& bd + dyn + bwn + ywnn \\
+=& bd + (dyn + bwn + ywnn) \\
+=& bd + (dy + bw + ywn) * n
 \end{aligned}
 $$
 
@@ -67,27 +67,50 @@ lemmas can be prohibitive, and get in our way of actually wanting to use Agda.
 Thankfully, this is not a cost we often need to pay, thanks to Agda's *ring
 solver.*
 
+
+## Rings
+
 The ring solver is a general purpose tool for automatically reasoning about
-rings. Rings are algebraic structures which generalize the relationships between
-addition and multiplication. A ring has an associative, commutative binary
-operation called "addition" and an associative, commutative binary operation
-called "multiplication." We also have
-distinguished elements 0 and 1 that behave like you'd expect with respect to 0
-and 1, namely that we have the following pile of equalities: `def:+-identityˡ`,
+rings. *Rings* are algebraic structures which generalize the relationships
+between addition and multiplication. A ring has an associative, commutative
+binary operation called "addition" and an associative, commutative binary
+operation called "multiplication." These operations need not correspond in any
+semantic way to the things we think of as being addition and multiplication,
+merely it's just they need to properly fit into the "ecosystem niche" that
+regular addition and multiplication do.
+
+What does this mean? A ring must also have distinguished elements 0 and 1 that
+behave like you'd expect with respect to addition and multiplication, namely
+that we have the following pile of equalities: `def:+-identityˡ`,
 `def:+-identityʳ`, `def:*-identityˡ`, `def:*-identityʳ`, `def:*-zeroˡ`,
 `def:*-zeroʳ`, `def:+-comm`, `def:*-comm`, `def:+-assocˡ`, `def:+-assocʳ`,
 `def:*-assocˡ`, `def:*-assocʳ`, `def:*-distribˡ-+`, and `def:*-distribʳ-+`. As
-you can see, there is a great deal of structure inherent here!
+you can see, there is a great deal of structure inherent in a ring!
 
 But, this is just the structure required of a *semiring*. In order to get the
 full *ring*, we require an additive inverse operation analogous to
 unary negation, with the property that for any $a$ we have $a + -a = 0$.
 
 By virtue of generalizing addition and multiplication, addition and
-multiplication themselves had better form a ring! And
-indeed they do. Note that however, the natural numbers don't have any additive
-inverses, and so they can at best be semirings. Integers, however, weaken this
-constraint, and are fully realizable as rings.
+multiplication themselves had better form a ring! And indeed they do. Note that
+however, the natural numbers don't have any additive inverses, and so they can
+at best be semirings. Integers, however, weaken this constraint, and are fully
+realizable as rings.
+
+Rings occupy an excellent space in the mathematical hierarchy, corresponding to
+the sort of algebraic reasoning that is required in grade-school, at least,
+that subset before fractions are introduced. Given our extreme familiarity with
+arithmetic over rings, it is the sort of reasoning that comes up everywhere in
+mathematics. And what's better is that, given we expect children to be able to
+solve it, there exists an algorithm for determining the equivalence of two
+expressions over the same ring.
+
+In this chapter, we will get a feel for using Agda's ring solver to tackle
+problems, and then dive in more deeply to see exactly how it works by
+implementing our own version.
+
+
+## Agda's Ring Solver
 
 Agda's standard library comes with a *ring solver*, which is a series of tools
 for automatically solving equalities over rings. Of course, calling it a *ring*
@@ -96,6 +119,177 @@ well, due to a subtle weakening of required ring structure. However, these
 details are irrelevant to today's discussion; all you need to keep in mind is
 that the ring solver works over any commutative semiring in addition to rings
 themselves.
+
+The ring solver machinery exists in the standard library under
+`module:Algebra.Solver.Ring.Simple`, but many specialized versions are present.
+For example, the (semi)ring solver for the natural numbers is squirreled away
+under `module:Data.Nat.Solver`. We can pull it into scope, and get access to the
+solver itself by subsequently opening `module:+-*-Solver`:
+
+
+```agda
+module Example-Nat-Solver where
+  open import Data.Nat.Solver
+  open +-*-Solver
+```
+
+Of course, we'd like the naturals themselves in scope, so we have something to
+prove about:
+
+```agda
+  open import Data.Nat
+```
+
+In our pen and paper example above, we did a lot of work to show the equality of
+$ac + (cx + az + xzn) \times n$ and $c \times (a + xn) + zn \times (a + xn)$.
+Let's prove this with the ring solver. We can start with the type, which already
+is quite gnarly:
+
+```agda
+  open import Relation.Binary.PropositionalEquality
+
+  lemma₁
+      : (a c n x z : ℕ)
+      → a * c + (c * x + a * z + x * z * n) * n
+      ≡ c * (a + x * n) + z * n * (a + x * n)
+```
+
+Inside of `module:+-*-Solver` is `def:solve`, which is our front-end for
+invoking the ring solver. The type of `def:solve` is a dependent nightmare, but
+we can give its arguments informally:
+
+1. `type:n : ℕ`: the number of variables that exist in the expression.
+2. A function from `n` variables to a *syntactic* representation of the
+   expression you'd like solved.
+3. A proof that the two expressions have the same normal form. This is almost
+   always simply `ctor:refl`.
+4. `n` more arguments, for the specific values of the variables.
+
+In `def:lemma₁` we have five variables (`a`, `c`, `n`, `x`, and `z`), and so our
+first argument to `solve` should be `5`.
+
+Next we need to give a function which constructs the syntax of the equality
+we're trying to show. In general this means replacing `type:_≡_` with
+`def:_:=_`, `def:_+_` with `def:_:+_`, `def:_*_` with `def:_:*_`, and any
+constant `k` with `def:con` `k`. The variables you receive from the function can
+be used without any adjustment.
+
+Thus the full implementation of `def:lemma₁` is:
+
+```agda
+  lemma₁ = solve 5
+    (λ a c n x z
+        →  a :* c :+ (c :* x :+ a :* z :+ x :* z :* n) :* n
+        := c :* (a :+ x :* n) :+ z :* n :* (a :+ x :* n)
+    ) refl
+```
+
+It's certainly not the most beautiful sight to behold, but you must admit that
+it's much better than proving this tedious fact by hand.
+
+The syntactic equality term we must build in the big lambda here is a curious
+thing. What exactly is going on here? This happens to be a quirk of the
+implementation of the solver, but it's there for a good reason. Recall that our
+"usual" operations (that is, `def:_+_` and `def:_*_` and, in general values that
+work over `ℕ`) are computational objects; Agda will compute and reduce them if
+it is able to do so, and will make these rewrites regardless of what you
+actually write down.
+
+But when you think about solving these sorts of equations on paper, what you're
+actually doing is working with the syntax, and not actually computing in any
+real sense. The algorithm to solve equations is to use a series of syntactic
+rewrite rules that allow us to move symbolic terms around, without ever caring
+about the computational properties of those symbolic terms.
+
+Thus, the lambda we need to give to `def:solve` is a concession to this fact;
+we'd like Agda to prove, *symbolically,* that the two terms are equivalent,
+without requiring any computation of the underlying terms in order to do so. And
+in order to do so, we must explicitly tell Agda what the symbolic equation is,
+since all it has access is to is some stuck value that exists in the theory of
+Agda, rather than in the theory of the ring itself.
+
+This duplication between the Agda expression of the term and the symbolic
+version of the same is regrettable. Are we doomed to write them both, every
+time? Thankfully not.
+
+
+## Tactical Solving
+
+Agda has a powerful *macro* system, which, in full glory, is beyond the scope of
+this book. However, at a high level, the macro system allows regular Agda
+programs to access the typechecker. This is a tremendous (if fragile)
+superpower, and allows programmers to do all sorts of unholy things. One such
+capability is to use the type currently expected by Agda in order to synthesize
+values at compile time. Another, is to syntactically inspect an Agda expression
+at compile time. Together, these features can be used to automatically derive
+the symbolic form required for doing ring solving.
+
+To illustrate broadly how this works, we can write code of this form:
+
+```snippet
+    a + (x + z) * n      ≡⟨ ? ⟩
+    (a + x * n) + z * n
+```
+
+Agda knows that the type of the hole must be `type:a + (x + z) * n ≡ (a + x * n)
++ z * n`, and if we were to put a macro in place of the hole, that macro can
+inspect the type of the hole. It can then perform all of the necessary
+replacements (turning `def:_+_` into `def:_:+_` and so on) in order to write the
+ring-solving symbolic lambda for us. All that is left to do is to tell the
+solver which variables we'd like to use.
+
+We can demonstrate all of this by implementing `def:≈-trans` again. This time,
+the tactical ring solver is found in `module:Data.Nat.Tactic.RingSolver`, and
+requires lists to be in scope as well:
+
+```agda
+module Example-Tactical where
+  open import Data.Nat.Tactic.RingSolver
+  open import Data.List
+    using ([]; _∷_)
+```
+
+We can then show `def:≈-trans`:
+
+```agda
+  open import Data.Nat
+  open import Relation.Binary.PropositionalEquality
+
+  ≈-trans
+      : (a b c n x y z w : ℕ)
+      → a + x * n ≡ b + y * n
+      → b + z * n ≡ c + w * n
+      → a + (x + z) * n ≡ c + (w + y) * n
+  ≈-trans a b c n x y z w pxy pzw = begin
+    a + (x + z) * n      ≡⟨ solve (a ∷ x ∷ z ∷ n ∷ []) ⟩
+    (a + x * n) + z * n  ≡⟨ cong (_+ z * n) pxy ⟩
+    (b + y * n) + z * n  ≡⟨ solve (b ∷ y ∷ n ∷ z ∷ []) ⟩
+    (b + z * n) + y * n  ≡⟨ cong (_+ y * n) pzw ⟩
+    c + w * n + y * n    ≡⟨ solve (c ∷ w ∷ n ∷ y ∷ []) ⟩
+    c + (w + y) * n      ∎
+    where open ≡-Reasoning
+```
+
+The `macro:solve` macro only works for terms of type `type:x ≡ y`, which means
+it can't be used to show parameterized properties, like `def:lemma₁` earlier.
+For that, we can instead invoke `macro:solve-∀`:
+
+
+```agda
+  lemma₁
+      : (a c n x z : ℕ)
+      → a * c + (c * x + a * z + x * z * n) * n
+      ≡ c * (a + x * n) + z * n * (a + x * n)
+  lemma₁ = solve-∀
+```
+
+As you can see, ring solving is an extremely powerful technique, capable of
+automating away hours of tedious proof work. But where does these magical powers
+come from? How can this possibly work? We will use the remainder of this chapter
+to explore that question, implementing our own ring solver in the process.
+
+
+## The Pen and Paper Algorithm
 
 , meaning we can use the ring solver to tackle problems of this
 form. Let's set up the necessary machinery again to describe the problem:
