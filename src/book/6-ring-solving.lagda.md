@@ -558,6 +558,15 @@ module Sandbox-RingSolver {𝔸 : Set}
     (let infixr 6 _*_; _*_ = _*_) where
 ```
 
+We will require many algebraic definitions to be in scope:
+
+```agda
+  open import Relation.Binary.PropositionalEquality
+
+  module _ {A : Set} where
+    open import Algebra.Definitions {A = A} _≡_ public
+```
+
 Encoding our multivariate HNF in Agda isn't too tricky; though admittedly the
 resulting syntax leaves much to be desired. We can parameterize `HNF` by a
 natural corresponding to how many distinct variables it has. Anywhere before we
@@ -689,47 +698,333 @@ fully-blown ring instead by requiring a negation operation over `𝔸`, and clos
 dedicated reader.
 
 
+## Semantics
+
+In order to prove that addition and multiplication do what they say on the tin,
+we must give a *semantics* to `type:HNF`, in essence, giving a *specification*
+for how they ought to behave. This is sometimes called a *denotation* or a
+*model.*
+
+Semantics are often given by a function into some other type. We saw a function
+like this in our univariate example, in which we evaluated an `type:HNF` down to
+a `𝔸`. We will do the same thing here, except that our new `def:eval` function
+must take a mapping of variables to `𝔸`, which we can encode as a function `Fin
+n → 𝔸`. Thus, we have:
+
+```agda
+  open import Function
+    using (_∘_)
+  open import Data.Fin
+    using (Fin; zero; suc)
+
+  eval : (Fin n → 𝔸) → HNF n → 𝔸
+  eval v (const a) = a
+  eval v (coeff a) = eval (v ∘ suc) a
+  eval v (a *x+ b) = v zero * eval v a + eval (v ∘ suc) b
+```
+
+Given a model of `type:HNF`, we would now like to show that everything we've
+built so far does in fact *preserve meaning,*  which is to say, addition in
+`type:HNF` should correspond to addition over `𝔸`, and so on and so forth.
+This mathematical property is known as a *homomorphism,*  which means "structure
+preserving." The idea being that the homomorphism maps structure on one side to
+equivalent structure on the other.
+
+As a first example, we can give the type of nullary homomorphisms:
+
+```agda
+
+  Homomorphism₀ : HNF n → 𝔸 → Set
+  Homomorphism₀ h a =
+    ∀ v → eval v h ≡ a
+```
+
+and subsequently show that there exists a homomorphism between `↪ a : HNF n`
+and `a : 𝔸`, as per `def:eval-↪`:
+
+```agda
+  eval-↪ : (a : 𝔸) → Homomorphism₀ {n} (↪ a) a
+  eval-↪ {zero} a f = refl
+  eval-↪ {suc n} a f = eval-↪ a (f ∘ suc)
+```
+
+There exist two special cases of `def:eval-↪`:
+
+```agda
+  eval-0H : Homomorphism₀ {n} 0H 0#
+  eval-0H = eval-↪ 0#
+
+  eval-1H : Homomorphism₀ {n} 1H 1#
+  eval-1H = eval-↪ 1#
+```
+
+We also have two unary homomorphisms over `def:eval`, although their types are
+tricky enough that we don't attempt to give a type synonym for them. The first
+is that evaluation of a `ctor:coeff` term is equivalent to evaluating it having
+dropped the current variable.
+
+```agda
+  eval-coeff
+    : (f : Fin (suc n) → 𝔸)
+    → (h : HNF n)
+    → eval f (coeff h) ≡ eval (f ∘ suc) h
+  eval-coeff f a = refl
+```
+
+and the other is that `def:to-var` (defined momentarily) simply evaluates to the
+desired variable. First we will write `def:to-var`, which transforms a `type:Fin
+n` into the corresponding variable in the correct coefficient space:
+
+```agda
+  to-var : Fin n → HNF n
+  to-var zero = x* 1H
+  to-var (suc x) = coeff (to-var x)
+```
+
+We would like to show that the evaluation of this term is equivalent to just
+instantiating the correct variable. Constructing the homomorphism here requires
+some of the semiring structure over `𝔸`, which we will postulate since we are
+only making a toy example. In a real implementation, however, these postulates
+should be required of whoever is instantiating the solver module.
+
+```agda
+  postulate
+    +-identityʳ : RightIdentity 0# _+_
+    *-identityʳ : RightIdentity 1# _*_
+
+  eval-to-var
+      : (f : Fin n → 𝔸)
+      → (x : Fin n)
+      → eval f (to-var x) ≡ f x
+  eval-to-var f zero
+    rewrite eval-0H (f ∘ suc)
+    rewrite eval-1H (f ∘ suc)
+    rewrite *-identityʳ (f zero)
+      = +-identityʳ (f zero)
+  eval-to-var f (suc x) = eval-to-var (f ∘ suc) x
+```
+
+There is a third unary homomorphism we'd like to show, namely that `def:x*` does
+what it should.
+
+```agda
+  open ≡-Reasoning
+
+  eval-x*
+      : (f : Fin (suc n) → 𝔸)
+      → (h : HNF (suc n))
+      → eval f (x* h) ≡ f zero * eval f h
+  eval-x* f (coeff a) =
+    begin
+      f zero * eval f' a + eval f' (↪ 0#)
+    ≡⟨ cong ((f zero * eval f' a) +_) (eval-0H f') ⟩
+      f zero * eval f' a + 0#
+    ≡⟨ +-identityʳ _ ⟩
+      f zero * eval f' a
+    ∎
+    where
+      f' = f ∘ suc
+  eval-x* f (a *x+ b) =
+    let f' = f ∘ suc  -- ! 1
+        ↓ = eval f
+        ↓' = eval f' in
+    begin
+      f zero * (f zero * ↓ a + ↓' b) + ↓' (↪ 0#)
+    ≡⟨ cong (f zero * (f zero * ↓ a + ↓' b) +_) (eval-0H f') ⟩
+      f zero * (f zero * ↓ a + ↓' b) + 0#
+    ≡⟨ +-identityʳ _ ⟩
+      f zero * (f zero * ↓ a + ↓' b)
+    ∎
+```
+
+Notice that at `ann:1` we have introduced a `keyword:let` binding in order to
+give shorter names to common expressions that frequently occur in our proof.
+This is a useful trick for managing the amount of mental capacity required to
+work through a proof.
+
+Now come the interesting pieces. We'd like to show two binary homomorphisms, one
+from `def:_⊕_` to `def:_+_`, and another between `def:_⊗_`  and `def:_*_`.
+First, we can give the definition of a binary homomorphism:
+
+```agda
+  Homomorphism₂ : (HNF n → HNF n → HNF n) → (𝔸 → 𝔸 → 𝔸) → Set
+  Homomorphism₂ f g =
+    ∀ v x₁ x₂ → eval v (f x₁ x₂) ≡ g (eval v x₁) (eval v x₂)
+```
+
+The details of these two homomorphisms are quite cursed. As my friend says,
+"solvers are fun because they condense all the suffering into one place." The
+idea is that we will take on all the pain of solving ring problems, and tackle
+them once and for all. The result is hairy, to say the least. For the sake of
+this book's length, we will not prove these two homomorphisms in their full
+glory, instead we will sketch them out and leave the details for a particularly
+motivated reader. To that extent, we will introduce two postulates which we will
+use to hint the next step to the reader:
+
+```agda
+  postulate
+    …algebra… : {x y : 𝔸} → x ≡ y
+    …via… : {B : Set} {x y : 𝔸} → B → x ≡ y
+```
+
+Here, `def:…algebra…` suggests the next step follows by standard algebraic
+tricks such as commutativity, associativity, or removing identities. Ironically,
+this is the step that we'd expect a ring solver to be able to tackle for us.
+
+Alternatively, we will use `def:…via…` to suggest that a `def:cong` needs to be
+applied in order to massage the given proof term into the right place. Since
+these expressions are exceptionally large, most of the work on these steps is
+merely the construction of the `def:cong` target.
+
+Anyway, in order to show the homomorphism for addition, we will require
+`def:+-assoc`, which we again postulate, but in a real solver should instead be
+brought in as part of the proof that `𝔸` is a (semi)ring in the first place.
+
+```agda
+  postulate
+    +-assoc : Associative _+_
+
+  eval-⊕ : Homomorphism₂ {n} _⊕_ _+_
+  eval-⊕ f (const a) (const b) = refl
+  eval-⊕ f (coeff a) (coeff b) = eval-⊕ (f ∘ suc) a b
+  eval-⊕ f (coeff a) (b *x+ c)
+    rewrite eval-⊕ (f ∘ suc) a c =
+      begin
+        f zero * eval f b + eval f' a + eval f' c
+      ≡⟨ …algebra… ⟩
+        eval f' a + f zero * eval f b + eval f' c
+      ∎
+    where f' = f ∘ suc
+  eval-⊕ f (a *x+ b) (coeff c)
+    rewrite eval-⊕ (f ∘ suc) b c =
+      sym (+-assoc _ _ _)
+  eval-⊕ f (a *x+ b) (c *x+ d)
+    rewrite eval-⊕ f a c
+    rewrite eval-⊕ (f ∘ suc) b d =
+      begin
+        f zero * (eval f a + eval f c)
+          + (eval f' b + eval f' d)
+      ≡⟨ …algebra… ⟩
+        (f zero * eval f a + eval f' b)
+          + f zero * eval f c + eval f' d
+      ∎
+    where f' = f ∘ suc
+```
+
+The real pain in writing a ring solver is in the homomorphism for
+multiplication, which is presented here in a very sketched form. There are five
+cases we need to look at, the first four of which are rather reasonable:
+
+```agda
+  postulate
+    *-distribˡ-+ : _*_ DistributesOverˡ _+_
+    *-distribʳ-+ : _*_ DistributesOverʳ _+_
+
+  eval-⊗ : Homomorphism₂ {n} _⊗_ _*_
+  eval-⊗ f (const a) (const b) = refl
+  eval-⊗ f (coeff a) (coeff b) = eval-⊗ (f ∘ suc) a b
+  eval-⊗ f (coeff a) (b *x+ c)
+    rewrite eval-⊗ f (coeff a) b
+    rewrite eval-⊗ (f ∘ suc) a c =
+      begin
+        f zero * eval f' a * eval f b + eval f' a * eval f' c
+      ≡⟨ …algebra… ⟩
+        eval f' a * f zero * eval f b + eval f' a * eval f' c
+      ≡⟨ sym (*-distribˡ-+ _ _ _) ⟩
+        eval f' a * (f zero * eval f b + eval f' c)
+      ∎
+    where
+      f' = f ∘ suc
+  eval-⊗ f (a *x+ b) (coeff c)
+    rewrite eval-⊗ (f ∘ suc) b c
+    rewrite eval-⊗ f a (coeff c) =
+      begin
+        f zero * eval f a * eval f' c + eval f' b * eval f' c
+      ≡⟨ …algebra… ⟩
+        (f zero * eval f a) * eval f' c + eval f' b * eval f' c
+      ≡⟨ sym (*-distribʳ-+ _ _ _) ⟩
+        (f zero * eval f a + eval f' b) * eval f' c
+      ∎
+    where
+      f' = f ∘ suc
+```
+
+The final case, which multiplies `ctor:_*x+_` against `ctor:_*x+_`, is an
+extremely nasty piece of work. Recall that in the definition of `def:_⊗_`, we
+needed to invoke `def:x*` four times, `def:_⊕_` three times, and `def:_⊗_`
+itself four times. Every instance of these uses requires an invocation of the
+corresponding homomorphism, `def:cong`ed into the right place, and then
+algebraically manipulated so that like terms can be grouped. This proof is no
+laughing matter; remember, the ring solver coalesces all of the pain into one
+place, and this is where it has accumulated.
+
+```agda
+  eval-⊗ f (a *x+ b) (c *x+ d) =
+    let f' = f ∘ suc
+        ↓ = eval f
+        ↓' = eval f'
+        v = f zero in
+    begin
+      v * (↓ (x* (a ⊗ c) ⊕ a ⊗ coeff d ⊕ c ⊗ coeff b))
+        + ↓' (↪ 0# ⊕ ↪ 0# ⊕ b ⊗ d)
+    ≡⟨ …algebra… ⟩
+      v * (↓ (x* (a ⊗ c) ⊕ a ⊗ coeff d ⊕ c ⊗ coeff b))
+        + ↓' (b ⊗ d)
+    ≡⟨ …via… (eval-⊕ f) ⟩
+      v * (↓ (x* (a ⊗ c)) + ↓ (a ⊗ coeff d ⊕ c ⊗ coeff b))
+        + ↓' (b ⊗ d)
+    ≡⟨ …via… (eval-⊕ f) ⟩
+      v * (↓ (x* (a ⊗ c)) + ↓ (a ⊗ coeff d) + ↓ (c ⊗ coeff b))
+        + ↓' (b ⊗ d)
+    ≡⟨ …via… (eval-⊗ f a (coeff d)) ⟩
+      v * (↓ (x* (a ⊗ c)) + ↓ a * ↓ (coeff d)
+            + ↓ (c ⊗ coeff b))
+        + ↓' (b ⊗ d)
+    ≡⟨ …via… (eval-coeff f d) ⟩
+      v * (↓ (x* (a ⊗ c)) + ↓ a * ↓' d + ↓ (c ⊗ coeff b))
+        + ↓' (b ⊗ d)
+    ≡⟨ …algebra… ⟩ -- …via… (eval-⊗ f c (coeff b)) ⟩
+      v * (↓ (x* (a ⊗ c)) + ↓ a * ↓' d + ↓ c * ↓ (coeff b))
+        + ↓' (b ⊗ d)
+    ≡⟨ …via… (eval-coeff f b) ⟩
+      v * (↓ (x* (a ⊗ c)) + ↓ a * ↓' d + ↓ c * ↓' b)
+        + ↓' (b ⊗ d)
+    ≡⟨ …via… (eval-⊗ f' b d) ⟩
+      v * (↓ (x* (a ⊗ c)) + ↓ a * ↓' d + ↓ c * ↓' b)
+        + ↓' b * ↓' d
+    ≡⟨ …via… (eval-x* f (a ⊗ c)) ⟩
+      v * (v * ↓ (a ⊗ c) + ↓ a * ↓' d + ↓ c * ↓' b)
+        + ↓' b * ↓' d
+    ≡⟨ …via… (eval-⊗ f a c) ⟩
+      v * (v * ↓ a * ↓ c + ↓ a * ↓' d + ↓ c * ↓' b)
+        + ↓' b * ↓' d
+    ≡⟨ …algebra… ⟩
+      ((v * ↓ a) * (v * ↓ c) + ↓' b * (v * ↓ c))
+        + (v * ↓ a * ↓' d + ↓' b * ↓' d)
+    ≡⟨ …via… *-distribʳ-+ ⟩
+      ((v * ↓ a) * (v * ↓ c) + ↓' b * (v * ↓ c))
+        + (v * ↓ a + ↓' b) * ↓' d
+    ≡⟨ …via… *-distribʳ-+ ⟩
+      (v * ↓ a + ↓' b) * (v * ↓ c) + (v * ↓ a + ↓' b) * ↓' d
+    ≡⟨ sym (*-distribˡ-+ _ _ _) ⟩
+      (v * ↓ a + ↓' b) * (v * ↓ c + ↓' d)
+    ∎
+```
+
+
 ## Sketching Out a Ring Solver
-
-While we will not implement a ring solver in this book, we can certainly explore
-the high-level ideas necessary to implement one, and give enough of a sketch for
-the motivated reader to follow through on. We will take our inspiration from the
-ring solver presented in the introduction to this chapter, looking for a similar
-interface.
-
-To simplify the problem, our sketch will only solve over one variable. If
-you're curious about generalizing the approach, the standard library is full of
-insightful approaches to this problem.
-
-We begin with a little ceremony. We will use the standard library's
-`CommutativeSemiring`, which is a record containing `_+_`, `_*_`, `0#` and `1#`.
-We then parameterize a new module over a commutative semiring:
-
-```agda
-open import Level using (Level)
-open import Algebra.Bundles using (CommutativeSemiring)
-
-module RingSolver {c ℓ : Level} (ring : CommutativeSemiring c ℓ) where
-```
-
-By opening the `CommutativeSemiring` record, we can pull the semigroup
-operations into scope.
-
-```agda
-  open CommutativeSemiring ring renaming (Carrier to A)
-```
 
 Next we will define the syntax for dealing with rings:
 
 ```agda
-  infixr 5 _:+_
-  infixr 6 _:*_
+  -- infixr 5 _:+_
+  -- infixr 6 _:*_
 
-  data Syn : Set c where
-    var : Syn
-    con : A → Syn
-    _:+_ : Syn → Syn → Syn
-    _:*_ : Syn → Syn → Syn
+  -- data Syn : Set c where
+  --   var : Syn
+  --   con : A → Syn
+  --   _:+_ : Syn → Syn → Syn
+  --   _:*_ : Syn → Syn → Syn
 ```
 
 And, just to show that this really is the syntax for our language, we can give
@@ -737,56 +1032,32 @@ it semantics via `⟦_⟧`, which simply interprets the syntax as the actual rin
 operations:
 
 ```agda
-  ⟦_⟧ : Syn → A → A
-  ⟦ var ⟧    v = v
-  ⟦ con c ⟧  v = c
-  ⟦ x :+ y ⟧ v = ⟦ x ⟧ v + ⟦ y ⟧ v
-  ⟦ x :* y ⟧ v = ⟦ x ⟧ v * ⟦ y ⟧ v
+  -- ⟦_⟧ : Syn → A → A
+  -- ⟦ var ⟧    v = v
+  -- ⟦ con c ⟧  v = c
+  -- ⟦ x :+ y ⟧ v = ⟦ x ⟧ v + ⟦ y ⟧ v
+  -- ⟦ x :* y ⟧ v = ⟦ x ⟧ v * ⟦ y ⟧ v
 ```
-
-So that covers the syntax. But now we'd like to be able to build a normal form.
-The most obvious way of constructing such a thing is via *Horner normal form*,
-which is unlike our standard polynomial notation, but instead encodes
-polynomials out of the following building blocks:
-
-```agda
-  data HNF : Set c where
-    ⊘ : HNF
-    _*x+_ : HNF → A → HNF
-```
-
-You might have encountered HNF in an algorithms class at some point. The
-observation comes from the fact that computing the value of a polynomial in
-standard form requires $O(n^2)$ multiplications in the largest degree of the
-polynomial. Instead if we make the following transformation:
-
-$$
-x^2 + 5x + 6 = ((0 + 1)x + 5)x + 6
-$$
-
-we require only $O(n)$ multiplications, which is a significant improvement in
-asymptotics. Horner normal form doesn't buy us any asymptotic improvements in
-this case, but it saves us needing to reshuffle everything around.
 
 Our next step is simply to give the semantics for `HNF`, completely analogously
 to what we did for `Syn`:
 
 ```agda
-  ⟦_⟧H : HNF → A → A
-  ⟦ ⊘ ⟧H _ = 0#
-  ⟦ a *x+ b ⟧H x = ⟦ a ⟧H x * x + b
+  -- ⟦_⟧H : HNF → A → A
+  -- ⟦ ⊘ ⟧H _ = 0#
+  -- ⟦ a *x+ b ⟧H x = ⟦ a ⟧H x * x + b
 ```
 
 We'd like to define a transformation from `Syn` into `HNF`, but that is going to
 require addition and multiplication over `HNF`. Addition is straightforward:
 
 ```agda
-  _+H_ : HNF → HNF → HNF
-  ⊘ +H y = y
-  (a *x+ b) +H ⊘ = a *x+ b
-  (a *x+ b) +H (c *x+ d) = (a +H c) *x+ (b + d)
+  -- _+H_ : HNF → HNF → HNF
+  -- ⊘ +H y = y
+  -- (a *x+ b) +H ⊘ = a *x+ b
+  -- (a *x+ b) +H (c *x+ d) = (a +H c) *x+ (b + d)
 
-  infixl 5 _+H_
+  -- infixl 5 _+H_
 ```
 
 and multiplication isn't much more work, after we take advantage of the
@@ -797,27 +1068,27 @@ $$
 $$
 
 ```agda
-  _*S_ : A → HNF → HNF
-  k *S ⊘ = ⊘
-  k *S (hnf *x+ x) = (k *S hnf) *x+ (k * x)
-  infixl 6 _*S_
+  -- _*S_ : A → HNF → HNF
+  -- k *S ⊘ = ⊘
+  -- k *S (hnf *x+ x) = (k *S hnf) *x+ (k * x)
+  -- infixl 6 _*S_
 
-  _*H_ : HNF → HNF → HNF
-  ⊘ *H _ = ⊘
-  (a *x+ b) *H ⊘ = ⊘
-  (a *x+ b) *H (c *x+ d) = (((a *H c) *x+ 0#) +H (b *S c) +H (d *S a)) *x+ (b * d)
-  infixl 6 _*H_
+  -- _*H_ : HNF → HNF → HNF
+  -- ⊘ *H _ = ⊘
+  -- (a *x+ b) *H ⊘ = ⊘
+  -- (a *x+ b) *H (c *x+ d) = (((a *H c) *x+ 0#) +H (b *S c) +H (d *S a)) *x+ (b * d)
+  -- infixl 6 _*H_
 ```
 
 With all of this machinery out of the way, we can implement `normalize`, which
 transforms a `Syn` into an `HNF`:
 
 ```agda
-  hnf : Syn → HNF
-  hnf var = (⊘ *x+ 1#) *x+ 0#
-  hnf (con x) = ⊘ *x+ x
-  hnf (x :+ y) = hnf x +H hnf y
-  hnf (x :* y) = hnf x *H hnf y
+  -- hnf : Syn → HNF
+  -- hnf var = (⊘ *x+ 1#) *x+ 0#
+  -- hnf (con x) = ⊘ *x+ x
+  -- hnf (x :+ y) = hnf x +H hnf y
+  -- hnf (x :* y) = hnf x *H hnf y
 ```
 
 Believe it or not, that's most of the work to write a ring solver. We have one
@@ -825,132 +1096,132 @@ more function to write, showing that evaluating the syntactic term is equal to
 evaluating its normal form --- that is, that the normal form truly is a merely a
 different representation of the same expression. This function has type:
 
-```agda
-  open import Relation.Binary.Reasoning.Setoid setoid
+-- ```agda
+--   open import Relation.Binary.Reasoning.Setoid setoid
 
-  postulate
-    …algebra… : {x y : A} → x ≈ y
-    …via… : {ℓ : Level} {B : Set ℓ} {x y : A} → B → x ≈ y
-
-
-
-  +H-+-hom : ∀ x y v → ⟦ x +H y ⟧H v ≈ ⟦ x ⟧H v + ⟦ y ⟧H v
-  +H-+-hom ⊘ ⊘ v = sym (+-identityʳ 0#)
-  +H-+-hom (x *x+ x₁) ⊘ v =
-    begin
-      ⟦ x ⟧H v * v + x₁
-    ≈⟨ …algebra… ⟩
-      ⟦ x ⟧H v * v + x₁ + 0#
-    ∎
-  +H-+-hom ⊘ (y *x+ x₁) v = sym (+-identityˡ _)
-  +H-+-hom (x *x+ x₂) (y *x+ x₁) v =
-    begin
-      ⟦ x +H y ⟧H v * v + (x₂ + x₁)
-    ≈⟨ +-cong (*-cong (+H-+-hom x y v) refl) refl ⟩
-      (⟦ x ⟧H v + ⟦ y ⟧H v) * v + (x₂ + x₁)
-    ≈⟨ …algebra… ⟩
-      ⟦ x ⟧H v * v + x₂ + (⟦ y ⟧H v * v + x₁)
-    ∎
-
-  *S-*-hom : ∀ k x v → ⟦ k *S x ⟧H v ≈ k * ⟦ x ⟧H v
-  *S-*-hom k ⊘ v = sym (zeroʳ _)
-  *S-*-hom k (x *x+ x₁) v =
-    begin
-      ⟦ k *S x ⟧H v * v + k * x₁
-    ≈⟨ +-congʳ (*-congʳ (*S-*-hom k x v)) ⟩
-      k * ⟦ x ⟧H v * v + k * x₁
-    ≈⟨ …algebra… ⟩
-      k * (⟦ x ⟧H v * v + x₁)
-    ∎
-
-  foil : ∀ a b c d → (a + b) * (c + d) ≈ (a * c) + (b * c) + (a * d) + (b * d)
-  foil a b c d = …algebra…
-
-  *H-*-hom : ∀ x y v → ⟦ x *H y ⟧H v ≈ ⟦ x ⟧H v * ⟦ y ⟧H v
-  *H-*-hom ⊘ y v = sym (zeroˡ _)
-  *H-*-hom (x *x+ x₁) ⊘ v = sym (zeroʳ _)
-  *H-*-hom (a *x+ b) (c *x+ d) x =
-    let ⌊_⌋ a = ⟦ a ⟧H x in
-    begin
-      ⟦ ((a *H c) *x+ 0#) +H b *S c +H d *S a ⟧H x * x + b * d
-    ≈⟨ +-congʳ (*-congʳ (+H-+-hom (((a *H c) *x+ 0#) +H b *S c) (d *S a) x)) ⟩
-      (⟦ ((a *H c) *x+ 0#) +H b *S c ⟧H x + ⟦ d *S a ⟧H x) * x + b * d
-    ≈⟨ +-congʳ (*-congʳ (+-congʳ (+H-+-hom ((a *H c) *x+ 0#) (b *S c) x))) ⟩
-      (⌊ a *H c ⌋ * x + 0# + ⌊ b *S c ⌋ + ⌊ d *S a ⌋) * x + b * d
-    ≈⟨ …via… *S-*-hom ⟩
-      (⌊ a *H c ⌋ * x + (b * ⌊ c ⌋) + (d * ⌊ a ⌋)) * x + (b * d)
-    ≈⟨ +-congʳ (*-congʳ (+-congʳ (+-congʳ (*-congʳ (*H-*-hom a c x))))) ⟩
-      (⌊ a ⌋ * ⌊ c ⌋ * x + b * ⌊ c ⌋ + d * ⌊ a ⌋) * x + (b * d)
-    ≈⟨ …via… distribʳ ⟩
-      (⌊ a ⌋ * ⌊ c ⌋ * x * x) + (b * ⌊ c ⌋ * x) + (d * ⌊ a ⌋ * x) + (b * d)
-    ≈⟨ …algebra… ⟩
-      (⌊ a ⌋ * x * (⌊ c ⌋ * x)) + (b * (⌊ c ⌋ * x)) + (⌊ a ⌋ * x * d) + (b * d)
-    ≈⟨ sym (foil (⌊ a ⌋ * x) b (⌊ c ⌋ * x) d) ⟩
-      (⌊ a ⌋ * x + b) * (⌊ c ⌋ * x + d)
-    ∎
-
-  _≈nested_>_<_ : A → {f : A → A} → (cong : {x y : A} → x ≈ y → f x ≈ f y) → {x y z : A} → x IsRelatedTo y → f y IsRelatedTo z → f x IsRelatedTo z
-  _ ≈nested cong > relTo x=y < (relTo fy=z) = relTo (trans (cong x=y) fy=z)
-  infixr 2 _≈nested_>_<_
-
-  _□ : (x : A) → x IsRelatedTo x
-  _□ = _∎
-
-  infix  3 _□
+--   postulate
+--     …algebra… : {x y : A} → x ≈ y
+--     …via… : {ℓ : Level} {B : Set ℓ} {x y : A} → B → x ≈ y
 
 
 
-  open import Function using (_∘_)
+--   +H-+-hom : ∀ x y v → ⟦ x +H y ⟧H v ≈ ⟦ x ⟧H v + ⟦ y ⟧H v
+--   +H-+-hom ⊘ ⊘ v = sym (+-identityʳ 0#)
+--   +H-+-hom (x *x+ x₁) ⊘ v =
+--     begin
+--       ⟦ x ⟧H v * v + x₁
+--     ≈⟨ …algebra… ⟩
+--       ⟦ x ⟧H v * v + x₁ + 0#
+--     ∎
+--   +H-+-hom ⊘ (y *x+ x₁) v = sym (+-identityˡ _)
+--   +H-+-hom (x *x+ x₂) (y *x+ x₁) v =
+--     begin
+--       ⟦ x +H y ⟧H v * v + (x₂ + x₁)
+--     ≈⟨ +-cong (*-cong (+H-+-hom x y v) refl) refl ⟩
+--       (⟦ x ⟧H v + ⟦ y ⟧H v) * v + (x₂ + x₁)
+--     ≈⟨ …algebra… ⟩
+--       ⟦ x ⟧H v * v + x₂ + (⟦ y ⟧H v * v + x₁)
+--     ∎
 
-  *H-*-hom' : ∀ x y v → ⟦ x *H y ⟧H v ≈ ⟦ x ⟧H v * ⟦ y ⟧H v
-  *H-*-hom' ⊘ y v = sym (zeroˡ _)
-  *H-*-hom' (x *x+ x₁) ⊘ v = sym (zeroʳ _)
-  *H-*-hom' (a *x+ b) (c *x+ d) x =
-    let ⌊_⌋ a = ⟦ a ⟧H x in
-    begin
-      ⟦ ((a *H c) *x+ 0#) +H b *S c +H d *S a ⟧H x * x + b * d
-    ≈nested (+-congʳ ∘ *-congʳ)
-      >
-        ⌊ ((a *H c) *x+ 0#) +H b *S c +H d *S a ⌋
-      ≈⟨ +H-+-hom (((a *H c) *x+ 0#) +H b *S c) (d *S a) x ⟩
-        ⌊((a *H c) *x+ 0#) +H b *S c ⌋ + ⌊ d *S a ⌋
-      ≈⟨ +-congʳ (+H-+-hom ((a *H c) *x+ 0#) (b *S c) x) ⟩
-        ⌊ a *H c ⌋ * x + 0# + ⌊ b *S c ⌋ + ⌊ d *S a ⌋
-      ≈⟨ …via… *S-*-hom ⟩
-        ⌊ a *H c ⌋ * x + (b * ⌊ c ⌋) + (d * ⌊ a ⌋)
-      ≈⟨ +-congʳ (+-congʳ (*-congʳ (*H-*-hom a c x))) ⟩
-        ⌊ a ⌋ * ⌊ c ⌋ * x + b * ⌊ c ⌋ + d * ⌊ a ⌋
-    □ <
-      (⌊ a ⌋ * ⌊ c ⌋ * x + b * ⌊ c ⌋ + d * ⌊ a ⌋) * x + (b * d)
-    ≈⟨ …via… distribʳ ⟩
-      (⌊ a ⌋ * ⌊ c ⌋ * x * x) + (b * ⌊ c ⌋ * x) + (d * ⌊ a ⌋ * x) + (b * d)
-    ≈⟨ …algebra… ⟩
-      (⌊ a ⌋ * x * (⌊ c ⌋ * x)) + (b * (⌊ c ⌋ * x)) + (⌊ a ⌋ * x * d) + (b * d)
-    ≈⟨ sym (foil (⌊ a ⌋ * x) b (⌊ c ⌋ * x) d) ⟩
-      (⌊ a ⌋ * x + b) * (⌊ c ⌋ * x + d)
-    ∎
+--   *S-*-hom : ∀ k x v → ⟦ k *S x ⟧H v ≈ k * ⟦ x ⟧H v
+--   *S-*-hom k ⊘ v = sym (zeroʳ _)
+--   *S-*-hom k (x *x+ x₁) v =
+--     begin
+--       ⟦ k *S x ⟧H v * v + k * x₁
+--     ≈⟨ +-congʳ (*-congʳ (*S-*-hom k x v)) ⟩
+--       k * ⟦ x ⟧H v * v + k * x₁
+--     ≈⟨ …algebra… ⟩
+--       k * (⟦ x ⟧H v * v + x₁)
+--     ∎
 
-  sems : (s : Syn) → (v : A) → ⟦ s ⟧ v ≈ ⟦ hnf s ⟧H v
+--   foil : ∀ a b c d → (a + b) * (c + d) ≈ (a * c) + (b * c) + (a * d) + (b * d)
+--   foil a b c d = …algebra…
+
+--   *H-*-hom : ∀ x y v → ⟦ x *H y ⟧H v ≈ ⟦ x ⟧H v * ⟦ y ⟧H v
+--   *H-*-hom ⊘ y v = sym (zeroˡ _)
+--   *H-*-hom (x *x+ x₁) ⊘ v = sym (zeroʳ _)
+--   *H-*-hom (a *x+ b) (c *x+ d) x =
+--     let ⌊_⌋ a = ⟦ a ⟧H x in
+--     begin
+--       ⟦ ((a *H c) *x+ 0#) +H b *S c +H d *S a ⟧H x * x + b * d
+--     ≈⟨ +-congʳ (*-congʳ (+H-+-hom (((a *H c) *x+ 0#) +H b *S c) (d *S a) x)) ⟩
+--       (⟦ ((a *H c) *x+ 0#) +H b *S c ⟧H x + ⟦ d *S a ⟧H x) * x + b * d
+--     ≈⟨ +-congʳ (*-congʳ (+-congʳ (+H-+-hom ((a *H c) *x+ 0#) (b *S c) x))) ⟩
+--       (⌊ a *H c ⌋ * x + 0# + ⌊ b *S c ⌋ + ⌊ d *S a ⌋) * x + b * d
+--     ≈⟨ …via… *S-*-hom ⟩
+--       (⌊ a *H c ⌋ * x + (b * ⌊ c ⌋) + (d * ⌊ a ⌋)) * x + (b * d)
+--     ≈⟨ +-congʳ (*-congʳ (+-congʳ (+-congʳ (*-congʳ (*H-*-hom a c x))))) ⟩
+--       (⌊ a ⌋ * ⌊ c ⌋ * x + b * ⌊ c ⌋ + d * ⌊ a ⌋) * x + (b * d)
+--     ≈⟨ …via… distribʳ ⟩
+--       (⌊ a ⌋ * ⌊ c ⌋ * x * x) + (b * ⌊ c ⌋ * x) + (d * ⌊ a ⌋ * x) + (b * d)
+--     ≈⟨ …algebra… ⟩
+--       (⌊ a ⌋ * x * (⌊ c ⌋ * x)) + (b * (⌊ c ⌋ * x)) + (⌊ a ⌋ * x * d) + (b * d)
+--     ≈⟨ sym (foil (⌊ a ⌋ * x) b (⌊ c ⌋ * x) d) ⟩
+--       (⌊ a ⌋ * x + b) * (⌊ c ⌋ * x + d)
+--     ∎
+
+  -- _≈nested_>_<_ : A → {f : A → A} → (cong : {x y : A} → x ≈ y → f x ≈ f y) → {x y z : A} → x IsRelatedTo y → f y IsRelatedTo z → f x IsRelatedTo z
+  -- _ ≈nested cong > relTo x=y < (relTo fy=z) = relTo (trans (cong x=y) fy=z)
+  -- infixr 2 _≈nested_>_<_
+
+  -- _□ : (x : A) → x IsRelatedTo x
+  -- _□ = _∎
+
+  -- infix  3 _□
+
+
+
+  -- open import Function using (_∘_)
+
+  -- *H-*-hom' : ∀ x y v → ⟦ x *H y ⟧H v ≈ ⟦ x ⟧H v * ⟦ y ⟧H v
+  -- *H-*-hom' ⊘ y v = sym (zeroˡ _)
+  -- *H-*-hom' (x *x+ x₁) ⊘ v = sym (zeroʳ _)
+  -- *H-*-hom' (a *x+ b) (c *x+ d) x =
+  --   let ⌊_⌋ a = ⟦ a ⟧H x in
+  --   begin
+  --     ⟦ ((a *H c) *x+ 0#) +H b *S c +H d *S a ⟧H x * x + b * d
+  --   ≈nested (+-congʳ ∘ *-congʳ)
+  --     >
+  --       ⌊ ((a *H c) *x+ 0#) +H b *S c +H d *S a ⌋
+  --     ≈⟨ +H-+-hom (((a *H c) *x+ 0#) +H b *S c) (d *S a) x ⟩
+  --       ⌊((a *H c) *x+ 0#) +H b *S c ⌋ + ⌊ d *S a ⌋
+  --     ≈⟨ +-congʳ (+H-+-hom ((a *H c) *x+ 0#) (b *S c) x) ⟩
+  --       ⌊ a *H c ⌋ * x + 0# + ⌊ b *S c ⌋ + ⌊ d *S a ⌋
+  --     ≈⟨ …via… *S-*-hom ⟩
+  --       ⌊ a *H c ⌋ * x + (b * ⌊ c ⌋) + (d * ⌊ a ⌋)
+  --     ≈⟨ +-congʳ (+-congʳ (*-congʳ (*H-*-hom a c x))) ⟩
+  --       ⌊ a ⌋ * ⌊ c ⌋ * x + b * ⌊ c ⌋ + d * ⌊ a ⌋
+  --   □ <
+  --     (⌊ a ⌋ * ⌊ c ⌋ * x + b * ⌊ c ⌋ + d * ⌊ a ⌋) * x + (b * d)
+  --   ≈⟨ …via… distribʳ ⟩
+  --     (⌊ a ⌋ * ⌊ c ⌋ * x * x) + (b * ⌊ c ⌋ * x) + (d * ⌊ a ⌋ * x) + (b * d)
+  --   ≈⟨ …algebra… ⟩
+  --     (⌊ a ⌋ * x * (⌊ c ⌋ * x)) + (b * (⌊ c ⌋ * x)) + (⌊ a ⌋ * x * d) + (b * d)
+  --   ≈⟨ sym (foil (⌊ a ⌋ * x) b (⌊ c ⌋ * x) d) ⟩
+  --     (⌊ a ⌋ * x + b) * (⌊ c ⌋ * x + d)
+  --   ∎
+
+  -- sems : (s : Syn) → (v : A) → ⟦ s ⟧ v ≈ ⟦ hnf s ⟧H v
 ```
 
 and is sketched out:
 
 ```agda
-  sems var v = begin
-    v                       ≈⟨ …algebra… ⟩
-    (0# * v + 1#) * v + 0#  ∎
-  sems (con c) v = begin
-    c           ≈⟨ sym (+-identityˡ _) ⟩
-    0# + c      ≈⟨ sym (+-congʳ (zeroˡ _)) ⟩
-    0# * v + c  ∎
-  sems (x :+ y) v = begin
-    ⟦ x ⟧ v + ⟦ y ⟧ v                        ≈⟨ +-cong (sems x v) (sems y v) ⟩
-    ⟦ hnf x ⟧H v + ⟦ hnf y ⟧H v  ≈⟨ sym (+H-+-hom (hnf x) (hnf y) v) ⟩
-    ⟦ hnf x +H hnf y ⟧H v        ∎
-  sems (x :* y) v = begin
-    ⟦ x ⟧ v * ⟦ y ⟧ v                        ≈⟨ *-cong (sems x v) (sems y v) ⟩
-    ⟦ hnf x ⟧H v * ⟦ hnf y ⟧H v  ≈⟨ sym (*H-*-hom (hnf x) (hnf y) v) ⟩
-    ⟦ hnf x *H hnf y ⟧H v        ∎
+  -- sems var v = begin
+  --   v                       ≈⟨ …algebra… ⟩
+  --   (0# * v + 1#) * v + 0#  ∎
+  -- sems (con c) v = begin
+  --   c           ≈⟨ sym (+-identityˡ _) ⟩
+  --   0# + c      ≈⟨ sym (+-congʳ (zeroˡ _)) ⟩
+  --   0# * v + c  ∎
+  -- sems (x :+ y) v = begin
+  --   ⟦ x ⟧ v + ⟦ y ⟧ v                        ≈⟨ +-cong (sems x v) (sems y v) ⟩
+  --   ⟦ hnf x ⟧H v + ⟦ hnf y ⟧H v  ≈⟨ sym (+H-+-hom (hnf x) (hnf y) v) ⟩
+  --   ⟦ hnf x +H hnf y ⟧H v        ∎
+  -- sems (x :* y) v = begin
+  --   ⟦ x ⟧ v * ⟦ y ⟧ v                        ≈⟨ *-cong (sems x v) (sems y v) ⟩
+  --   ⟦ hnf x ⟧H v * ⟦ hnf y ⟧H v  ≈⟨ sym (*H-*-hom (hnf x) (hnf y) v) ⟩
+  --   ⟦ hnf x *H hnf y ⟧H v        ∎
 ```
 
 Implementing `sems` will probably be the most work if you attempt this at home;
@@ -961,16 +1232,16 @@ Finally, we can put everything together, solving proofs of the evaluation of two
 pieces of syntax given a proof of their normalized forms:
 
 ```agda
-  solve
-      : (s t : Syn)
-      → (v : A)
-      → ⟦ hnf s ⟧H v ≈ ⟦ hnf t ⟧H v
-      → ⟦ s ⟧ v ≈ ⟦ t ⟧ v
-  solve s t v x = begin
-    ⟦ s ⟧ v             ≈⟨ sems s v ⟩
-    ⟦ hnf s ⟧H v  ≈⟨ x ⟩
-    ⟦ hnf t ⟧H v  ≈⟨ sym (sems t v) ⟩
-    ⟦ t ⟧ v             ∎
+  -- solve
+  --     : (s t : Syn)
+  --     → (v : A)
+  --     → ⟦ hnf s ⟧H v ≈ ⟦ hnf t ⟧H v
+  --     → ⟦ s ⟧ v ≈ ⟦ t ⟧ v
+  -- solve s t v x = begin
+  --   ⟦ s ⟧ v             ≈⟨ sems s v ⟩
+  --   ⟦ hnf s ⟧H v  ≈⟨ x ⟩
+  --   ⟦ hnf t ⟧H v  ≈⟨ sym (sems t v) ⟩
+  --   ⟦ t ⟧ v             ∎
 ```
 
 The proof argument required by this function is an informative clue as to why we
