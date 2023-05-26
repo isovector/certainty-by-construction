@@ -1011,493 +1011,64 @@ place, and this is where it has accumulated.
     ∎
 ```
 
+## Syntax
 
-## Sketching Out a Ring Solver
+We're nearly at the home stretch. With our semantics out of the way, the next
+step in our ring solver is to implement the symbolic expression of our ring.
+This syntax is responsible for bridging the gap between the concrete values in
+the ring we'd like to equate, and their connections to `type:HNF`. While this
+might sound intimidating, it's exceptionally straightforward after the previous
+slog proving the multiplication homomorphism.
 
-Next we will define the syntax for dealing with rings:
-
-```agda
-  -- infixr 5 _:+_
-  -- infixr 6 _:*_
-
-  -- data Syn : Set c where
-  --   var : Syn
-  --   con : A → Syn
-  --   _:+_ : Syn → Syn → Syn
-  --   _:*_ : Syn → Syn → Syn
-```
-
-And, just to show that this really is the syntax for our language, we can give
-it semantics via `⟦_⟧`, which simply interprets the syntax as the actual ring
-operations:
+Our syntax for semirings is simple and unassuming:
 
 ```agda
-  -- ⟦_⟧ : Syn → A → A
-  -- ⟦ var ⟧    v = v
-  -- ⟦ con c ⟧  v = c
-  -- ⟦ x :+ y ⟧ v = ⟦ x ⟧ v + ⟦ y ⟧ v
-  -- ⟦ x :* y ⟧ v = ⟦ x ⟧ v * ⟦ y ⟧ v
-```
-
-Our next step is simply to give the semantics for `HNF`, completely analogously
-to what we did for `Syn`:
-
-```agda
-  -- ⟦_⟧H : HNF → A → A
-  -- ⟦ ⊘ ⟧H _ = 0#
-  -- ⟦ a *x+ b ⟧H x = ⟦ a ⟧H x * x + b
-```
-
-We'd like to define a transformation from `Syn` into `HNF`, but that is going to
-require addition and multiplication over `HNF`. Addition is straightforward:
-
-```agda
-  -- _+H_ : HNF → HNF → HNF
-  -- ⊘ +H y = y
-  -- (a *x+ b) +H ⊘ = a *x+ b
-  -- (a *x+ b) +H (c *x+ d) = (a +H c) *x+ (b + d)
-
-  -- infixl 5 _+H_
-```
-
-and multiplication isn't much more work, after we take advantage of the
-algebraic fact that:
-
-$$
-(ax + b)(cx + d) = acx^2 + (bc + ad)x + bd
-$$
-
-```agda
-  -- _*S_ : A → HNF → HNF
-  -- k *S ⊘ = ⊘
-  -- k *S (hnf *x+ x) = (k *S hnf) *x+ (k * x)
-  -- infixl 6 _*S_
-
-  -- _*H_ : HNF → HNF → HNF
-  -- ⊘ *H _ = ⊘
-  -- (a *x+ b) *H ⊘ = ⊘
-  -- (a *x+ b) *H (c *x+ d) = (((a *H c) *x+ 0#) +H (b *S c) +H (d *S a)) *x+ (b * d)
-  -- infixl 6 _*H_
-```
-
-With all of this machinery out of the way, we can implement `normalize`, which
-transforms a `Syn` into an `HNF`:
-
-```agda
-  -- hnf : Syn → HNF
-  -- hnf var = (⊘ *x+ 1#) *x+ 0#
-  -- hnf (con x) = ⊘ *x+ x
-  -- hnf (x :+ y) = hnf x +H hnf y
-  -- hnf (x :* y) = hnf x *H hnf y
-```
-
-Believe it or not, that's most of the work to write a ring solver. We have one
-more function to write, showing that evaluating the syntactic term is equal to
-evaluating its normal form --- that is, that the normal form truly is a merely a
-different representation of the same expression. This function has type:
-
--- ```agda
---   open import Relation.Binary.Reasoning.Setoid setoid
-
---   postulate
---     …algebra… : {x y : A} → x ≈ y
---     …via… : {ℓ : Level} {B : Set ℓ} {x y : A} → B → x ≈ y
-
-
-
---   +H-+-hom : ∀ x y v → ⟦ x +H y ⟧H v ≈ ⟦ x ⟧H v + ⟦ y ⟧H v
---   +H-+-hom ⊘ ⊘ v = sym (+-identityʳ 0#)
---   +H-+-hom (x *x+ x₁) ⊘ v =
---     begin
---       ⟦ x ⟧H v * v + x₁
---     ≈⟨ …algebra… ⟩
---       ⟦ x ⟧H v * v + x₁ + 0#
---     ∎
---   +H-+-hom ⊘ (y *x+ x₁) v = sym (+-identityˡ _)
---   +H-+-hom (x *x+ x₂) (y *x+ x₁) v =
---     begin
---       ⟦ x +H y ⟧H v * v + (x₂ + x₁)
---     ≈⟨ +-cong (*-cong (+H-+-hom x y v) refl) refl ⟩
---       (⟦ x ⟧H v + ⟦ y ⟧H v) * v + (x₂ + x₁)
---     ≈⟨ …algebra… ⟩
---       ⟦ x ⟧H v * v + x₂ + (⟦ y ⟧H v * v + x₁)
---     ∎
-
---   *S-*-hom : ∀ k x v → ⟦ k *S x ⟧H v ≈ k * ⟦ x ⟧H v
---   *S-*-hom k ⊘ v = sym (zeroʳ _)
---   *S-*-hom k (x *x+ x₁) v =
---     begin
---       ⟦ k *S x ⟧H v * v + k * x₁
---     ≈⟨ +-congʳ (*-congʳ (*S-*-hom k x v)) ⟩
---       k * ⟦ x ⟧H v * v + k * x₁
---     ≈⟨ …algebra… ⟩
---       k * (⟦ x ⟧H v * v + x₁)
---     ∎
-
---   foil : ∀ a b c d → (a + b) * (c + d) ≈ (a * c) + (b * c) + (a * d) + (b * d)
---   foil a b c d = …algebra…
-
---   *H-*-hom : ∀ x y v → ⟦ x *H y ⟧H v ≈ ⟦ x ⟧H v * ⟦ y ⟧H v
---   *H-*-hom ⊘ y v = sym (zeroˡ _)
---   *H-*-hom (x *x+ x₁) ⊘ v = sym (zeroʳ _)
---   *H-*-hom (a *x+ b) (c *x+ d) x =
---     let ⌊_⌋ a = ⟦ a ⟧H x in
---     begin
---       ⟦ ((a *H c) *x+ 0#) +H b *S c +H d *S a ⟧H x * x + b * d
---     ≈⟨ +-congʳ (*-congʳ (+H-+-hom (((a *H c) *x+ 0#) +H b *S c) (d *S a) x)) ⟩
---       (⟦ ((a *H c) *x+ 0#) +H b *S c ⟧H x + ⟦ d *S a ⟧H x) * x + b * d
---     ≈⟨ +-congʳ (*-congʳ (+-congʳ (+H-+-hom ((a *H c) *x+ 0#) (b *S c) x))) ⟩
---       (⌊ a *H c ⌋ * x + 0# + ⌊ b *S c ⌋ + ⌊ d *S a ⌋) * x + b * d
---     ≈⟨ …via… *S-*-hom ⟩
---       (⌊ a *H c ⌋ * x + (b * ⌊ c ⌋) + (d * ⌊ a ⌋)) * x + (b * d)
---     ≈⟨ +-congʳ (*-congʳ (+-congʳ (+-congʳ (*-congʳ (*H-*-hom a c x))))) ⟩
---       (⌊ a ⌋ * ⌊ c ⌋ * x + b * ⌊ c ⌋ + d * ⌊ a ⌋) * x + (b * d)
---     ≈⟨ …via… distribʳ ⟩
---       (⌊ a ⌋ * ⌊ c ⌋ * x * x) + (b * ⌊ c ⌋ * x) + (d * ⌊ a ⌋ * x) + (b * d)
---     ≈⟨ …algebra… ⟩
---       (⌊ a ⌋ * x * (⌊ c ⌋ * x)) + (b * (⌊ c ⌋ * x)) + (⌊ a ⌋ * x * d) + (b * d)
---     ≈⟨ sym (foil (⌊ a ⌋ * x) b (⌊ c ⌋ * x) d) ⟩
---       (⌊ a ⌋ * x + b) * (⌊ c ⌋ * x + d)
---     ∎
-
-  -- _≈nested_>_<_ : A → {f : A → A} → (cong : {x y : A} → x ≈ y → f x ≈ f y) → {x y z : A} → x IsRelatedTo y → f y IsRelatedTo z → f x IsRelatedTo z
-  -- _ ≈nested cong > relTo x=y < (relTo fy=z) = relTo (trans (cong x=y) fy=z)
-  -- infixr 2 _≈nested_>_<_
-
-  -- _□ : (x : A) → x IsRelatedTo x
-  -- _□ = _∎
-
-  -- infix  3 _□
-
-
-
-  -- open import Function using (_∘_)
-
-  -- *H-*-hom' : ∀ x y v → ⟦ x *H y ⟧H v ≈ ⟦ x ⟧H v * ⟦ y ⟧H v
-  -- *H-*-hom' ⊘ y v = sym (zeroˡ _)
-  -- *H-*-hom' (x *x+ x₁) ⊘ v = sym (zeroʳ _)
-  -- *H-*-hom' (a *x+ b) (c *x+ d) x =
-  --   let ⌊_⌋ a = ⟦ a ⟧H x in
-  --   begin
-  --     ⟦ ((a *H c) *x+ 0#) +H b *S c +H d *S a ⟧H x * x + b * d
-  --   ≈nested (+-congʳ ∘ *-congʳ)
-  --     >
-  --       ⌊ ((a *H c) *x+ 0#) +H b *S c +H d *S a ⌋
-  --     ≈⟨ +H-+-hom (((a *H c) *x+ 0#) +H b *S c) (d *S a) x ⟩
-  --       ⌊((a *H c) *x+ 0#) +H b *S c ⌋ + ⌊ d *S a ⌋
-  --     ≈⟨ +-congʳ (+H-+-hom ((a *H c) *x+ 0#) (b *S c) x) ⟩
-  --       ⌊ a *H c ⌋ * x + 0# + ⌊ b *S c ⌋ + ⌊ d *S a ⌋
-  --     ≈⟨ …via… *S-*-hom ⟩
-  --       ⌊ a *H c ⌋ * x + (b * ⌊ c ⌋) + (d * ⌊ a ⌋)
-  --     ≈⟨ +-congʳ (+-congʳ (*-congʳ (*H-*-hom a c x))) ⟩
-  --       ⌊ a ⌋ * ⌊ c ⌋ * x + b * ⌊ c ⌋ + d * ⌊ a ⌋
-  --   □ <
-  --     (⌊ a ⌋ * ⌊ c ⌋ * x + b * ⌊ c ⌋ + d * ⌊ a ⌋) * x + (b * d)
-  --   ≈⟨ …via… distribʳ ⟩
-  --     (⌊ a ⌋ * ⌊ c ⌋ * x * x) + (b * ⌊ c ⌋ * x) + (d * ⌊ a ⌋ * x) + (b * d)
-  --   ≈⟨ …algebra… ⟩
-  --     (⌊ a ⌋ * x * (⌊ c ⌋ * x)) + (b * (⌊ c ⌋ * x)) + (⌊ a ⌋ * x * d) + (b * d)
-  --   ≈⟨ sym (foil (⌊ a ⌋ * x) b (⌊ c ⌋ * x) d) ⟩
-  --     (⌊ a ⌋ * x + b) * (⌊ c ⌋ * x + d)
-  --   ∎
-
-  -- sems : (s : Syn) → (v : A) → ⟦ s ⟧ v ≈ ⟦ hnf s ⟧H v
-```
-
-and is sketched out:
-
-```agda
-  -- sems var v = begin
-  --   v                       ≈⟨ …algebra… ⟩
-  --   (0# * v + 1#) * v + 0#  ∎
-  -- sems (con c) v = begin
-  --   c           ≈⟨ sym (+-identityˡ _) ⟩
-  --   0# + c      ≈⟨ sym (+-congʳ (zeroˡ _)) ⟩
-  --   0# * v + c  ∎
-  -- sems (x :+ y) v = begin
-  --   ⟦ x ⟧ v + ⟦ y ⟧ v                        ≈⟨ +-cong (sems x v) (sems y v) ⟩
-  --   ⟦ hnf x ⟧H v + ⟦ hnf y ⟧H v  ≈⟨ sym (+H-+-hom (hnf x) (hnf y) v) ⟩
-  --   ⟦ hnf x +H hnf y ⟧H v        ∎
-  -- sems (x :* y) v = begin
-  --   ⟦ x ⟧ v * ⟦ y ⟧ v                        ≈⟨ *-cong (sems x v) (sems y v) ⟩
-  --   ⟦ hnf x ⟧H v * ⟦ hnf y ⟧H v  ≈⟨ sym (*H-*-hom (hnf x) (hnf y) v) ⟩
-  --   ⟦ hnf x *H hnf y ⟧H v        ∎
-```
-
-Implementing `sems` will probably be the most work if you attempt this at home;
-showing the homomorphisms between `_+H_` and `_+_` are not trivial, nor are
-those for multiplication.
-
-Finally, we can put everything together, solving proofs of the evaluation of two
-pieces of syntax given a proof of their normalized forms:
-
-```agda
-  -- solve
-  --     : (s t : Syn)
-  --     → (v : A)
-  --     → ⟦ hnf s ⟧H v ≈ ⟦ hnf t ⟧H v
-  --     → ⟦ s ⟧ v ≈ ⟦ t ⟧ v
-  -- solve s t v x = begin
-  --   ⟦ s ⟧ v             ≈⟨ sems s v ⟩
-  --   ⟦ hnf s ⟧H v  ≈⟨ x ⟩
-  --   ⟦ hnf t ⟧H v  ≈⟨ sym (sems t v) ⟩
-  --   ⟦ t ⟧ v             ∎
-```
-
-The proof argument required by this function is an informative clue as to why we
-always needed to pass `refl` to the official ring solver `solve` function.
-
-```agda
-
-module solver2 where
-
-module Solver {𝔸 : Set}
-    (0# 1# : 𝔸)
-    (_+_ _*_ : 𝔸 → 𝔸 → 𝔸)
-    (let infixr 5 _+_; _+_ = _+_) (let infixr 6 _*_; _*_ = _*_) where
-  open import Relation.Binary.PropositionalEquality
-
-  module _ {A : Set} where
-    open import Algebra.Definitions {A = A} _≡_ public
-
-  postulate
-    -- +-identityˡ : LeftIdentity 0# _+_
-    +-identityʳ : RightIdentity 0# _+_
-    -- *-identityˡ : LeftIdentity 1# _*_
-    *-identityʳ : RightIdentity 1# _*_
-    -- *-zeroˡ : LeftZero 0# _*_
-    -- *-zeroʳ : RightZero 0# _*_
-    -- +-comm : Commutative _+_
-    -- *-comm : Commutative _*_
-    +-assoc : Associative _+_
-    -- *-assoc : Associative _*_
-    *-distribˡ-+ : _*_ DistributesOverˡ _+_
-    *-distribʳ-+ : _*_ DistributesOverʳ _+_
-
-  open import Data.Nat
-    using (ℕ; zero; suc)
-
-  private variable
-    n : ℕ
-
-  data HNF : ℕ → Set where
-    const : 𝔸 → HNF zero
-    coeff : HNF n → HNF (suc n)
-    _*x+_ : HNF (suc n) → HNF n → HNF (suc n)
-
-  _⊕_ : HNF n → HNF n → HNF n
-  const a ⊕ const b = const (a + b)
-  coeff a ⊕ coeff b = coeff (a ⊕ b)
-  coeff a ⊕ (b *x+ c) = b *x+ (a ⊕ c)
-  (a *x+ b) ⊕ coeff c = a *x+ (b ⊕ c)
-  (a *x+ b) ⊕ (c *x+ d) = (a ⊕ c) *x+ (b ⊕ d)
-  infixr 5 _⊕_
-
-  ↪ : 𝔸 → HNF n
-  ↪ {zero} a = const a
-  ↪ {suc n} a = coeff (↪ a)
-
-  0H : HNF n
-  0H = ↪ 0#
-
-  1H : HNF n
-  1H = ↪ 1#
-
-  x* : HNF (suc n) → HNF (suc n)
-  x* a = a *x+ 0H
-
-  _⊗_ : HNF n → HNF n → HNF n
-  const a ⊗ const b = const (a * b)
-  coeff a ⊗ coeff b = coeff (a ⊗ b)
-  coeff a ⊗ (b *x+ c) = (coeff a ⊗ b) *x+ (a ⊗ c)
-  (a *x+ b) ⊗ coeff c = (a ⊗ coeff c) *x+ (b ⊗ c)
-  (a *x+ b) ⊗ (c *x+ d)
-      = x* (x* (a ⊗ c))
-     ⊕ x* ((a ⊗ coeff d)
-     ⊕ (c ⊗ coeff b))
-     ⊕ coeff (b ⊗ d)
-  infixr 6 _⊗_
-
-
-  open import Data.Fin
-    using (Fin; suc; zero)
-
   data Syn (n : ℕ) : Set where
     var : Fin n → Syn n
     con : 𝔸 → Syn n
     _:+_ : Syn n → Syn n → Syn n
     _:*_ : Syn n → Syn n → Syn n
+  -- TODO(sandy): should I be infixl?
   infixr 5 _:+_
   infixr 6 _:*_
+```
 
+Additionally, we can assign semantics for `type:Syn`, which, given a mapping for
+the variables, produces an `𝔸`.
+
+```agda
   ⟦_⟧ : Syn n → (Fin n → 𝔸) → 𝔸
   ⟦ var v ⟧  vs = vs v
   ⟦ con c ⟧  vs = c
   ⟦ x :+ y ⟧ vs = ⟦ x ⟧ vs + ⟦ y ⟧ vs
   ⟦ x :* y ⟧ vs = ⟦ x ⟧ vs * ⟦ y ⟧ vs
+```
 
-  open import Function using (_∘_)
+However, this is not the only interpretation we can give for `type:Syn`. There
+is also a transformation from `type:Syn` into `type:HNF`:
 
-  to-var : Fin n → HNF n
-  to-var zero = x* 1H
-  to-var (suc x) = coeff (to-var x)
-
+```agda
   hnf : Syn n → HNF n
   hnf (var x) = to-var x
   hnf (con x) = ↪ x
   hnf (x :+ b) = hnf x ⊕ hnf b
   hnf (x :* b) = hnf x ⊗ hnf b
+```
 
-  eval : (Fin n → 𝔸) → HNF n → 𝔸
-  eval v (const a) = a
-  eval v (coeff a) = eval (v ∘ suc) a
-  eval v (a *x+ b) = v zero * eval v a + eval (v ∘ suc) b
+It is exactly the relationship between `def:⟦_⟧` and `def:hnf` that we're
+interested in. The former allows us to transform syntax into computable values
+in the domain of the user of our solver. The latter gives us a means of
+computing the normal form for a piece of syntax. The relevant theorem here is
+`def:eval-hnf`, which states that you get the same answer whether you evaluate
+the `def:hnf` or simply push the syntax through `def:⟦_⟧`.
 
-  eval-↪ : (f : Fin n → 𝔸) → (a : 𝔸) → eval f (↪ a) ≡ a
-  eval-↪ {zero} f a = refl
-  eval-↪ {suc n} f a = eval-↪ (f ∘ suc) a
-
-  eval-to-var : (f : Fin n → 𝔸) → (x : Fin n) → eval f (to-var x) ≡ f x
-  eval-to-var f zero
-    rewrite eval-↪ (f ∘ suc) 0#
-    rewrite eval-↪ (f ∘ suc) 1#
-    rewrite *-identityʳ (f zero)
-      = +-identityʳ (f zero)
-  eval-to-var f (suc x) = eval-to-var (f ∘ suc) x
-
-  postulate
-    …algebra… : {x y : 𝔸} → x ≡ y
-    …via… : {B : Set} {x y : 𝔸} → B → x ≡ y
-
-  open ≡-Reasoning
-
-  eval-coeff : (f : Fin (suc n) → 𝔸) → (h : HNF n) → eval f (coeff h) ≡ eval (f ∘ suc) h
-  eval-coeff f a = refl
-
-  eval-⊕ : (f : Fin n → 𝔸) → (a b : HNF n) → eval f (a ⊕ b) ≡ eval f a + eval f b
-  eval-⊕ f (const a) (const b) = refl
-  eval-⊕ f (coeff a) (coeff b) = eval-⊕ (f ∘ suc) a b
-  eval-⊕ f (coeff a) (b *x+ c)
-    rewrite eval-⊕ (f ∘ suc) a c = begin
-      f zero * eval f b + eval f' a + eval f' c
-    ≡⟨ …algebra… ⟩
-      eval f' a + f zero * eval f b + eval f' c
-    ∎
-    where f' = f ∘ suc
-  eval-⊕ f (a *x+ b) (coeff c)
-    rewrite eval-⊕ (f ∘ suc) b c = sym (+-assoc _ _ _)
-  eval-⊕ f (a *x+ b) (c *x+ d)
-    rewrite eval-⊕ f a c
-    rewrite eval-⊕ (f ∘ suc) b d = begin
-      f zero * (eval f a + eval f c)
-        + (eval f' b + eval f' d)
-    ≡⟨ …algebra… ⟩
-      (f zero * eval f a + eval f' b)
-        + f zero * eval f c + eval f' d
-    ∎
-    where f' = f ∘ suc
-
-  eval-x* : (f : Fin (suc n) → 𝔸) → (h : HNF (suc n)) → eval f (x* h) ≡ f zero * eval f h
-  eval-x* f (coeff a) =
-    begin
-      f zero * eval f' a + eval f' (↪ 0#)
-    ≡⟨ cong ((f zero * eval f' a) +_) (eval-↪ f' 0#) ⟩
-      f zero * eval f' a + 0#
-    ≡⟨ +-identityʳ _ ⟩
-      f zero * eval f' a
-    ∎
-    where
-      f' = f ∘ suc
-  eval-x* f (a *x+ b) =
-    begin
-      f zero * (f zero * eval f a + eval f' b) + eval f' (↪ 0#)
-    ≡⟨ cong (f zero * (f zero * eval f a + eval f' b) +_) (eval-↪ f' 0#) ⟩
-      f zero * (f zero * eval f a + eval f' b) + 0#
-    ≡⟨ +-identityʳ _ ⟩
-      f zero * (f zero * eval f a + eval f' b)
-    ∎
-    where
-      f' = f ∘ suc
-
-  eval-⊗ : (f : Fin n → 𝔸) → (b c : HNF n) → eval f (b ⊗ c) ≡ eval f b * eval f c
-  eval-⊗ f (const a) (const b) = refl
-  eval-⊗ f (coeff a) (coeff b) = eval-⊗ (f ∘ suc) a b
-  eval-⊗ f (coeff a) (b *x+ c)
-    rewrite eval-⊗ f (coeff a) b
-    rewrite eval-⊗ (f ∘ suc) a c =
-      begin
-        f zero * eval f' a * eval f b + eval f' a * eval f' c
-      ≡⟨ …algebra… ⟩
-        eval f' a * f zero * eval f b + eval f' a * eval f' c
-      ≡⟨ sym (*-distribˡ-+ _ _ _) ⟩
-        eval f' a * (f zero * eval f b + eval f' c)
-      ∎
-    where
-      f' = f ∘ suc
-      open ≡-Reasoning
-  eval-⊗ f (a *x+ b) (coeff c)
-    rewrite eval-⊗ (f ∘ suc) b c
-    rewrite eval-⊗ f a (coeff c) =
-      begin
-        f zero * eval f a * eval f' c + eval f' b * eval f' c
-      ≡⟨ …algebra… ⟩
-        (f zero * eval f a) * eval f' c + eval f' b * eval f' c
-      ≡⟨ sym (*-distribʳ-+ _ _ _) ⟩
-        (f zero * eval f a + eval f' b) * eval f' c
-      ∎
-    where
-      f' = f ∘ suc
-      open ≡-Reasoning
-  eval-⊗ f (a *x+ b) (c *x+ d) =
-    begin
-      v * (↓ (x* (a ⊗ c) ⊕ a ⊗ coeff d ⊕ c ⊗ coeff b)) + ↓' (↪ 0# ⊕ ↪ 0# ⊕ b ⊗ d)
-    ≡⟨ …algebra… ⟩
-      v * (↓ (x* (a ⊗ c) ⊕ a ⊗ coeff d ⊕ c ⊗ coeff b)) + ↓' (b ⊗ d)
-    ≡⟨ …via… (eval-⊕ f) ⟩
-      v * (↓ (x* (a ⊗ c)) + ↓ (a ⊗ coeff d ⊕ c ⊗ coeff b)) + ↓' (b ⊗ d)
-    ≡⟨ …via… (eval-⊕ f) ⟩
-      v * (↓ (x* (a ⊗ c)) + ↓ (a ⊗ coeff d) + ↓ (c ⊗ coeff b)) + ↓' (b ⊗ d)
-    ≡⟨ …via… (eval-⊗ f a (coeff d)) ⟩
-      v * (↓ (x* (a ⊗ c)) + ↓ a * ↓ (coeff d) + ↓ (c ⊗ coeff b)) + ↓' (b ⊗ d)
-    ≡⟨ …via… (eval-coeff f d) ⟩
-      v * (↓ (x* (a ⊗ c)) + ↓ a * ↓' d + ↓ (c ⊗ coeff b)) + ↓' (b ⊗ d)
-    ≡⟨ …algebra… ⟩ -- …via… (eval-⊗ f c (coeff b)) ⟩
-      v * (↓ (x* (a ⊗ c)) + ↓ a * ↓' d + ↓ c * ↓ (coeff b)) + ↓' (b ⊗ d)
-    ≡⟨ …via… (eval-coeff f b) ⟩
-      v * (↓ (x* (a ⊗ c)) + ↓ a * ↓' d + ↓ c * ↓' b) + ↓' (b ⊗ d)
-    ≡⟨ …via… (eval-⊗ f' b d) ⟩
-      v * (↓ (x* (a ⊗ c)) + ↓ a * ↓' d + ↓ c * ↓' b) + ↓' b * ↓' d
-    ≡⟨ …via… (eval-x* f (a ⊗ c)) ⟩
-      v * (v * ↓ (a ⊗ c) + ↓ a * ↓' d + ↓ c * ↓' b) + ↓' b * ↓' d
-    ≡⟨ …via… (eval-⊗ f a c) ⟩
-      v * (v * ↓ a * ↓ c + ↓ a * ↓' d + ↓ c * ↓' b) + ↓' b * ↓' d
-    ≡⟨ …algebra… ⟩
-      v * v * ↓ a * ↓ c + v * ↓ a * ↓' d + v * ↓ c * ↓' b + ↓' b * ↓' d
-    ≡⟨ …algebra… ⟩
-      (v * ↓ a) * (v * ↓ c) + v * ↓ a * ↓' d +  v * ↓ c * ↓' b + ↓' b * ↓' d
-    ≡⟨ …algebra… ⟩
-      (v * ↓ a) * (v * ↓ c)  + ↓' b * v * ↓ c   + v * ↓ a * ↓' d + ↓' b * ↓' d
-    ≡⟨ …algebra… ⟩
-      ((v * ↓ a) * (v * ↓ c) + ↓' b * (v * ↓ c)) + v * ↓ a * ↓' d + ↓' b * ↓' d
-    ≡⟨ …algebra… ⟩
-      ((v * ↓ a) * (v * ↓ c) + ↓' b * (v * ↓ c)) + (v * ↓ a * ↓' d + ↓' b * ↓' d)
-    ≡⟨ …via… *-distribʳ-+ ⟩
-      ((v * ↓ a) * (v * ↓ c) + ↓' b * (v * ↓ c)) + (v * ↓ a + ↓' b) * ↓' d
-    ≡⟨ cong (_+ ((v * ↓ a + ↓' b) * ↓' d)) (sym (*-distribʳ-+ _ _ _)) ⟩
-      (v * ↓ a + ↓' b) * (v * ↓ c) + (v * ↓ a + ↓' b) * ↓' d
-    ≡⟨ sym (*-distribˡ-+ _ _ _) ⟩
-      (v * ↓ a + ↓' b) * (v * ↓ c + ↓' d)
-    ∎
-    where
-      f' = f ∘ suc
-      ↓ = eval f
-      ↓' = eval f'
-      v = f zero
-
-
-  eval-hnf : (f : Fin n → 𝔸) → (s : Syn n) → eval f (hnf s) ≡ ⟦ s ⟧ f
+```agda
+  eval-hnf
+      : (f : Fin n → 𝔸)
+      → (s : Syn n)
+      → eval f (hnf s) ≡ ⟦ s ⟧ f
   eval-hnf f (var a) = eval-to-var f a
-  eval-hnf f (con a) = eval-↪ f a
+  eval-hnf f (con a) = eval-↪ a f
   eval-hnf f (s :+ s₁)
     rewrite eval-⊕ f (hnf s) (hnf s₁)
     rewrite eval-hnf f s
@@ -1506,53 +1077,171 @@ module Solver {𝔸 : Set}
     rewrite eval-⊗ f (hnf s) (hnf s₁)
     rewrite eval-hnf f s
     rewrite eval-hnf f s₁ = refl
+```
 
 
-  open import Data.Vec using (Vec; []; _∷_; map; lookup)
+## Solving the Ring
 
+Everything is now in place in order to actually solve equalities in our
+(semi)ring. The core of our solver is `def:equate`---the function which is
+capable of showing that two ring expressions are equivalent. The interface to
+this function leaves quite a lot to be desired, but we will work on the
+ergonomics momentarily.
+
+The idea here is to use `def:eval-hnf` to show that the concrete Agda value is
+equivalent to the interpretation of the syntax object. We can then show the
+interpretation of the syntax object is equivalent to the evaluation of the
+normal form of the syntax object. Subsequently, we ask the user for a proof that
+the normal forms are the same---which is always just `ctor:refl`---and then do
+the same chain of proof compositions backwards across the other ring expression.
+Thus, `def:equate` in all its glory is as follows:
+
+```agda
+  equate
+      : (lhs rhs : Syn n)
+      → hnf lhs ≡ hnf rhs
+      → (f : Fin n → 𝔸)
+      → ⟦ lhs ⟧ f ≡ ⟦ rhs ⟧ f
+  equate lhs rhs lhs=rhs f = begin
+    ⟦ lhs ⟧ f         ≡⟨ sym (eval-hnf f lhs) ⟩
+    eval f (hnf lhs)  ≡⟨ cong (eval f) lhs=rhs ⟩
+    eval f (hnf rhs)  ≡⟨ eval-hnf f rhs ⟩
+    ⟦ rhs ⟧ f         ∎
+```
+
+While `def:equate` does do everything we've promised, its interface leaves much
+to be desired. In particular, it requires us to manage all of our variables by
+hand; not only must we give an explicit function `f : Fin n → 𝔸` to evaluate the
+variables, but we also must encode them ourselves in the `lhs` and `rhs`
+`type:Syn` objects. This is a far cry from the standard library's ring solver,
+which gives us the syntactic variables in a lambda, and allows us to fill in the
+eventual values as additional arguments to the function.
+
+As our very last objective on this topic, we will turn our attention to
+assuaging both of these pain points.
+
+
+## Ergonomics
+
+Some reflection on the difference between our ring solver and the one in Agda's
+standard library suggests the path forwards on improving our solver's
+ergonomics. Both of the aforementioned differences---providing the syntactic
+variables, and receiving the actual values for those variables---are instances
+of a single mechanism: the $n$-ary function.
+
+An $n$-ary function is one which receives $n$ arguments of type `A` before
+returning something of type `B`. Building such a thing is less difficult than it
+might seem at first blush.
+
+Recall in @sec:curry-uncurry, in which we discussed the curry/uncurry
+isomorphism, showing that it's always possible to transform between a curried
+function of the form `type:A -> B -> C`, and a tupled function of the form
+`type:A × B → C`. This is exactly the same idea as what we'll need to implement
+an $n$-ary function, except that we will use a `type:Vec` instead of a tuple.
+
+We can give the type of an $n$-ary function by doing induction on a natural
+number, corresponding on the number of arguments we still need to take. Writing
+a non-dependent version of this type is straightforward:
+
+```agda
+  open import Data.Vec
+    using (Vec; []; _∷_; lookup; map)
+
+  N-ary′⅋ : ℕ → Set → Set → Set
+  N-ary′⅋ zero A B = B
+  N-ary′⅋ (suc n) A B = A → N-ary′⅋ n A B
+```
+
+While this works, it doesn't allow the `B` type to depend on the vector
+accumulated in giving this type. Fixing the issue requires a little bit of
+brain-folding:
+
+```agda
+  N-ary : (n : ℕ) → (A : Set) → (Vec A n → Set) → Set
+  N-ary zero A B = B []
+  N-ary (suc n) A B = (a : A) → N-ary n A (B ∘ (a ∷_))
+```
+
+In general, the non-dependent versions of functions are special cases of the
+dependent ones, in which the argument is simply ignored. This gives us a
+"better" definition for `type:N-ary′`:
+
+```agda
+  N-ary′ : ℕ → Set → Set → Set
+  N-ary′ n A B = N-ary n A (λ _ → B)
+```
+
+Analogously to the curry and uncurry functions which provided the isomorphism
+between curried and tupled functions, we can give two functions to show that
+`type:N-ary n A B` is equivalent to a function `type:Vec A n → B`. Such a thing
+comes in two flavors---we must be able to convert one way, and be able to
+convert back. First we have `def:curryⁿ`, which transforms a vectorized function
+into an $n$-ary one:
+
+```agda
+  curryⁿ
+      : {n : ℕ} {A : Set} {B : Vec A n → Set}
+      → ((v : Vec A n) → B v)
+      → N-ary n A B
+  curryⁿ {zero} x = x []
+  curryⁿ {suc n} x a = curryⁿ (x ∘ (a ∷_))
+```
+
+As an inverse, we have `def_$ⁿ_`, which undoes the transformation made by
+`def:curryⁿ`. The name here might strike you as peculiar, but it's a pun on a
+famous Haskell idiom where `_$_` is the function application operator.
+
+```agda
+  _$ⁿ_
+      : {n : ℕ} {A : Set} {B : Vec A n → Set}
+      → N-ary n A B
+      → ((v : Vec A n) → B v)
+  _$ⁿ_ {zero} f [] = f
+  _$ⁿ_ {suc n} f (x ∷ v) = f x $ⁿ v
+```
+
+`def:_$ⁿ_` and `def:curryⁿ` allow us to swap between an $n$-ary function---which
+is convenient for users, but hard to actually implement anything using---and a
+function over vectors---which is much easier to use as an implementer. Thus, we
+can use `def:curryⁿ` whenever we'd like to present a function to the user, and
+transform it into something workable via `def:_$ⁿ_`.
+
+Now that we have an $n$-ary function that we can use to give the user his
+syntactic variables, we'd like him to be able to give us *both* sides of the
+equation back. Recall that this is not possible with `type:Syn`, which doesn't
+contain any constructor for differentiating between the two sides. However,
+further thought shows that really we'd just like to get back two `type:Syn`
+objects. Rather than going through the work of making a new type to do this for
+us, we can simply re-purpose `type:_×_` by giving it a new can of paint:
+
+```agda
+  open import Data.Product
+    using (_×_)
+    renaming (_,_ to _:=_) public
+```
+
+By renaming `ctor:_,_` to `ctor:_:=_`, we can now write a syntactic equality as
+`lhs := rhs`, and our users are none the wiser.
+
+There is one final thing to do, and that's to generate a vector full of distinct
+variables that we can inject into the syntax lambda that the user gives us. This
+is done in two pieces: the first step builds the distinct `type:Fin` values, and the
+second then executes `def:map` in order to transform them into `type:Syn`.
+
+```agda
   fins : Vec (Fin n) n
   fins {zero} = []
   fins {suc n} = zero ∷ map suc fins
 
   vars : Vec (Syn n) n
   vars = map var fins
+```
 
-  solve₀
-      : (n : ℕ)
-      → (x y : Vec (Syn n) n → Syn n)
-      → hnf (x vars) ≡ hnf (y vars)
-      → (v : Vec 𝔸 n)
-      → ⟦ x vars ⟧ (lookup v) ≡ ⟦ y vars ⟧ (lookup v)
-  solve₀ n x y x=y v = begin
-    ⟦ x vars ⟧ f           ≡⟨ sym (eval-hnf f (x vars)) ⟩
-    eval f (hnf (x vars))  ≡⟨ cong (eval f) x=y ⟩
-    eval f (hnf (y vars))  ≡⟨ eval-hnf f (y vars) ⟩
-    ⟦ y vars ⟧ f           ∎
-    where
-      f = lookup v
+And that's all, folks. We can now give a full-strength definition of
+`def:solve`, equivalent to the one in Agda's standard library:
 
-  open import Data.Product
-    using (_×_)
-    renaming ( proj₁ to lhs
-             ; proj₂ to rhs
-             ; _,_ to _:=_
-             ) public
-
-  N-ary : (n : ℕ) → (A : Set) → (Vec A n → Set) → Set
-  N-ary zero A B = B []
-  N-ary (suc n) A B = (a : A) → N-ary n A (B ∘ (a ∷_))
-
-  N-ary′ : ℕ → Set → Set → Set
-  N-ary′ n A B = N-ary n A (λ _ → B)
-
-  _$ⁿ_ : {n : ℕ} → {A : Set} → {B : Vec A n → Set} → N-ary n A B → ((v : Vec A n) → B v)
-  _$ⁿ_ {zero} f [] = f
-  _$ⁿ_ {suc n} f (x ∷ v) = _$ⁿ_ (f x) v
-
-  curryⁿ : {n : ℕ} → {A : Set} → {B : Vec A n → Set} → ((v : Vec A n) → B v) → N-ary n A B
-  curryⁿ {zero} x = x []
-  curryⁿ {suc n} x a = curryⁿ (x ∘ (a ∷_))
-
+```agda
+  -- TODO(sandy): lookup gives us a function from vec to fin
   solve
       : (n : ℕ)
       → (eq : N-ary′ n (Syn n) (Syn n × Syn n))
@@ -1561,23 +1250,6 @@ module Solver {𝔸 : Set}
       → N-ary n 𝔸 (λ v → ⟦ x ⟧ (lookup v) ≡ ⟦ y ⟧ (lookup v))
   solve n eq x=y =
     let x := y = eq $ⁿ vars {n}
-     in curryⁿ (solve₀ n (λ _ → x) (λ _ → y) x=y)
-
-open import Data.Nat
-
-open import Data.Vec using ([]; _∷_)
-
-open Solver 0 1 _+_ _*_
-open import Relation.Binary.PropositionalEquality
-
-
-
-test : (a b : ℕ) → a * (5 * a + b) + b * b ≡ b * b + (a * 5 * a + a * b)
-test a b =
-  solve 2 (λ x y → x :* ((con 5 :* x) :+ y) :+ (y :* y)
-                := y :* y :+ (x :* con 5) :* x :+ x :* y )
-    refl a b
+     in curryⁿ (equate x y x=y ∘ lookup)
 ```
-
-
 
