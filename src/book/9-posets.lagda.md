@@ -1,76 +1,114 @@
-# Partially Ordered Sets
+# Structed Sets
 
 ```agda
 {-# OPTIONS --allow-unsolved-metas #-}
 module 9-posets where
 
 open import Agda.Primitive
-open import 8-iso
 ```
 
+In this chapter we will discuss a swathe of so-called *structured sets,* that
+is, simple mathematical objects from the realm of *abstract algebra.* Structured
+sets, as their helpful name implies, are sets with additional structure on top.
+This structure always comes in the form of *distinguished elements,*
+*operations,* and *laws* relating the two. Laws and operations you already know
+about; distinguished elements are just values in the type that we want to call
+attention to for some reason.
 
-*Partially ordered sets* generalize our everyday notion of comparison --- that
-is, to ask, "is this thing less than that other thing?" We are most familiar
-with orderings in the context of the number line, which is a helpful starting
-point, but doesn't cover the whole story.
+By virtue of your steadfast hard work throughout this book thus far, the
+examples in this chapter will present you with very little challenge. Thus, we
+will move more quickly than we have been, in order to present a great deal of
+structured sets. Rather than work through all of the details together, I will
+instead draw your attention to how these structures give rise to real solutions
+in the domain of computer programming.
+
+
+## Partially Ordered Sets
+
+The first structured set we will look at is *partially ordered sets,* which are
+often shortened as *posets*. Posets generalize our everyday notion of
+comparison---that is, to ask, "is this thing less than that other thing?" We are
+most familiar with orderings in the context of the number line, which is a
+helpful starting point, but doesn't cover the whole story.
 
 Orderings over numbers have a property that you might take for granted, that is,
 they are *total.* For any two numbers $a$ and $b$, you can decide whether $a <
-b$, $a = b$ or $a > b$. This is an extremely strong property, and requiring it
-would filter out many things we'd otherwise like to order. For example, consider
-a family tree where we can say person $a$ is less than person $b$ if $a$ is
-below $b$ (or if $a$ *is* $b$) in the family tree. Such a thing certainly feels
-like an ordering, but it isn't total; for example, my neither my wife's parents
-are neither above nor below my parents, since they exist in an unrelated
-branches of the family tree.
+b$, $a = b$ or $a > b$. This is an extremely strong property, known as
+*trichotomy*, and requiring it would filter out many things we'd otherwise like
+to order. For example, consider a family tree where we can say person $a$ is
+"less than" person $b$ if $a$ is a descendant of $b$ (or if $a$ and $b$ are the
+same person.)
 
-The opposite of a total relation is a partial one, and since we don't require
-totality, our ordering is thus a partial one. Therefore, "partially ordered
-sets."
+Such a relation over the family tree certainly feels like an ordering, but it
+isn't total; for example, my neither my wife's parents are neither above nor
+below my parents, since they exist in an unrelated branches of the family tree.
+This is fortunate turn of events, otherwise extended family get-togethers might
+be very uncomfortable indeed.
+
+Relations form a dichotomy; they are either *total*, and relate every two
+elements, or they are *partial* and do not. Since our family tree relation is
+not total, it must be partial. Thus, we have derived the name "partially ordered
+sets" for ourselves!
 
 What properties would we expect of an ordering? Like equivalence relationships,
-we will require reflexivity and transitivity. However, symmetry doesn't hold in
-an ordering, and this is in fact the defining characteristic of an ordering.
-Instead, we'd prefer a different, though similar, property, namely
-*antisymmetry*. Antisymmetry is the property that if we know `a ≤ b` and that `b
-≤ a`, then we know $a ≈ b$. That is to say, the only sort of cycles that are
-allowed in a poset are those from an element to itself.
+we will require reflexivity and transitivity. But, unlike in an equivalence,
+symmetry holds no power in an ordering. A quick smell test makes this evidently
+clear. While it would certainly be interesting if we could use $2 \le 5$ to
+derive a proof of $5 \le 2$, we would be unable to call the subsequent amazing
+discoveries "orderings."
 
-We can formalize this notion of `Antisymmetry` in Agda as a function of two
-relations:
+In the place of symmetry we instead reach for *antisymmetry*---the idea that if
+we know both $a \le b$ and $b \le a$ then we know for sure that $a = b$. This
+jives with our intuition. One corollary of this is that the only cycles allowed
+in a poset are from one element to itself. There are no loops in a family tree;
+such a thing would violate not only causality, but, worse, the poset laws too.
+
+We can formalize this notion of antisymmetry in Agda as a function of two
+relations---one for the ordering relation itself, and another for the equality
+we discover if both directions of the ordering hold.
 
 ```agda
-Antisymmetric
-  : {c ℓ₁ ℓ₂ : Level} {A : Set c}
-  → (A → A → Set ℓ₁)
-  → (A → A → Set ℓ₂)
-  → Set (c ⊔ ℓ₁ ⊔ ℓ₂)
-Antisymmetric {A = A} _≈_ _≤_ = {i j : A} → i ≤ j → j ≤ i → i ≈ j
+module Sandbox-Antisymmetry where
+  open import Relation.Binary
+    using (Rel)
+
+  Antisymmetric
+    : {c ℓ₁ ℓ₂ : Level} {A : Set c}
+    → Rel A ℓ₁
+    → Rel A ℓ₂
+    → Set (c ⊔ ℓ₁ ⊔ ℓ₂)
+  Antisymmetric {A = A} _≈_ _≤_
+    = {i j : A} → i ≤ j → j ≤ i → i ≈ j
 ```
 
-This definition comes directly from `Relation.Binary.Definitions` if you need it
-in the future and don't want to define it yourself.
+This definition comes directly from `module:Relation.Binary`. If you
+need it in the future, this is where you should look.
 
 ```agda
-open import Relation.Binary.Definitions hiding (Antisymmetric)
+open import Relation.Binary
+  using (Rel; Antisymmetric; Reflexive; Transitive)
 ```
 
 We can now dive into giving the definition of a poset: a record parameterized by
 the `_≤_` relationship we are asserting is a poset. Like everything we do, we
 require an equivalence relation on the underlying carrier `A` to having a
-meaningful notion of "equality" when discussing antisymmetry.
+meaningful notion of "equality" when discussing antisymmetry. However, as
+always, dealing with setoids and doing this "properly" is a huge pain, and thus
+we will cheat for presentation purposes and use propositional equality.
 
 ```agda
 private variable
   c ℓ : Level
 
-module _ {A : Set c} ⦃ _ : Equivalent ℓ A ⦄ (_≤_ : A → A → Set ℓ) where
+open import Relation.Binary.PropositionalEquality
+  using (_≡_)
+
+module _ {A : Set c} (_≤_ : Rel A ℓ) where
   record Poset : Set (c ⊔ ℓ) where
     field
       refl : Reflexive _≤_
-      antisym : Antisymmetric _≋_ _≤_
+      antisym : Antisymmetric _≡_ _≤_
       trans : Transitive _≤_
-
 ```
 
 In addition, we will introduce the notions of *top* and *bottom* elements. These
@@ -91,7 +129,7 @@ they exist. This is an easy thing to prove; given two top elements, they most
 both be bigger than the other, and thus be equal by antisymmetry.
 
 ```agda
-  Top-unique : {x y : A} → Poset → Top x → Top y → x ≋ y
+  Top-unique : {x y : A} → Poset → Top x → Top y → x ≡ y
   Top-unique {x} {y} pos e≤x e≤y =
     pos .Poset.antisym (e≤y x) (e≤x y)
 ```
@@ -99,7 +137,7 @@ both be bigger than the other, and thus be equal by antisymmetry.
 The dual fact holds for bottom elements, for exactly the same reasons:
 
 ```agda
-  Bottom-unique : {x y : A} → Poset → Bottom x → Bottom y → x ≋ y
+  Bottom-unique : {x y : A} → Poset → Bottom x → Bottom y → x ≡ y
   Bottom-unique {x} {y} pos x≤e y≤e =
     pos .Poset.antisym (x≤e y) (y≤e x)
 ```
@@ -246,8 +284,8 @@ later.
 module Substrings (A : Set) where
   open import Data.List
 
-  private instance
-    ListA-equiv = ≡-equiv (List A)
+  -- private instance
+  --   ListA-equiv = ≡-equiv (List A)
 
 
   private variable
@@ -473,7 +511,6 @@ Doing some module rites to set up the problem again:
 
 module MeetsAndJoins
          {A : Set c}
-         ⦃ _ : Equivalent ℓ A ⦄
          (_≤_ : A → A → Set ℓ)
          (poset : Poset _≤_)
          where
@@ -540,8 +577,6 @@ module _ (A : Set) (_≟_ : (x y : A) → Dec (x PropEq.≡ y)) where
   open import Data.List
   open Substrings A
 
-  private instance
-    ListA-equiv = ≡-equiv (List A)
 
   private variable
     a : A
@@ -585,7 +620,7 @@ a great example. Maybe I can use it for something else?
   ... | yes z = match (kernel≤ xs ys)
   ... | no z = insert (kernel≤ xs ys)
 
-  kernel-comm : Commutative _≋_ kernel
+  kernel-comm : Commutative _≡_ kernel
   kernel-comm [] [] = PropEq.refl
   kernel-comm [] (y ∷ ys) = PropEq.refl
   kernel-comm (x ∷ xs) [] = PropEq.refl
@@ -623,7 +658,7 @@ module _ where
     field
       n : ℕ
       0<n : 0 < n
-      proof : a * n ≋ b
+      proof : a * n ≡ b
 
   div-poset : Poset _Divides_
   _Divides_.n (refl div-poset) = 1
@@ -632,13 +667,13 @@ module _ where
   antisym div-poset {i} {j} (divides m 0<m pm) (divides n 0<n pn) =
     ≤-antisym
         ( begin
-          i      ≡⟨ Equiv.sym (*-identityʳ i) ⟩
+          i      ≡⟨ PropEq.sym (*-identityʳ i) ⟩
           i * 1  ≤⟨ *-mono-≤ (≤-refl {i}) 0<m ⟩
           i * m  ≡⟨ pm ⟩
           j      ∎
         )
         ( begin
-          j      ≡⟨ Equiv.sym (*-identityʳ j) ⟩
+          j      ≡⟨ PropEq.sym (*-identityʳ j) ⟩
           j * 1  ≤⟨ *-mono-≤ (≤-refl {j}) 0<n ⟩
           j * n  ≡⟨ pn ⟩
           i      ∎
@@ -654,11 +689,11 @@ module _ where
   _Divides_.proof (trans div-poset {i} {j} {k}
                     (divides m 0<m pm)
                     (divides n 0<n pn)) = begin
-      i * (m * n)  ≈⟨ Equiv.sym (*-assoc i m n) ⟩
-      i * m * n    ≈⟨ cong (_* n) pm ⟩
+      i * (m * n)  ≡⟨ PropEq.sym (*-assoc i m n) ⟩
+      i * m * n    ≡⟨ cong (_* n) pm ⟩
       j * n        ≡⟨ pn ⟩
       k            ∎
-    where open ≋-Reasoning
+    where open PropEq.≡-Reasoning
 ```
 
 ## Duality
@@ -671,7 +706,7 @@ is trivial to construct.
 First, we must make a new module to bind the existing `_≤_` relation:
 
 ```agda
-module Op {A : Set c} ⦃ _ : Equivalent ℓ A ⦄ {_≤_ : A → A → Set ℓ} where
+module Op {A : Set c} {_≤_ : A → A → Set ℓ} where
 ```
 
 We can now construct a new relation, `_≥_` by swapping which argument is on the
