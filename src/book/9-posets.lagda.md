@@ -94,7 +94,9 @@ the `_≤_` relationship we are asserting is a poset. Like everything we do, we
 require an equivalence relation on the underlying carrier `A` to having a
 meaningful notion of "equality" when discussing antisymmetry. However, as
 always, dealing with setoids and doing this "properly" is a huge pain, and thus
-we will cheat for presentation purposes and use propositional equality.
+we will cheat for presentation purposes and use propositional equality. Don't
+worry; the posets in the standard library are fully setoid-powered, if you ever
+need to use one in real anger.
 
 ```agda
 private variable
@@ -106,14 +108,23 @@ open import Relation.Binary.PropositionalEquality
 module _ {A : Set c} (_≤_ : Rel A ℓ) where
   record Poset : Set (c ⊔ ℓ) where
     field
-      refl : Reflexive _≤_
-      antisym : Antisymmetric _≡_ _≤_
-      trans : Transitive _≤_
+      ≤-refl : Reflexive _≤_
+      ≤-antisym : Antisymmetric _≡_ _≤_
+      ≤-trans : Transitive _≤_
 ```
 
-In addition, we will introduce the notions of *top* and *bottom* elements. These
-are elements in the set which are greater than and less than every other element
-in the set. Not ever poset has top and bottom elements, but some do, and we will
+Presented in this way, we see that a `type:Poset` is nothing but a
+`type:Preorder` with the addition of antisymmetry. This is often the case in
+mathematics, where two objects will differ by only a single property, but have
+dramatically different names. For example, a *magma* which gains associativity
+becomes a *semigroup,* and then becomes a *monoid* with the addition of an
+identity, and then an honest-to-goodness *ring* when it gets inverses. Keeping
+straight the mapping from words to properties has always been the hardest part
+for me.
+
+Anyway, we will introduce the notions of *top* and *bottom* elements. These are
+elements in the set which are greater than and less than every other element in
+the set. Not ever poset has top and bottom elements, but some do, and we will
 keep an eye out for them as we go forwards.
 
 ```agda
@@ -131,7 +142,7 @@ both be bigger than the other, and thus be equal by antisymmetry.
 ```agda
   Top-unique : {x y : A} → Poset → Top x → Top y → x ≡ y
   Top-unique {x} {y} pos e≤x e≤y =
-    pos .Poset.antisym (e≤y x) (e≤x y)
+    pos .Poset.≤-antisym (e≤y x) (e≤x y)
 ```
 
 The dual fact holds for bottom elements, for exactly the same reasons:
@@ -139,7 +150,7 @@ The dual fact holds for bottom elements, for exactly the same reasons:
 ```agda
   Bottom-unique : {x y : A} → Poset → Bottom x → Bottom y → x ≡ y
   Bottom-unique {x} {y} pos x≤e y≤e =
-    pos .Poset.antisym (x≤e y) (y≤e x)
+    pos .Poset.≤-antisym (x≤e y) (y≤e x)
 ```
 
 Let's close out the module, and then do a little ritual to get the Agda
@@ -148,8 +159,7 @@ environment into the right state for the remainder of the chapter.
 ```agda
 open Poset
 
-import Relation.Binary.PropositionalEquality as PropEq
-open PropEq using (cong)
+open import Relation.Binary.PropositionalEquality
 ```
 
 ## Examples of Posets
@@ -201,12 +211,12 @@ comment.
 
 ```
   ≤B-poset : Poset _≤B_
-  refl ≤B-poset {false} = f≤b
-  refl ≤B-poset {true} = t≤t
-  antisym ≤B-poset f≤b f≤b = PropEq.refl
-  antisym ≤B-poset t≤t b≤a = PropEq.refl
-  trans ≤B-poset f≤b b≤c = f≤b
-  trans ≤B-poset t≤t t≤t = t≤t
+  ≤-refl ≤B-poset {false} = f≤b
+  ≤-refl ≤B-poset {true} = t≤t
+  ≤-antisym ≤B-poset f≤b f≤b = refl
+  ≤-antisym ≤B-poset t≤t b≤a = refl
+  ≤-trans ≤B-poset f≤b b≤c = f≤b
+  ≤-trans ≤B-poset t≤t t≤t = t≤t
 ```
 
 Another poset is the usual ordering over the natural numbers. We can construct
@@ -245,14 +255,14 @@ the only difference is the requirement of a `cong` to show antisymmetry in the
 
 ```agda
   ≤ℕ-poset : Poset _≤ℕ_
-  refl ≤ℕ-poset {zero} = z≤n
-  refl ≤ℕ-poset {suc x} = s≤s (refl ≤ℕ-poset)
-  antisym ≤ℕ-poset {.zero} {.zero} z≤n z≤n = PropEq.refl
-  antisym ≤ℕ-poset {.(suc _)} {.(suc _)} (s≤s a≤b) (s≤s b≤a) =
-    cong suc (antisym ≤ℕ-poset a≤b b≤a)
-  trans ≤ℕ-poset z≤n b≤c = z≤n
-  trans ≤ℕ-poset (s≤s a≤b) (s≤s b≤c) =
-    s≤s (trans ≤ℕ-poset a≤b b≤c)
+  ≤-refl ≤ℕ-poset {zero} = z≤n
+  ≤-refl ≤ℕ-poset {suc x} = s≤s (≤-refl ≤ℕ-poset)
+  ≤-antisym ≤ℕ-poset {.zero} {.zero} z≤n z≤n = refl
+  ≤-antisym ≤ℕ-poset {.(suc _)} {.(suc _)} (s≤s a≤b) (s≤s b≤a) =
+    cong suc (≤-antisym ≤ℕ-poset a≤b b≤a)
+  ≤-trans ≤ℕ-poset z≤n b≤c = z≤n
+  ≤-trans ≤ℕ-poset (s≤s a≤b) (s≤s b≤c) =
+    s≤s (≤-trans ≤ℕ-poset a≤b b≤c)
 ```
 
 ## The Poset of Substrings
@@ -327,7 +337,7 @@ natural numbers, and we can instead find this (and much more machinery) in
 
 ```agda
   open import Data.Nat
-  open import Data.Nat.Properties
+  import Data.Nat.Properties as ℕ
 ```
 
 Before showing our poset, let's first define a little lemma, namely that
@@ -359,10 +369,10 @@ Solution
     z≤n
   substr-cong-length {x₁ ∷ l₁} (insert {l₂ = l₂} {a = a} a≤b) = begin
     length (x₁ ∷ l₁)  ≤⟨ substr-cong-length a≤b ⟩
-    length l₂         ≤⟨ ≤-step ≤-refl ⟩
+    length l₂         ≤⟨ ℕ.≤-step ℕ.≤-refl ⟩
     1 + length l₂     ≡⟨⟩
     length (a ∷ l₂)   ∎
-    where open ≤-Reasoning
+    where open ℕ.≤-Reasoning
         ```
 
 We will need two more lemmas in order to show our poset on substrings. The first
@@ -388,8 +398,8 @@ Showing reflexivity is never hard, and subsets are no exception:
 
 ```agda
   substr-pos : Poset _SubstrOf_
-  refl substr-pos {[]} = []≤
-  refl substr-pos {x ∷ xs} = match (refl substr-pos)
+  ≤-refl substr-pos {[]} = []≤
+  ≤-refl substr-pos {x ∷ xs} = match (≤-refl substr-pos)
 ```
 
 Transitivity is also straightforward in the case of subsets. We need to split on
@@ -397,15 +407,15 @@ every case of both proofs, and then find something that typechecks to fill the
 solution, but there is little of interest here.
 
 ```agda
-  trans substr-pos []≤ b≤c = []≤
-  trans substr-pos (match a≤b) (match b≤c)
-    = match (trans substr-pos a≤b b≤c)
-  trans substr-pos (match a≤b) (insert b≤c)
-    = insert (trans substr-pos (match a≤b) b≤c)
-  trans substr-pos (insert a≤b) (match b≤c)
-    = insert (trans substr-pos a≤b b≤c)
-  trans substr-pos (insert a≤b) (insert b≤c)
-    = insert (trans substr-pos (insert a≤b) b≤c)
+  ≤-trans substr-pos []≤ b≤c = []≤
+  ≤-trans substr-pos (match a≤b) (match b≤c)
+    = match (≤-trans substr-pos a≤b b≤c)
+  ≤-trans substr-pos (match a≤b) (insert b≤c)
+    = insert (≤-trans substr-pos (match a≤b) b≤c)
+  ≤-trans substr-pos (insert a≤b) (match b≤c)
+    = insert (≤-trans substr-pos a≤b b≤c)
+  ≤-trans substr-pos (insert a≤b) (insert b≤c)
+    = insert (≤-trans substr-pos (insert a≤b) b≤c)
 ```
 
 Having saved the most interesting bits for last, we turn our attention to the
@@ -414,16 +424,16 @@ last remaining property: antisymmetry. Showing antisymmetry for the `[]≤` and
 
 
 ```agda
-  antisym substr-pos []≤ []≤ = PropEq.refl
-  antisym substr-pos (match a≤b) (match b≤a) =
-    cong (_ ∷_) (antisym substr-pos a≤b b≤a)
+  ≤-antisym substr-pos []≤ []≤ = refl
+  ≤-antisym substr-pos (match a≤b) (match b≤a) =
+    cong (_ ∷_) (≤-antisym substr-pos a≤b b≤a)
 ```
 
 but challenges immediately pop up as soon as we have an `insert` proof. When we
 look at `match/insert` for example
 
 ```agda
-  antisym substr-pos (match a≤b) (insert b≤a)
+  ≤-antisym substr-pos (match a≤b) (insert b≤a)
 ```
 
 our goal becomes to show `a ∷ l₁ ≡ a ∷ l₂`, given the following two proofs:
@@ -466,7 +476,7 @@ equivalent statements about the lengths of the corresponding lists. Then,
 contradiction.
 
 ```agda
-    with lies (≤-trans (substr-cong-length b≤a) (substr-cong-length a≤b))
+    with lies (ℕ.≤-trans (substr-cong-length b≤a) (substr-cong-length a≤b))
 ```
 
 Once we've shown a contradiction, Agda is smart enough to realize there is no
@@ -483,10 +493,10 @@ impossible, but in different ways and requiring us to show different
 contradictions.
 
 ```agda
-  antisym substr-pos (insert a≤b) (match b≤a)
-    with lies (≤-trans (substr-cong-length a≤b) (substr-cong-length b≤a))
+  ≤-antisym substr-pos (insert a≤b) (match b≤a)
+    with lies (ℕ.≤-trans (substr-cong-length a≤b) (substr-cong-length b≤a))
   ... | ()
-  antisym substr-pos (insert {a = a} a≤b) (insert {a = b} b≤a)
+  ≤-antisym substr-pos (insert {a = a} a≤b) (insert {a = b} b≤a)
     with lies₂ (substr-cong-length a≤b) (substr-cong-length b≤a)
   ... | ()
 ```
@@ -573,7 +583,7 @@ proofs.
 ```agda
 open import Relation.Nullary
 
-module _ (A : Set) (_≟_ : (x y : A) → Dec (x PropEq.≡ y)) where
+module _ (A : Set) (_≟_ : (x y : A) → Dec (x ≡ y)) where
   open import Data.List
   open Substrings A
 
@@ -621,37 +631,40 @@ a great example. Maybe I can use it for something else?
   ... | no z = insert (kernel≤ xs ys)
 
   kernel-comm : Commutative _≡_ kernel
-  kernel-comm [] [] = PropEq.refl
-  kernel-comm [] (y ∷ ys) = PropEq.refl
-  kernel-comm (x ∷ xs) [] = PropEq.refl
+  kernel-comm [] [] = refl
+  kernel-comm [] (y ∷ ys) = refl
+  kernel-comm (x ∷ xs) [] = refl
   kernel-comm (x ∷ xs) (y ∷ ys) with x ≟ y | y ≟ x
-  ... | yes PropEq.refl | yes w = cong (x ∷_) (kernel-comm xs ys)
-  ... | yes z | no w = ⊥-elim (w (PropEq.sym z))
+  ... | yes refl | yes w = cong (x ∷_) (kernel-comm xs ys)
+  ... | yes z | no w = ⊥-elim (w (sym z))
   ... | no z | no w = kernel-comm xs ys
-  ... | no z | yes w = ⊥-elim (z (PropEq.sym w))
+  ... | no z | yes w = ⊥-elim (z (sym w))
 
   open MeetsAndJoins _SubstrOf_ substr-pos
+  open IsMeet
 
   is-meet : (x y : List A) → IsMeet x y (kernel x y)
-  IsMeet.a≤x (is-meet x y) = kernel≤ x y
-  IsMeet.a≤y (is-meet x y) = ?
-  IsMeet.a-is-most (is-meet x y) [] z≤x z≤y = []≤
-  IsMeet.a-is-most (is-meet (x ∷ xs) (.x ∷ ys)) (.x ∷ zs) (match z≤x) (match z≤y) with x ≟ x
-  ... | yes p = match (IsMeet.a-is-most (is-meet xs ys) zs z≤x z≤y)
-  ... | no p = ⊥-elim (p PropEq.refl)
-  IsMeet.a-is-most (is-meet (x ∷ xs) (y ∷ ys)) (.x ∷ zs) (match z≤x) (insert z≤y) with x ≟ y
-  ... | yes PropEq.refl = {! !}
+  a≤x (is-meet x y) = kernel≤ x y
+  a≤y (is-meet x y) = subst (_SubstrOf _) (kernel-comm y x) (kernel≤ y x)
+  a-is-most (is-meet x y) [] z≤x z≤y = []≤
+  a-is-most (is-meet (x ∷ xs) (.x ∷ ys)) (.x ∷ zs) (match z≤x) (match z≤y) with x ≟ x
+  ... | yes p = match (a-is-most (is-meet xs ys) zs z≤x z≤y)
+  ... | no p = ⊥-elim (p refl)
+  a-is-most (is-meet (x ∷ xs) (y ∷ ys)) (.x ∷ zs) (match z≤x) (insert z≤y) with x ≟ y
+  ... | yes refl = insert ?
   ... | no p = {! !}
-  IsMeet.a-is-most (is-meet (x ∷ xs) (y ∷ ys)) (.y ∷ zs) (insert z≤x) (match z≤y) with x ≟ y
-  ... | yes PropEq.refl = {! !}
+  a-is-most (is-meet (x ∷ xs) (y ∷ ys)) (.y ∷ zs) (insert z≤x) (match z≤y) with x ≟ y
+  ... | yes refl = let zz = kernel≤ xs ys in ?
   ... | no p = {! !}
-  IsMeet.a-is-most (is-meet (x ∷ xs) (y ∷ ys)) (z ∷ zs) (insert z≤x) (insert z≤y) = {! !}
+  a-is-most (is-meet (x ∷ xs) (y ∷ ys)) (z ∷ zs) (insert z≤x) (insert z≤y) with x ≟ y
+  ... | yes refl = insert (a-is-most (is-meet xs ys) (z ∷ zs) z≤x z≤y)
+  ... | no p = ?
 ```
 
 ```agda
 module _ where
   open import Data.Nat
-  open import Data.Nat.Properties
+  import Data.Nat.Properties as ℕ
 
   record _Divides_ (a b : ℕ) : Set where
     constructor divides
@@ -661,39 +674,39 @@ module _ where
       proof : a * n ≡ b
 
   div-poset : Poset _Divides_
-  _Divides_.n (refl div-poset) = 1
-  _Divides_.0<n (refl div-poset) = s≤s z≤n
-  _Divides_.proof (refl div-poset) = *-identityʳ _
-  antisym div-poset {i} {j} (divides m 0<m pm) (divides n 0<n pn) =
-    ≤-antisym
+  _Divides_.n (≤-refl div-poset) = 1
+  _Divides_.0<n (≤-refl div-poset) = s≤s z≤n
+  _Divides_.proof (≤-refl div-poset) = ℕ.*-identityʳ _
+  ≤-antisym div-poset {i} {j} (divides m 0<m pm) (divides n 0<n pn) =
+    ℕ.≤-antisym
         ( begin
-          i      ≡⟨ PropEq.sym (*-identityʳ i) ⟩
-          i * 1  ≤⟨ *-mono-≤ (≤-refl {i}) 0<m ⟩
+          i      ≡⟨ sym (ℕ.*-identityʳ i) ⟩
+          i * 1  ≤⟨ ℕ.*-mono-≤ (ℕ.≤-refl {i}) 0<m ⟩
           i * m  ≡⟨ pm ⟩
           j      ∎
         )
         ( begin
-          j      ≡⟨ PropEq.sym (*-identityʳ j) ⟩
-          j * 1  ≤⟨ *-mono-≤ (≤-refl {j}) 0<n ⟩
+          j      ≡⟨ sym (ℕ.*-identityʳ j) ⟩
+          j * 1  ≤⟨ ℕ.*-mono-≤ (ℕ.≤-refl {j}) 0<n ⟩
           j * n  ≡⟨ pn ⟩
           i      ∎
         )
-    where open ≤-Reasoning
-  _Divides_.n (trans div-poset (divides m 0<m pm) (divides n 0<n pn)) = m * n
-  _Divides_.0<n (trans div-poset (divides m 0<m pm) (divides n 0<n pn)) =
+    where open ℕ.≤-Reasoning
+  _Divides_.n (≤-trans div-poset (divides m 0<m pm) (divides n 0<n pn)) = m * n
+  _Divides_.0<n (≤-trans div-poset (divides m 0<m pm) (divides n 0<n pn)) =
     begin
       1      ≡⟨⟩
-      1 * 1  ≤⟨ *-mono-≤ 0<m 0<n ⟩
+      1 * 1  ≤⟨ ℕ.*-mono-≤ 0<m 0<n ⟩
       m * n  ∎
-    where open ≤-Reasoning
-  _Divides_.proof (trans div-poset {i} {j} {k}
+    where open ℕ.≤-Reasoning
+  _Divides_.proof (≤-trans div-poset {i} {j} {k}
                     (divides m 0<m pm)
                     (divides n 0<n pn)) = begin
-      i * (m * n)  ≡⟨ PropEq.sym (*-assoc i m n) ⟩
+      i * (m * n)  ≡⟨ sym (ℕ.*-assoc i m n) ⟩
       i * m * n    ≡⟨ cong (_* n) pm ⟩
       j * n        ≡⟨ pn ⟩
       k            ∎
-    where open PropEq.≡-Reasoning
+    where open ≡-Reasoning
 ```
 
 ## Duality
@@ -724,8 +737,8 @@ which we can emulate in Agda by naming this operation `_ᵒᵖ`.
 
 ```agda
   _ᵒᵖ : Poset _≤_ → Poset _≥_
-  refl (poset ᵒᵖ) = poset .refl
-  antisym (poset ᵒᵖ) x y = poset .antisym y x
-  trans (poset ᵒᵖ) x≥y y≥z = poset .trans y≥z x≥y
+  ≤-refl (poset ᵒᵖ) = poset .≤-refl
+  ≤-antisym (poset ᵒᵖ) x y = poset .≤-antisym y x
+  ≤-trans (poset ᵒᵖ) x≥y y≥z = poset .≤-trans y≥z x≥y
 ```
 

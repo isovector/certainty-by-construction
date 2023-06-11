@@ -77,7 +77,7 @@ open import Data.Sum renaming (map to ⊎-map)
 open import Data.Product renaming (map to ×-map)
 
 open import Relation.Binary.PropositionalEquality
-  using (_≡_; setoid; isEquivalence)
+  using (_≡_; refl; setoid; isEquivalence)
 
 private instance
   Fin-equiv : {n : ℕ} → Equivalent lzero (Fin n)
@@ -148,12 +148,12 @@ to           (proof countable-Bool) false      = zero
 to           (proof countable-Bool) true       = suc zero
 from         (proof countable-Bool) zero       = false
 from         (proof countable-Bool) (suc x)    = true
-left-inv-of  (proof countable-Bool) false      = _≡_.refl
-left-inv-of  (proof countable-Bool) true       = _≡_.refl
-right-inv-of (proof countable-Bool) zero       = _≡_.refl
-right-inv-of (proof countable-Bool) (suc zero) = _≡_.refl
-to-cong      (proof countable-Bool) _≡_.refl   = _≡_.refl
-from-cong    (proof countable-Bool) _≡_.refl   = _≡_.refl
+left-inv-of  (proof countable-Bool) false      = refl
+left-inv-of  (proof countable-Bool) true       = refl
+right-inv-of (proof countable-Bool) zero       = refl
+right-inv-of (proof countable-Bool) (suc zero) = refl
+to-cong      (proof countable-Bool) _≡_.refl   = refl
+from-cong    (proof countable-Bool) _≡_.refl   = refl
     ```
 
 One interesting fact about finite sets is that if two sets have the same

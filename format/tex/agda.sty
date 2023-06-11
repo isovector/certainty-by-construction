@@ -651,8 +651,10 @@
     %
     % The environment used to handle indentation (of individual lines)
     % and alignment.
-        \begin{tcolorbox}[breakable]%
-    \begin{pboxed}%
+        \tcbsidebyside[breakable, sidebyside, sidebyside align = top, sidebyside adapt=left, sidebyside gap=2mm,
+        left=3mm, right=3mm, segmentation style = {opacity = 0}]%
+        {\arabic{Agda@Current}$\rightarrowbar{}$}
+        {\begin{pboxed}%
       %
       % Conditionally preserve alignment between code blocks.
       \ifthenelse{\boolean{Agda@Align}}{%
@@ -662,8 +664,8 @@
       %
       % The code.
       \BODY%
-    \end{pboxed}%
-    \end{tcolorbox}%
+        \end{pboxed}}%
+    % \end{tcolorbox}%
     %
     \ifthenelse{\boolean{Agda@Number}}{%
       % Equation numbers have been requested.
