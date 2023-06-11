@@ -54,26 +54,82 @@ module example where
   -- I am an example
 ```
 
-This introduces a new module `module:example` inside of `module:1-agda`. Unlike many
-programming languages, Agda doesn't use delimiters to indicate blocks; instead,
-it uses *significant whitespace.* That is, in order to show that the comment `I
-am an example` is inside the module `example`, it must be indented relative to
-the `module`. Indeed, we can go absolutely mad with the module hierarchy (and
-with power):
+This introduces a new module `module:example` inside of `module:1-agda`. Unlike
+many programming languages, Agda doesn't use delimiters to indicate blocks;
+instead, it uses *significant whitespace.* That is, in order to show that the
+comment `I am an example` is inside the module `example`, it must be indented
+relative to the `module`. Because leading whitespace is meaningful in Agda, we
+must be careful to get our indentation right.
+
+
+OnlyBook
+
+:   This nested indentation can get very deep in real programs. It's not a
+    problem in a text editor, but in print, real-estate is very expensive.
+    Therefore, we will try to elide as much indentation as possible. You might
+    have noticed a little number 0 in the left margin gutter of each code block.
+    This indicates how many spaces should precede each line of the code block.
+
+:   If a block of code is at the same relative indent level as the last one,
+    we'll just mark the column depth in the gutter. However, if the indentation
+    has increased, we'll draw attention to it with a $\rightarrowbar$ symbol.
+    Likewise, if the indentation has decreased, we'll use a $\barleftarrow$
+    symbol.
+
+:   Thus, you might see $\rightarrowbar$ 2, meaning that the indentation of this
+    block has increased such that the leftmost character should be 2 spaces away
+    from the beginning of the line. Note that this is an *absolute* positioning
+    scheme; $\rightarrowbar$ 8 means that you should *begin* in column 8, *not*
+    that you should add 8 additional spaces relative to the previous line.
+
+:   To illustrate, these five code blocks:
+
+:     ```agda
+module foo⅋ where
+      ```
+
+:     ```agda
+  module bar⅋ where
+      ```
+
+:     ```agda
+    module qux⅋ where
+      ```
+
+:     ```agda
+    module zaz⅋ where
+      ```
+
+:     ```agda
+  module ram⅋ where
+      ```
+
+:   should be laid out in your Agda file like this:
 
 ```agda
 module foo where
   module bar where
     module qux where
-  module zaz where
+    module zaz where
+  module ram where
 ```
 
-Here, we have defined four sub-modules, which have the *fully-qualified* names:
+
+OnlyBook
+
+:   Don't worry; this will be much less tedious throughout the book than it
+    seems. The illustration here is merely to get you paying attention to the
+    indicators. Our actual code will require dramatically less changing of
+    indentation.
+
+In this example, we have defined five sub-modules, which have the
+*fully-qualified* names:
 
 - `module:1-agda.foo`
 - `module:1-agda.foo.bar`
 - `module:1-agda.foo.bar.qux`
-- `module:1-agda.foo.zaz`
+- `module:1-agda.foo.bar.zaz`
+- `module:1-agda.foo.ram`
 
 We will use many modules throughout this book---albeit ones which are much more
 interesting than the ones presented thus far. Our primary use for them will be
@@ -478,9 +534,9 @@ false != true of type Bool
 when checking that the expression refl has type not true ≡ true
 ```
 
-This error is telling us that our unit test failed; that `def:not` `ctor:true` is actually
-`ctor:false`, but we said it was `ctor:true`! We will discuss these strange `type:≡` and `ctor:refl`
-things in great detail soon enough.
+This error is telling us that our unit test failed; that `def:not` `ctor:true`
+is actually `ctor:false`, but we said it was `ctor:true`! We will discuss these
+strange `type:≡` and `ctor:refl` things in great detail soon enough.
 
 
 ## Dealing with Unicode
