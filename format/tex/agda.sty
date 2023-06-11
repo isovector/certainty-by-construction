@@ -563,6 +563,8 @@
 \define@boolkey[Agda]{code}{hide}[true]{}
 \newcounter{Agda@CurrentIndent}
 \setcounter{Agda@CurrentIndent}{0}
+\@addtoreset{Agda@CurrentIndent}{chapter}
+
 \newcommand{\Agda@IndentSymbol}{}
 \define@key[Agda]{code}{indent}[0]{%
   \ifthenelse{\cnttest{#1}{>}{\value{Agda@CurrentIndent}}}

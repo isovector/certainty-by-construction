@@ -676,7 +676,6 @@ syntax. If we fill the resulting hole with the names of both arguments `x` and
 
 ```agda
   _∨⅋⅋⅋⅋_ : Bool → Bool → Bool
-  -- TODO(sandy): bug in rendering, ₁ is gone
   x ∨⅋⅋⅋⅋ x₁ = {! x x₁ !}
 ```
 
