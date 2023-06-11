@@ -1,4 +1,4 @@
-# The Co-blub Paradox
+ The Co-blub Paradox
 
 It is widely acknowledged that the languages you speak shape the thoughts you
 can think; while this is true for natural language, it is doubly so in the case
@@ -24,7 +24,7 @@ powerfulness; a programmer who thinks in a middle-of-the-road language along
 this ordering (call it Blub) can identify less powerful languages, but not those
 which are more powerful. The idea rings true; one can arrange languages in power
 by the features they support, and subsequently check to see if a language
-supports all the features felt to be important. If it doesn't, it must be less
+supports all the features we feel to be important. If it doesn't, it must be less
 powerful. However, this technique doesn't work to identify more powerful
 languages---at best, you will see that the compared language supports all the
 features you're looking for, but you don't know enough to ask for more.
@@ -58,7 +58,7 @@ operations, and it wouldn't be nearly as tedious as it seems today.
 
 Then came assembly languages, which provided human-meaningful mnemonics to the
 computer's opcodes. No longer did we need to encode a jump as
-`11111000110000001100` --- now it was `jl 16`. Still mysterious, to be sure, but
+`11111000110000001100`---now it was `jl 16`. Still mysterious, to be sure, but
 significant gains are realized in legibility. When encoded directly in machine
 code, programs were, for the most part, write-only. But assembly languages
 don't come for free; first you need to write an assembler: a program that reads
@@ -67,7 +67,7 @@ writing machine code directly, you can imagine the task of implementing an
 assembler to feel like make work---a tool to automate a problem you don't have.
 In the context of the Co-Blub paradox, knowing the direct encodings of your
 opcodes is an anti-pattern when you have an assembly language, as it makes your
-contributes inscrutable among your peers.
+contributions inscrutable among your peers.
 
 Programming directly in assembly eventually hit its limits. Every computer had a
 different assembly language, which meant if you wanted to run the same program
@@ -75,10 +75,10 @@ on a different computer you'd have to completely rewrite the whole thing; often
 needing to translate between extremely different concepts and limitations.
 Ignoring a lot of history, C came around with the big innovation that software
 should be portable between different computers: the same C program should work
-regardless of the underlying machine architecture. If you were an assembly
-programmer, you ran into the anti-pattern that while you could squeeze more
-performance and perform clever optimizations if you were aware of the underlying
-architecture, this fundamentally limited you *to that platform.*
+regardless of the underlying machine architecture---more or less. If you were an
+assembly programmer, you ran into the anti-pattern that while you could squeeze
+more performance and perform clever optimizations if you were aware of the
+underlying architecture, this fundamentally limited you *to that platform.*
 
 By virtue of being, in many ways, a unifying assembly language, C runs very
 close to what we think of as "the metal." Although different computer
@@ -91,10 +91,11 @@ its programmers, who are thus required to think about mutable memory and about
 how to encode complicated objects as sequences of bytes in that memory. But then
 came Java, whose contribution to mainstream programming was to popularize the
 idea that memory is cheap and abundant, and thus OK to waste some in order to
-alleviate the headache of needing to track it all yourself. As a C programmer
-coming to Java, you must unlearn the idea that memory is sacred and scarce, that
-you can do a better job of keeping track of it than the compiler can, and,
-hardest of all, that it is an important thing to track in the first place.
+alleviate the headache of needing to wrangle it all yourself. A C programmer
+coming to Java must unlearn the idea that memory is sacred and scarce, that
+one can do a better job of keeping track of it than the compiler can. The
+hardest thing to unlearn is that memory is an important thing to think about in
+the first place.
 
 There is a clear line of progression here; as we move up the lattice of powerful
 languages, we notice that more and more details of what we thought were integral
@@ -110,11 +111,12 @@ are numbers and records. Where Java requires the executable pieces to be
 packaged up and moved around with explicit dependencies on the data it requires,
 Lisp just lets you write and pass around functions, which automatically carry
 around all the data they reference. Java has a *design pattern* for this called
-the "command pattern," which requires much ado and ink to be spilled, while in
-Lisp it just works in a way that is hard to understand if you are used to
+the "command pattern," which has required much ado and ink to be spilled. In
+Lisp, however, you can just pass functions around as first-class values and
+everything works properly. It can be hard to grok why exactly if you are used to
 thinking about computer programs as static sequences of instructions. Indeed,
 the command pattern is bloated and ultimately unnecessary in Lisp, and
-practitioners must first unlearn it before they can begin to see the beauty of
+practitioners must first unlearn it before they can begin to see the way of
 Lisp.
 
 Haskell takes a step further than Lisp, in that it restricts when and where
@@ -132,16 +134,14 @@ to acknowledge this reality and insists on coding with side-effects pays a great
 price, both on the amount of code they need to write, in its long-term
 reusability, and, most importantly, in the correctness of their computations.
 
-All of this brings us to Agda, which is as far as I've gotten along the power
-lattice of programming languages. While Agda looks a great deal like Haskell,
-its powerful typesystem allows us to articulate many invariants that are
-impossible to write down in other languages. It's tempting to think about Agda
-as Haskell-but-with-better-types, but this is missing the point. Agda's type
-system is so precise we can *prove* that our solutions are correct, which
-alleviates the need to actually *run* the subsequent programs. In essence,
-programming in Agda abstracts away the notion of execution entirely. Following
-our argument about co-Blub programmers, they will come to Agda with the
-anti-pattern that thinking their hard-earned, battle-proven programming
+All of this brings us to Agda, which is as far as I've personally come along the
+power lattice of programming languages. Agda's powerful type system allows us to
+articulate many invariants that are impossible to write down in other languages.
+In fact, its type system is so precise we can *prove* that our solutions are
+correct, which alleviates the need to actually *run* the subsequent programs. In
+essence, programming in Agda abstracts away the notion of execution entirely.
+Following our argument about co-Blub programmers, they will come to Agda with
+the anti-pattern that thinking their hard-earned, battle-proven programming
 techniques for wrangling runtime performance will come in handy. But this is not
 the case; most of the techniques we have learned and consider "computer science"
 are in fact *implementation ideas:* that is, specific realizations from infinite
@@ -159,7 +159,7 @@ when your proofs end up being much more difficult than you feel they deserve.
 Despite the pain and the frustration, this is in fact a feature, and not a bug.
 It is a necessary struggle, akin to the type-checker informing you that your
 program is wrong. While it can be tempting to blame the tool, the real fault is
-in the workmanship.
+in the craftsmanship.
 
 
 ## A World Without Execution?
@@ -170,16 +170,16 @@ the eventual result, whether that be an answer (as in a computation) or series
 of side-effects (as in most real-world programs,) non-execution seems useless at
 best and masturbatory at worst.
 
-Consider the case of rewriting a program from scratch. Even though none of the
-source code is reused, nor is the computation or side effects preserved, the
-second time writing a program is always easier. Why should this be so? Writing
-the program has an effect on the world, completely apart from the digital
-artifacts that result---namely, the way in which your brain changes from having
-written the program. As a creative endeavor, every program leaves its mark on
-its creator, in the mental battle scars that accumulate from having struggled
-with---and eventually having conquered---the individual problems inherent in the
-program. Considering a program to be only a digital artifact ignores the very
-real groove it made on its author's brain.
+Consider the case of rewriting a program from scratch. Even though we reuse none
+of the original source code, nor the compiled artifacts, the second time through
+writing a program is always much easier. Why should this be so? Writing the
+program has an effect on the world, completely apart from the digital artifacts
+that result---namely, the way in which your brain changes from having written
+the program. Programming is a creative endeavor, and every program leaves its mark on its
+creator. It is through these mental battle scars---accumulated from struggling
+with and conquering problems---that we become better programmers. Considering a
+program to be a digital artifact only ignores the very real groove it made on
+its author's brain.
 
 It is for this reason that programmers, in their spare time, will also write
 other sorts of programs. Code that are is not necessarily useful, but code that
@@ -191,36 +191,33 @@ exploring new ideas, which acts as a forcing function to prevent us from fooling
 ourselves into thinking we understand when we don't. After all, it's much easier
 to fool ourselves than it is to fool the computer.
 
-So, programmers are not unfamiliar with writing programs, not running the
-eventual code, but for the process of having built it in the first place. In
-effect, the real output of this process is the neural pathways it engenders.
+So, programmers are familiar with writing programs, not for running the eventual
+code, but for the process of having built it in the first place. In effect, the
+real output of this process is the neural pathways it engenders.
 
 Agda fits very naturally into this niche; the purpose of writing Agda is not to
-be able to run the code, but that Agda is such a harsh mistress that having
-programmed it in Agda will teach you much more about the subject than you
-thought there *was.* Agda forces you to grapple with the hard, conceptual parts
-of the problem, without worrying very much about how you're going to make the
-whole thing go fast later. After all, there's nothing *to* go fast if you don't
-know what you're building in the first place.
+be able to run the code, but because Agda is so strict with what it allows.
+Having programmed it in Agda will teach you much more about the subject than you
+thought there was to know. Agda forces you to grapple with the hard, conceptual
+parts of the problem, without worrying very much about how you're going to make
+the whole thing go fast later. After all, there's nothing *to* go fast if you
+don't know what you're building in the first place.
 
-This message might be at odds with some readers. Surely you don't have to
-*really* understand the problem in order to get work done? I would say yes, you
-do. Consider the universal programmer experience of spending a week implementing
-a tricky algorithm or data structure, only to realize upon completion that you
+Consider the universal programmer experience of spending a week implementing a
+tricky algorithm or data structure, only to realize upon completion that you
 don't need it---either that it doesn't do what you hoped, or it doesn't actually
-solve the problem you thought you had. Unfortunately, this is the rule to
-software, not the exception. Without total conceptual clarity, your software can
-never possibly be correct, if for no other reason than you don't know what
-correct even *means.* Maybe the program will still give you an answer, but it is
+solve the problem you thought you had. Unfortunately, this is the rule in
+software, not the exception. Without total conceptual clarity, our software can
+never possibly be correct, if for no other reason than we don't know what
+correct *means.* Maybe the program will still give you an answer, but it is
 nothing but willful ignorance to assume this output corresponds at all to
 reality.
 
 The reality is, conceptual understanding is the difficult part of
-programming---the rest is just iteratively filling in the blanks. The way we
-have all learned how to do programming is to attempt to solve both problems at
-once: we write code and try to decipher the problem as we go; it is the rare
-coder who stops to think on the whiteboard, and the rarer-still engineer who
-starts there.
+programming---the rest is just coloring by numbers. The way we have all learned
+how to do programming is to attempt to solve both problems at once: we write
+code and try to decipher the problem as we go; it is the rare coder who stops to
+think on the whiteboard, and the rarer-still engineer who starts there.
 
 But again recall the case of rewriting a program. Once you have worked through
 the difficult pieces, the rest is just going through the motions. There exists
