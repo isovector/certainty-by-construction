@@ -1,27 +1,24 @@
 # Introduction to Agda
 
-This book in your hands is no ordinary prose. No, it is a living, breathing
-document. Certainly this is a curious claim; on what grounds can it be made? The
-book you are reading is not just a book, it is also a computer program written
-in the *literate style.*
+This book is no ordinary prose. It is not just a book, but it is also a piece of
+software. Literate programming is a technique for interspersing prose and
+computer programs in the same document. The result is a *polyglot*: a single
+artifact that can be interpreted simultaneously as a book written in English, or
+a series of program modules written in Agda.
 
-Literate programming is a technique for interspersing prose and computer
-programs in the same document. The result is a "polyglot": a single artifact
-that can be interpreted simultaneously as a book written in English, or a series
-of program modules written in Agda.
+By virtue of being a literate program, this book is only capable of being
+typeset if all of the code actually compiles; it's not by the virtue of having
+had a diligent copy-editor! The book simply will not compile if any of the Agda
+code presented in it doesn't typecheck, or if any of its tests fail. And as we
+will see shortly, Agda programs come with very extensive tests.
 
-The advantage of reading a literate program are that you can be sure the code
-*actually works.* This is not by the virtue of having had a diligent
-copy-editor; it's merely a byproduct of the process. The book simply can't be
-assembled into its current form if it contains any syntax errors or if any of
-its tests fail. And as we will see shortly, Agda programs come with very
-extensive tests. Furthermore, presenting all the code means I, the author,
-cannot sweep any nitty-gritty details under the rug.
+In this chapter we will get acquainted with Agda's syntax, core ideas, and
+interactive tooling. By the end, you will be able to parse Agda code mentally,
+be able to write simple functions, and type the many funny Unicode characters
+which are ubiquitous in real Agda code.
 
 
 ## Modules and Imports
-
-When code is presented in this book, it will come in a box like the following:
 
 
 Hidden
@@ -31,35 +28,39 @@ Hidden
     ```
 
 
+When code is presented in this book, it will come in a box like the following:
+
 ```agda
 module 1-agda where
 ```
 
-This is not merely an example; it's necessary preamble when starting a new Agda
-file. The `module` is Agda's simplest unit of compilation, and every chapter in
-this book will begin a new module. Thus, you shouldn't be surprised to see
-similar blocks of code at the beginning of each chapter.
+This is not just an example of a code block: it's necessary preamble when
+starting a new Agda file. Every Agda file must begin with a `keyword:module`
+definition, and since this book is a real Agda program, every chapter must
+contain a `keyword:module` definition before we can write any code.
 
--- TODO(sandy): CHANGE ME WHEN PUBLISHING
+The module is Agda's simplest unit of compilation.
+
+> TODO(sandy): change me when publishing
 
 Every Agda source file must begin with a module declaration corresponding to the
 file name. Since this module is called `module:1-agda`, if you want to follow
 along at home, you will have to save your file as `1-agda.agda`.
 
-Agda modules can contain other modules, in which case they act as namespacing
-tools. For example, we can make a submodule inside of `module:1-agda`:
+Agda modules can contain other modules, in which case they act as tools for
+namespacing. For example, we can make a submodule inside of `module:1-agda`:
 
 ```agda
 module example where
-  -- I am an example
+  -- This is a comment
 ```
 
 This introduces a new module `module:example` inside of `module:1-agda`. Unlike
 many programming languages, Agda doesn't use delimiters to indicate blocks;
 instead, it uses *significant whitespace.* That is, in order to show that the
-comment `I am an example` is inside the module `example`, it must be indented
-relative to the `module`. Because leading whitespace is meaningful in Agda, we
-must be careful to get our indentation right.
+comment is inside the module `module:example`, it must be indented relative to
+the `keyword:module` keyword. Because leading whitespace is meaningful in Agda,
+we must be careful to get our indentation right.
 
 
 OnlyBook
@@ -134,7 +135,7 @@ In this example, we have defined five sub-modules, which have the
 We will use many modules throughout this book---albeit ones which are much more
 interesting than the ones presented thus far. Our primary use for them will be
 to scope out sections of prose. And since modules act as namespaces, we will
-often open a new one in order to illustrate anti-patterns and false starts
+often open a new one in order to illustrate anti-patterns and false starts,
 without polluting our main results.
 
 One distinct advantage of organizing chapters into modules is that chapters thus
@@ -146,9 +147,24 @@ simply import the necessary pieces.
 We will also assume the presence of the Agda standard library, but will first
 derive the pieces we use from scratch before importing it. Agda's flexibility is
 outstanding, and common "magical" constructions in other languages---like
-numbers, booleans, and `if..then..else` syntax--- are all defined by the
+numbers, booleans, and `if..then..else` syntax---are all defined by the
 standard library. Getting a chance to define them for ourselves will help build
 an appreciation that none of this stuff needs to be special.
+
+
+## A Note on Interaction
+
+Agda is an interactive programming language. That means at any point in time,
+you can load an Agda file via the [`Load`](AgdaCmd) command. This will cause
+Agda to parse, typecheck, and highlight the program. It's a good habit to reload
+your file every time you make a syntactically valid change. Doing so will alert
+you to problems as soon as they might occur.
+
+While working through this book, you are encouraged to reload your file after
+every code block.
+
+
+## Importing Code
 
 However, we will break this define-it-before-you-import-it rule just once to
 illustrate how Agda's import syntax works. Imports are also scoped to the
@@ -200,12 +216,12 @@ come to them.
 
 Unlike most programming languages, syntax highlighting in Agda is performed *by
 the compiler,* rather than just some hodgepodge set of regular expressions that
-hope to do a reasonably good job of parsing the program. In many ways, thus,
-it's more correct to call this *semantic highlighting*. Since Agda's parser is
-so flexible, getting trustworthy highlighting information from the compiler is a
-necessity for quickly parsing what's going on. This, along with the lack of
-[`GotoDefinition`](AgdaCmd), is the main reason Agda is challenging to read
-outside of a text editor.
+hope to do a reasonably good job of parsing the program. Therefore, it's more
+correct to call this *semantic highlighting* rather than syntax highlighting.
+Since Agda's parser is so flexible, getting trustworthy highlighting information
+from the compiler is a necessity for quickly parsing what's going on. This,
+along with the lack of [`GotoDefinition`](AgdaCmd), is the main reason Agda is
+challenging to read outside of a text editor.
 
 Because this book is a literate Agda document, all of the syntax highlighting
 you see was produced directly by the Agda compiler. This is unfortunately the
@@ -228,14 +244,7 @@ throughout the book. Feel free to return to this section if you're ever having a
 hard time mentally parsing what's going on.
 
 
-## Types
-
--- TODO(sandy): a value has exactly one type
-
-
-```agda
-module Sandbox-Judgments where
-```
+## Types and Values
 
 Because this is a book about mathematics for programmers, it bears discussing a
 great deal around *data*---that of the utmost importance to programmers. On a
@@ -250,9 +259,9 @@ This is a physical fact, caused by the path dependency that computation has
 taken over history. Programmers are often split into two camps: those who
 worship and count bits as if they are precious, and those of the opinion that we
 have lots of memory, and thus room to ignore it. Curiously, there are very few
-who consider memory at a lower level than it is presented in C; perhaps the
-human mind simply isn't capable of keeping track of all the layers of
-abstraction.
+alive today who think about memory at a lower level than it is presented in C;
+perhaps the human mind simply isn't capable of keeping track of all the layers
+of abstraction.
 
 Regardless of what camp you find yourself in, thinking about data in terms of
 this hierarchy of abstraction will not be conducive to our purposes. A great
@@ -268,8 +277,8 @@ elucidating.
 
 Agda takes its types extremely seriously; it is strongly unlikely you have ever
 used a language with a type system one tenth as powerful as Agda's. This is true
-even if you're extremely familiar with strongly-typed languages like Rust,
-TypeScript, Haskell, C++, or Java. Agda is a *dependently-typed* programming
+even if you're intimately familiar with strongly-typed languages like Rust,
+TypeScript, Haskell, C++, or Scala. Agda is a *dependently-typed* programming
 language, which means its types can be *computed.* For example, you might make a
 function that returns a `String` if (and only if) the 10th Fibonacci number is
 56 (it isn't.) At first blush, this seems impractical---if not useless---but it
@@ -278,18 +287,19 @@ But let's not get ahead of ourselves.
 
 Of utmost importance in Agda is the notion of a *typing judgment:* the (static)
 assertion that a particular value has a particular type. A typing judgment is
-the fancy, academic name for a type declaration. Because `true` is a `type:Bool`, we
-would write the judgment `true : Bool`, where the colon can be read aloud as
-"has the type," or "is of type." We can't yet write this judgment down, since we
-are in a new module and thus have lost our imports that brought `true` and
-`type:Bool` into scope.
+the fancy, academic name for a type declaration. Because `true` is a
+`type:Bool`, we would write the judgment `true : Bool`, where the colon can be
+read aloud as "has the type," or "is of type." We can't yet write this judgment
+down, since we are in a new module and thus have lost our imports that brought
+`true` and `type:Bool` into scope.
 
 In Agda, we can assert the existence of things without having to give them a
-definition by using the `postulate` keyword. This is an extremely useful tool,
-as we will see later. For now, we can use it to explicitly write down some
+definition by using the `postulate` keyword. As we will see later, this is can
+be a very useful tool. For now, we can use it to explicitly write down some
 typing judgments. First, we assert that the type `type:Bool` exists:
 
 ```agda
+module Sandbox-Judgments where
   postulate
     Bool : Set
 ```
@@ -302,15 +312,15 @@ existence by giving them typing judgments as well:
     true  : Bool
 ```
 
-You will have noticed that `type:Bool : Set` itself looks a great deal like a typing
-judgment. And in fact, it is. `Set` is one of the few built-in things in Agda,
-and it corresponds, as a first approximation, to "the type of all types." That
-is, the judgment `type:Bool : Set` says "`type:Bool` is a type."
+You will have noticed that `type:Bool : Set` itself looks a great deal like a
+typing judgment. And in fact, it is. `Set` is one of the few built-in things in
+Agda, and it corresponds, as a first approximation, to "the type of all types."
+That is, the judgment `type:Bool : Set` says "`type:Bool` is a type." Since
+`type:Bool` is a type, we are therefore justified in saying that `def:false` and
+`def:true` are of type `type:Bool`.
 
-Since `type:Bool` is a type, we are now *justified* in saying that `def:false` and `def:true`
-are of type `type:Bool`. However, we can't just put any old thing on the right side
-of the typing colon. Try, for example, adding the following judgment to our
-postulate block:
+But we can't just put any old thing on the right side of the typing colon!
+Try, for example, adding the following judgment to our postulate block:
 
 ```illegal
     illegal : false
@@ -326,43 +336,56 @@ when checking that the expression false has type _4
 
 This is not the easiest thing to decipher, but what Agda is trying to tell you
 is that `def:false` is not a type, and thus it has no business being on the
-right-hand side of a colon. The general rule here is that you can only put `type:X`
-on the right side of a colon if you have earlier put it on the left of `type:Set`,
-as in:
+right-hand side of a colon. The general rule here is that you can only put
+`type:Foo` on the *right side* of a colon if you have earlier put it on the
+*left* of `type:Set`. That is,
 
 ```agda
-    X : Set
-    y : X
+    Foo : Set
+    -- other stuff
+    bar : Foo
 ```
 
-Postulating types and values like this is a helpful piece of pedagogy, but it's
-not how we usually get things done. Just as Dijkstra popularized the role of
-*structured programming* by arguing programmers should not be writing jumps
+As a note on terminology, anything that belongs in `type:Set` we will call a
+*type.* Anything which belongs to a type is called a *value.* Thus in the
+previous example, we say `type:Foo` is a type, and `def:bar` is a value. As a
+matter of convention, types' names will always begin with capital letters, while
+values will be given lowercase names. This is not required by Agda; it's merely
+for the sake of our respective sanities when the types inevitably get hairy.
+
+Furthermore, it's important to note that while types may have many values, every
+value has exactly one type. Since we know that `bar : Foo`, we know for a fact
+that `bar` is NOT of type `Qux` (unless `Foo` and `Qux` happen to be the same
+type.)
+
+Postulating types and values like we have been is a helpful piece of pedagogy,
+but it's not how things usually get done. Just as Dijkstra popularized the role
+of *structured programming* by arguing programmers should not be writing jumps
 directly, but instead using `if` and `while` and so forth, we will note that
 real programming does not get done by writing typing judgments directly (nor
 does mathematics, for that matter.) Why is this?
 
 One problem is, we'd like to say that `def:false` and `def:true` are *the only*
-booleans. But of course, nothing stops us from further postulating additional
-booleans, perhaps:
+booleans. But of course, nothing stops us from further postulating another
+`type:Bool`, perhaps:
 
 ```agda
     file-not-found : Bool
 ```
 
-You can imagine the chaos that might occur if someone added this after the fact.
-All of a sudden, our programs, carefully designed to handle only the binary case
-of booleans, would now need to be retrofitted with extra logic to handle the
-case of `file-not-found`. Such a possibility is anathema to the concept of
-modular and composable programs --- those that we can write and prove correct
-once, without needing to worry about what the future will bring.
+You can imagine the chaos that might occur if someone added such a judgment
+after the fact. All of a sudden, our programs, carefully designed to handle only
+the binary case of booleans, would now need to be retrofitted with extra logic
+to handle the case of `file-not-found`. This possibility is anathema to the
+concept of modular and composable programs---those that we can write and prove
+correct once, without needing to worry about what the future will bring.
 
 In short, working directly with postulates is dangerous and, in general, an
 anti-pattern. We will return to postulates in @sec:postulates and see how they
 can be useful as mathematical tools. Instead, we will investigate a tool that
-instead allows us to simultaneously define `type:Bool`, `def:false` and `def:true` into a
-*closed theory.* That is, we'd like to say that these are *the only* two
-booleans, allowing us and Agda to reason about that fact.
+instead allows us to simultaneously define `type:Bool`, `def:false` and
+`def:true` into a *closed theory.* That is, we'd like to say that these are *the
+only* two booleans, allowing us and Agda to reason about that fact.
 
 To do this, we can use a `data` declaration:
 
@@ -373,27 +396,28 @@ module Booleans where
     true : Bool
 ```
 
-which simultaneously asserts the three typing judgments `type:Bool` `:`
-type:Set`, `ctor:false` `:` `type:Bool` and `ctor:true` `:` `type:Bool`, and
-further, states that this is an exhaustive list of all the booleans. There are
-no others. When written like this, we often call `ctor:false` and `ctor:true`
-the *data constructors* or the *introductory forms* of `type:Bool`.
+which simultaneously asserts the three typing judgments `Bool : Set`, `false :
+Bool`, `true : Bool`, and further, states that this is an *exhaustive* list of
+all the booleans. There are, and can be, no others. When written like this, we
+often call `ctor:false` and `ctor:true` the *data constructors* or the
+*introductory forms* of `type:Bool`.
 
-After all of this foreplay, you are probably itching to write a program in Agda.
-As a first step, let's write the `not` function, which transforms `ctor:false` into
-`ctor:true` and vice-versa. Functions in Agda begin with a typing judgment using a
-*function* arrow (which you can type in your editor via [`to`](AgdaMode)), and
-are immediately followed by a *definition* of the function:
+After all of this preamble, you are probably itching to write a program in Agda.
+As a first step, let's write the `not` function, which transforms `ctor:false`
+into `ctor:true` and vice-versa. Functions in Agda begin with a typing judgment
+using a *function* arrow (which you can type in your editor via
+[`to`](AgdaMode)), and are immediately followed by a *definition* of the
+function:
 
 ```agda
   not⅋₀ : Bool → Bool  -- ! 1
   not⅋₀ = ?  -- ! 2
 ```
 
-Line [1](Ann) should be read aloud as "`def:not` is a function that takes a `type:Bool`
-argument and returns a `type:Bool`," or, alternatively, as "`def:not` has type `type:Bool` to
-`type:Bool`." The question mark on line [2](Ann) says to Agda "we're not sure how to
-implement this function."
+Line [1](Ann) should be read aloud as "`def:not` is a function that takes a
+`type:Bool` argument and returns a `type:Bool`," or, alternatively, as
+"`def:not` has type `type:Bool` to `type:Bool`." The question mark on line
+[2](Ann) says to Agda "we're not sure how to implement this function."
 
 Agda acknowledges that most of the time you're writing a program, it's an
 *incomplete* program. Agda is an interactive tool, meaning it can help you
@@ -403,7 +427,7 @@ does being left alone in your text editor, typing away until the program is
 done.
 
 Incomplete programs are programs that contain one or more *holes* in them, where
-a hole is a bit of the program you haven't written yet. Thanks to Agda's
+a hole is part of the program that you haven't written yet. Thanks to Agda's
 exceptionally strong type system, it knows a great deal about what shape your
 hole must have, and what sorts of programs-fragments would successfully fill the
 hole. In the process of filling a hole, perhaps by calling a function that
@@ -414,9 +438,9 @@ in the process. As you continue solving holes, eventually there will be no more
 left, and then your program will be complete.
 
 The question mark above at [2](Ann) is one of these holes. After reloading the
-file in Agda (TODO: how?), we can ask it for help in implementing `not`.
-Position your cursor on the hole and invoke the [`MakeCase`](AgdaCmd), which will
-replace our definition with:
+file in Agda ([`Load`](AgdaCmd)), we can ask it for help in implementing `not`.
+Position your cursor on the hole and invoke the [`MakeCase`](AgdaCmd), which
+will replace our definition with:
 
 ```agda
   not⅋ : Bool → Bool
@@ -439,18 +463,18 @@ to
 ?1 : Bool
 ```
 
-The changes engendered by invoking [`MakeCase`](AgdaCmd) like we did have a lot to
-teach us about how Agda works. Our first hole, way back at [1](Ann) had type
+The changes engendered by invoking [`MakeCase`](AgdaCmd) like we did have a lot
+to teach us about how Agda works. Our first hole, way back at [1](Ann) had type
 `Bool → Bool`, because we had written `not = ?`, and we knew already that `not`
 had type `Bool → Bool`. In giving a definition for `not`, we had better give a
 definition that has the same type as the one we claimed!
 
-After [`MakeCase`](AgdaCmd) however, we instead had `not x = {! !}`, with the hole
-now having type `type:Bool`. Somehow we lost the `Bool →` part of the type---but
-where did it go? The answer is that the `Bool →` corresponded to the function's
-parameter. In addition to the type of the hole changing, we also obtained an `x`
-on the left of the equals sign. It's a good bet that this `x` is indeed our
-parameter.
+After [`MakeCase`](AgdaCmd) however, we instead had `not x = {! !}`, with the
+hole now having type `type:Bool`. Somehow we lost the `Bool →` part of the
+type---but where did it go? The answer is that the `Bool →` corresponded to the
+function's *parameter.* In addition to the type of the hole changing, we also
+obtained an `x` on the left of the equals sign. It's a good bet that this `x` is
+indeed our parameter.
 
 To verify this, we can put the cursor in the whole and this time invoke the
 [`TypeContext`](AgdaCmd) command, which will replace the info window with the
@@ -497,8 +521,11 @@ and give a result for each on the right side of the equals sign.
 
 In implementing this little function, we learned quite a lot about how Agda's
 interactivity can help. We can admire our handiwork by interactively running
-[`Normalize:not false`](AgdaCmd), which will leave the computed answer (`ctor:true`) in
-the info window.
+[`Normalize:not false`](AgdaCmd), which will leave the computed answer:
+
+```info
+true
+```
 
 While [`Normalize`](AgdaCmd) is a nice little tool for interactively computing
 small results, we can instead write a small unit test. Breaking our "don't
@@ -541,23 +568,23 @@ strange `type:≡` and `ctor:refl` things in great detail soon enough.
 
 ## Dealing with Unicode
 
-Personally, my biggest challenge coming to Agda was learning to wrangle all of
-the Unicode characters. The field of programming has a peculiar affinity for the
-standard ASCII character set, which is somewhat odd when you think about it.
-What symbol is `==` supposed to be, anyway? Is it *merely* a standard equals
-sign? If so, why not just use `=`? Is it supposed to be an elongated equals
-sign? In the case we really wanted to stick with ASCII, surely `=?` would be a
-better choice, since this operator *tests* for equality. Agda follows this path,
-but decides that, since we have a perfectly good unicode symbol anyway, why not
-use `≟`?
+Many programmers' biggest challenging coming to Agda, myself included, is
+learning to wrangle all of the Unicode characters. The field of programming has
+a peculiar affinity for the standard ASCII character set, which is somewhat odd
+when you think about it. What symbol is `==` supposed to be, anyway? Is it
+*merely* a standard equals sign? If so, why not just use `=`? Is it supposed to
+be an elongated equals sign? In the case we really wanted to stick with ASCII,
+surely `=?` would be a better choice, since this operator *tests* for equality.
+Agda follows this path, but decides that, since we have a perfectly good unicode
+symbol anyway, why not use `≟`?
 
 There are two primary arguments here to make here against the usage of unicode.
 
 The first, is unfamiliarity with symbols when *reading* code. For example, when
-I was getting started, I was often flummoxed by `⊎` and `⨄`, which are easy to
-distinguish when placed beside one another, but much harder when they're in the
-wild. When you're reading code, how do you know which symbol is which? And how
-do you assign names to them?
+I was getting started, I was often flummoxed by the difference between `⊎` and
+`⨄`, which are easy to distinguish when placed beside one another, but much
+harder when they're in the wild. When you're reading code, how do you know which
+symbol is which? And how do you assign names to them?
 
 Agda provides [`DescribeChar`](AgdaCmd) to help with this problem, which when
 run with the cursor over `⊎` will produce the following output:
@@ -594,11 +621,12 @@ press a series of characters that together build the one you want. For example,
 [`=?`](AgdaMode). Some characters require only one additional keypress. We can
 write `∙` by typing [`.`](AgdaMode) and `∘` with [`o`](AgdaMode).
 
-One common binding you'll need is that for function arrows, `→`. This is typed
-in the obvious way, [`->`](AgdaMode), but can also be written in fewer
-keystrokes as [`to`](AgdaMode). As it happens, this is the same mnemonic that
-LaTeX uses to type the arrow symbol. If you're familiar with LaTeX, most
-bindings you know from there will also work in Agda.
+As you have already seen, one common binding you'll need is that for function
+arrows, `→`. This is typed in the obvious way, [`->`](AgdaMode), but can also be
+written in fewer keystrokes as [`to`](AgdaMode). Typesetting aficionados might
+be delighted that this is mnemonic that LaTeX uses to inset the arrow symbol. If
+you're familiar with LaTeX, most bindings you know from there will also work in
+Agda.
 
 Similarly to LaTeX, we can prefix bindings with `_` or `^` to make subscript or
 superscript versions of characters. That means we can get `₁` via
@@ -609,26 +637,32 @@ subscript `f`.
 
 Mathematicians, and thus Agda-users, are also particularly fond of Greek
 letters. You can type Greek letters by prefixing the Latin-equivalent letter
-with [`G`](AgdaMode). That is, if you'd like a `λ` (and what good functional
-programmer wouldn't?) you'd type [`Gl`](AgdaMode), because `λ` is the Greek
-version of the Latin letter `l`. And if you want an uppercase lambda `Λ`, well,
-that one is just [`GL`](AgdaMode). As you can see, the system is quite well
-organized when you wrap your head around it.
+with [`G`](AgdaMode). That is, if you'd like a `λ` (lambda) you'd type
+[`Gl`](AgdaMode), because `λ` is the Greek version of the Latin letter `l`. And
+if you want an uppercase lambda `Λ`, well, that one is just [`GL`](AgdaMode). As
+you can see, the system is quite well organized when you wrap your head around
+it. Assuming you know Greek.
 
 The other block of symbols you'll probably need at first are the so-called
 *blackboard bold* letters, which are often used in mathematics to describe sets
-of numbers --- the natural numbers being `ℕ`, the reals being `ℝ`, the rationals
+of numbers---the natural numbers being `ℕ`, the reals being `ℝ`, the rationals
 being `ℚ` (short for "quotients"), and so on. You can type blackboard bold
-numbers with the [`b`](AgdaMode) prefix.
+numbers with the [`b`](AgdaMode) prefix. The three examples here are input as
+[`bN`](AgdaMode), [`bR`](AgdaMode) and [`bQ`](AgdaMode) respectively.
 
 Suspend your disbelief; programming in Unicode really is quite delightful if you
 can push through the first few hours. Having orders of magnitude more symbols
 under your fingers is remarkably powerful, meaning you can shorten your
-identifiers without throwing away information. And as a bonus, especially when
-transcribing mathematics, your program can look exceptionally close to the
-source material --- nice to minimize the cognitive load. You're already dealing
-with big ideas, without having to add a layer of naming indirection into the
-mix.
+identifiers without throwing away information. In addition, you will notice a
+common vocabulary for how these symbols get used. Being able to recognize more
+symbols means you can recognize more concepts at a distance. For example, we
+will often use the floor brackets `⌊⌋` for as a name for an evaluation function,
+and we will always build the union of types via the symbol `⊎`.
+
+And as a bonus, especially when transcribing mathematics, your program can look
+exceptionally close to the source material---nice to minimize the cognitive
+load. You're already dealing with big ideas, without having to add a layer of
+naming indirection into the mix.
 
 
 ## A Note on Syntax
@@ -638,7 +672,7 @@ Haskell, OCaml, PureScript, among many, many other cousins. This section will
 give you a brief overview of how to conceptualize Agda as a programming
 language, including some sense of how to mentally parse it.
 
-Agda is divided into four distinct pieces of linguistic structure. First and
+Agda is divided into several distinct pieces of linguistic structure. First and
 foremost, it is an *expression-based* language, meaning there are no statements
 in the language. On the right side of every equals sign, Agda expects an
 expression, which is to say, a program tree that produces a value. If you are
@@ -663,24 +697,24 @@ its syntax for function calls. The above call would look, in Agda, like this:
 foo bar 5 true
 ```
 
-where arguments are separated from their function and one another by
-white-space. If disambiguation is necessary, we surround the entire expression
-in parentheses:
+Note that the arguments here are separated here only by whitespace. If
+disambiguation is necessary (which it is, whenever we have nested function
+calls,) we surround the entire expression in parentheses:
 
 ```example
 baz 0 (f false) (foo bar 5 true)
 ```
 
-which would be written in the ALGOL style as
+This would be written in the ALGOL style as
 
 ```cpp
 baz(0, f(false), foo(bar, 5, true))
 ```
 
-While this might feel like an unnecessarily annoying break in conventional
-syntax, there are mightily-good theoretical reasons for it. With this knowledge
-of function calls, it's interesting to look back at our definition of `not`;
-recall:
+While it might feel like an unnecessarily annoying break in conventional syntax,
+there are mightily-good theoretical reasons for it, addressed soon. Given this
+new lens on the syntax of function calls, it's informative to look back at our
+definition of `not`; recall:
 
 ```agda
   not⅋⅋⅋⅋ : Bool → Bool
@@ -689,11 +723,12 @@ recall:
 ```
 
 we can now mentally parse these definitions differently, that is, reading them
-literally. The first of which, says "the function call `not false` is equal to
-`ctor:true`". Thus, this equals sign is really and truly an *equals* sign. It is
-*not* the "assignment" operator found in all stateful descendants of ALGOL, nor
-is it some sort of test-for-equality that usually gets called `==`. No, we are
-saying the thing on the left side is exactly the same thing as on the right!
+literally. The first of which, says "the function `def:not` called with argument
+`ctor:false` is equal to `ctor:true`". Thus, this equals sign is really and
+truly an *equals* sign. It is *not* the "assignment" operator found in all
+stateful descendants of ALGOL, nor is it some sort of test-for-equality that
+usually gets called `==`. No, we are saying the thing on the left side is
+exactly the same thing as on the right!
 
 This equality is very deep. While Agda will simplify the left side to the right
 whenever possible, the two sides are exactly equivalent in all non-pattern
@@ -706,11 +741,14 @@ is in showing that equivalence.
 
 Another simple operation over booleans is logical OR; that is, the result is
 true if at least one of its arguments is true. Mathematicians often use the
-symbol $\vee$ (pronounced "vel") for this operation, which we will follow, since
-the goal is to define the same interface as is present in the Agda standard
-library. This operator is used infix, which we can communicate to Agda by naming
-the OR function `def:_∨_`; note that this is not a latin `v`, but the unicode
-character [`or`](AgdaMode). Note also the underscores on either side of it!
+symbol $\vee$ (pronounced "vel") for this operation, which we will follow. Note
+that this is not the Latin letter `v`, but the Unicode character
+[`or`](AgdaMode).
+
+This odd choice for a function name is justified by our goal to reimplement the
+Agda standard library, with the same names. The standard library calls this
+`def:_∨_`, and so we will too. The underscores are also meaningful, as we will
+see momentarily.
 
 ```agda
   _∨⅋⅋_ : Bool → Bool → Bool
@@ -725,8 +763,8 @@ hole and run [`MakeCase`](AgdaCmd). Agda will respond:
   x ∨⅋⅋⅋ x₁ = {! !}
 ```
 
-You will notice that `def:_∨_` has been replaced with `x ∨ x₁`. The underscores are
-not literal underscores, but instead mark placeholders for the operator's
+You will notice that `def:_∨_` has been replaced with `x ∨ x₁`. The underscores
+are not literal underscores, but instead mark placeholders for the operator's
 syntax. If we fill the resulting hole with the names of both arguments `x` and
 `x₁`, we can again ask Agda to [`MakeCase`](AgdaCmd):
 
@@ -762,17 +800,18 @@ Here we have taken the same approach as in `def:not`: for each argument, we
 enumerate every possibilities, giving the answer on the right side of the equals
 sign. You will notice that this strategy grows enormously; a function of five
 booleans would require 32 clauses to enumerate every possibility. Fortunately,
-this is not the only way to define `def:_∨_`. We can instead throw some thought at
-the problem, and realize the goal is to identify whether or not one of the
+this is not the only way to define `def:_∨_`. We can instead throw some thought
+at the problem, and realize the goal is to identify whether or not one of the
 arguments is `ctor:true`. This doesn't require pattern matching on *both*
-parameters---some clever thought indicates we can get away with matching only on
+parameters---some clever insight indicates we can get away with matching only on
 one.
 
-If the argument we matched on is `ctor:true`, we're done, without looking at the
-other argument. If our matched argument is `ctor:false`, then the result is `ctor:true`
-only when the second argument is `ctor:true`. In neither case do we need to inspect
-both of the arguments! We can take advantage of this fact by using a variable to
-abstract over the second parameter. Instead, let us define `def:_∨_` in this way:
+If the argument we matched on is `ctor:true`, we're done, without needing to
+look at the other argument. If our matched argument is `ctor:false`, then the
+result is `ctor:true` only when the second argument is `ctor:true`. In neither
+case do we need to inspect both of the arguments! We can take advantage of this
+fact by using a variable to abstract over the second parameter. Instead, let us
+define `def:_∨_` in this way:
 
 ```agda
   _∨_ : Bool → Bool → Bool
@@ -789,12 +828,12 @@ and in the `ctor:true` case we ignore it completely because we've already found 
 Note that we call `other` a variable, but **it is a variable in the mathematical
 sense rather than in the usual programming sense.** This variable is a way of
 talking about something whose value we don't know, like the $x$ in the
-expression $f(x) = 2x$. Here, $x$ exists, but its value is set once and for all
-by the user of $f$. When we are talking about $f(5)$, $x = 5$, and it is never
-the case that $x$ changes to 7 while still in the context of $f(5)$. In a given
-context, $f$ (or `other`) is always *bound* to a specific value, even if we
-don't know what that value is. For this reason, we sometimes call variables
-*bindings.*
+expression $f(x) = 2x$ (but not like the $x$ in $x^2 = 9$.) Here, $x$ exists,
+but its value is set once and for all by the user of $f$. When we are talking
+about $f(5)$, $x = 5$, and it is never the case that $x$ changes to 7 while
+still in the context of $f(5)$. In any given context, $f$ is always *bound* to a
+specific value, even if we don't know what that value is. For this reason, we
+sometimes call variables *bindings.*
 
 
 ## Agda's Computational Model
@@ -830,17 +869,17 @@ is required to wait for both arguments. We can observe this in action with the
 
 We can fill in only one argument to an operator by removing only one of the
 underscores. Thus, we can see what happens when we invoke `def:_v₂_` with only its
-first argument. Try invoking [`Normalise:true v₂_`](AgdaCmd), to which Agda will
-respond:
+first argument. This is known as a *segment.* Try invoking [`Normalise:true
+v₂_`](AgdaCmd), to which Agda will respond:
 
 ```info
 λ other → true
 ```
 
-This response is Agda's syntax for an anonymous (lambda) function. It takes an
-argument, called `other`, ignores it, and immediately returns `ctor:true`. Writing
-lambdas like this is valid Agda code, but this syntax is often reserved for
-niche circumstances.
+This response is Agda's syntax for an anonymous function (also known as a
+*lambda*.) It takes an argument, called `other`, completely ignores it, and
+immediately returns `ctor:true`. Writing lambdas like this is valid Agda syntax,
+but we will not use it except for extremely small functions.
 
 Nevertheless, let's compare this output to the result of [`Normalise:true
 ∨₁_`](AgdaCmd):
@@ -857,32 +896,33 @@ the pattern match on it in `def:_∨₁_` is *also* stuck. When the second argum
 provided, the pattern match will unstick, and so too will the final result.
 
 We can see this behavior more clearly by postulating a boolean value. Postulated
-values are always stuck, and thus `stuck` is an apt name for one:
+values are always stuck, and thus `def:always-stuck` is an apt name for one:
 
 ```agda
   postulate
-    stuck : Bool
+    always-stuck : Bool
 ```
 
 Our new `stuck` is always stuck. For example, we can learn nothing more about it
-with [`Normalise:stuck`](AgdaCmd):
+with [`Normalise:always-stuck`](AgdaCmd):
 
 ```info
-stuck
+always-stuck
 ```
 
-Nor can we reduce [`Normalise:not stuck`](AgdaCmd) to a value:
+Nor can we reduce [`Normalise:not always-stuck`](AgdaCmd) to a value:
 
 ```info
-not stuck
+not always-stuck
 ```
 
-Don't believe the response, this is indeed stuck! Rather, the entire call to
-`not` with argument `stuck` is stuck. And, as you might expect, [`Normalise:true
-∨₁ stuck`](AgdaCmd) is also stuck:
+Don't believe the response, this *is* indeed always stuck (although it is not
+the same as the `def:always-stuck` variable.) Rather, the entire call to `def:not`
+with argument `def:always-stuck` is stuck. And, as you might expect, [`Normalise:true ∨₁
+stuck`](AgdaCmd) is also stuck:
 
 ```info
-true ∨₁ stuck
+true ∨₁ always-stuck
 ```
 
 Fascinatingly however, [`Normalise:true ∨₂ stuck`](AgdaCmd) computes just fine:
@@ -891,30 +931,33 @@ Fascinatingly however, [`Normalise:true ∨₂ stuck`](AgdaCmd) computes just fi
 true
 ```
 
-This progress of computation even when the second argument is stuck (`stuck`, or
-otherwise) is the reason by which we prefer `def:_∨₂_` over `def:_∨₁_`. While this
-example might seem somewhat contrived, it isn't, in fact. Avoiding a pattern
-match in an implementation means you can avoid a pattern match in every
-subsequent proof *about* the implementation, and can be the difference between a
-three line proof and an 81 line proof. We will return to this point when we
-discuss proof techniques, but for now, try not to get into the habit of bashing
-your way through every implementation if you can at all help it.
+This progress of computation even when the second argument is stuck
+(`def:always-stuck`, or otherwise) is the reason by which we prefer `def:_∨₂_`
+over `def:_∨₁_`.
+
+While this example might seem somewhat contrived, you would be amazed at how
+often it comes up in practice. Avoiding a pattern match in an implementation
+means you can avoid a pattern match in every subsequent proof *about* the
+implementation, and can be the difference between a three line proof and an 81
+line proof. We will return to this point when we discuss proof techniques, but
+for now, try not to get into the habit of bashing your way through every
+implementation if you can at all help it.
 
 
 ## Records and Tuples
 
 In this section, we will play around with record types, as a lead up to
-discussing functions. These two seemingly disparate ideas have a surprising
-amount of interplay between them. We would like to motivate an answer to the
-question of "what's up with the funny arrow `→` in function types?" Why does
-`def:_∨_` have type `type:Bool → Bool → Bool`, instead of a more "standard" type like it
-would in most everyday programming languages. For example, we might write
-`def:_∨_`'s type as `type:(Bool, Bool) → Bool`, which makes it very clear which are the
-parameters and which is the return.
+discussing functions in more detail. These two seemingly disparate ideas have a
+surprising amount of interplay between them. We would like to motivate an answer
+to the question of "what's up with the funny arrow `→` in function types?" Why
+does `def:_∨_` have type `type:Bool → Bool → Bool`, instead of a more "standard"
+type like it would in most everyday programming languages. For example, you
+might argue that we should write `def:_∨_`'s type as `type:(Bool, Bool) → Bool`,
+so that it's very clear which are the parameters and which is the return.
 
-Types like `type:(Bool, Bool)` are known as *tuple* types, which we can encode to a
-in Agda as record types. Record types are types with a number of subfields. A
-special case of records are tuples, which we can think of as anonymous records
+Types like `type:(Bool, Bool)` are known as *tuple* types, which we can encode
+to a in Agda as record types. Record types are types with a number of subfields.
+A special case of records are tuples, which we can think of as anonymous records
 with only two fields. As a first approximation, we can write the tuple type like
 this:
 
@@ -929,16 +972,16 @@ module Sandbox-Tuples where
 ```
 
 There is quite a lot going on here, which we will tackle one step at a time. At
-[1](Ann) we parameterize the entire type `type:_×_` by two other types, call them `A`
-and `B`. This is because we'd like to be able to form tuples of any two types,
-whether they be integers and booleans, tuples of tuples, or more exotic things
-still. Note that this name `type:_×_` is not the Latin letter `x`, but is instead the
-*times symbol,* input via [`x`](AgdaMode).
+[1](Ann) we parameterize the entire type `type:_×_` by two other types, call
+them `A` and `B`. This is because we'd like to be able to form tuples of any two
+types, whether they be integers and booleans, tuples of tuples, or more exotic
+things still. Note that this name `type:_×_` is not the Latin letter `x`, but is
+instead the *times symbol,* input via [`x`](AgdaMode).
 
-At [2](Ann) we say "inside of the `type:_×_` type, there are two fields." These two
-fields are named `field:proj₁` and `field:proj₂`, and have types `A` and `B`, respectively.
-This is what you would expect; if we have a record corresponding to a tuple of
-two things, *it should have two things in it.*
+At [2](Ann) we say "inside of the `type:_×_` type, there are two fields." These
+two fields are named `field:proj₁` and `field:proj₂`, and have types `A` and
+`B`, respectively. This is what you would expect; if we have a record
+corresponding to a tuple of two things, *it should have two things in it.*
 
 We can try out our new tuple type, as usual by plunking a hole down on the right
 hand side of the equals sign:
