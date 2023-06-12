@@ -410,13 +410,13 @@ course, this is a blatant misuse of the equals symbol, so instead we write
 $11 + 2 = 1 \text{(mod 12)}$.
 
 How can we formalize this idea of modular arithmetic? Well, if we'd like to show
-$a = b (\text{mod} n)$, we would like to find two multiples of $n$ that we can
+$a = b \text{(mod }n\text{)}$, we would like to find two multiples of $n$ that we can
 use to equate the two. That is to say, we need to find $x, y : ℕ$ such that $a +
 xn = b + yn$.
 
 
 ```agda
-open import Data.Nat
+open import Data.Nat using (ℕ; _+_; _*_)
 
 module ModularArithmetic where
   open import Relation.Binary.PropositionalEquality
@@ -433,6 +433,8 @@ module ModularArithmetic where
 Notice that we use propositional equality at [1](Ann) to assert that we're
 witnessing the fact that these two expressions *really are the same!* But that's
 merely an implementation detail.
+
+-- TODO(sandy): what does it mean that this is only an impl detail?
 
 We can now show that our clock example works as expected:
 
@@ -456,9 +458,13 @@ module ℕ/nℕ (n : ℕ) where
   _≈_ = _≈_⟨mod n ⟩
 ```
 
+As it happens, `type:_≈_` forms an equivalence relation. Showing reflexivity and
+symmetry is simple enough:
+
 ```agda
   open import 4-relations
-  open Sandbox-Relations
+  -- TODO(sandy): would be nice to have section numbers for modules
+  open Relation.Binary using (Reflexive; Symmetric; Transitive; IsEquivalence)
 
   module _ where
     open import Relation.Binary.PropositionalEquality
@@ -470,120 +476,59 @@ module ℕ/nℕ (n : ℕ) where
     ≈-sym (≈-mod x y p) = ≈-mod y x (sym p)
 ```
 
-
-```agda
-    open import Data.Nat.Solver
-    open +-*-Solver
-
-    lemma₁ : (a n x z : ℕ) → a + (x + z) * n ≡ a + x * n + z * n
-    lemma₁ = solve 4
-      (λ a n x z → a :+ (x :+ z) :* n
-                := (a :+ x :* n) :+ z :* n)
-      refl
-
-    lemma₂ : (b n y z : ℕ) → (b + y * n) + z * n ≡ (b + z * n) + y * n
-    lemma₂ = solve 4
-      (λ b n y z → (b :+ y :* n) :+ z :* n
-                := (b :+ z :* n) :+ y :* n)
-      refl
-```
-
-```agda
-    ≈-trans : Transitive _≈_
-    ≈-trans {a} {b} {c} (≈-mod x y pxy) (≈-mod z w pzw) =
-      ≈-mod (x + z) (w + y) ( begin
-        a + (x + z) * n      ≡⟨ lemma₁ a n x z ⟩
-        (a + x * n) + z * n  ≡⟨ cong (_+ z * n) pxy ⟩
-        (b + y * n) + z * n  ≡⟨ lemma₂ b n y z ⟩
-        (b + z * n) + y * n  ≡⟨ cong (_+ y * n) pzw ⟩
-        c + w * n + y * n    ≡⟨ sym (lemma₁ c n w y) ⟩
-        c + (w + y) * n      ∎
-      )
-      where open ≡-Reasoning
-```
-
-```agda
-  ≈-equiv : IsEquivalence _≈_
-  IsEquivalence.refl ≈-equiv = ≈-refl
-  IsEquivalence.sym ≈-equiv = ≈-sym
-  IsEquivalence.trans ≈-equiv = ≈-trans
-```
-
-```agda
-  module ≈-Reasoning where
-    open Sandbox-Orderings
-
-    ≈-preorder : IsPreorder _≈_
-    IsPreorder.refl ≈-preorder = ≈-refl
-    IsPreorder.trans ≈-preorder = ≈-trans
-
-    open IsEquivalence ≈-equiv using (sym) public
-    open PreorderReasoning ≈-preorder public
-```
-
-My claim is that our use of the `≈` in `_≈_⟨mod_⟩` is valid; this relationship
-truly is an equivalence relation---that is to say, it's interchangeable with
-equality, and behaves in an identical manner, mathematically speaking. Recall
-that to show an equivalence relationship, we need to show the relation satisfies
-reflexivity, symmetry, and transitivity. As usual, we can reify these
-constraints into a record, parameterized by a relation:
-
-```agda
-module _ where
-  private variable
-    A : Set
-    a b c : A
-
-  record IsEquivalence (_≈_ : A → A → Set) : Set where
-    field
-      refl : a ≈ a
-      sym : a ≈ b → b ≈ a
-      trans : a ≈ b → b ≈ c → a ≈ c
-```
-
-Let's now show that `_≈_⟨mod_⟩` forms an equivalence relation. We begin by
-binding a few helper variables:
-
-```agda
--- module mod-base (n : ℕ) where
---   open import Relation.Binary.PropositionalEquality
-
---   private
---     variable
---       a b c d : ℕ
-```
-
-Show `refl` is trivial---the two numbers are already equal:
-
-```agda
-  -- mod-refl : a ≈ a ⟨mod n ⟩
-  -- mod-refl = ≈-mod 0 0 refl
-```
-
-Symmetry is also simple; we just need to swap around which multiples are which,
-and fiddle the equality proof correspondingly:
-
-```agda
-  -- mod-sym : a ≈ b ⟨mod n ⟩ → b ≈ a ⟨mod n ⟩
-  -- mod-sym (≈-mod x y p) = ≈-mod y x (sym p)
-```
-
-Transitivity, however, is significantly more involved. Before diving into the
-implementation, let's work out the solution "on paper" first, where we can more
-more quickly and require less formality in justifying our steps.
-
-We can set up the problem as given $a, b, c, x, y, z, w : ℕ$, we have a series
-of simultaneous equations:
+However, the transitivity of `type:_≈_` is a significantly harder thing to
+demonstrate. Before diving into the implementation, let's work out the solution
+"on paper" first, where we can more more quickly and require less formality in
+justifying our steps. To set up the problem, given `a ≈ b` and `b ≈ c`, and
+would like to show `a ≈ c`. This looks simple enough, but the short types
+involved here pack quite a punch. Recall that what `a ≈ b` really means is that
+we have two numbers `x y : ℕ`, such that
 
 $$
-a + xn = b + yn \\
+a + xn = b + yn
+$$
+
+Similarly for `b ≈ c` we have two more numbers `z w : ℕ` such that
+
+$$
 b + zn = c + wn
 $$
 
-We'd like to eliminate the $b$ term, so we can solve both sides for $b$:
+In order to show `type: Transitive _≈_`, we therefore must find two more numbers
+`i j : ℕ` such that the following equation holds:
+
+$$
+a + in = c + jn
+$$
+
+Solving this requires some simultaneous manipulation of the first two equations:
+
+$$
+\begin{aligned}
+a + xn &= b + yn \\
+b + zn &= c + wn
+\end{aligned}
+$$
+
+We'd like to eliminate the $b$ term, so we can solve both equations for $b$:
+
+$$
+\begin{aligned}
+a + xn - yn &= b + yn \\
+b &= c + wn - zn
+\end{aligned}
+$$
+
+which then allows us to combine the two equations:
 
 $$
 a + xn - yn = b = c + wn - zn
+$$
+
+and therefore we have:
+
+$$
+a + xn - yn = c + wn - zn
 $$
 
 Recall, however, that we're working over the natural numbers, which do not have
@@ -601,61 +546,91 @@ $$
 a + (x + z)n = c + (w + y)n
 $$
 
-This gives us our desired multiples of $n$ for implementing transitivity:
+This gives us our desired numbers `i j : ℕ` for transivity, namely $i = x + z$
+and $j = w + y$.
 
 ```agda
-  -- mod-trans : a ≈ b ⟨mod n ⟩ → b ≈ c ⟨mod n ⟩ → a ≈ c ⟨mod n ⟩
-  -- mod-trans {a} {b} {c} (≈-mod x y pxy)  (≈-mod z w pzw) =
-  --   ≈-mod (x + z) (w + y) ( begin
+    ≈-trans : Transitive _≈_
+    ≈-trans {a} {b} {c} (≈-mod x y pxy) (≈-mod z w pzw) =
+      ≈-mod (x + z) (w + y)
 ```
 
-And all that's left is to carry out the proof we performed above. This is not
-hard, but requires a good amount of symbolic manipulation:
+And now for the hard part---we must give a *proof* that these are in fact the
+right numbers. Most of the work involved is algebraic manipulation, shuffling
+the terms around such that we can apply `pxy` and then `pzw`. Inlining the
+algebraic manipulation is a huge amount of effort, so instead we will use two
+as-of-yet-undefined lemmas that do the heavy lifting.
 
 ```agda
-      -- a + (x + z) * n      ≡⟨ lemma₁ ⟩
-      -- (a + x * n) + z * n  ≡⟨ cong (_+ z * n) pxy ⟩
-      -- (b + y * n) + z * n  ≡⟨ lemma₂ ⟩
-      -- (b + z * n) + y * n  ≡⟨ cong (_+ y * n) pzw ⟩
-      -- c + w * n + y * n    ≡⟨ lemma₃ ⟩
-      -- c + (w + y) * n      ∎
-    -- )
+      ( begin
+        a + (x + z) * n      ≡⟨ lemma₁ a n x z ⟩
+        (a + x * n) + z * n  ≡⟨ cong (_+ z * n) pxy ⟩
+        (b + y * n) + z * n  ≡⟨ lemma₂ b (y * n) (z * n) ⟩
+        (b + z * n) + y * n  ≡⟨ cong (_+ y * n) pzw ⟩
+        c + w * n + y * n    ≡⟨ sym (lemma₁ c n w y) ⟩
+        c + (w + y) * n      ∎
+      )
+      where
+        open ≡-Reasoning
 ```
 
-The lemmas here are an annoying amount of work simply to move the equation into
-the right shape such that we can apply `pxy` and `pzw`. Rather than write them
-by hand, we can turn to our trusty friend, the ring solver:
+Here, `lemma₁` distributes `* n` over the addition, and reassociate everything
+so it's in the right shape for `pxy`. Meanwhile, `lemma₂` applies the
+commutativity of addition across a pair of parentheses.
+
+Rather than go through the effort of proving these lemmas for ourselves, we can
+turn to the ring solver, and ask it to do the heavy lifting on our behalf.
+First, we must bring the ring solver into scope:
 
 ```agda
-    -- where
-    --   open ≡-Reasoning
-    --   open import Data.Nat.Solver
-    --   open +-*-Solver
-
-    --   lemma₁ = solve 4
-    --     (λ a n x z → a :+ (x :+ z) :* n
-    --               := (a :+ x :* n) :+ z :* n)
-    --     refl a n x z
-
-    --   lemma₂ = solve 4
-    --     (λ b n y z → (b :+ y :* n) :+ z :* n
-    --               := (b :+ z :* n) :+ y :* n)
-    --     refl b n y z
-
-    --   lemma₃ = solve 4
-    --     (λ c n w y → c :+ w :* n :+ y :* n
-    --               := c :+ (w :+ y) :* n)
-    --     refl c n w y
+        open import Data.Nat.Solver
+        open +-*-Solver
 ```
 
-We are now satisfied that `_≈_⟨mod_⟩` is indeed an equivalence relationship.
-All that's left is to bundle everything together into an `IsEquivalence`:
+and then we can get our two lemmas by invoking `solve` with the number of
+variables in the expression, and a syntactic representation of the problem we'd
+like solved:
 
 ```agda
-  -- mod-equiv : IsEquivalence (_≈_⟨mod n ⟩)
-  -- IsEquivalence.refl mod-equiv = mod-refl
-  -- IsEquivalence.sym mod-equiv = mod-sym
-  -- IsEquivalence.trans mod-equiv = mod-trans
+        lemma₁ = solve 4
+          (λ a n x z → a :+ (x :+ z) :* n := (a :+ x :* n) :+ z :* n)
+          refl
+
+        lemma₂ = solve 3
+          (λ b i j → (b :+ i) :+ j := (b :+ j) :+ i)
+          refl
+```
+
+The ring solver is a fantastic tool for automating away tedious, symbolic proofs
+of this form. Of course, we could have proven these lemmas by hand, but they are
+uninteresting and error-prone. And, after all, why do something by hand when
+it's automateable? What's amazing is that the ring solver is just standard Agda
+library code; it's nothing you couldn't have written for yourself. And indeed,
+we will drill into exactly this problem in @sec:ringsolving.
+
+Anyway, now that we have reflexivity, symmetry, and transitivity, we now know
+that `type:_≈_` is an equivalence relation.
+
+```agda
+  ≈-equiv : IsEquivalence _≈_
+  IsEquivalence.refl   ≈-equiv = ≈-refl
+  IsEquivalence.sym    ≈-equiv = ≈-sym
+  IsEquivalence.trans  ≈-equiv = ≈-trans
+```
+
+Additionally, we can use this fact to get equational reasoning syntax for free,
+via our `module:PreorderReasoning` module from @sec:preorderreasoning.
+
+```agda
+  module ≈-Reasoning where
+    open Sandbox-Orderings
+
+    ≈-preorder : IsPreorder _≈_
+    IsPreorder.refl   ≈-preorder = ≈-refl
+    IsPreorder.trans  ≈-preorder = ≈-trans
+
+    open IsEquivalence ≈-equiv using (sym) public
+    open PreorderReasoning ≈-preorder public
 ```
 
 As you've seen, it's quite a lot of work to prove anything about `_≈_⟨mod_⟩`;
@@ -682,42 +657,41 @@ much higher level than we could when we were constructing pairs of numbers and
 proofs between them.
 
 ```agda
-  -- private
-  --   open import Relation.Binary
-  --   mod-setoid : Setoid _ _
-  --   Setoid.Carrier mod-setoid = ℕ
-  --   Setoid._≈_ mod-setoid = _≈_⟨mod n ⟩
-  --   IsEquivalence.refl (Setoid.isEquivalence mod-setoid) = mod-refl
-  --   IsEquivalence.sym (Setoid.isEquivalence mod-setoid) = mod-sym
-  --   IsEquivalence.trans (Setoid.isEquivalence mod-setoid) = mod-trans
+open import Relation.Binary
+  using (Rel; IsEquivalence)
 
-  -- module mod-reasoning where
-  --   open import Relation.Binary.Reasoning.Setoid mod-setoid public
+module Sandbox-Setoids where
+  open import Level
+  record Setoid (c ℓ : Level) : Set (suc c ⊔ suc ℓ) where
+    field
+      Carrier : Set c
+      _≈_ : Rel Carrier ℓ
+      isEquivalence : IsEquivalence _≈_
+
 ```
 
 Our `Setoid` record merely needs to bundle the underlying set with its
 equivalence relation (and a proof that that relation is in fact an equivalence
 relation!)
 
-```agda
--- record Setoid : Set₁ where
---   infix 4 _≈_
---   field
---     Carrier : Set
---     _≈_ : Carrier → Carrier → Set
---     isEquivalence : IsEquivalence _≈_
--- open Setoid
-```
-
 Given this, it's trivial to show now that `_≈_⟨mod_⟩` forms a setoid:
 
 ```agda
--- mod-setoid : ℕ → Setoid
--- Carrier       (mod-setoid n) = ℕ
--- _≈_           (mod-setoid n) = _≈_⟨mod n ⟩
---   where open mod-def
--- isEquivalence (mod-setoid n) = mod-equiv
---   where open mod-base n
+  mod-setoid : ℕ → Setoid _ _
+  mod-setoid n = record
+    { Carrier = ℕ
+    ; _≈_ = _≈_
+    ; isEquivalence = ≈-equiv
+    }
+    where open ℕ/nℕ n
+
+  module _ where
+    open Sandbox-IntensionalExtensional
+
+    ext-setoid : (A B : Set) → Setoid _ _
+    Setoid.Carrier        (ext-setoid A B) = A → B
+    Setoid._≈_            (ext-setoid A B) = _≗_
+    Setoid.isEquivalence  (ext-setoid A B) = ≗-equiv
 ```
 
 We're almost ready to build some interesting proofs; but we're going to need to
@@ -731,17 +705,6 @@ module mod-properties (n : ℕ) where
 We'll still need propositional equality for a few things, but the setoid
 infrastructure is meant to be a mostly drop-in replacement for propositional
 equality, and so we will import it qualified:
-
-```agda
-  -- import Relation.Binary.PropositionalEquality as PropEq
-```
-
-We also need our base types and equivalence in scope:
-
-```agda
-  -- open mod-base n
-  -- open IsEquivalence mod-equiv public
-```
 
 Let's prove two more fact "by hand", the fact that $0 = n (\text{mod} n)$:
 
