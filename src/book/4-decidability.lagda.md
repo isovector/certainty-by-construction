@@ -277,25 +277,25 @@ Compare this type to the more "obvious" type:
 
 The difference between [1](Ann) and [2](Ann) is that in the latter, we receive a
 specific `A`, and are then required to give back a proof that there is no
-`≢-refl` *for that specific type.* In [1](Ann) however, we are required to show
-that there does not exist a `≢-refl` that works for *every* type `A`. End users
+`def:≢-refl` *for that specific type.* In [1](Ann) however, we are required to show
+that there does not exist a `def:≢-refl` that works for *every* type `A`. End users
 of `¬≢-refl` don't care one way or another, but the difference here is
 absolutely crucial for actually *proving* the notion. Let's look at this more
 closely.
 
-At a high level, the proof here is "`≢-refl` must be false because it's the
-negation of `≡-refl`, which is easily shown to be true." While the type of the
-argument to `¬≢-refl` is `Reflexive _≢_`, we can use
+At a high level, the proof here is "`def:≢-refl` must be false because it's the
+negation of `def:≡-refl`, which is easily shown to be true." While the type of the
+argument to `def:¬≢-refl` is `type:Reflexive _≢_`, we can use
 [TypeContext/Normalise](AgdaCmd) to ask Agda to expand out this definition,
 resulting in `x ≡ x → ⊥`. Under the lens of this expanded type, it seems
-reasonable to call the argument `¬≡-refl`, as in the following:
+reasonable to call the argument `def:¬≡-refl`, as in the following:
 
 ```agda
 ¬≢-refl⅋₁ : ¬ ({A : Set} → Reflexive {A} _≢_)
 ¬≢-refl⅋₁ ¬≡-refl = {! !}
 ```
 
-Of course, we do in fact have a proof of `x ≡ x`, namely `ctor:refl`, so we can try
+Of course, we do in fact have a proof of `type:x ≡ x`, namely `ctor:refl`, so we can try
 solving the hole as:
 
 ```agda
@@ -314,7 +314,7 @@ argument and solving them ourselves:
 ```
 
 You'll notice that the yellow warning has disappeared, and we're left only with
-some holes to fill. The first hole has type `Set`, while the second has type
+some holes to fill. The first hole has type `type:Set`, while the second has type
 `?0`, meaning its type depends on the answer to our first hole. We're free to
 choose any type we'd like for this first hole, so let's try `type:ℕ`:
 
@@ -331,7 +331,7 @@ and now all we need is to pick an arbitrary value of type `type:ℕ`:
 ```
 
 What was to be demonstrated has thus been proved. But let's see what goes wrong
-if we try the same approach on `¬≢-refl-bad`. Since `A` is now a top-level
+if we try the same approach on `def:¬≢-refl-bad`. Since `A` is now a top-level
 parameter, we can bind it in the function body, meaning we have one fewer
 implicit to fill in:
 
@@ -593,12 +593,12 @@ defines a new pattern called `leaf : A → BinTree A`:
   pattern leaf a = branch empty a empty
 ```
 
-You might wonder why we use a `data:pattern` here rather than just a regular old
-function:
+You might wonder why we use a `keyword:pattern` here rather than just a regular
+old function:
 
 ```agda
-  leaf⅋ : {A : Set} → A → BinTree A
-  leaf⅋ a = branch empty a empty
+  leaf′ : {A : Set} → A → BinTree A
+  leaf′ a = branch empty a empty
 ```
 
 The difference is all in the colors. Literally. The reason is that, as the name
@@ -681,7 +681,7 @@ Just to demonstrate that everything works, we can make a little tree:
   tree = branch (branch (leaf 0) 0 (leaf 2)) 4 (leaf 6)
 ```
 
-and then show that six is somewhere in this `tree`, as per the very assertive
+and then show that six is somewhere in this `def:tree`, as per the very assertive
 definition:
 
 ```agda
@@ -735,7 +735,7 @@ natural numbers, and does not exist in the standard library.
     ss-even : {n : ℕ} → IsEven n → IsEven (2 + n)
 ```
 
-It's now possible to show every element in `tree` is even. In fact, Agda can
+It's now possible to show every element in `def:tree` is even. In fact, Agda can
 prove it for us, via [Auto](AgdaCmd):
 
 ```agda
@@ -870,7 +870,7 @@ Given the standard notion of ordering over the natural numbers:
     s≤s : {m n : ℕ} → m ≤ n → suc m ≤ suc n
 ```
 
-we can again ask Agda for a proof that `tree` is a BST:
+we can again ask Agda for a proof that `def:tree` is a BST:
 
 ```agda
   tree-is-bst : IsBST _≤_ tree
@@ -944,7 +944,7 @@ and assemble the final proof if everything is `ctor:yes`:
 ```
 
 You might be wondering whether there is an easier way to assemble these proofs.
-Unfortunately, there is no. It's not theoretically impossible by any means, but
+Unfortunately, there is not. It's not theoretically impossible by any means, but
 at time of writing, there is no automatic means of deriving these proofs.
 
 

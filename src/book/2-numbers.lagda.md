@@ -966,17 +966,17 @@ Just to convince ourselves everything works, let's write a few unit tests:
   module Tests where
     open import Relation.Binary.PropositionalEquality
 
-    -- _ : one + two ≡ three
-    -- _ = refl
+    _ : one + two ≡ three
+    _ = refl
 
-    -- _ : three ∸ one ≡ two
-    -- _ = refl
+    _ : three ∸ one ≡ two
+    _ = refl
 
-    -- _ : one ∸ three ≡ zero
-    -- _ = refl
+    _ : one ∸ three ≡ zero
+    _ = refl
 
-    -- _ : two * two ≡ four
-    -- _ = refl
+    _ : two * two ≡ four
+    _ = refl
 ```
 
 You can find all of these goodies, and significantly more, in the standard
@@ -1278,6 +1278,7 @@ of the logic:
 ```agda
   infixl 5 _+_
 
+  -- TODO(sandy): need to rename earlier _+⅋_
   _+_ : ℤ → ℤ → ℤ
   (+ x)    + (+ y)    = + (x ℕ.+ y)
   (+ x)    + -[1+ y ] = x ⊝ ℕ.suc y

@@ -253,10 +253,7 @@ parameterize the whole thing by the type of things it relates. Solving all these
 constraints simultaneously gives us the following `data` definition.
 
 ```agda
--- TODO(sandy): drop this module when the chapter is rewritten
-module REMOVE-ME where
-
-  data _≡_ {A : Set} : A → A → Set where
+data _≡_ {A : Set} : A → A → Set where
 ```
 
 The `type:≡` symbol is input via [`==`](AgdaMode).
@@ -267,7 +264,7 @@ there is only one basic way to show an equality, which is to say, two things are
 equal only if they are the same thing in the first place!
 
 ```agda
-    refl : {x : A} → x ≡ x
+  refl : {x : A} → x ≡ x
 ```
 
 The type here, `type:{x : A} → x ≡ x` says that for any value `x` we'd like, we know
@@ -282,7 +279,7 @@ not want `type:_≡_` to associate at all, so we can use `infix` without a left 
 right suffix to prevent this behavior:
 
 ```agda
-  infix 4 _≡_
+infix 4 _≡_
 ```
 
 We have already encountered `type:_≡_` and `ctor:refl` in @sec:chapter1 where we called
@@ -300,31 +297,31 @@ Let's play around with our equality type to get a feel for how much work it can
 do, without any further machinery.
 
 ```agda
-  module Sandbox-Playground where
-    open Naturals
-      using (one; two; three; four; _+_; _*_; _^_)
+module Sandbox-Playground where
+  open Naturals
+    using (one; two; three; four; _+_; _*_; _^_)
 ```
 
 It's no surprise that Agda can determine the equality of two syntactically
 identical terms:
 
 ```agda
-    3≡3 : suc (suc (suc zero)) ≡ suc (suc (suc zero))
-    3≡3 = refl
+  3≡3 : suc (suc (suc zero)) ≡ suc (suc (suc zero))
+  3≡3 = refl
 ```
 
 Agda will also expand definitions:
 
 ```agda
-    three≡3 : three ≡ suc (suc (suc zero))
-    three≡3 = refl
+  three≡3 : three ≡ suc (suc (suc zero))
+  three≡3 = refl
 ```
 
 including if those definitions require computation:
 
 ```agda
-    three≡one+two : three ≡ one + two
-    three≡one+two = refl
+  three≡one+two : three ≡ one + two
+  three≡one+two = refl
 ```
 
 Each of these examples is of the "unit test" variety. Perhaps you'll be
@@ -339,7 +336,7 @@ $$
 We can write this proposition as a type rather directly:
 
 ```agda
-    0+x≡x : (x : ℕ) → zero + x ≡ x
+  0+x≡x : (x : ℕ) → zero + x ≡ x
 ```
 
 In order to give a proof of this fact, we must bind the parameter on the left
@@ -347,7 +344,7 @@ side of the equals (in fact, we don't even need to give it a name), but `ctor:re
 is sufficient on the right side:
 
 ```agda
-    0+x≡x _ = refl
+  0+x≡x _ = refl
 ```
 
 There are two equally valid interpretations of `def:0+x≡x`. The first is exactly the
@@ -368,8 +365,8 @@ Try as we might, however, Agda will refuse to type check the analogous equality
 `def:x+0≡x`:
 
 ```illegal
-    x+0≡x⅋ : (x : ℕ) → x + zero ≡ x
-    x+0≡x⅋ _ = refl
+  x+0≡x⅋ : (x : ℕ) → x + zero ≡ x
+  x+0≡x⅋ _ = refl
 ```
 
 ```info
@@ -386,18 +383,18 @@ on this equality until we can unstick `x`. Like always, the solution to
 stuckness is pattern matching:
 
 ```agda
-    x+0≡x⅋₀ : (x : ℕ) → x + zero ≡ x
-    x+0≡x⅋₀ zero = {! !}
-    x+0≡x⅋₀ (suc x) = {! !}
+  x+0≡x⅋₀ : (x : ℕ) → x + zero ≡ x
+  x+0≡x⅋₀ zero = {! !}
+  x+0≡x⅋₀ (suc x) = {! !}
 ```
 
 Immediately, Agda gets unstuck, and tells us now the type of the first hole is
 `zero ≡ zero`; which is an easy thing to prove:
 
 ```agda
-    x+0≡x⅋₁ : (x : ℕ) → x + zero ≡ x
-    x+0≡x⅋₁ zero = refl
-    x+0≡x⅋₁ (suc x) = {! !}
+  x+0≡x⅋₁ : (x : ℕ) → x + zero ≡ x
+  x+0≡x⅋₁ zero = refl
+  x+0≡x⅋₁ (suc x) = {! !}
 ```
 
 This second goal here is `suc (x + zero) ≡ suc x`, which has arisen from
@@ -417,10 +414,10 @@ order to work out this problem of fitting a `ctor:suc` into a proof-shaped hole.
 At first blush, we are trying to solve the following problem:
 
 ```agda
-    postulate
-      _ : (x : ℕ)
-        → x + zero ≡ x
-        → suc (x + zero) ≡ suc x
+  postulate
+    _ : (x : ℕ)
+      → x + zero ≡ x
+      → suc (x + zero) ≡ suc x
 ```
 
 which we read as "for any number `x : ℕ`, we can transform a proof of `x + zero
@@ -429,9 +426,10 @@ reasonable, it seems to be setting the bar too low. Surely it's the case that we
 could show the more general solution:
 
 ```agda
-      _ : {x y : ℕ}
-        → x ≡ y
-        → suc x ≡ suc y
+  postulate
+    _ : {x y : ℕ}
+      → x ≡ y
+      → suc x ≡ suc y
 ```
 
 
@@ -455,13 +453,13 @@ to the frequency with which we will use this technique in the field. The type of
 relevant variables.
 
 ```agda
-    cong⅋₀
-        : {A B : Set}
-        → {x y : A}
-        → (f : A → B)
-        → x ≡ y
-        → f x ≡ f y
-    cong⅋₀ f x≡y = ?
+  cong⅋₀
+      : {A B : Set}
+      → {x y : A}
+      → (f : A → B)
+      → x ≡ y
+      → f x ≡ f y
+  cong⅋₀ f x≡y = ?
 ```
 
 Proving `def:cong` is straightforward. We already have a proof that `x ≡ y`. If we
@@ -469,25 +467,25 @@ pattern match on this value, Agda is smart enough to rewrite every `y` in the
 type as `x`. Thus, after a [MakeCase:x≡y](AgdaCmd):
 
 ```agda
-    cong⅋₁
-        : {A B : Set}
-        → {x y : A}
-        → (f : A → B)
-        → x ≡ y
-        → f x ≡ f y
-    cong⅋₁ f refl = {! !}
+  cong⅋₁
+      : {A B : Set}
+      → {x y : A}
+      → (f : A → B)
+      → x ≡ y
+      → f x ≡ f y
+  cong⅋₁ f refl = {! !}
 ```
 
 our new goal has type `f x ≡ f y`, which is trivially a call to `ctor:refl`.
 
 ```agda
-    cong
-        : {A B : Set}
-        → {x y : A}
-        → (f : A → B)
-        → x ≡ y
-        → f x ≡ f y
-    cong f refl = refl
+  cong
+      : {A B : Set}
+      → {x y : A}
+      → (f : A → B)
+      → x ≡ y
+      → f x ≡ f y
+  cong f refl = refl
 ```
 
 You'll notice something cool has happened here. When we pattern match on a
@@ -499,25 +497,25 @@ For now, recall that we were looking for a means of completing the following
 proof:
 
 ```agda
-    x+0≡x⅋₂ : (x : ℕ) → x + zero ≡ x
-    x+0≡x⅋₂ zero = refl
-    x+0≡x⅋₂ (suc x) = {! !}
+  x+0≡x⅋₂ : (x : ℕ) → x + zero ≡ x
+  x+0≡x⅋₂ zero = refl
+  x+0≡x⅋₂ (suc x) = {! !}
 ```
 
 Our new `def:cong` function fits nicely into this hole:
 
 ```agda
-    x+0≡x⅋₃ : (x : ℕ) → x + zero ≡ x
-    x+0≡x⅋₃ zero = refl
-    x+0≡x⅋₃ (suc x) = cong suc {! !}
+  x+0≡x⅋₃ : (x : ℕ) → x + zero ≡ x
+  x+0≡x⅋₃ zero = refl
+  x+0≡x⅋₃ (suc x) = cong suc {! !}
 ```
 
 which [Auto](AgdaCmd) will now happily fill for us using recursion:
 
 ```agda
-    x+0≡x : (x : ℕ) → x + zero ≡ x
-    x+0≡x zero = refl
-    x+0≡x (suc x) = cong suc (x+0≡x x)
+  x+0≡x : (x : ℕ) → x + zero ≡ x
+  x+0≡x zero = refl
+  x+0≡x (suc x) = cong suc (x+0≡x x)
 ```
 
 Congruence is an excellent tool for doing induction in proofs. You can do
@@ -535,11 +533,11 @@ addition, because $x + 0 = x$ and $0 + x = x$. In order to get start getting
 familiar with these idioms, we can give new our existing proofs:
 
 ```agda
-    +-identityˡ : (x : ℕ) → zero + x ≡ x
-    +-identityˡ = 0+x≡x
+  +-identityˡ : (x : ℕ) → zero + x ≡ x
+  +-identityˡ = 0+x≡x
 
-    +-identityʳ : (x : ℕ) → x + zero ≡ x
-    +-identityʳ = x+0≡x
+  +-identityʳ : (x : ℕ) → x + zero ≡ x
+  +-identityʳ = x+0≡x
 ```
 
 The superscript `l` and `r` here are input as [`^l`](AgdaMode) and [`^r`](AgdaMode),
@@ -568,10 +566,10 @@ Exercise
 Solution
 
 :     ```agda
-    *-identityʳ : (x : ℕ) → x * one ≡ x
-    *-identityʳ zero = refl
-    *-identityʳ (suc x) = cong suc (*-identityʳ x)
-      ```
+  *-identityʳ : (x : ℕ) → x * one ≡ x
+  *-identityʳ zero = refl
+  *-identityʳ (suc x) = cong suc (*-identityʳ x)
+    ```
 
 
 Exercise
@@ -582,10 +580,10 @@ Exercise
 Solution
 
 :     ```agda
-    *-identityˡ : (x : ℕ) → one * x ≡ x
-    *-identityˡ zero = refl
-    *-identityˡ (suc x) = cong suc (+-identityʳ x)
-      ```
+  *-identityˡ : (x : ℕ) → one * x ≡ x
+  *-identityˡ zero = refl
+  *-identityˡ (suc x) = cong suc (+-identityʳ x)
+    ```
 
 Exercise
 
@@ -597,10 +595,10 @@ Exercise
 Solution
 
 :     ```agda
-    ^-identityʳ : (x : ℕ) → x ^ one ≡ x
-    ^-identityʳ zero = refl
-    ^-identityʳ (suc x) = cong suc (*-identityʳ x)
-      ```
+  ^-identityʳ : (x : ℕ) → x ^ one ≡ x
+  ^-identityʳ zero = refl
+  ^-identityʳ (suc x) = cong suc (*-identityʳ x)
+    ```
 
 
 ## Symmetry and Involutivity
@@ -633,8 +631,8 @@ equals sign. We can exploit this fact to reverse every propositional equality
 proof via `def:sym`:
 
 ```agda
-    sym : {A : Set} → {x y : A} → x ≡ y → y ≡ x
-    sym refl = refl
+  sym : {A : Set} → {x y : A} → x ≡ y → y ≡ x
+  sym refl = refl
 ```
 
 Rather underwhelming once you see it, isn't it? After we pattern match on
@@ -651,8 +649,8 @@ With `def:sym`, we now have a satisfying, general-purpose tool for implementing
 `*-identityˡ′`:
 
 ```agda
-    *-identityˡ′ : (x : ℕ) → x ≡ one * x
-    *-identityˡ′ x = sym (*-identityˡ x)
+  *-identityˡ′ : (x : ℕ) → x ≡ one * x
+  *-identityˡ′ x = sym (*-identityˡ x)
 ```
 
 Because `def:sym` swaps which of its arguments is on the left and which is on the
@@ -667,10 +665,10 @@ particular arguments on either side of the equals sign. Then we're ready to get
 started on the question proper, namely:
 
 ```agda
-    sym-involutive
-        : {A : Set} → {x y : A}
-        → (p : x ≡ y)
-        → sym (sym p) ≡ p
+  sym-involutive
+      : {A : Set} → {x y : A}
+      → (p : x ≡ y)
+      → sym (sym p) ≡ p
 ```
 
 The proof here is simple and satisfying, and is left as an exercise to the
@@ -679,14 +677,14 @@ reader.
 
 Exercise
 
-:   Prove `sym-involutive`.
+:   Prove `def:sym-involutive`.
 
 
 Solution
 
   :   ```agda
-    sym-involutive refl = refl
-      ```
+  sym-involutive refl = refl
+    ```
 
 
 An involution is any operation that gets you back to where you started after two
@@ -694,12 +692,12 @@ invocations. In other words, it's a self-canceling operation. For another
 example we've already run into, `not : Bool → Bool` is also involutive:
 
 ```agda
-    import 1-agda
-    open 1-agda.Booleans
+  import 1-agda
+  open 1-agda.Booleans
 
-    not-involutive : (x : Bool) → not (not x) ≡ x
-    not-involutive false = refl
-    not-involutive true = refl
+  not-involutive : (x : Bool) → not (not x) ≡ x
+  not-involutive false = refl
+  not-involutive true = refl
 ```
 
 Throughout this book, we will encounter more and more algebraic properties like
@@ -769,11 +767,11 @@ chain of dominoes. This notion is called *transitivity,* and we can state it
 thus:
 
 ```agda
-    trans
-      : {A : Set} {x y z : A}
-      → x ≡ y
-      → y ≡ z
-      → x ≡ z
+  trans
+    : {A : Set} {x y z : A}
+    → x ≡ y
+    → y ≡ z
+    → x ≡ z
 ```
 
 In other words, `def:trans` takes a proof that `x ≡ y` and a proof that `y ≡ z`, and
@@ -782,7 +780,7 @@ the `def:sym` book, and pattern match on both proofs, allowing Agda to unify `z`
 `y`, before subsequently unifying `y` and `x`:
 
 ```agda
-    trans refl refl = refl
+  trans refl refl = refl
 ```
 
 We can use transitivity to help us prove less-fundamental properties about
@@ -799,21 +797,21 @@ $$
 
 
 ```agda
-    -- TODO(sandy): put these zeroes in the section on identities
-    *-zeroˡ : (x : ℕ) → zero * x ≡ zero
-    *-zeroˡ _ = refl
+  -- TODO(sandy): put these zeroes in the section on identities
+  *-zeroˡ : (x : ℕ) → zero * x ≡ zero
+  *-zeroˡ _ = refl
 
-    *-zeroʳ : (x : ℕ) → x * zero ≡ zero
-    *-zeroʳ zero = refl
-    *-zeroʳ (suc x) = *-zeroʳ x
+  *-zeroʳ : (x : ℕ) → x * zero ≡ zero
+  *-zeroʳ zero = refl
+  *-zeroʳ (suc x) = *-zeroʳ x
 ```
 
 Let's write this as a proposition:
 
 
 ```agda
-    a^1≡a+b*0⅋₋₁ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
-    a^1≡a+b*0⅋₋₁ a b = ?
+  a^1≡a+b*0⅋₋₁ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
+  a^1≡a+b*0⅋₋₁ a b = ?
 ```
 
 Of course, we can always prove something by doing the manual work of pattern
@@ -825,9 +823,9 @@ proposition out of reusable pieces that we've already developed. Because we'd
 like to glue together some existing proofs, we begin with a call to `def:trans`:
 
 ```agda
-    a^1≡a+b*0⅋₀ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
-    a^1≡a+b*0⅋₀ a b
-      = trans ? ?
+  a^1≡a+b*0⅋₀ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
+  a^1≡a+b*0⅋₀ a b
+    = trans ? ?
 ```
 
 This call to `def:trans` shows up with a yellow background because we haven't yet
@@ -837,9 +835,9 @@ to worry about, as our next step will sort everything out. We will follow our
 called `^-identityʳ a`:
 
 ```agda
-    a^1≡a+b*0⅋₁ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
-    a^1≡a+b*0⅋₁ a b
-      = trans (^-identityʳ a) ?
+  a^1≡a+b*0⅋₁ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
+  a^1≡a+b*0⅋₁ a b
+    = trans (^-identityʳ a) ?
 ```
 
 Our goal now has the type `a ≡ a + b * zero`, which we'd like to simplify and
@@ -848,12 +846,12 @@ assert the fact that $a = a + 0$. We don't have a proof of this directly, but we
 do have the opposite direction via `+-identityʳ a`. Symmetry can help us out:
 
 ```agda
-    a^1≡a+b*0⅋₂ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
-    a^1≡a+b*0⅋₂ a b
-      = trans (^-identityʳ a)
-      ( trans (sym (+-identityʳ a))
-              ?
-      )
+  a^1≡a+b*0⅋₂ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
+  a^1≡a+b*0⅋₂ a b
+    = trans (^-identityʳ a)
+    ( trans (sym (+-identityʳ a))
+            ?
+    )
 ```
 
 We are left with a goal with the type `a + zero ≡ a + b * zero`. While we know
@@ -863,16 +861,16 @@ evidence into the right place. Whenever you have a proof for a subexpression,
 you should think `def:cong`:
 
 ```agda
-    -- TODO(sandy): rewrite me with the targeting idea first, so we can avoid
-    -- the unsolved metas here
-    --
-    -- also put in a note about picking the spot first, for exactly this reason
-    a^1≡a+b*0⅋₃ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
-    a^1≡a+b*0⅋₃ a b
-      = trans (^-identityʳ a)
-      ( trans (sym (+-identityʳ a))
-              (cong ? (sym (*-zeroʳ b)))
-      )
+  -- TODO(sandy): rewrite me with the targeting idea first, so we can avoid
+  -- the unsolved metas here
+  --
+  -- also put in a note about picking the spot first, for exactly this reason
+  a^1≡a+b*0⅋₃ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
+  a^1≡a+b*0⅋₃ a b
+    = trans (^-identityʳ a)
+    ( trans (sym (+-identityʳ a))
+            (cong ? (sym (*-zeroʳ b)))
+    )
 ```
 
 This final hole, recall, moves the given proof to the desired place in the
@@ -882,12 +880,12 @@ Therefore, we must give a function that *targets* the `ctor:zero`, leaving the
 remainder of the expression alone. We can introduce a function via a lambda:
 
 ```agda
-    a^1≡a+b*0⅋₄ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
-    a^1≡a+b*0⅋₄ a b
-      = trans (^-identityʳ a)
-      ( trans (sym (+-identityʳ a))
-              (cong (λ φ → ?) (sym (*-zeroʳ b)))
-      )
+  a^1≡a+b*0⅋₄ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
+  a^1≡a+b*0⅋₄ a b
+    = trans (^-identityʳ a)
+    ( trans (sym (+-identityʳ a))
+            (cong (λ φ → ?) (sym (*-zeroʳ b)))
+    )
 ```
 
 The lambda here is input as [`Gl`](AgdaMode), while the phi is [`Gf`](AgdaMode).
@@ -896,12 +894,12 @@ the expression you had before, and replace the bit you'd like to change with the
 function's input. Thus:
 
 ```agda
-    a^1≡a+b*0 : (a b : ℕ) → a ^ one ≡ a + (b * zero)
-    a^1≡a+b*0 a b
-      = trans (^-identityʳ a)
-      ( trans (sym (+-identityʳ a))
-              (cong (λ φ → a + φ) (sym (*-zeroʳ b)))
-      )
+  a^1≡a+b*0 : (a b : ℕ) → a ^ one ≡ a + (b * zero)
+  a^1≡a+b*0 a b
+    = trans (^-identityʳ a)
+    ( trans (sym (+-identityʳ a))
+            (cong (λ φ → a + φ) (sym (*-zeroʳ b)))
+    )
 ```
 
 Of course, we can rewrite `λ φ → a + φ` by "canceling" the `φ` on both sides,
@@ -909,12 +907,12 @@ which gives us the slightly terser form `a +_`. This gives rise to an
 alternative implementation:
 
 ```agda
-    a^1≡a+b*0′ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
-    a^1≡a+b*0′ a b
-      = trans (^-identityʳ a)
-      ( trans (sym (+-identityʳ a))
-              (cong (a +_) (sym (*-zeroʳ b)))
-      )
+  a^1≡a+b*0′ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
+  a^1≡a+b*0′ a b
+    = trans (^-identityʳ a)
+    ( trans (sym (+-identityʳ a))
+            (cong (a +_) (sym (*-zeroʳ b)))
+    )
 ```
 
 Throughout this book, we will use the second notation whenever the subexpression
@@ -945,9 +943,9 @@ To illustrate this idea we can make a *postfix* operator by prefixing our
 operator with an underscore, as in the factorial function:
 
 ```agda
-    _! : ℕ → ℕ
-    zero ! = one
-    suc n ! = suc n * n !  -- ! 1
+  _! : ℕ → ℕ
+  zero ! = one
+  suc n ! = suc n * n !  -- ! 1
 ```
 
 -- TODO(sandy): is this claim true?
@@ -965,8 +963,8 @@ with associativity. For example, while it's tedious to write `five` out of
 `ctor:suc`s:
 
 ```agda
-    five⅋₀ : ℕ
-    five⅋₀ = suc (suc (suc (suc (suc zero))))
+  five⅋₀ : ℕ
+  five⅋₀ = suc (suc (suc (suc (suc zero))))
 ```
 
 where each of these sets of parentheses is mandatory, we can instead embrace the
@@ -974,13 +972,13 @@ nature of counting in unary and define a right-associative prefix "tick mark"
 (input as [`|`](AgdaMode)):
 
 ```agda
-    ∣_ : ℕ → ℕ
-    ∣_ = suc
+  ∣_ : ℕ → ℕ
+  ∣_ = suc
 
-    infixr 20 ∣_
+  infixr 20 ∣_
 
-    five : ℕ
-    five = ∣ ∣ ∣ ∣ ∣ zero
+  five : ℕ
+  five = ∣ ∣ ∣ ∣ ∣ zero
 ```
 
 The presence of `ctor:zero` here is unfortunate, but necessary. When nesting
@@ -990,11 +988,11 @@ to write "true" tick marks which are merely to be counted. However, we can
 lessen the ugliness by introducing some different syntax for `ctor:zero`, as in:
 
 ```agda
-    □ : ℕ
-    □ = zero
+  □ : ℕ
+  □ = zero
 
-    five⅋₁ : ℕ
-    five⅋₁ = ∣ ∣ ∣ ∣ ∣ □
+  five⅋₁ : ℕ
+  five⅋₁ = ∣ ∣ ∣ ∣ ∣ □
 ```
 
 The square `def:□` can be input as [`sq`](AgdaMode). Whether or not this syntax is
@@ -1008,13 +1006,13 @@ the mathematical notation for the floor function (integer part) is
 $\lfloor{x}\rfloor$, which we can replicate in Agda:
 
 ```agda
-    postulate
-      ℝ : Set
-      π : ℝ
-      ⌊_⌋ : ℝ → ℕ
+  postulate
+    ℝ : Set
+    π : ℝ
+    ⌊_⌋ : ℝ → ℕ
 
-    three′ : ℕ
-    three′ = ⌊ π ⌋
+  three′ : ℕ
+  three′ = ⌊ π ⌋
 ```
 
 The floor bars are input via [``clL``](AgdaMode) and [clR](AgdaMode), while `type:ℝ`
@@ -1033,40 +1031,40 @@ demonstrate the approach, we can define it here. Because both `?` and `:`
 we will instead use `‽` ([`?!`](AgdaMode)) and `⦂` ([`z:`](AgdaMode)):
 
 ```agda
-    _‽_⦂_ : {A : Set} → Bool → A → A → A
-    false ‽ t ⦂ f = f
-    true ‽ t ⦂ f = t
+  _‽_⦂_ : {A : Set} → Bool → A → A → A
+  false ‽ t ⦂ f = f
+  true ‽ t ⦂ f = t
 
-    infixr 20 _‽_⦂_
+  infixr 20 _‽_⦂_
 
-    _ : ℕ
-    _ = not true ‽ four ⦂ one
+  _ : ℕ
+  _ = not true ‽ four ⦂ one
 ```
 
 Alternatively, since Agda doesn't come with an `if..else..` construct either, we
 can also trivially define that:
 
 ```agda
-    if_then_else_ : {A : Set} → Bool → A → A → A
-    if_then_else_ = _‽_⦂_
+  if_then_else_ : {A : Set} → Bool → A → A → A
+  if_then_else_ = _‽_⦂_
 
-    infixr 20 if_then_else_
+  infixr 20 if_then_else_
 ```
 
 which we can immediately use:
 
 ```agda
-    _ : ℕ
-    _ = if not true then four else one
+  _ : ℕ
+  _ = if not true then four else one
 ```
 
 or nest with itself:
 
 ```agda
-    _ : ℕ
-    _ = if not true then four
-        else if true then one
-        else zero
+  _ : ℕ
+  _ = if not true then four
+      else if true then one
+      else zero
 ```
 
 As another example, languages from the ML family come with a `case..of`
@@ -1075,18 +1073,18 @@ equals sign (as opposed to Agda, where we can only do it on the left side!)
 However, it's easy to replicate this syntax for ourselves:
 
 ```agda
-    case_of_ : {A B : Set} → A → (A → B) → B
-    case e of f = f e
+  case_of_ : {A B : Set} → A → (A → B) → B
+  case e of f = f e
 ```
 
 This definition takes advantage of Agda's pattern-matching lambda, as in:
 
 ```agda
-    _ : ℕ
-    _ = case not true of λ
-          { false → one
-          ; true → four
-          }
+  _ : ℕ
+  _ = case not true of λ
+        { false → one
+        ; true → four
+        }
 ```
 
 There is one small problem when doing mixfix parsing; unfortunately, we cannot
@@ -1095,8 +1093,8 @@ to make a boolean operator `_is equal to_`. A simple fix is to intersperse our
 tokens with hyphens, as in:
 
 ```agda
-    _is-equal-to_ : {A : Set} → A → A → Set
-    x is-equal-to y = x ≡ y
+  _is-equal-to_ : {A : Set} → A → A → Set
+  x is-equal-to y = x ≡ y
 ```
 
 which is nearly as good.
@@ -1143,7 +1141,7 @@ The construction of our domain specific language is a little finicky and deserve
 some thought. Let's go slowly, but start with a new module:
 
 ```agda
-    module ≡-Reasoning where
+  module ≡-Reasoning where
 ```
 
 The idea here is that we will make a series of right-associative syntax
@@ -1154,10 +1152,10 @@ called a *tombstone* marker. Since proofs already end with this piece of syntax,
 it's a great choice to terminate our right-associative chain of equalities.
 
 ```agda
-      _∎ : {A : Set} → (x : A) → x ≡ x
-      _∎ x = refl
+    _∎ : {A : Set} → (x : A) → x ≡ x
+    _∎ x = refl
 
-      infix 3 _∎
+    infix 3 _∎
 ```
 
 The tombstone marker is input in Agda via [`qed`](AgdaMode). Note that the `x`
@@ -1168,10 +1166,10 @@ an equality that requires no justification. If we already have the proof we'd
 like, we can simply return it:
 
 ```agda
-      _≡⟨⟩_ : {A : Set} → (x : A) → {y : A} → x ≡ y → x ≡ y
-      x ≡⟨⟩ p = p
+    _≡⟨⟩_ : {A : Set} → (x : A) → {y : A} → x ≡ y → x ≡ y
+    x ≡⟨⟩ p = p
 
-      infixr 2 _≡⟨⟩_
+    infixr 2 _≡⟨⟩_
 ```
 
 Again, `x` is unused in the definition, and exists only in the type. You might
@@ -1183,16 +1181,16 @@ a guide for the *human* writing the thing in the first place! These `x`s mark
 the current state of the computation. Let's illustrate the point:
 
 ```agda
-      _ : four ≡ suc (one + two)
-      _ =
-        four
-          ≡⟨⟩
-        two + two
-          ≡⟨⟩
-        suc one + two
-          ≡⟨⟩
-        suc (one + two)
-          ∎
+    _ : four ≡ suc (one + two)
+    _ =
+      four
+        ≡⟨⟩
+      two + two
+        ≡⟨⟩
+      suc one + two
+        ≡⟨⟩
+      suc (one + two)
+        ∎
 ```
 
 In this case, since everything is fully concrete, Agda can just work out the
@@ -1203,40 +1201,40 @@ It can be helpful to insert explicit parentheses here to help us parse exactly
 what's going on:
 
 ```agda
-      _ : four ≡ suc (one + two)
-      _ =
-        four ≡⟨⟩
-          ( two + two ≡⟨⟩
-            ( suc one + two ≡⟨⟩
-              ( suc (one + two) ∎ )))
+    _ : four ≡ suc (one + two)
+    _ =
+      four ≡⟨⟩
+        ( two + two ≡⟨⟩
+          ( suc one + two ≡⟨⟩
+            ( suc (one + two) ∎ )))
 ```
 
 Replacing `def:_∎` with its definition, we get:
 
 ```agda
-      _ : four ≡ suc (one + two)
-      _ =
-        four ≡⟨⟩
-          ( two + two ≡⟨⟩
-            ( suc one + two ≡⟨⟩ refl ))
+    _ : four ≡ suc (one + two)
+    _ =
+      four ≡⟨⟩
+        ( two + two ≡⟨⟩
+          ( suc one + two ≡⟨⟩ refl ))
 ```
 
 We can then replace the innermost `def:_≡⟨⟩_` with *its* definition, which you will
 remember is to just return its second argument:
 
 ```agda
-      _ : four ≡ suc (one + two)
-      _ =
-        four ≡⟨⟩
-          ( two + two ≡⟨⟩ refl )
+    _ : four ≡ suc (one + two)
+    _ =
+      four ≡⟨⟩
+        ( two + two ≡⟨⟩ refl )
 ```
 
 This process continues on and one until all of the syntax is eliminated, and we
 are left with just:
 
 ```agda
-      _ : four ≡ suc (one + two)
-      _ = refl
+    _ : four ≡ suc (one + two)
+    _ = refl
 ```
 
 While it seems like our notation merely ignores the equal terms, this isn't
@@ -1275,16 +1273,16 @@ Of course, `def:_≡⟨⟩_` is no good for providing justifications. Instead, w
 the same idea, but this time leave a hole for the justification.
 
 ```agda
-      _≡⟨_⟩_
-          : {A : Set}
-          → (x : A)
-          → {y z : A}
-          → x ≡ y
-          → y ≡ z
-          → x ≡ z
-      _≡⟨_⟩_ x = trans
+    _≡⟨_⟩_
+        : {A : Set}
+        → (x : A)
+        → {y z : A}
+        → x ≡ y
+        → y ≡ z
+        → x ≡ z
+    _≡⟨_⟩_ x = trans
 
-      infixr 2 _≡⟨_⟩_
+    infixr 2 _≡⟨_⟩_
 ```
 
 `def:_≡⟨_⟩_` works exactly in the same way as `def:_≡⟨⟩_`, except that it takes a
@@ -1297,10 +1295,10 @@ keyword. This is not strictly necessary, but makes for nice introductory syntax
 to let the reader know that an equational reasoning proof is coming up:
 
 ```agda
-      begin_ : {A : Set} → {x y : A} → x ≡ y → x ≡ y
-      begin_ x=y = x=y
+    begin_ : {A : Set} → {x y : A} → x ≡ y → x ≡ y
+    begin_ x=y = x=y
 
-      infix 1 begin_
+    infix 1 begin_
 ```
 
 The `def:begin_` function does nothing, it merely returns the proof given. And since
@@ -1312,42 +1310,42 @@ Let's now put all of our hard work to good use. Recall the proof that originally
 set us off on a hunt for better syntax:
 
 ```agda
-    a^1≡a+b*0′⅋₁ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
-    a^1≡a+b*0′⅋₁ a b
-      = trans (^-identityʳ a)
-      ( trans (sym (+-identityʳ a))
-              (cong (a +_) (sym (*-zeroʳ b)))
-      )
+  a^1≡a+b*0′⅋₁ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
+  a^1≡a+b*0′⅋₁ a b
+    = trans (^-identityʳ a)
+    ( trans (sym (+-identityʳ a))
+            (cong (a +_) (sym (*-zeroʳ b)))
+    )
 ```
 
 We can now rewrite this proof in the equational reasoning style:
 
 ```agda
-    a^1≡a+b*0′⅋₂ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
-    a^1≡a+b*0′⅋₂ a b =
-      begin
-        a ^ one
-      ≡⟨ ^-identityʳ a ⟩
-        a
-      ≡⟨ sym (+-identityʳ a) ⟩
-        a + zero
-      ≡⟨ cong (a +_) (sym (*-zeroʳ b)) ⟩
-        a + b * zero
-      ∎
-      where open ≡-Reasoning
+  a^1≡a+b*0′⅋₂ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
+  a^1≡a+b*0′⅋₂ a b =
+    begin
+      a ^ one
+    ≡⟨ ^-identityʳ a ⟩
+      a
+    ≡⟨ sym (+-identityʳ a) ⟩
+      a + zero
+    ≡⟨ cong (a +_) (sym (*-zeroʳ b)) ⟩
+      a + b * zero
+    ∎
+    where open ≡-Reasoning
 ```
 
 which, for the purposes of aesthetics, we will format in this book as the
 following whenever we have available line-width:
 
 ```agda
-    a^1≡a+b*0′⅋₃ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
-    a^1≡a+b*0′⅋₃ a b = begin
-      a ^ one       ≡⟨ ^-identityʳ a ⟩
-      a             ≡⟨ sym (+-identityʳ a) ⟩
-      a + zero      ≡⟨ cong (a +_) (sym (*-zeroʳ b)) ⟩
-      a + b * zero  ∎
-      where open ≡-Reasoning
+  a^1≡a+b*0′⅋₃ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
+  a^1≡a+b*0′⅋₃ a b = begin
+    a ^ one       ≡⟨ ^-identityʳ a ⟩
+    a             ≡⟨ sym (+-identityʳ a) ⟩
+    a + zero      ≡⟨ cong (a +_) (sym (*-zeroʳ b)) ⟩
+    a + b * zero  ∎
+    where open ≡-Reasoning
 ```
 
 As you can see, this is a marked improvement over our original definition. The
@@ -1399,27 +1397,27 @@ We can write this in Agda with the type:
 
 
 ```agda
-    +-assoc⅋₀ : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
+  +-assoc⅋₀ : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
 ```
 
 A quick binding of variables, induction on `x`, and obvious use of `ctor:refl` gets
 us to this step:
 
 ```agda
-    +-assoc⅋₀ zero y z = refl
-    +-assoc⅋₀ (suc x) y z = ?
+  +-assoc⅋₀ zero y z = refl
+  +-assoc⅋₀ (suc x) y z = ?
 ```
 
 We're ready to start a reasoning block, and thus we can use our
 [`begin`](AgdaMode) snippet:
 
 ```agda
-    +-assoc⅋₁ : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
-    +-assoc⅋₁ zero y z = refl
-    +-assoc⅋₁ (suc x) y z = begin
-      ?  ≡⟨ ? ⟩
-      ?  ∎
-      where open ≡-Reasoning
+  +-assoc⅋₁ : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
+  +-assoc⅋₁ zero y z = refl
+  +-assoc⅋₁ (suc x) y z = begin
+    ?  ≡⟨ ? ⟩
+    ?  ∎
+    where open ≡-Reasoning
 ```
 
 Note that I have opted to format this lemma more horizontally than the vertical
@@ -1434,25 +1432,25 @@ from Agda. Using [Solve](AgdaCmd) at the first and last holes will get Agda to
 fill in the terms---the two things that eventually need to be equal:
 
 ```agda
-    +-assoc⅋₂ : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
-    +-assoc⅋₂ zero y z = refl
-    +-assoc⅋₂ (suc x) y z = begin
-      suc x + y + z    ≡⟨ ? ⟩
-      suc x + (y + z)  ∎
-      where open ≡-Reasoning
+  +-assoc⅋₂ : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
+  +-assoc⅋₂ zero y z = refl
+  +-assoc⅋₂ (suc x) y z = begin
+    suc x + y + z    ≡⟨ ? ⟩
+    suc x + (y + z)  ∎
+    where open ≡-Reasoning
 ```
 
 I always like to subsequently extend the top and bottom sides like this:
 
 ```agda
-    +-assoc⅋₃ : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
-    +-assoc⅋₃ zero y z = refl
-    +-assoc⅋₃ (suc x) y z = begin
-      suc x + y + z    ≡⟨⟩
-      ?                ≡⟨ ? ⟩
-      ?                ≡⟨⟩
-      suc x + (y + z)  ∎
-      where open ≡-Reasoning
+  +-assoc⅋₃ : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
+  +-assoc⅋₃ zero y z = refl
+  +-assoc⅋₃ (suc x) y z = begin
+    suc x + y + z    ≡⟨⟩
+    ?                ≡⟨ ? ⟩
+    ?                ≡⟨⟩
+    suc x + (y + z)  ∎
+    where open ≡-Reasoning
 ```
 
 which recall says that the newly added lines are already equal to the other side
@@ -1463,28 +1461,28 @@ it goes too far, but for our simple examples here, this will always be helpful.
 The result looks like this:
 
 ```agda
-    +-assoc⅋₄ : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
-    +-assoc⅋₄ zero y z = refl
-    +-assoc⅋₄ (suc x) y z = begin
-      suc x + y + z      ≡⟨⟩
-      suc (x + y + z)    ≡⟨ ? ⟩
-      suc (x + (y + z))  ≡⟨⟩
-      suc x + (y + z)    ∎
-      where open ≡-Reasoning
+  +-assoc⅋₄ : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
+  +-assoc⅋₄ zero y z = refl
+  +-assoc⅋₄ (suc x) y z = begin
+    suc x + y + z      ≡⟨⟩
+    suc (x + y + z)    ≡⟨ ? ⟩
+    suc (x + (y + z))  ≡⟨⟩
+    suc x + (y + z)    ∎
+    where open ≡-Reasoning
 ```
 
 This new hole is clearly a `cong suc`, which we can partially fill in, and then
 invoke [Auto](AgdaCmd) to search for the remainder of the proof:
 
 ```agda
-    +-assoc : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
-    +-assoc zero y z = refl
-    +-assoc (suc x) y z = begin
-      suc x + y + z      ≡⟨⟩
-      suc (x + y + z)    ≡⟨ cong suc (+-assoc x y z) ⟩
-      suc (x + (y + z))  ≡⟨⟩
-      suc x + (y + z)    ∎
-      where open ≡-Reasoning
+  +-assoc : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
+  +-assoc zero y z = refl
+  +-assoc (suc x) y z = begin
+    suc x + y + z      ≡⟨⟩
+    suc (x + y + z)    ≡⟨ cong suc (+-assoc x y z) ⟩
+    suc (x + (y + z))  ≡⟨⟩
+    suc x + (y + z)    ∎
+    where open ≡-Reasoning
 ```
 
 I quite like this approach for tackling proofs. I introduce a [`begin`](AgdaMode)
@@ -1496,9 +1494,9 @@ Let's do another proof together, this time a less-trivial one. First, we will
 dash out a quick lemma:
 
 ```agda
-    +-suc : (x y : ℕ) → x + suc y ≡ suc (x + y)
-    +-suc zero y = refl
-    +-suc (suc x) y = cong suc (+-suc x y)
+  +-suc : (x y : ℕ) → x + suc y ≡ suc (x + y)
+  +-suc zero y = refl
+  +-suc (suc x) y = cong suc (+-suc x y)
 ```
 
 and now would like to show the *commutativity* of addition, which is,
@@ -1521,21 +1519,21 @@ Exercise
 Solution
 
 :     ```agda
-    +-comm⅋₀ : (x y : ℕ) → x + y ≡ y + x
-    +-comm⅋₀ zero y = sym (+-identityʳ y)
-    +-comm⅋₀ (suc x) y = ?
-      ```
+  +-comm⅋₀ : (x y : ℕ) → x + y ≡ y + x
+  +-comm⅋₀ zero y = sym (+-identityʳ y)
+  +-comm⅋₀ (suc x) y = ?
+    ```
 
 Let's start with a [`begin`](AgdaMode) snippet, this time filling the top and
 bottom holes via [Solve/Normalise](AgdaCmd) directly:
 
 ```agda
-    +-comm⅋₁ : (x y : ℕ) → x + y ≡ y + x
-    +-comm⅋₁ zero y = sym (+-identityʳ y)
-    +-comm⅋₁ (suc x) y = begin
-      suc (x + y)  ≡⟨ ? ⟩
-      y + suc x    ∎
-      where open ≡-Reasoning
+  +-comm⅋₁ : (x y : ℕ) → x + y ≡ y + x
+  +-comm⅋₁ zero y = sym (+-identityʳ y)
+  +-comm⅋₁ (suc x) y = begin
+    suc (x + y)  ≡⟨ ? ⟩
+    y + suc x    ∎
+    where open ≡-Reasoning
 ```
 
 Here we have our choice of working top-down, or bottom up. Let's work bottom-up,
@@ -1543,51 +1541,51 @@ for fun. Add a [`step`](AgdaMode), which will make things temporarily go all
 yellow as Agda now has too many degrees of freedom to work out what you mean:
 
 ```agda
-    +-comm⅋₂ : (x y : ℕ) → x + y ≡ y + x
-    +-comm⅋₂ zero y = sym (+-identityʳ y)
-    +-comm⅋₂ (suc x) y = begin
-      suc (x + y)  ≡⟨ ? ⟩
-      ?            ≡⟨ ? ⟩
-      y + suc x    ∎
-      where open ≡-Reasoning
+  +-comm⅋₂ : (x y : ℕ) → x + y ≡ y + x
+  +-comm⅋₂ zero y = sym (+-identityʳ y)
+  +-comm⅋₂ (suc x) y = begin
+    suc (x + y)  ≡⟨ ? ⟩
+    ?            ≡⟨ ? ⟩
+    y + suc x    ∎
+    where open ≡-Reasoning
 ```
 
 Nevertheless, we can persevere and fill in the bottom hole using our `def:+-suc`
 lemma from just now:
 
 ```agda
-    +-comm⅋₃ : (x y : ℕ) → x + y ≡ y + x
-    +-comm⅋₃ zero y = sym (+-identityʳ y)
-    +-comm⅋₃ (suc x) y = begin
-      suc (x + y)  ≡⟨ ? ⟩
-      ?            ≡⟨ sym (+-suc y x) ⟩
-      y + suc x    ∎
-      where open ≡-Reasoning
+  +-comm⅋₃ : (x y : ℕ) → x + y ≡ y + x
+  +-comm⅋₃ zero y = sym (+-identityʳ y)
+  +-comm⅋₃ (suc x) y = begin
+    suc (x + y)  ≡⟨ ? ⟩
+    ?            ≡⟨ sym (+-suc y x) ⟩
+    y + suc x    ∎
+    where open ≡-Reasoning
 ```
 
 With this justification in place, we can now ask Agda to fill the remaining
 term-level hole, again via [Solve/Normalise](AgdaCmd):
 
 ```agda
-    +-comm⅋₄ : (x y : ℕ) → x + y ≡ y + x
-    +-comm⅋₄ zero y = sym (+-identityʳ y)
-    +-comm⅋₄ (suc x) y = begin
-      suc (x + y)  ≡⟨ ? ⟩
-      suc (y + x)  ≡⟨ sym (+-suc y x) ⟩
-      y + suc x    ∎
-      where open ≡-Reasoning
+  +-comm⅋₄ : (x y : ℕ) → x + y ≡ y + x
+  +-comm⅋₄ zero y = sym (+-identityʳ y)
+  +-comm⅋₄ (suc x) y = begin
+    suc (x + y)  ≡⟨ ? ⟩
+    suc (y + x)  ≡⟨ sym (+-suc y x) ⟩
+    y + suc x    ∎
+    where open ≡-Reasoning
 ```
 
 which makes the solution obvious:
 
 ```agda
-    +-comm : (x y : ℕ) → x + y ≡ y + x
-    +-comm zero y = sym (+-identityʳ y)
-    +-comm (suc x) y = begin
-      suc (x + y)  ≡⟨ cong suc (+-comm x y) ⟩
-      suc (y + x)  ≡⟨ sym (+-suc y x) ⟩
-      y + suc x    ∎
-      where open ≡-Reasoning
+  +-comm : (x y : ℕ) → x + y ≡ y + x
+  +-comm zero y = sym (+-identityʳ y)
+  +-comm (suc x) y = begin
+    suc (x + y)  ≡⟨ cong suc (+-comm x y) ⟩
+    suc (y + x)  ≡⟨ sym (+-suc y x) ⟩
+    y + suc x    ∎
+    where open ≡-Reasoning
 ```
 
 
@@ -1600,21 +1598,21 @@ This is the case in `def:*-suc`, which allows us to expand a `ctor:suc` on the r
 of a multiplication term:
 
 ```agda
-    *-suc : (x y : ℕ) → x * suc y ≡ x + x * y
-    *-suc zero y = refl
-    *-suc (suc x) y = begin
-      suc x * suc y          ≡⟨⟩
-      suc y + x * suc y      ≡⟨ cong (λ φ → suc y + φ) (*-suc x y) ⟩
-      suc y + (x + x * y)    ≡⟨⟩
-      suc (y + (x + x * y))
-                           ≡⟨ cong suc (sym (+-assoc y x (x * y))) ⟩
-      suc ((y + x) + x * y)
-                  ≡⟨ cong (λ φ → suc (φ + x * y)) (+-comm y x) ⟩
-      suc ((x + y) + x * y)  ≡⟨ cong suc (+-assoc x y (x * y)) ⟩
-      suc (x + (y + x * y))  ≡⟨⟩
-      suc x + (y + x * y)    ≡⟨⟩
-      suc x + (suc x * y)    ∎
-      where open ≡-Reasoning
+  *-suc : (x y : ℕ) → x * suc y ≡ x + x * y
+  *-suc zero y = refl
+  *-suc (suc x) y = begin
+    suc x * suc y          ≡⟨⟩
+    suc y + x * suc y      ≡⟨ cong (λ φ → suc y + φ) (*-suc x y) ⟩
+    suc y + (x + x * y)    ≡⟨⟩
+    suc (y + (x + x * y))
+                          ≡⟨ cong suc (sym (+-assoc y x (x * y))) ⟩
+    suc ((y + x) + x * y)
+                ≡⟨ cong (λ φ → suc (φ + x * y)) (+-comm y x) ⟩
+    suc ((x + y) + x * y)  ≡⟨ cong suc (+-assoc x y (x * y)) ⟩
+    suc (x + (y + x * y))  ≡⟨⟩
+    suc x + (y + x * y)    ≡⟨⟩
+    suc x + (suc x * y)    ∎
+    where open ≡-Reasoning
 ```
 
 We are now ready to prove `def:*-comm`, one of our major results in this chapter.
@@ -1628,34 +1626,34 @@ Exercise
 Solution
 
 :       ```agda
-    *-comm : (x y : ℕ) → x * y ≡ y * x
-    *-comm zero y = sym (*-zeroʳ y)
-    *-comm (suc x) y = begin
-      suc x * y  ≡⟨⟩
-      y + x * y  ≡⟨ cong (y +_) (*-comm x y) ⟩
-      y + y * x  ≡⟨ sym (*-suc y x) ⟩
-      y * suc x  ∎
-      where open ≡-Reasoning
-        ```
+  *-comm : (x y : ℕ) → x * y ≡ y * x
+  *-comm zero y = sym (*-zeroʳ y)
+  *-comm (suc x) y = begin
+    suc x * y  ≡⟨⟩
+    y + x * y  ≡⟨ cong (y +_) (*-comm x y) ⟩
+    y + y * x  ≡⟨ sym (*-suc y x) ⟩
+    y * suc x  ∎
+    where open ≡-Reasoning
+      ```
 
 ```agda
-    *-distribʳ-+ : (x y z : ℕ) → (y + z) * x ≡ y * x + z * x
-    *-distribʳ-+ x zero z = refl
-    *-distribʳ-+ x (suc y) z = begin
-      (suc y + z) * x      ≡⟨⟩
-      x + (y + z) * x      ≡⟨ cong (x +_) (*-distribʳ-+ x y z) ⟩
-      x + (y * x + z * x)  ≡⟨ sym (+-assoc x (y * x) (z * x)) ⟩
-      (x + y * x) + z * x  ≡⟨⟩
-      suc y * x + z * x    ∎
-      where open ≡-Reasoning
+  *-distribʳ-+ : (x y z : ℕ) → (y + z) * x ≡ y * x + z * x
+  *-distribʳ-+ x zero z = refl
+  *-distribʳ-+ x (suc y) z = begin
+    (suc y + z) * x      ≡⟨⟩
+    x + (y + z) * x      ≡⟨ cong (x +_) (*-distribʳ-+ x y z) ⟩
+    x + (y * x + z * x)  ≡⟨ sym (+-assoc x (y * x) (z * x)) ⟩
+    (x + y * x) + z * x  ≡⟨⟩
+    suc y * x + z * x    ∎
+    where open ≡-Reasoning
 
-    *-assoc : (x y z : ℕ) → (x * y) * z ≡ x * (y * z)
-    *-assoc zero y z = refl
-    *-assoc (suc x) y z = begin
-      suc x * y * z        ≡⟨⟩
-      (y + x * y) * z      ≡⟨ *-distribʳ-+ z y (x * y) ⟩
-      y * z + (x * y) * z  ≡⟨ cong (λ φ → y * z + φ) (*-assoc x y z) ⟩
-      y * z + x * (y * z)  ≡⟨⟩
-      suc x * (y * z)      ∎
-      where open ≡-Reasoning
+  *-assoc : (x y z : ℕ) → (x * y) * z ≡ x * (y * z)
+  *-assoc zero y z = refl
+  *-assoc (suc x) y z = begin
+    suc x * y * z        ≡⟨⟩
+    (y + x * y) * z      ≡⟨ *-distribʳ-+ z y (x * y) ⟩
+    y * z + (x * y) * z  ≡⟨ cong (λ φ → y * z + φ) (*-assoc x y z) ⟩
+    y * z + x * (y * z)  ≡⟨⟩
+    suc x * (y * z)      ∎
+    where open ≡-Reasoning
 ```

@@ -762,13 +762,13 @@ Exercise
 
 Solution
 
-:       ```agda
+:         ```agda
   equiv→preorder
       : {_~_ : Rel A ℓ}
       → IsEquivalence _~_ → IsPreorder _~_
   IsPreorder.refl (equiv→preorder x) = IsEquivalence.refl x
   IsPreorder.trans (equiv→preorder x) = IsEquivalence.trans x
-        ```
+          ```
 
 
 ## Graph Reachability
