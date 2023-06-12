@@ -36,7 +36,7 @@ build/tex/agda/%.agda : src/book/%.agda
 
 # Run the agda processor
 build/tex/agda/latex/%.tex : build/tex/agda/%.lagda.tex
-	(cd build/tex/agda && agda --latex --only-scope-checking $*.lagda.tex)
+	(cd build/tex/agda && agda --latex $*.lagda.tex)
 
 # Copy the resulting latex document
 build/tex/book/%.tex : build/tex/agda/latex/%.tex

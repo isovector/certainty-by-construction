@@ -71,11 +71,11 @@ OnlyBook
     have noticed a little number 0 in the left margin gutter of each code block.
     This indicates how many spaces should precede each line of the code block.
 
-:   If a block of code is at the same relative indent level as the last one,
-    we'll just mark the column depth in the gutter. However, if the indentation
-    has increased, we'll draw attention to it with a $\rightarrowbar$ symbol.
-    Likewise, if the indentation has decreased, we'll use a $\barleftarrow$
-    symbol.
+:   If the first line of block of code is at the same relative indent level as
+    the last line of the previous one, we'll just mark the column depth in the
+    gutter. However, if the indentation has increased, we'll draw attention to
+    it with a $\rightarrowbar$ symbol. Likewise, if the indentation has
+    decreased, we'll use a $\barleftarrow$ symbol.
 
 :   Thus, you might see $\rightarrowbar$ 2, meaning that the indentation of this
     block has increased such that the leftmost character should be 2 spaces away
@@ -83,7 +83,7 @@ OnlyBook
     scheme; $\rightarrowbar$ 8 means that you should *begin* in column 8, *not*
     that you should add 8 additional spaces relative to the previous line.
 
-:   To illustrate, these five code blocks:
+:   To illustrate, these four code blocks:
 
 :     ```agda
 module foo⅋ where
@@ -91,9 +91,6 @@ module foo⅋ where
 
 :     ```agda
   module bar⅋ where
-      ```
-
-:     ```agda
     module qux⅋ where
       ```
 
@@ -123,8 +120,13 @@ OnlyBook
     indicators. Our actual code will require dramatically less changing of
     indentation.
 
-In this example, we have defined five sub-modules, which have the
-*fully-qualified* names:
+:   The important point here is that you should indent when you see a
+    $\rightarrowbar$, and likewise de-dent when you see a $\barleftarrow$. If
+    you or Agda ever confused about where your indentation should be, use a
+    number of spaces equal to number indicated.
+
+In this the code block example above, we have defined five sub-modules, which
+have the *fully-qualified* names:
 
 - `module:1-agda.foo`
 - `module:1-agda.foo.bar`
@@ -1480,11 +1482,18 @@ It is now time to investigate the mysterious curly braces that prefix several of
 our functions. As a reminder, we have the following functions in scope, with
 the given typing judgments:
 
+
+Hidden
+
+:   ```agda
+  postulate
+    ```
+
+
 ```agda
-  postulate  -- HIDEME
-    ⅋_,_ : {A B : Set} → A → B → A × B
-    ⅋curry : {A B C : Set} → (A × B → C) → (A → B → C)
-    ⅋uncurry : {A B C : Set} → (A → B → C) → (A × B → C)
+    _,_⅋ : {A B : Set} → A → B → A × B
+    curry⅋ : {A B C : Set} → (A × B → C) → (A → B → C)
+    uncurry⅋ : {A B C : Set} → (A → B → C) → (A × B → C)
 ```
 
 Each of these types is preceded by curly braces containing a list of types,
@@ -1496,7 +1505,7 @@ for `{A : Set} → {B : Set}`, and so on for more variables. We can therefore
 rewrite the type of `ctor:_,_` in its full glory:
 
 ```agda
-    ⅋⅋_,_ : {A : Set} → {B : Set} → A → B → A × B
+    _,_⅋⅋ : {A : Set} → {B : Set} → A → B → A × B
 ```
 
 In this form, it looks a lot like `A : Set` and `B : Set` are *arguments* to

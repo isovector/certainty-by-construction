@@ -561,21 +561,27 @@
 
 % Keys used by the code environment.
 \define@boolkey[Agda]{code}{hide}[true]{}
-\newcounter{Agda@CurrentIndent}
-\setcounter{Agda@CurrentIndent}{0}
-\@addtoreset{Agda@CurrentIndent}{chapter}
 
 \newcommand{\Agda@IndentSymbol}{}
 \define@key[Agda]{code}{indent}[0]{%
-  \ifthenelse{\cnttest{#1}{>}{\value{Agda@CurrentIndent}}}
+  \ifthenelse{\cnttest{#1}{>}{\value{Agda@LastIndent}}}
     {\renewcommand{\Agda@IndentSymbol}{$\rightarrowbar$ #1}}
     {
-    \ifthenelse{\cnttest{#1}{<}{\value{Agda@CurrentIndent}}}
+    \ifthenelse{\cnttest{#1}{<}{\value{Agda@LastIndent}}}
       {\renewcommand{\Agda@IndentSymbol}{#1 $\barleftarrow$}}
       {\renewcommand{\Agda@IndentSymbol}{#1}}
     }
-  \setcounter{Agda@CurrentIndent}{#1}%
 }
+
+
+\newcounter{Agda@LastIndent}
+\setcounter{Agda@LastIndent}{0}
+\@addtoreset{Agda@LastIndent}{chapter}
+
+\define@key[Agda]{code}{endindent}[0]{%
+  \setcounter{Agda@LastIndent}{#1}%
+}
+
 \define@boolkey[Agda]{code}{inline}[true]{}
 \define@boolkey[Agda]{code}{inline*}[true]{%
   \setboolean{Agda@InlineStar}{true}}
@@ -647,7 +653,7 @@
     % Check if numbers have been requested. If they have, then a side
     % effect of this call is that Agda@Number is set to true, the code
     % number counter is increased, and the label (if any) is set.
-    \setkeys[Agda]{code}[hide,inline,inline*,indent]{#1}%
+    \setkeys[Agda]{code}[hide,inline,inline*,indent,endindent]{#1}%
     \ifthenelse{\boolean{Agda@Number}}{%
       % Equation numbers have been requested. Use a minipage, so that
       % there is room for the code number to the right, and the code
