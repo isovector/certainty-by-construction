@@ -684,12 +684,18 @@ Given this, it's trivial to show now that `_≈_⟨mod_⟩` forms a setoid:
     ; isEquivalence = ≈-equiv
     }
     where open ℕ/nℕ n
+```
 
+```agda
   module _ where
     open Sandbox-IntensionalExtensional
 
-    ext-setoid : (A B : Set) → Setoid _ _
-    Setoid.Carrier        (ext-setoid A B) = A → B
+    ext-setoid
+        : {ℓa ℓb : Level}
+        → (A : Set ℓa)
+        → (B : A → Set ℓb)
+        → Setoid _ _
+    Setoid.Carrier        (ext-setoid A B) = (a : A) → B a
     Setoid._≈_            (ext-setoid A B) = _≗_
     Setoid.isEquivalence  (ext-setoid A B) = ≗-equiv
 ```
