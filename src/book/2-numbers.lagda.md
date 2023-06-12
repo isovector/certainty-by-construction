@@ -78,31 +78,12 @@ the form "X ought to be enough for anyone."
 
 How can we hope to generate an infinite set of numbers? The trick isn't very
 impressive---in fact, I've already pointed it out. You start at zero, and then
-you go up one at a time, forever. In Agda, we can encode this by saying `ctor:zero`
-is a natural number, and that, given some number `n`, we can construct the next
-number up---its *successor*---as `suc n`. Such an encoding gives rise to a
-rather elegant (if *inefficient*, but, remember, we don't care) specification of
-the natural numbers. Under such a scheme, we would write the number 7 as:
-
-Hidden
-
-:     ```agda
-module HiddenCrap where
-  data ℕ : Set where
-    zero : ℕ
-    suc  : ℕ → ℕ
-      ```
-
-Hidden
-
-:     ```agda
-  _ : ℕ
-  _ =
-      ```
-
-```agda
-    suc (suc (suc (suc (suc (suc (suc zero))))))
-```
+you go up one at a time, forever. In Agda, we can encode this by saying
+`ctor:zero` is a natural number, and that, given some number `n`, we can
+construct the next number up---its *successor*---as `suc n`. Such an encoding
+gives rise to a rather elegant (if *inefficient*, but, remember, we don't care)
+specification of the natural numbers. Under such a scheme, we would write the
+number 7 as `ctor:suc (suc (suc (suc (suc (suc (suc zero))))))`.
 
 It is important to stress that this is a *unary* encoding, rather than the
 traditional *binary* encoding familiar to computer scientists. There is nothing

@@ -247,8 +247,10 @@ $endif$
 % NOTE(sandy): here is where my stuff lives
 
 
+\usepackage{listings}
 \usepackage[many]{tcolorbox}
 \tcbuselibrary{xparse}
+\tcbuselibrary{listings}
 \usepackage{titlesec}
 
 \newcommand{\hidestart}{}
@@ -305,7 +307,14 @@ $endif$
 
 \usepackage[tikz]{bclogo}
 
-\newenvironment{AgdaInfo}{\smallskip\begin{bclogo}[arrondi=0.5,logo=\bcloupe,barre=snake,tailleOndu=1.5,noborder=true,couleurBarre=gray]{\quad Response}}{\end{bclogo}}
+\newtcblisting{AgdaInfo}{ breakable, enhanced%
+                        , colframe=blue!30!black, title={Info Window}%
+                        , boxed title style={sharp corners}, left=3mm, sharp corners%
+                        , attach boxed title to top left={yshift*=-\tcboxedtitleheight}%
+                        , listing only%
+                        }
+
+% \newenvironment{AgdaInfo}{\smallskip\begin{bclogo}[arrondi=0.5,logo=\bcloupe,barre=snake,tailleOndu=1.5,noborder=true,couleurBarre=gray]{\quad Response}}{\end{bclogo}}
 
 
 

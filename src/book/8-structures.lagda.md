@@ -425,7 +425,7 @@ $$
 which clearly doesn't satisfy the `preserves-ε` property, since
 
 $$
-f(\varepsilon) \mapsto a
+\varepsilon \mapsto a
 $$
 
 In fact, there is even a simpler proof. We have seen that there are at least two

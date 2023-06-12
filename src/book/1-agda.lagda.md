@@ -521,7 +521,8 @@ and give a result for each on the right side of the equals sign.
 
 In implementing this little function, we learned quite a lot about how Agda's
 interactivity can help. We can admire our handiwork by interactively running
-[`Normalize:not false`](AgdaCmd), which will leave the computed answer:
+[`Normalize:not false`](AgdaCmd), which will compute the result, and leave the
+answer in the info window:
 
 ```info
 true
@@ -1243,12 +1244,12 @@ This doesn't yet exhibit the desirability of one-at-a-time functions we'd like
 to showcase. But we will note that `def:makeBird` is a function whose definition
 binds two arguments (`age` and `name`), and simply passes them off to
 `def:makeAnimal`. If you were to drop a hole on the right side of this equation,
-you'd see that the type of the hole is `type:SpecificAnimal`. By the law of equality,
-this means the left-hand side must also have type `type:SpecificAnimal`. If we were
-to drop the `name` binding on the left side, the hole now has type `type:Name →
-type:SpecificAnimal`. Dropping now the `age` parameter too, we see the resulting hole
-now has type `type:Age → Name → SpecificAnimal`, exactly what we expect from the type
-definition.
+you'd see that the type of the hole is `type:SpecificAnimal`. By the law of
+equality, this means the left-hand side must also have type
+`type:SpecificAnimal`. If we were to drop the `name` binding on the left side,
+the hole now has type `type:Name → SpecificAnimal`. Dropping now the `age`
+parameter too, we see the resulting hole now has type `type:Age → Name →
+SpecificAnimal`, exactly what we expect from the type definition.
 
 Are you ready for the cool part? If we insert the implicit parentheses into the
 type of `def:makeAnimal`, we get `type:AnimalVariety → (Age → (Name → SpecificAnimal))`;
