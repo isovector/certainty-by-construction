@@ -449,7 +449,7 @@ constant:
 
 ```agda
 module ℕ/nℕ (n : ℕ) where
-  open ModularArithmetic
+  open ModularArithmetic public
   open import Relation.Binary
     using (Rel)
 
@@ -706,6 +706,7 @@ about `_≈_⟨mod_⟩` in a new module:
 
 ```agda
 module mod-properties (n : ℕ) where
+  open ℕ/nℕ n
 ```
 
 We'll still need propositional equality for a few things, but the setoid
@@ -715,8 +716,12 @@ equality, and so we will import it qualified:
 Let's prove two more fact "by hand", the fact that $0 = n (\text{mod} n)$:
 
 ```agda
-  -- 0≈n : 0 ≈ n ⟨mod n ⟩
-  -- 0≈n = ≈-mod 1 0 PropEq.refl
+  import Relation.Binary.PropositionalEquality as PropEq
+  open import Data.Nat
+  open import Data.Nat.Properties
+
+  0≈n : 0 ≈ n
+  0≈n = ≈-mod 1 0 PropEq.refl
 ```
 
 and the fact that we can `cong suc` onto proofs about `_≈_⟨mod_⟩`. While this
@@ -726,8 +731,8 @@ illustrate this point, consider the function `4 *_`, which doesn't preserve
 equality whenever, for example, $n = 5$.
 
 ```agda
-  -- mod-suc-cong : {a b : ℕ} → a ≈ b ⟨mod n ⟩ → suc a ≈ suc b ⟨mod n ⟩
-  -- mod-suc-cong (≈-mod x y p) = ≈-mod x y (PropEq.cong suc p)
+  mod-suc-cong : {a b : ℕ} → a ≈ b → suc a ≈ suc b
+  mod-suc-cong (≈-mod x y p) = ≈-mod x y (PropEq.cong suc p)
 ```
 
 Now that our setoid infrastructure is bought and paid for, and also that we have
@@ -736,13 +741,13 @@ modular arithmetic in earnest. We can open the `mod-reasoning` module to enable
 setoid reasoning throughout the rest of the current module.
 
 ```agda
-  -- open mod-reasoning
+  open ≈-Reasoning
 ```
 
 Let's begin by proving the following theorem:
 
 ```agda
-  -- +-zero-mod : (a b : ℕ) → a ≈ 0 ⟨mod n ⟩ → a + b ≈ b ⟨mod n ⟩
+  +-zero-mod : (a b : ℕ) → a ≈ 0 → a + b ≈ b
 ```
 
 We can proceed in two cases, by splitting on `b`. In the zero case, we need to
@@ -750,16 +755,16 @@ show `a + zero ≈ zero ⟨mod n⟩`. Like when we did reasoning over propositio
 equality, we `begin`:
 
 ```agda
-  -- +-zero-mod a zero a≈0 =
-  --   begin
-  --     a + zero
+  +-zero-mod a zero a≈0 =
+    begin
+      a + zero
 ```
 
 and we still have access to propositional equality rewriting:
 
 ```agda
-    -- ≡⟨ +-identityʳ a ⟩
-    --   a
+    ≡⟨ +-identityʳ a ⟩
+      a
 ```
 
 However, now that we have setoid reasoning enable, we can also do *setoid
@@ -767,9 +772,9 @@ rewriting* via the `≈⟨_⟩` operator. We have an `a` and want `zero`, and
 conveniently, already have a proof that `a ≈ 0 ⟨mod n⟩`, so we can just apply it:
 
 ```agda
-    -- ≈⟨ a≈0 ⟩
-    --   zero
-    -- ∎
+    ≈⟨ a≈0 ⟩
+      zero
+    ∎
 ```
 
 You can see already how much nicer this style of reasoning is, compared with our
@@ -778,22 +783,21 @@ old method of building the `_≈_⟨mod_⟩` term directly.
 We also need to show the `suc b` case, presented without further commentary.
 
 ```agda
-  -- +-zero-mod a (suc b) a≈0 = begin
-  --   a + suc b    ≡⟨ +-suc a b ⟩
-  --   suc a + b    ≡⟨⟩
-  --   suc (a + b)  ≈⟨ mod-suc-cong (+-zero-mod a b a≈0) ⟩
-  --   suc b        ∎
-
+  +-zero-mod a (suc b) a≈0 = begin
+    a + suc b    ≡⟨ +-suc a b ⟩
+    suc a + b    ≡⟨⟩
+    suc (a + b)  ≈⟨ mod-suc-cong (+-zero-mod a b a≈0) ⟩
+    suc b        ∎
 ```
 
 Let's hoist another theorem about natural numbers that will come in handy: the
 fact that `suc` is injective.
 
 ```agda
-  -- mod-suc-injective
-  --   : {a b : ℕ} → suc a ≈ suc b ⟨mod n ⟩ → a ≈ b ⟨mod n ⟩
-  -- mod-suc-injective (≈-mod x y p) =
-  --   ≈-mod x y (suc-injective p)
+  mod-suc-injective
+    : {a b : ℕ} → suc a ≈ suc b → a ≈ b
+  mod-suc-injective (≈-mod x y p) =
+    ≈-mod x y (suc-injective p)
 ```
 
 We're now ready to show a major result, the fact that `_≈_⟨mod_⟩` preserves
@@ -801,31 +805,31 @@ addition. Congruence proofs like this are the real workhorses of getting real
 mathematics done, so it's exciting that we're able to build it.
 
 ```agda
-  -- +-cong₂-mod
-  --     : {a b c d : ℕ}
-  --     → a ≈ b ⟨mod n ⟩
-  --     → c ≈ d ⟨mod n ⟩
-  --     → a + c ≈ b + d ⟨mod n ⟩
+  +-cong₂-mod
+      : {a b c d : ℕ}
+      → a ≈ b
+      → c ≈ d
+      → a + c ≈ b + d
 ```
 
 We can begin by case splitting on `a`. The zero case is straightforward, making
 use of our previous lemma `+-zero-mod`:
 
 ```agda
-  -- +-cong₂-mod {zero} {b} {c} {d} pab pcd = begin
-  --   c         ≈⟨ pcd ⟩
-  --   d         ≈⟨ sym (+-zero-mod b d (sym pab)) ⟩
-  --   b + d     ∎
+  +-cong₂-mod {zero} {b} {c} {d} pab pcd = begin
+    c         ≈⟨ pcd ⟩
+    d         ≈⟨ sym (+-zero-mod b d (sym pab)) ⟩
+    b + d     ∎
 ```
 
 In the `suc a` case, we can now case split on `b`. The zero case is equally
 straightforward:
 
 ```agda
-  -- +-cong₂-mod {suc a} {zero} {c} {d} pab pcd = begin
-  --   suc a + c  ≈⟨ +-zero-mod (suc a) c pab ⟩
-  --   c          ≈⟨ pcd ⟩
-  --   d          ∎
+  +-cong₂-mod {suc a} {zero} {c} {d} pab pcd = begin
+    suc a + c  ≈⟨ +-zero-mod (suc a) c pab ⟩
+    c          ≈⟨ pcd ⟩
+    d          ∎
 ```
 
 And all that's left is the non-zero cases, in which we can hand the problem over
@@ -833,8 +837,8 @@ to induction, using `mod-suc-cong` and `mod-suc-injective` to manipulate our
 proofs back into the right shape.
 
 ```agda
-  -- +-cong₂-mod {suc a} {suc b} {c} {d} pab pcd =
-  --     mod-suc-cong (+-cong₂-mod (mod-suc-injective pab) pcd)
+  +-cong₂-mod {suc a} {suc b} {c} {d} pab pcd =
+      mod-suc-cong (+-cong₂-mod (mod-suc-injective pab) pcd)
 ```
 
 `+-cong₂-mod` is quite a marvel of a theorem, especially when you consider
@@ -883,39 +887,39 @@ We'll prove two more facts about modular arithmetic, one in service of the
 other. We can show that modular multiplication by zero results in zero:
 
 ```agda
-  -- *-zero-mod : (a b : ℕ) → b ≈ 0 ⟨mod n ⟩ → a * b ≈ 0 ⟨mod n ⟩
-  -- *-zero-mod zero b x = refl
-  -- *-zero-mod (suc a) b x = begin
-  --   suc a * b  ≡⟨⟩
-  --   b + a * b  ≈⟨ +-cong₂-mod x (*-zero-mod a b x) ⟩
-  --   0          ∎
+  *-zero-mod : (a b : ℕ) → b ≈ 0 → a * b ≈ 0
+  *-zero-mod zero b x = refl
+  *-zero-mod (suc a) b x = begin
+    suc a * b  ≡⟨⟩
+    b + a * b  ≈⟨ +-cong₂-mod x (*-zero-mod a b x) ⟩
+    0          ∎
 ```
 
 And at long last, we can show that modular arithmetic is also congruent over
 multiplication, via `*-cong₂-mod`:
 
 ```agda
-  -- *-cong₂-mod
-  --     : {a b c d : ℕ}
-  --     → a ≈ b ⟨mod n ⟩
-  --     → c ≈ d ⟨mod n ⟩
-  --     → a * c ≈ b * d ⟨mod n ⟩
-  -- *-cong₂-mod {zero} {b} {c} {d} a=b c=d = begin
-  --   zero * c  ≡⟨⟩
-  --   zero      ≈⟨ sym (*-zero-mod d b (sym a=b)) ⟩
-  --   d * b     ≡⟨ *-comm d b ⟩
-  --   b * d     ∎
-  -- *-cong₂-mod {suc a} {zero} {c} {d} a=b c=d = begin
-  --   suc a * c  ≡⟨ *-comm (suc a) c ⟩
-  --   c * suc a  ≈⟨ *-zero-mod c (suc a) a=b ⟩
-  --   zero       ≡⟨⟩
-  --   zero * d   ∎
-  -- *-cong₂-mod {suc a} {suc b} {c} {d} a=b c=d = begin
-  --   suc a * c  ≡⟨⟩
-  --   c + a * c
-  --     ≈⟨ +-cong₂-mod c=d (*-cong₂-mod (mod-suc-injective a=b) c=d) ⟩
-  --   d + b * d  ≡⟨⟩
-  --   suc b * d  ∎
+  *-cong₂-mod
+      : {a b c d : ℕ}
+      → a ≈ b
+      → c ≈ d
+      → a * c ≈ b * d
+  *-cong₂-mod {zero} {b} {c} {d} a=b c=d = begin
+    zero * c  ≡⟨⟩
+    zero      ≈⟨ sym (*-zero-mod d b (sym a=b)) ⟩
+    d * b     ≡⟨ *-comm d b ⟩
+    b * d     ∎
+  *-cong₂-mod {suc a} {zero} {c} {d} a=b c=d = begin
+    suc a * c  ≡⟨ *-comm (suc a) c ⟩
+    c * suc a  ≈⟨ *-zero-mod c (suc a) a=b ⟩
+    zero       ≡⟨⟩
+    zero * d   ∎
+  *-cong₂-mod {suc a} {suc b} {c} {d} a=b c=d = begin
+    suc a * c  ≡⟨⟩
+    c + a * c
+      ≈⟨ +-cong₂-mod c=d (*-cong₂-mod (mod-suc-injective a=b) c=d) ⟩
+    d + b * d  ≡⟨⟩
+    suc b * d  ∎
 ```
 
 While the proof of `*-cong₂-mod` is still quite involved, again, it's worth
@@ -972,40 +976,18 @@ combinators we can use for building setoids out of other things. For example,
 given a type, we can trivially construct a setoid using propositional equality:
 
 ```agda
--- module _ where
---   import Relation.Binary.PropositionalEquality as PropEq
+module _ where
+  import Relation.Binary.PropositionalEquality as PropEq
 
---   setoid : Set → Setoid
---   Carrier (setoid A) = A
---   _≈_ (setoid A) = PropEq._≡_
---   IsEquivalence.refl (isEquivalence (setoid A)) = PropEq.refl
---   IsEquivalence.sym (isEquivalence (setoid A)) = PropEq.sym
---   IsEquivalence.trans (isEquivalence (setoid A)) = PropEq.trans
+  open Relation.Binary
+    using (Setoid)
+  open Setoid using (Carrier; _≈_; isEquivalence)
+
+  setoid : Set → Setoid _ _
+  Carrier (setoid A) = A
+  _≈_ (setoid A) = PropEq._≡_
+  IsEquivalence.refl (isEquivalence (setoid A)) = PropEq.refl
+  IsEquivalence.sym (isEquivalence (setoid A)) = PropEq.sym
+  IsEquivalence.trans (isEquivalence (setoid A)) = PropEq.trans
 ```
-
-We can also lift setoids over functions to get a setoid-extensional version of
-function equality. By ensuring two functions are equal for every possible input,
-we can show two functions are equal:
-
-```agda
-  -- hom-setoid : Set → Setoid → Setoid
-  -- Carrier (hom-setoid A s) = A → Carrier s
-  -- _≈_ (hom-setoid A s) f g = (a : A) → (_≈_ s) (f a) (g a)  -- ! 1
-  -- isEquivalence (hom-setoid A s) = equiv
-  --   where
-  --   open IsEquivalence (s .isEquivalence)
-
-  --   equiv : IsEquivalence _
-  --   IsEquivalence.refl equiv a = refl
-  --   IsEquivalence.sym equiv f a = sym (f a)
-  --   IsEquivalence.trans equiv f g a = trans (f a) (g a)
-```
-
-Notice at [1](Ann) we are unable to write the more natural `f a ≈ g a`, because
-as we've set up the problem, `_≈_` is a field of the `s` record, and is thus a
-*ternary* function with binary operator syntax. We solve this problem by
-writing the function in head-normal form. Left to its own devices, Agda will
-attempt to rewrite this in cursed form as `(s ≈ f a) (g a)`, which we go through
-great lengths to avoid.
-
 
