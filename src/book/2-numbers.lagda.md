@@ -220,8 +220,8 @@ constructors:
 
 ```agda
   n=0?⅋₃ : ℕ → Bool
-  n=0?⅋₃ zero = {! !}
-  n=0?⅋₃ (suc x) = {! !}  -- ! 1
+  n=0?⅋₃ zero     = {! !}
+  n=0?⅋₃ (suc x)  = {! !}  -- ! 1
 ```
 
 Interestingly, at [1](Ann), Agda has given us a new form, something we didn't
@@ -238,8 +238,8 @@ solve from here, without needing to do anything with `x`.
 
 ```agda
   n=0? : ℕ → Bool
-  n=0? zero    = true
-  n=0? (suc x) = false
+  n=0? zero     = true
+  n=0? (suc x)  = false
 ```
 
 It will be informative to compare this against a function that computes whether
@@ -255,10 +255,10 @@ Solution
 
 :   ```agda
   n=2? : ℕ → Bool
-  n=2? zero = false
-  n=2? (suc zero) = false
-  n=2? (suc (suc zero)) = true
-  n=2? (suc (suc (suc x))) = false
+  n=2? zero                 = false
+  n=2? (suc zero)           = false
+  n=2? (suc (suc zero))     = true
+  n=2? (suc (suc (suc x)))  = false
     ```
 
 
@@ -277,9 +277,9 @@ by recursion:
 
 ```agda
   even? : ℕ → Bool
-  even? zero = true
-  even? (suc zero) = false
-  even? (suc (suc x)) = even? x
+  even? zero           = true
+  even? (suc zero)     = false
+  even? (suc (suc x))  = even? x
 ```
 
 This general technique of giving some explicit answers for specific inputs, and
@@ -326,16 +326,16 @@ successors simultaneously:
 
 ```agda
   data Evenℕ : Set where
-    zero : Evenℕ
-    suc-suc : Evenℕ → Evenℕ
+    zero     : Evenℕ
+    suc-suc  : Evenℕ → Evenℕ
 ```
 
 We can transform an `Evenℕ` into a `ℕ` by induction:
 
 ```agda
   toℕ : Evenℕ → ℕ
-  toℕ zero = zero
-  toℕ (suc-suc x) = suc (toℕ x)
+  toℕ zero         = zero
+  toℕ (suc-suc x)  = suc (toℕ x)
 ```
 
 This approach, however, feels slightly underwhelming. The attentive reader will
@@ -352,8 +352,8 @@ implementation should be this:
 
 ```agda
   correct-toℕ : Evenℕ → ℕ
-  correct-toℕ zero = zero
-  correct-toℕ (suc-suc x) = suc (suc (correct-toℕ x))
+  correct-toℕ zero         = zero
+  correct-toℕ (suc-suc x)  = suc (suc (correct-toℕ x))
 ```
 
 Rather than trying to construct a completely new type for the even naturals,
@@ -377,60 +377,63 @@ unusable types:
 ```agda
   module Sandbox-Usable where
     postulate
-      Usable : Set
-      Unusable : Set
+      Usable    : Set
+      Unusable  : Set
 
     IsEven : ℕ → Set
-    IsEven zero = Usable
-    IsEven (suc zero) = Unusable
-    IsEven (suc (suc x)) = IsEven x
+    IsEven zero           = Usable
+    IsEven (suc zero)     = Unusable
+    IsEven (suc (suc x))  = IsEven x
 ```
 
-You will notice the definition of `type:IsEven` is identical to that of `def:even?`
-except that we replaced `type:Bool` with `type:Set`, `ctor:true` with `type:Usuable`, and `ctor:false`
-with `type:Unusuable`. Which, really, is what you would expect; `def:even?` was already a
-function that computed whether a given number is even! While we could flesh this
-idea out in full by finding specific (non-postulated) types to use for `type:Usuable`
-and `type:Unusuable`, constructing subsets in this way isn't often fruitful. Though
-it occasionally comes in handy, and it's nice to know you can compute types
-directly in this way.
+You will notice the definition of `type:IsEven` is identical to that of
+`def:even?` except that we replaced `type:Bool` with `type:Set`, `ctor:true`
+with `type:Usuable`, and `ctor:false` with `type:Unusuable`. Which, really, is
+what you would expect; `def:even?` was already a function that computed whether
+a given number is even! While we could flesh this idea out in full by finding
+specific (non-postulated) types to use for `type:Usuable` and `type:Unusuable`,
+constructing subsets in this way isn't often fruitful. Though it occasionally
+comes in handy, and it's nice to know you can compute types directly in this
+way.
 
-Let's drop out of the `Sandbox-Usable` module, and try defining `type:IsEven` in a
-different way.
+Let's drop out of the `Sandbox-Usable` module, and try defining `type:IsEven` in
+a different way.
 
 The situation here is analogous to our first venture into typing judgments.
 While we realized we could get away working directly in typing judgments, things
-became much easier when we used a more principled structure---namely, the `keyword:data`
-type. Amazingly, here too we can use a `keyword:data` type to solve our problem. The
-trick is to add an *index* to our type. Let's begin just with the `data`
-declaration:
+became much easier when we used a more principled structure---namely, the
+`keyword:data` type. Amazingly, here too we can use a `keyword:data` type to
+solve our problem. The trick is to add an *index* to our type. Let's begin just
+with the `data` declaration:
 
 ```agda
   data IsEven : ℕ → Set where  -- ! 1
 ```
 
 Every type we have seen so far has been of the form `data X : Set`, but at
-[1](Ann) we have `type:ℕ → Set` on the right side of the colon. Reading this as a
-type declaration directly, it says that this type `type:IsEven` we're currently
-defining *is exactly* that function we were looking for earlier with type `type:ℕ →
-Set`. We `type:IsEven` an *indexed type*, and the `type:ℕ` to be its index.
+[1](Ann) we have `type:ℕ → Set` on the right side of the colon. Reading this as
+a type declaration directly, it says that this type `type:IsEven` we're
+currently defining *is exactly* that function we were looking for earlier with
+type `type:ℕ → Set`. We `type:IsEven` an *indexed type*, and the `type:ℕ` to be
+its index.
 
 Every constructor of an indexed type must fully fill in every index. But to a
 first approximation, constructors of an indexed type are *statements* about the
-index. For example, it is an axiom that `ctor:zero` is an even number, which we can
-reflect directly as a constructor:
+index. For example, it is an axiom that `ctor:zero` is an even number, which we
+can reflect directly as a constructor:
 
 ```agda
     zero-even : IsEven zero
 ```
 
-Notice that this constructor is equivalent to the base case `even? zero =
-true`. We would like to exclude odd numbers from `type:IsEven`, so we can ignore the
-`ctor:suc zero` case. Which brings us to the inductive case, where in `def:even?` we
-peeled off two `ctor:suc`s and then recursed. In a very real way that we will make
-precise later, constructing this subset is the "opposite" of implementing the
-decision function. Thus, where we used to pull off two `ctor:suc`s and recurse, we'd
-now like to first recurse, and then *add* two `ctor:suc`s!
+Notice that this constructor is equivalent to the base case `even? zero = true`.
+We would like to exclude odd numbers from `type:IsEven`, so we can ignore the
+`ctor:suc zero` case. Which brings us to the inductive case, where in
+`def:even?` we peeled off two `ctor:suc`s and then recursed. In a very real way
+that we will make precise later, constructing this subset is the "opposite" of
+implementing the decision function. Thus, where we used to pull off two
+`ctor:suc`s and recurse, we'd now like to first recurse, and then *add* two
+`ctor:suc`s!
 
 ```agda
     suc-suc-even : {n : ℕ} → IsEven n → IsEven (suc (suc n))
@@ -524,8 +527,8 @@ Solution
 
 :   ```agda
   data IsOdd : ℕ → Set where
-    one-odd : IsOdd one
-    suc-suc-odd : {n : ℕ} → IsOdd n → IsOdd (suc (suc n))
+    one-odd      : IsOdd one
+    suc-suc-odd  : {n : ℕ} → IsOdd n → IsOdd (suc (suc n))
     ```
 
 
@@ -540,8 +543,8 @@ Solution
 
 :   ```agda
   evenOdd : {n : ℕ} → IsEven n → IsOdd (suc n)
-  evenOdd zero-even = one-odd
-  evenOdd (suc-suc-even x) = suc-suc-odd (evenOdd x)
+  evenOdd zero-even         = one-odd
+  evenOdd (suc-suc-even x)  = suc-suc-odd (evenOdd x)
     ```
 
 
@@ -559,8 +562,8 @@ element of some type `A`.
 
 ```agda
   data Maybe (A : Set) : Set where
-    just : A → Maybe A
-    nothing : Maybe A
+    just     : A →  Maybe A
+    nothing  :      Maybe A
 ```
 
 Here, `ctor:just` is the constructor for when the `type:Maybe` *does* contain an element,
@@ -584,9 +587,9 @@ we can do [MakeCase](AgdaCmd) a few times:
 
 ```agda
   evenEv⅋₁ : (n : ℕ) → Maybe (IsEven n)
-  evenEv⅋₁ zero = {! !}
-  evenEv⅋₁ (suc zero) = {! !}
-  evenEv⅋₁ (suc (suc n)) = {! !}
+  evenEv⅋₁ zero           = {! !}
+  evenEv⅋₁ (suc zero)     = {! !}
+  evenEv⅋₁ (suc (suc n))  = {! !}
 ```
 
 Then, everywhere we know there is definitely not an answer, we can fill in the
@@ -594,9 +597,9 @@ hole with `ctor:nothing`:
 
 ```agda
   evenEv⅋₂ : (n : ℕ) → Maybe (IsEven n)
-  evenEv⅋₂ zero = {! !}
-  evenEv⅋₂ (suc zero) = nothing
-  evenEv⅋₂ (suc (suc n)) = {! !}
+  evenEv⅋₂ zero           = {! !}
+  evenEv⅋₂ (suc zero)     = nothing
+  evenEv⅋₂ (suc (suc n))  = {! !}
 ```
 
 In the zero case, where we know there is an answer, we refine our hole with
@@ -604,9 +607,9 @@ In the zero case, where we know there is an answer, we refine our hole with
 
 ```agda
   evenEv⅋₃ : (n : ℕ) → Maybe (IsEven n)
-  evenEv⅋₃ zero = just {! !}
-  evenEv⅋₃ (suc zero) = nothing
-  evenEv⅋₃ (suc (suc n)) = {! !}
+  evenEv⅋₃ zero           = just {! !}
+  evenEv⅋₃ (suc zero)     = nothing
+  evenEv⅋₃ (suc (suc n))  = {! !}
 ```
 
 but `ctor:just` what? The type `IsEven zero` of the goal tells us, but we can also
@@ -614,9 +617,9 @@ elicit an answer from Agda via [Refine:](AgdaCmd):
 
 ```agda
   evenEv⅋₄ : (n : ℕ) → Maybe (IsEven n)
-  evenEv⅋₄ zero = just zero-even
-  evenEv⅋₄ (suc zero) = nothing
-  evenEv⅋₄ (suc (suc n)) = {! !}
+  evenEv⅋₄ zero           = just zero-even
+  evenEv⅋₄ (suc zero)     = nothing
+  evenEv⅋₄ (suc (suc n))  = {! !}
 ```
 
 At this step in `def:even?` we just recursed and we were done. However, that can't quite
@@ -632,8 +635,8 @@ known as a `with` abstraction, and the syntax is as follows:
 
 ```agda
   evenEv⅋₅ : (n : ℕ) → Maybe (IsEven n)
-  evenEv⅋₅ zero = just zero-even
-  evenEv⅋₅ (suc zero) = nothing
+  evenEv⅋₅ zero        = just zero-even
+  evenEv⅋₅ (suc zero)  = nothing
   evenEv⅋₅ (suc (suc n)) with evenEv⅋₅ n  -- ! 1
   ... | result = {! !}  -- ! 2
 ```
@@ -649,11 +652,11 @@ run [MakeCase:result](AgdaCmd) in the hole to pattern match on `result`:
 
 ```agda
   evenEv⅋₆ : (n : ℕ) → Maybe (IsEven n)
-  evenEv⅋₆ zero = just zero-even
-  evenEv⅋₆ (suc zero) = nothing
+  evenEv⅋₆ zero        = just zero-even
+  evenEv⅋₆ (suc zero)  = nothing
   evenEv⅋₆ (suc (suc n)) with evenEv⅋₆ n
-  ... | just x = {! !}
-  ... | nothing = {! !}
+  ... | just x   = {! !}
+  ... | nothing  = {! !}
 ```
 
 In the case that `result` is nothing, we know that our recursive call failed,
@@ -662,11 +665,11 @@ Similarly for the `ctor:just` case:
 
 ```agda
   evenEv⅋₇ : (n : ℕ) → Maybe (IsEven n)
-  evenEv⅋₇ zero = just zero-even
-  evenEv⅋₇ (suc zero) = nothing
+  evenEv⅋₇ zero        = just zero-even
+  evenEv⅋₇ (suc zero)  = nothing
   evenEv⅋₇ (suc (suc n)) with evenEv⅋₆ n
-  ... | just x = just {! !}
-  ... | nothing = nothing
+  ... | just x   = just {! !}
+  ... | nothing  = nothing
 ```
 
 We're close to the end. Now we know that `x : IsEven n` and our hole requires an
@@ -675,11 +678,11 @@ We're close to the end. Now we know that `x : IsEven n` and our hole requires an
 
 ```agda
   evenEv : (n : ℕ) → Maybe (IsEven n)
-  evenEv zero = just zero-even
-  evenEv (suc zero) = nothing
+  evenEv zero        = just zero-even
+  evenEv (suc zero)  = nothing
   evenEv (suc (suc n)) with evenEv n
-  ... | just x = just (suc-suc-even x)
-  ... | nothing = nothing
+  ... | just x   = just (suc-suc-even x)
+  ... | nothing  = nothing
 ```
 
 
@@ -711,8 +714,8 @@ naturally require recursion on their constituent parts. Let's now invoke
 
 ```agda
   _+⅋₂_ : ℕ → ℕ → ℕ
-  zero +⅋₂ y = {! !}
-  suc x +⅋₂ y = {! !}
+  zero   +⅋₂ y = {! !}
+  suc x  +⅋₂ y = {! !}
 ```
 
 Immediately a base case is clear to us; adding zero to something doesn't change
@@ -720,8 +723,8 @@ it. In fact, that's the *definition* of zero. Thus, we have:
 
 ```agda
   _+⅋₃_ : ℕ → ℕ → ℕ
-  zero +⅋₃ y = y
-  suc x +⅋₃ y = {! !}
+  zero   +⅋₃ y = y
+  suc x  +⅋₃ y = {! !}
 ```
 
 The second case here clearly requires recursion, but it might not immediately be
@@ -745,8 +748,8 @@ which translates back to Agda as our final definition of addition:
 
 ```agda
   _+_ : ℕ → ℕ → ℕ
-  zero  + y = y
-  suc x + y = suc (x + y)
+  zero   + y = y
+  suc x  + y = suc (x + y)
 ```
 
 With a little thought, it's clear that this function really does implement
@@ -821,16 +824,16 @@ pick one or the other, we default to `x`:
 
 ```agda
   _*⅋₂_ : ℕ → ℕ → ℕ
-  zero *⅋₂ y = {! !}
-  suc x *⅋₂ y = {! !}
+  zero   *⅋₂ y = {! !}
+  suc x  *⅋₂ y = {! !}
 ```
 
 From school, recall that zero times anything is zero:
 
 ```agda
   _*⅋₃_ : ℕ → ℕ → ℕ
-  zero *⅋₃ y = zero
-  suc x *⅋₃ y = {! !}
+  zero   *⅋₃ y = zero
+  suc x  *⅋₃ y = {! !}
 ```
 
 What's left is where we can dig into our mental cache of algebra facts. Recall
@@ -847,8 +850,8 @@ Therefore, our final implementation of multiplication is just:
 
 ```agda
   _*_ : ℕ → ℕ → ℕ
-  zero * y = zero
-  suc x * y = y + x * y
+  zero   * y = zero
+  suc x  * y = y + x * y
 ```
 
 of course, we need to add a fixity definition for everything to work out
@@ -897,8 +900,8 @@ consciously---requires that we pattern match on `y`.
 
 ```agda
   _^⅋₂_ : ℕ → ℕ → ℕ
-  x ^⅋₂ zero = {! !}
-  x ^⅋₂ suc y = {! !}
+  x ^⅋₂ zero   = {! !}
+  x ^⅋₂ suc y  = {! !}
 ```
 
 The first case is a usual identity, namely that
@@ -926,8 +929,8 @@ and thus:
 
 ```agda
   _^_ : ℕ → ℕ → ℕ
-  x ^ zero = one
-  x ^ suc y = x * x ^ y
+  x ^ zero   = one
+  x ^ suc y  = x * x ^ y
 ```
 
 
@@ -951,9 +954,9 @@ Solution
 
 :   ```agda
   _∸_ : ℕ → ℕ → ℕ
-  x     ∸ zero  = x
-  zero  ∸ suc y = zero
-  suc x ∸ suc y = x ∸ y
+  x      ∸ zero  = x
+  zero   ∸ suc y = zero
+  suc x  ∸ suc y = x ∸ y
     ```
 
 The last operation we will implement for natural numbers is multiplication,
@@ -1016,9 +1019,9 @@ one:"
 ```agda
 module Naive-Integers₁ where
   data ℤ : Set where
-    zero : ℤ
-    suc  : ℤ → ℤ
-    pred : ℤ → ℤ
+    zero  : ℤ
+    suc   : ℤ → ℤ
+    pred  : ℤ → ℤ
 ```
 
 The problem with this approach, is that numbers no longer have a unique
@@ -1026,8 +1029,8 @@ representation. For example, there are now infinitely many ways of representing
 `ctor:zero`, the first three of which are:
 
 * `ctor:zero`
-* `pred (suc zero)`
-* `suc (pred zero)`
+* `ctor:pred (suc zero)`
+* `ctor:suc (pred zero)`
 
 Recall that constructors are always distinct from one another, and furthermore,
 that they never compute to anything other than themselves. We could plausibly
@@ -1035,13 +1038,13 @@ try to fix this problem by writing a function `normalize`:
 
 ```agda
   normalize : ℤ → ℤ
-  normalize zero = zero
-  normalize (suc zero) = suc zero
-  normalize (suc (suc x)) = suc (normalize (suc x))
-  normalize (suc (pred x)) = normalize x
-  normalize (pred zero) = pred zero
-  normalize (pred (suc x)) = normalize x
-  normalize (pred (pred x)) = pred (normalize x)
+  normalize zero             = zero
+  normalize (suc zero)       = suc zero
+  normalize (suc (suc x))    = suc (normalize (suc x))
+  normalize (suc (pred x))   = normalize x
+  normalize (pred zero)      = pred zero
+  normalize (pred (suc x))   = normalize x
+  normalize (pred (pred x))  = pred (normalize x)
 ```
 
 which attempts to recursively "cancel out" subsequent applications of `ctor:pred` and
@@ -1101,6 +1104,7 @@ right direction. Really, the only problem here is our *interpretation of the
 syntax.* This brings us to our third, and final implementation for the integers:
 
 ```agda
+-- TODO(sandy): naive impl; indicate that; show the pain
 module Sandbox-Integers where
   import Data.Nat as ℕ
   open ℕ using (ℕ)
@@ -1134,9 +1138,9 @@ articulate these as computations:
 
 ```agda
   suc : ℤ → ℤ
-  suc (+ x)          = + ℕ.suc x
-  suc -[1+ ℕ.zero  ] = 0ℤ
-  suc -[1+ ℕ.suc x ] = -[1+ x ]
+  suc (+ x)           = + ℕ.suc x
+  suc -[1+ ℕ.zero  ]  = 0ℤ
+  suc -[1+ ℕ.suc x ]  = -[1+ x ]
 ```
 
 If `def:suc`'s argument is positive, it makes it more positive. If it's negative, it
@@ -1145,9 +1149,9 @@ define `def:pred` which makes its argument more negative:
 
 ```agda
   pred : ℤ → ℤ
-  pred (+ ℕ.zero) = -1ℤ
-  pred (+ ℕ.suc x) = + x
-  pred -[1+ x ] = -[1+ ℕ.suc x ]
+  pred (+ ℕ.zero)   = -1ℤ
+  pred (+ ℕ.suc x)  = + x
+  pred -[1+ x ]     = -[1+ ℕ.suc x ]
 ```
 
 It might be desirable to negate an integer; turning it negative if it's
@@ -1156,9 +1160,9 @@ implementation is not particularly natural:
 
 ```agda
   -⅋_ : ℤ → ℤ
-  -⅋ (+ ℕ.zero)  = 0ℤ
-  -⅋ (+ ℕ.suc x) = -[1+ x ]
-  -⅋ -[1+ x ]    = + ℕ.suc x
+  -⅋ (+ ℕ.zero)   = 0ℤ
+  -⅋ (+ ℕ.suc x)  = -[1+ x ]
+  -⅋ -[1+ x ]     = + ℕ.suc x
 ```
 
 When converting back and forth from positive to negative, there's this annoying
@@ -1173,8 +1177,8 @@ rewrite rule with the desired name of the pattern on the left, and what it
 should expand to on the right:
 
 ```agda
-  pattern +0 = + 0
-  pattern +[1+_] n = + (ℕ.suc n)
+  pattern +0        = + 0
+  pattern +[1+_] n  = + (ℕ.suc n)
 ```
 
 These two patterns give us symmetry when working with integers. While before we
@@ -1185,9 +1189,9 @@ elegant implementation:
 
 ```agda
   -_ : ℤ → ℤ
-  - +0       = +0
-  - +[1+ x ] = -[1+ x ]
-  - -[1+ x ] = +[1+ x ]
+  - +0        = +0
+  - +[1+ x ]  = -[1+ x ]
+  - -[1+ x ]  = +[1+ x ]
 ```
 
 Finally, the moment we've all been waiting for; it's time to implement addition
@@ -1203,9 +1207,9 @@ First, adding zero to anything doesn't change the result:
 ```agda
   infixl 5 _+⅋_
   _+⅋_ : ℤ → ℤ → ℤ
-  +0             +⅋ y              = y
-  +[1+ x       ] +⅋ +0             = +[1+ x ]
-  -[1+ x       ] +⅋ +0             = -[1+ x ]
+  +0        +⅋ y   = y
+  +[1+ x ]  +⅋ +0  = +[1+ x ]
+  -[1+ x ]  +⅋ +0  = -[1+ x ]
 ```
 
 These last two cases would be more naturally written as `x + +0 = x`, but we are
@@ -1213,8 +1217,8 @@ forced to expand out `x` for technical reasons (TODO(sandy): not true!). Continu
 the case in which we're adding negative one to positive one:
 
 ```agda
-  +[1+ ℕ.zero  ] +⅋ -[1+ ℕ.zero  ] = +0
-  -[1+ ℕ.zero  ] +⅋ +[1+ ℕ.zero  ] = +0
+  +[1+ ℕ.zero ]  +⅋ -[1+ ℕ.zero ] = +0
+  -[1+ ℕ.zero ]  +⅋ +[1+ ℕ.zero ] = +0
 ```
 
 Otherwise, both arguments are positive or both negative, in which case we just
@@ -1222,31 +1226,31 @@ add their underlying naturals (being careful to `ctor:ℕ.suc` the result, since
 have two `1+`s on the left side!)
 
 ```agda
-  +[1+ x       ] +⅋ +[1+ y       ] = +[1+ ℕ.suc (x ℕ.+ y) ]
-  -[1+ x       ] +⅋ -[1+ y       ] = -[1+ ℕ.suc (x ℕ.+ y) ]
+  +[1+ x ]  +⅋ +[1+ y ]  = +[1+ ℕ.suc (x ℕ.+ y) ]
+  -[1+ x ]  +⅋ -[1+ y ]  = -[1+ ℕ.suc (x ℕ.+ y) ]
 ```
 
 The next pair of cases is what happens if we are adding a negative one, in which
 case it must cancel out a positive `ctor:ℕ.suc`:
 
 ```agda
-  +[1+ ℕ.suc x ] +⅋ -[1+ ℕ.zero  ] = +[1+ x ]
-  -[1+ ℕ.zero  ] +⅋ +[1+ ℕ.suc y ] = +[1+ y ]
+  +[1+ ℕ.suc x  ]  +⅋ -[1+ ℕ.zero   ]  = +[1+ x ]
+  -[1+ ℕ.zero   ]  +⅋ +[1+ ℕ.suc y  ]  = +[1+ y ]
 ```
 
 Analogously, if we're adding a positive one:
 
 ```agda
-  +[1+ ℕ.zero  ] +⅋ -[1+ ℕ.suc y ] = -[1+ y ]
-  -[1+ ℕ.suc x ] +⅋ +[1+ ℕ.zero  ] = -[1+ x ]
+  +[1+ ℕ.zero   ]  +⅋ -[1+ ℕ.suc y  ]  = -[1+ y ]
+  -[1+ ℕ.suc x  ]  +⅋ +[1+ ℕ.zero   ]  = -[1+ x ]
 ```
 
 The final case, is if we are adding a positive `ctor:ℕ.suc` to a negative `ctor:ℕ.suc`, in
 which case the two cancel each other out and we add the remaining terms:
 
 ```agda
-  +[1+ ℕ.suc x ] +⅋ -[1+ ℕ.suc y ] = +[1+ x ] +⅋ -[1+ y ]
-  -[1+ ℕ.suc x ] +⅋ +[1+ ℕ.suc y ] = -[1+ x ] +⅋ +[1+ y ]
+  +[1+ ℕ.suc x ]  +⅋ -[1+ ℕ.suc y ]  = +[1+ x ]  +⅋ -[1+ y ]
+  -[1+ ℕ.suc x ]  +⅋ +[1+ ℕ.suc y ]  = -[1+ x ]  +⅋ +[1+ y ]
 ```
 
 What a headache! Who knew addition could be this hard? The good news is that I
@@ -1266,10 +1270,10 @@ its own function:
 
 ```agda
   _⊝_ : ℕ.ℕ → ℕ.ℕ → ℤ
-  _⊝_ ℕ.zero ℕ.zero = +0
-  _⊝_ ℕ.zero (ℕ.suc n) = -[1+ n ]
-  _⊝_ (ℕ.suc m) ℕ.zero = +[1+ m ]
-  _⊝_ (ℕ.suc m) (ℕ.suc n) = m ⊝ n
+  ℕ.zero   ⊝ ℕ.zero   = +0
+  ℕ.zero   ⊝ ℕ.suc n  = -[1+ n ]
+  ℕ.suc m  ⊝ ℕ.zero   = +[1+ m ]
+  ℕ.suc m  ⊝ ℕ.suc n  = m ⊝ n
 ```
 
 By implementing `def:_+_` in terms of `def:_⊝_`, we can factor out a significant portion
@@ -1280,10 +1284,10 @@ of the logic:
 
   -- TODO(sandy): need to rename earlier _+⅋_
   _+_ : ℤ → ℤ → ℤ
-  (+ x)    + (+ y)    = + (x ℕ.+ y)
-  (+ x)    + -[1+ y ] = x ⊝ ℕ.suc y
-  -[1+ x ] + (+ y)    = y ⊝ ℕ.suc x
-  -[1+ x ] + -[1+ y ] = -[1+ x ℕ.+ ℕ.suc y ]
+  (+ x)     + (+ y)     = + (x ℕ.+ y)
+  (+ x)     + -[1+ y ]  = x ⊝ ℕ.suc y
+  -[1+ x ]  + (+ y)     = y ⊝ ℕ.suc x
+  -[1+ x ]  + -[1+ y ]  = -[1+ x ℕ.+ ℕ.suc y ]
 ```
 
 This new definition of `def:_+_` is significantly shorter and more regular. As a
@@ -1315,15 +1319,15 @@ zero is zero:
 Multiplication by positive or negative one transfers the sign:
 
 ```agda
-  x * +[1+ ℕ.zero  ] = x
-  x * -[1+ ℕ.zero  ] = - x
+  x * +[1+ ℕ.zero  ]  = x
+  x * -[1+ ℕ.zero  ]  = - x
 ```
 
 and finally, we can perform repeated addition or subtraction:
 
 ```agda
-  x * +[1+ ℕ.suc y ] = (+[1+ y ] * x) + x
-  x * -[1+ ℕ.suc y ] = (-[1+ y ] * x) - x
+  x * +[1+ ℕ.suc y ]  = (+[1+ y ] * x) + x
+  x * -[1+ ℕ.suc y ]  = (-[1+ y ] * x) - x
 ```
 
 Thankfully, our hard work is rewarded when the unit tests agree that we got the

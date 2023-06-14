@@ -733,7 +733,6 @@ equivalent structure on the other.
 As a first example, we can give the type of nullary homomorphisms:
 
 ```agda
-
   Homomorphism₀ : HNF n → 𝔸 → Set
   Homomorphism₀ h a =
     ∀ v → eval v h ≡ a
@@ -825,19 +824,20 @@ what it should.
     where
       f' = f ∘ suc
   eval-x* f (a *x+ b) =
-    let f' = f ∘ suc  -- ! 1
+    let f0 = f zero  -- ! 1
+        f' = f ∘ suc
         ↓ = eval f
         ↓' = eval f' in
     begin
-      f zero * (f zero * ↓ a + ↓' b) + ↓' (↪ 0#)
-    ≡⟨ cong (f zero * (f zero * ↓ a + ↓' b) +_) (eval-0H f') ⟩
-      f zero * (f zero * ↓ a + ↓' b) + 0#
+      f0 * (f0 * ↓ a + ↓' b) + ↓' (↪ 0#)
+    ≡⟨ cong (f0 * (f0 * ↓ a + ↓' b) +_) (eval-0H f') ⟩
+      f0 * (f0 * ↓ a + ↓' b) + 0#
     ≡⟨ +-identityʳ _ ⟩
-      f zero * (f zero * ↓ a + ↓' b)
+      f0 * (f0 * ↓ a + ↓' b)
     ∎
 ```
 
-Notice that at `ann:1` we have introduced a `keyword:let` binding in order to
+Notice that at [1](Ann) we have introduced a `keyword:let` binding in order to
 give shorter names to common expressions that frequently occur in our proof.
 This is a useful trick for managing the amount of mental capacity required to
 work through a proof.
@@ -1024,10 +1024,10 @@ Our syntax for semirings is simple and unassuming:
 
 ```agda
   data Syn (n : ℕ) : Set where
-    var : Fin n → Syn n
-    con : 𝔸 → Syn n
-    _:+_ : Syn n → Syn n → Syn n
-    _:*_ : Syn n → Syn n → Syn n
+    var   : Fin n → Syn n
+    con   : 𝔸 → Syn n
+    _:+_  : Syn n → Syn n → Syn n
+    _:*_  : Syn n → Syn n → Syn n
   -- TODO(sandy): should I be infixl?
   infixr 5 _:+_
   infixr 6 _:*_
@@ -1038,10 +1038,10 @@ the variables, produces an `𝔸`.
 
 ```agda
   ⟦_⟧ : Syn n → (Fin n → 𝔸) → 𝔸
-  ⟦ var v ⟧  vs = vs v
-  ⟦ con c ⟧  vs = c
-  ⟦ x :+ y ⟧ vs = ⟦ x ⟧ vs + ⟦ y ⟧ vs
-  ⟦ x :* y ⟧ vs = ⟦ x ⟧ vs * ⟦ y ⟧ vs
+  ⟦ var v ⟧   vs = vs v
+  ⟦ con c ⟧   vs = c
+  ⟦ x :+ y ⟧  vs = ⟦ x ⟧ vs + ⟦ y ⟧ vs
+  ⟦ x :* y ⟧  vs = ⟦ x ⟧ vs * ⟦ y ⟧ vs
 ```
 
 However, this is not the only interpretation we can give for `type:Syn`. There
@@ -1049,10 +1049,10 @@ is also a transformation from `type:Syn` into `type:HNF`:
 
 ```agda
   hnf : Syn n → HNF n
-  hnf (var x) = to-var x
-  hnf (con x) = ↪ x
-  hnf (x :+ b) = hnf x ⊕ hnf b
-  hnf (x :* b) = hnf x ⊗ hnf b
+  hnf (var x)   = to-var x
+  hnf (con x)   = ↪ x
+  hnf (x :+ b)  = hnf x ⊕ hnf b
+  hnf (x :* b)  = hnf x ⊗ hnf b
 ```
 
 It is exactly the relationship between `def:⟦_⟧` and `def:hnf` that we're
@@ -1148,8 +1148,8 @@ a non-dependent version of this type is straightforward:
     using (Vec; []; _∷_; lookup; map)
 
   N-ary′⅋ : ℕ → Set → Set → Set
-  N-ary′⅋ zero A B = B
-  N-ary′⅋ (suc n) A B = A → N-ary′⅋ n A B
+  N-ary′⅋ zero     A B = B
+  N-ary′⅋ (suc n)  A B = A → N-ary′⅋ n A B
 ```
 
 While this works, it doesn't allow the `B` type to depend on the vector
@@ -1158,8 +1158,8 @@ brain-folding:
 
 ```agda
   N-ary : (n : ℕ) → (A : Set) → (Vec A n → Set) → Set
-  N-ary zero A B = B []
-  N-ary (suc n) A B = (a : A) → N-ary n A (B ∘ (a ∷_))
+  N-ary zero     A B = B []
+  N-ary (suc n)  A B = (a : A) → N-ary n A (B ∘ (a ∷_))
 ```
 
 In general, the non-dependent versions of functions are special cases of the
@@ -1183,8 +1183,8 @@ into an $n$-ary one:
       : {n : ℕ} {A : Set} {B : Vec A n → Set}
       → ((v : Vec A n) → B v)
       → N-ary n A B
-  curryⁿ {zero} x = x []
-  curryⁿ {suc n} x a = curryⁿ (x ∘ (a ∷_))
+  curryⁿ {zero}   x    = x []
+  curryⁿ {suc n}  x a  = curryⁿ (x ∘ (a ∷_))
 ```
 
 As an inverse, we have `def_$ⁿ_`, which undoes the transformation made by
@@ -1196,8 +1196,8 @@ famous Haskell idiom where `_$_` is the function application operator.
       : {n : ℕ} {A : Set} {B : Vec A n → Set}
       → N-ary n A B
       → ((v : Vec A n) → B v)
-  _$ⁿ_ {zero} f [] = f
-  _$ⁿ_ {suc n} f (x ∷ v) = f x $ⁿ v
+  _$ⁿ_ {zero}   f []       = f
+  _$ⁿ_ {suc n}  f (x ∷ v)  = f x $ⁿ v
 ```
 
 `def:_$ⁿ_` and `def:curryⁿ` allow us to swap between an $n$-ary function---which
@@ -1230,8 +1230,8 @@ second then executes `def:map` in order to transform them into `type:Syn`.
 
 ```agda
   fins : Vec (Fin n) n
-  fins {zero} = []
-  fins {suc n} = zero ∷ map suc fins
+  fins {zero}   = []
+  fins {suc n}  = zero ∷ map suc fins
 
   vars : Vec (Syn n) n
   vars = map var fins

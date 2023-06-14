@@ -310,8 +310,8 @@ and then, at the same level of indentation, we can postulate two booleans into
 existence by giving them typing judgments as well:
 
 ```agda
-    false : Bool
-    true  : Bool
+    false  : Bool
+    true   : Bool
 ```
 
 You will have noticed that `type:Bool : Set` itself looks a great deal like a
@@ -344,7 +344,7 @@ right-hand side of a colon. The general rule here is that you can only put
 
 ```agda
     Foo : Set
-    -- other stuff
+    -- ...
     bar : Foo
 ```
 
@@ -394,8 +394,8 @@ To do this, we can use a `data` declaration:
 ```agda
 module Booleans where
   data Bool : Set where
-    false : Bool
-    true : Bool
+    false  : Bool
+    true   : Bool
 ```
 
 which simultaneously asserts the three typing judgments `Bool : Set`, `false :
@@ -498,8 +498,8 @@ invoke [`MakeCase:x`](AgdaCmd), we will instead get:
 
 ```agda
   not⅋⅋ : Bool → Bool
-  not⅋⅋ false = {! !}
-  not⅋⅋ true = {! !}
+  not⅋⅋ false  = {! !}
+  not⅋⅋ true   = {! !}
 ```
 
 You'll notice where once there was one hole there are now two. We asked Agda to
@@ -511,8 +511,8 @@ vice versa:
 
 ```agda
   not : Bool → Bool
-  not false = true
-  not true = false
+  not false  = true
+  not true   = false
 ```
 
 Congratulations, you've just written your first Agda function!
@@ -721,8 +721,8 @@ definition of `not`; recall:
 
 ```agda
   not⅋⅋⅋⅋ : Bool → Bool
-  not⅋⅋⅋⅋ false = true
-  not⅋⅋⅋⅋ true = false
+  not⅋⅋⅋⅋ false  = true
+  not⅋⅋⅋⅋ true   = false
 ```
 
 we can now mentally parse these definitions differently, that is, reading them
@@ -782,10 +782,10 @@ write for ourselves:
 
 ```agda
   _∨⅋⅋⅋⅋⅋_ : Bool → Bool → Bool
-  false ∨⅋⅋⅋⅋⅋ false = {! !}
-  false ∨⅋⅋⅋⅋⅋ true  = {! !}
-  true  ∨⅋⅋⅋⅋⅋ false = {! !}
-  true  ∨⅋⅋⅋⅋⅋ true  = {! !}
+  false  ∨⅋⅋⅋⅋⅋ false  = {! !}
+  false  ∨⅋⅋⅋⅋⅋ true   = {! !}
+  true   ∨⅋⅋⅋⅋⅋ false  = {! !}
+  true   ∨⅋⅋⅋⅋⅋ true   = {! !}
 ```
 
 We can finish the definition of `def:_∨_` by giving filling in the desired answers
@@ -793,10 +793,10 @@ in each hole:
 
 ```agda
   _∨⅋_ : Bool → Bool → Bool
-  false ∨⅋ false = false
-  false ∨⅋ true  = true
-  true  ∨⅋ false = true
-  true  ∨⅋ true  = true
+  false  ∨⅋ false  = false
+  false  ∨⅋ true   = true
+  true   ∨⅋ false  = true
+  true   ∨⅋ true   = true
 ```
 
 Here we have taken the same approach as in `def:not`: for each argument, we
@@ -818,8 +818,8 @@ define `def:_∨_` in this way:
 
 ```agda
   _∨_ : Bool → Bool → Bool
-  false ∨ other = other
-  true  ∨ other = true
+  false  ∨ other = other
+  true   ∨ other = true
 ```
 
 Because we wrote `other`---rather than any of the constructors of `type:Bool`--- Agda
@@ -846,18 +846,18 @@ different names:
 
 ```agda
   _∨₁_ : Bool → Bool → Bool  -- ! 1
-  false ∨₁ false = false
-  false ∨₁ true  = true
-  true  ∨₁ false = true
-  true  ∨₁ true  = true
+  false  ∨₁ false  = false
+  false  ∨₁ true   = true
+  true   ∨₁ false  = true
+  true   ∨₁ true   = true
 ```
 
 and
 
 ```agda
   _∨₂_ : Bool → Bool → Bool  -- ! 2
-  false ∨₂ other = other
-  true  ∨₂ other = true
+  false  ∨₂ other  = other
+  true   ∨₂ other  = true
 ```
 
 Besides the amount of code we needed to write, is there a reason to prefer
@@ -970,8 +970,8 @@ module Sandbox-Tuples where
 
   record _×⅋_ (A : Set) (B : Set) : Set where  -- ! 1
     field -- ! 2
-      proj₁ : A
-      proj₂ : B
+      proj₁  : A
+      proj₂  : B
 ```
 
 There is quite a lot going on here, which we will tackle one step at a time. At
@@ -1218,14 +1218,14 @@ call by slowly fixing its parameters as in this example:
 ```agda
   module Example where
     data AnimalVariety : Set where  -- ! 1
-      dog : AnimalVariety
-      cat : AnimalVariety
-      bird : AnimalVariety
-      reptile : AnimalVariety
+      dog      : AnimalVariety
+      cat      : AnimalVariety
+      bird     : AnimalVariety
+      reptile  : AnimalVariety
 
     postulate
-      Name : Set  -- ! 2
-      Age : Set
+      Name  : Set  -- ! 2
+      Age   : Set
       SpecificAnimal : Set
 
       makeAnimal
@@ -1469,9 +1469,9 @@ at. The exact functions we wrote above are instead named `type:_,′_`, `def:cur
 import in order to get our sandbox into an equivalent state as the one above:
 
 ```agda
-    renaming ( _,′_     to _,_
-             ; curry′   to curry
-             ; uncurry′ to uncurry
+    renaming ( _,′_      to _,_
+             ; curry′    to curry
+             ; uncurry′  to uncurry
              )
 ```
 
@@ -1491,9 +1491,9 @@ Hidden
 
 
 ```agda
-    _,_⅋ : {A B : Set} → A → B → A × B
-    curry⅋ : {A B C : Set} → (A × B → C) → (A → B → C)
-    uncurry⅋ : {A B C : Set} → (A → B → C) → (A × B → C)
+    _,_⅋      : {A B : Set} → A → B → A × B
+    curry⅋    : {A B C : Set} → (A × B → C) → (A → B → C)
+    uncurry⅋  : {A B C : Set} → (A → B → C) → (A × B → C)
 ```
 
 Each of these types is preceded by curly braces containing a list of types,
