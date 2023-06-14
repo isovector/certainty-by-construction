@@ -5,7 +5,7 @@ open import Relation.Binary using (Setoid)
 open import Level
   renaming (suc to lsuc; _⊔_ to _⊔l_)
 
-module 8-structures where
+module 6-structures where
 
 open import Data.Maybe
 open import Data.Bool

@@ -1,7 +1,7 @@
 # Modular Arithmetic
 
 ```agda
-module 4-modarith where
+module 5-modarith where
 ```
 
 All of the equivalences we have looked at thus far have been combinators on
@@ -73,9 +73,8 @@ As it happens, `type:_≈_` forms an equivalence relation. Showing reflexivity a
 symmetry is simple enough:
 
 ```agda
-  open import 4-relations
-  -- TODO(sandy): would be nice to have section numbers for modules
-  open Relation.Binary using (Reflexive; Symmetric; Transitive; IsEquivalence)
+  open Relation.Binary
+    using (Reflexive; Symmetric; Transitive; IsEquivalence)
 
   module _ where
     open import Relation.Binary.PropositionalEquality
@@ -234,6 +233,7 @@ via our `module:PreorderReasoning` module from @sec:preorderreasoning.
 
 ```agda
   module ≈-Reasoning where
+    open import 4-relations
     open Sandbox-Orderings
 
     ≈-preorder : IsPreorder _≈_
@@ -242,48 +242,6 @@ via our `module:PreorderReasoning` module from @sec:preorderreasoning.
 
     open IsEquivalence ≈-equiv using (sym) public
     open PreorderReasoning ≈-preorder public
-```
-
-As you've seen, it's quite a lot of work to prove anything about `def:_≈_`;
-whenever we'd like to do anything, we need to construct two numbers `x` and `y`,
-and then prove the underlying equality holds. While this is OK for trivial
-propositions, things like `def:mod-trans` are nearly overwhelming. You can imagine
-how much effort it would be to prove anything of actual *substance* in this
-domain. Mathematicians hate number crunching as much, if not more, than anyone
-else, so surely they are not doing all this work by hand, are they? How can we
-simplify our workload?
-
-The answer, is setoids.
-
-
-## Setoids
-
-While it may seem like we've taken a long detour from our original goal of
-talking about equality, we are now ready to tackle *setoids* in their full
-glory. A setoid is a bundled binary relation alongside a proof that it's an
-equivalence relationship. By putting all of these things together, we're
-rewarded by the Agda standard library with setoid reasoning: syntax for doing
-"equational" reasoning over our objects. This reasoning lets us operate at a
-much higher level than we could when we were constructing pairs of numbers and
-proofs between them.
-
-```agda
-open import Relation.Binary
-  using (Rel; IsEquivalence; Setoid)
-
-module Sandbox-Setoids where
-```
-
-Given this, it's trivial to show now that `type:_≈_` forms a setoid:
-
-```agda
-  mod-setoid : ℕ → Setoid _ _
-  mod-setoid n = record
-    { Carrier        = ℕ
-    ; _≈_            = _≈_
-    ; isEquivalence  = ≈-equiv
-    }
-    where open ℕ/nℕ n
 ```
 
 We're almost ready to build some interesting proofs; but we're going to need to
@@ -295,11 +253,14 @@ module mod-properties (n : ℕ) where
   open ℕ/nℕ n
 ```
 
-We'll still need propositional equality for a few things, but the setoid
-infrastructure is meant to be a mostly drop-in replacement for propositional
-equality, and so we will import it qualified:
+We'll still need propositional equality for a few things, but the preorder
+reasoning infrastructure is meant to be a mostly drop-in replacement for
+propositional equality.
 
-Let's prove two more fact "by hand", the fact that $0 = n (\text{mod} n)$:
+-- TODO(sandy): sloppy; needs some reordering
+
+Let's prove two more fact "by hand", the fact that $0 = n\text{ (mod
+}n\text{)}$:
 
 ```agda
   import Relation.Binary.PropositionalEquality as PropEq
@@ -502,8 +463,8 @@ multiplication, via `def:*-cong₂-mod`:
     zero * d   ∎
   *-cong₂-mod {suc a} {suc b} {c} {d} a=b c=d = begin
     suc a * c  ≡⟨⟩
-    c + a * c
-      ≈⟨ +-cong₂-mod c=d (*-cong₂-mod (mod-suc-injective a=b) c=d) ⟩
+    c + a * c  ≈⟨ +-cong₂-mod c=d
+                    (*-cong₂-mod (mod-suc-injective a=b) c=d)⟩
     d + b * d  ≡⟨⟩
     suc b * d  ∎
 ```
