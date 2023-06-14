@@ -19,7 +19,7 @@ comparative to writing them in a language like Haskell.
 
 While writing a textbook was indeed helpful at identifying holes in my
 understanding, it was never a particularly good tool for *building* that
-understanding. My mathematics education is rather spotty --- I was good at
+understanding. My mathematics education is rather spotty---I was good at
 "running the maze" in school, which is to say, I could reliably compute answers.
 At university I received an engineering degree, which required lots more running
 of the maze, but I did horrendously in all of my math qua math courses. I had
@@ -112,7 +112,7 @@ Agda. That is, I picked a new textbook, and this time, coded up all of the
 definitions and theorems in Agda, as well as formalized my answers to the
 exercises. WOW! What a difference this made! All of a sudden I had the feedback
 mechanism for mathematics that I'd always wanted. I could get the red underlines
-on unconvincing (or wrong) parts of my argument automatically --- on the order
+on unconvincing (or wrong) parts of my argument automatically---on the order
 of seconds!
 
 Truly this was a marvelous technology.
@@ -142,7 +142,7 @@ process of explaining the techniques, and the necessity of linearizing the
 narrative, I've been forced to grapple with my understanding of mathematics, and
 it has become very clear in the places I was fooling myself. Of course, this
 book is itself an Agda document, meaning it is a living, breathing, and most
-importantly, *fully type-checking* Agda library --- meaning it comes with the
+importantly, *fully type-checking* Agda library---meaning it comes with the
 guarantee that I have told no lies, at least, none mathematically. I am by no
 means an expert in this field, but have stumbled across a fantastic method of
 learning and teaching mathematics.

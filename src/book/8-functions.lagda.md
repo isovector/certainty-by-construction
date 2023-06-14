@@ -570,7 +570,7 @@ This is not a coincidence, because nothing is ever a coincidence. Whenever the
 indices need to align, you should immediately think "function" (or at least
 "morphism," as we will discuss in @sec:categorytheory.) But, if matrices
 correspond to functions, exactly which functions are we talking about? The
-indices give us a clue --- the input must be parameterized by exactly one of
+indices give us a clue---the input must be parameterized by exactly one of
 `m`, `n`, and the output must be the other. In every day tasks, matrices are
 usually multiplied against column vectors. For example, if we think about a
 2-dimensional space with XY coordinates, the corresponds to a 90 degree
@@ -685,7 +685,7 @@ and then can show `*-sum-distribʳ` in earnest:
 ```
 
 There are a few more facts to prove about sums before we can get to the meat of
-our proof. But first, another reasonable assumption about `𝔸` --- namely that
+our proof. But first, another reasonable assumption about `𝔸`---namely that
 its multiplication is commutative:
 
 ```agda
@@ -856,7 +856,7 @@ and vice versa:
   (M ᵀ) i j = M j i
 ```
 
-It's trivial now to show that `⌊_⌋'` is nothing more than `⌊_⌋ ∘ _ᵀ` --- that
+It's trivial now to show that `⌊_⌋'` is nothing more than `⌊_⌋ ∘ _ᵀ`---that
 is, the interpretation of the transpose of the original matrix! The proof
 depends only on the commutativity of multiplication, which makes sense when you
 think about what these two operations must be doing:
@@ -882,7 +882,7 @@ the wrong decision is welcome to transpose their matrix first.
 
 
 So, what kind of functions are representable as matrices? As it happens, they
-are precisely the *linear maps* --- that is, the two properties `additive` and
+are precisely the *linear maps*---that is, the two properties `additive` and
 `homogeneity` must hold:
 
 ```agda

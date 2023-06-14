@@ -299,7 +299,7 @@ to explore that question, implementing our own ring solver in the process.
 
 ## The Pen and Paper Algorithm
 
-The question is --- how does any of this work? Is it built-in to the compiler,
+The question is---how does any of this work? Is it built-in to the compiler,
 or is it something we could have written for ourselves? Fascinatingly, the
 answer is the latter. It's the sort of thing we can build for ourselves, which
 we will explore now.

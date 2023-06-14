@@ -179,7 +179,7 @@ module _ where
 ```
 
 Dually, we could give a constructor `b≤t : {b : Bool} → b ≤B true`, but doing so
-means we would have two ways of proving `false ≤ true` --- via `f≤b {true}` and
+means we would have two ways of proving `false ≤ true`---via `f≤b {true}` and
 via `b≤t {false}`. Your life in Agda and mathematics will be easier if you try
 to avoid situations in which there are different representations of the same
 proof. Of course, it's often not possible to avoid, but when you, you will be
@@ -508,7 +508,7 @@ Some, but not all, posets have *joins,* also known as a *least upper bound.*
 That is, given elements `x` and `y` in the poset, can we find a unique element
 `z` which is the smallest element that's "at least as big" as `x` and `y`? In
 the family tree, two cousin's join is their grandparent (assuming they have only
-one --- if they have two grandparents, the join is not unique and thus doesn't
+one---if they have two grandparents, the join is not unique and thus doesn't
 exist!)
 
 A *meet* is the exact same idea, except it reverses the directions of all the

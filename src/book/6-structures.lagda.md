@@ -109,7 +109,7 @@ As you might expect, this thing follows the laws, but in a very trivial manner:
 Well, we managed to create a trivial monoid. But it wasn't very informative as
 to what exactly this thing is. Let's try the next simplest type we know, `Bool`.
 Are there any monoids over `Bool`s? Perhaps it's easiest to think about our
-binary operation first --- boolean AND is a good candidate of the right shape.
+binary operation first---boolean AND is a good candidate of the right shape.
 In Agda, this function is called `_∧_`.
 
 We need now to find an identity for `_∧_`, which is `true` if and only if both
@@ -360,7 +360,7 @@ general, but can be instantiated to great effect.
 
 The `summarize` function lets us use a function to transform a single value
 contained by the tree, uses `_∙_` to combine all the results in a meaningful
-way, and fills in empty spaces with `ε` --- a value guaranteed not to change the
+way, and fills in empty spaces with `ε`---a value guaranteed not to change the
 answer. In essence, monoids allow for a generalization of the common programming
 idiom:
 
@@ -656,7 +656,7 @@ monoids. All we have left to do is to show it:
 
 Monoid homomorphisms allow us to reify this idea that there are two ways to get
 to the same place, and therefore that the two ways must be equivalent. I like to
-think about homomorphisms as "preserving metaphors" --- that is to say, anything
+think about homomorphisms as "preserving metaphors"---that is to say, anything
 I believe to be true before the function call is also true after the function
 call, at least with respect to the operations on hand.
 
@@ -727,7 +727,7 @@ forall k m1 m2.
 
 which states that getting a key out of a merged map is the same as merging the
 values obtained by getting that key in either map. At a higher level, we're
-saying "merging really does do merging --- and doesn't do anything else!"
+saying "merging really does do merging---and doesn't do anything else!"
 
 A `get`-based monoid homomorphism seems like it correctly classifies the
 behavior we'd like. Is the same true for `set-hom`?
@@ -857,7 +857,7 @@ module _ where
 ```
 
 which uses 0 as the identity element, since it's the smallest possible natural
-number, we don't have a corresponding `min` monoid --- because we don't have an
+number, we don't have a corresponding `min` monoid---because we don't have an
 identity element! In this case, we have two options: extend the naturals with a
 "top" element `+∞` that is guaranteed to be bigger than every other number, or
 settle for building a semigroup. We will do the latter here.
