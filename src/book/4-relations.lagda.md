@@ -1071,7 +1071,7 @@ open:
 ```
 
 By now using `module:≤-Reasoning` directly, our proof is much cleaner, and
-therefore delightful:
+therefore much more delightful:
 
 ```agda
   n≤n+1 : (n : ℕ) → n ≤ n + 1

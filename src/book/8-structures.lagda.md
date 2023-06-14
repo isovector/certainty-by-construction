@@ -2,12 +2,10 @@
 
 ```agda
 open import Relation.Binary using (Setoid)
-open import Agda.Primitive renaming (_⊔_ to _⊔l_) using (Level; lsuc)
+open import Level
+  renaming (suc to lsuc; _⊔_ to _⊔l_)
 
 module 8-structures where
-
-postulate
-  todo : {A : Set} → A
 
 open import Data.Maybe
 open import Data.Bool
@@ -15,8 +13,14 @@ open import Data.List hiding (merge; last)
 open import Data.Nat
 open import Data.Unit hiding (setoid)
 
-module monoid {c l : Level} (eq : Setoid c l)  where
-  open Setoid eq renaming (_≈_ to _≡_; Carrier to A)
+open import Relation.Binary
+  using (Rel; Setoid)
+open import Algebra.Core
+  using (Op₂)
+
+module _ {c ℓ : Level} (≈-setoid : Setoid c ℓ)  where
+  open Setoid ≈-setoid
+    renaming (Carrier to M)
 ```
 
 Now that we have a passing familiarity with our language and tools, it's time to
@@ -35,37 +39,27 @@ corresponding to the "set." The phrase "equipped with" means "these things
 always go together," which is to say, we should bundle them up in a record:
 
 ```agda
-  record Monoid : Set (lsuc (c ⊔l l)) where
-    constructor monoid
-    infixr 5 _∙_
+  open import Relation.Binary
+    using (_Preserves₂_⟶_⟶_)
+  open import Algebra.Definitions _≈_
+    using (LeftIdentity; RightIdentity; Associative)
+
+  record IsMonoid (_∙_ : Op₂ M) (ε : M) : Set (c ⊔l ℓ) where
 ```
 
 We are equipped with "an associative binary operation." The definition gives no
 canonical name, so we must come up with one; because it's a binary operator, it
-requires two arguments. Perhaps `_∙_` will do fine for a name. Associativity is
-a law regarding how the operation behaves, so we will pass the buck on that for
-now.
+requires two arguments. Perhaps `field:_∙_` will do fine for a name, and it's
+trivial to assert that `field:_∙_` is `type:Associative`:
 
 ```agda
     field
-      _∙_ : A → A → A
+      ∙-assoc : Associative _∙_
 ```
 
 We are also equipped with an identity element. An element is just a value of the
 type, so all we require is an `A`. Although the passage above doesn't say so,
 this element is canonically known as `ε` ("epsilon".)
-
-```agda
-      ε : A
-```
-
-Returning to the associativity of our binary operation, associativity always
-means that we can reassemble parentheses as we please. You should be reminded of
-our old `+-assoc` proof in the following definition:
-
-```agda
-      ∙-assoc : (a b c : A) → (a ∙ b) ∙ c ≡ a ∙ (b ∙ c)
-```
 
 We are also told that `ε` is an identity. Without any more context we are
 forced to elaborate on the meaning here. An "identity" means something doesn't
@@ -74,10 +68,10 @@ since we're not told if `ε` is a left- or a right- unit, we must conclude it's
 both. Thus, we also add the following laws to our `Monoid` record:
 
 ```agda
-      ε-unitˡ : (a : A) → ε ∙ a ≡ a
-      ε-unitʳ : (a : A) → a ∙ ε ≡ a
+      ε-unitˡ : LeftIdentity ε _∙_
+      ε-unitʳ : RightIdentity ε _∙_
 
-      ∙-cong₂ : {a b c d : A} → a ≡ b → c ≡ d → a ∙ c ≡ b ∙ d
+      ∙-cong₂ : _∙_ Preserves₂ _≈_ ⟶ _≈_ ⟶ _≈_
 ```
 
 The first step to building intuition as to what a mathematical idea *is* is to
@@ -87,8 +81,6 @@ pick the one-element set `⊤`?
 ```agda
 open import Relation.Binary.PropositionalEquality hiding ([_])
 module _ where
-  open monoid (setoid ⊤)
-  open Monoid
 ```
 
 Well we'd need to pick a binary operation of type `⊤ → ⊤ → ⊤` of which there is
@@ -96,9 +88,13 @@ exactly one: the function that only ever returns `tt`. Likewise, we need an
 identity element, which must be `tt : ⊤` since we have no other options.
 
 ```agda
-  ⊤-monoid : Monoid
-  _∙_ ⊤-monoid _ _ = tt
-  ε ⊤-monoid = tt
+  open IsMonoid
+
+  private
+    _∙_ : Op₂ ⊤
+    _ ∙ _ = tt
+
+  ⊤-monoid : IsMonoid (setoid ⊤) _∙_ tt
 ```
 
 As you might expect, this thing follows the laws, but in a very trivial manner:
@@ -122,14 +118,9 @@ of its inputs are `true`. Therefore, if we fill one of its arguments with
 `true` is indeed an identity:
 
 ```agda
-module _ where
-  open monoid (setoid Bool)
-  open Monoid
   open import Data.Bool.Properties
 
-  true-and-monoid : Monoid
-  _∙_ true-and-monoid = _∧_
-  ε true-and-monoid = true
+  true-and-monoid : IsMonoid (setoid Bool) _∧_ true
   ∙-assoc true-and-monoid = ∧-assoc
   ε-unitˡ true-and-monoid = ∧-identityˡ
   ε-unitʳ true-and-monoid = ∧-identityʳ
@@ -144,9 +135,7 @@ Exercise
 Solution
 
 :   ```agda
-  false-or-monoid : Monoid
-  _∙_ false-or-monoid = _∨_
-  ε false-or-monoid = false
+  false-or-monoid : IsMonoid (setoid Bool) _∨_ false
   ∙-assoc false-or-monoid = ∨-assoc
   ε-unitˡ false-or-monoid = ∨-identityˡ
   ε-unitʳ false-or-monoid = ∨-identityʳ
@@ -154,9 +143,7 @@ Solution
     ```
 
     ```agda
-  false-xor-monoid : Monoid
-  _∙_ false-xor-monoid = _xor_
-  ε false-xor-monoid = false
+  false-xor-monoid : IsMonoid (setoid Bool) _xor_ false
   ∙-assoc false-xor-monoid false b c = refl
   ∙-assoc false-xor-monoid true false c = refl
   ∙-assoc false-xor-monoid true true false = refl
@@ -179,26 +166,19 @@ Exercise
 Solution
 
 :   ```agda
-module _ where
-  open monoid (setoid ℕ)
-  open Monoid
   open import Data.Nat.Properties
     ```
 
     ```agda
-  0-+-monoid : Monoid
-  _∙_ 0-+-monoid = _+_
-  ε 0-+-monoid = 0
+  0-+-monoid : IsMonoid (setoid ℕ) _+_ 0
   ∙-assoc 0-+-monoid = +-assoc
   ε-unitˡ 0-+-monoid = +-identityˡ
   ε-unitʳ 0-+-monoid = +-identityʳ
   ∙-cong₂ 0-+-monoid refl refl = refl
     ```
 
-    ```agda
-  1-*-monoid : Monoid
-  _∙_ 1-*-monoid = _*_
-  ε 1-*-monoid = 1
+  --   ```agda
+  1-*-monoid : IsMonoid (setoid ℕ) _*_ 1
   ∙-assoc 1-*-monoid = *-assoc
   ε-unitˡ 1-*-monoid = *-identityˡ
   ε-unitʳ 1-*-monoid = *-identityʳ
@@ -213,21 +193,36 @@ Exercise
 Solution
 
 :   ```agda
-module _ {A : Set} where
-  open monoid (setoid (List A))
-  open Monoid
+module _ {c : Level} {A : Set c} where
   open import Data.List.Properties
+  open IsMonoid
     ```
 
     ```agda
-  []-++-monoid : Monoid
-  _∙_ []-++-monoid = _++_
-  ε []-++-monoid = []
+  []-++-monoid : IsMonoid (setoid (List A)) _++_ []
   ∙-assoc []-++-monoid = ++-assoc
   ε-unitˡ []-++-monoid = ++-identityˡ
   ε-unitʳ []-++-monoid = ++-identityʳ
   ∙-cong₂ []-++-monoid refl refl = refl
     ```
+
+```agda
+  open import Function using (id; _∘′_; flip)
+  id-∘-monoid : IsMonoid (A →-setoid A) _∘′_ id
+  ∙-assoc id-∘-monoid x y z x₁ = refl
+  ε-unitˡ id-∘-monoid x x₁ = refl
+  ε-unitʳ id-∘-monoid x x₁ = refl
+  ∙-cong₂ id-∘-monoid {v = v} xy vu a
+    rewrite vu a
+    rewrite xy (v a) = refl
+
+  dual : ∀ {c l} {s : Setoid c l} {∙ ε} → IsMonoid s ∙ ε → IsMonoid s (flip ∙) ε
+  ∙-assoc (dual {s = s} is-monoid) x y z =
+    s .Setoid.sym (∙-assoc is-monoid z y x)
+  ε-unitˡ (dual is-monoid) x = ε-unitʳ is-monoid x
+  ε-unitʳ (dual is-monoid) x = ε-unitˡ is-monoid x
+  ∙-cong₂ (dual is-monoid) x y = ∙-cong₂ is-monoid y x
+```
 
 Armed with a few examples of monoids, we can now take some time to analyze the
 situation and try to make sense of the structure. Somehow we need to make sense
@@ -245,14 +240,38 @@ proving that `M : Set` is a monoid, a function `A → M`, and then transforms a
 its importance. We begin as always with the type:
 
 ```agda
-data BinTree (A : Set) : Set where
-  empty : BinTree A
-  branch : BinTree A → A → BinTree A → BinTree A
+module _ where
+  record Monoid (c ℓ : Level) : Set (lsuc (c ⊔l ℓ)) where
+    field
+      xsetoid : Setoid c ℓ
 
-module _ {A : Set} {M : Set} where
-  open monoid (setoid M)
+    open Setoid xsetoid renaming (Carrier to M) public
 
-  summarize : Monoid → (A → M) → BinTree A → M
+    infixl 7 _∙_
+    field
+      _∙_ : Op₂ M
+      ε : M
+      isMonoid : IsMonoid xsetoid _∙_ ε
+
+  mkMonoid : ∀ {c ℓ} {setoid : Setoid c ℓ} {∙ ε} → IsMonoid setoid ∙ ε → Monoid _ _
+  mkMonoid {setoid = setoid} {∙} {ε} isMonoid =
+    record { xsetoid = setoid
+           ; _∙_ = ∙
+           ; ε = ε
+           ; isMonoid = isMonoid
+           }
+```
+
+```agda
+  import 4-decidability
+  open 4-decidability.BinaryTrees
+
+  summarize
+      : ∀ {c ℓ A}
+      → (monoid : Monoid c ℓ) → let open Monoid monoid
+     in (A → M)
+      → BinTree A
+      → M
 ```
 
 We have two cases. The first is in which the tree is `empty`. Here we have no
@@ -286,24 +305,25 @@ Congratulations! We have just written every possible query (TODO: is this true?)
 over binary trees. Let's take a quick example of a tree:
 
 ```agda
-open import Data.String using (String)
+  open import Data.String using (String)
 
-example : BinTree String
-example =
-  branch
-    (branch empty "Glass" empty)
-    "Teflon"
-    (branch empty "Argon" empty)
+  example : BinTree String
+  example =
+    branch
+      (branch empty "Glass" empty)
+      "Teflon"
+      (branch empty "Argon" empty)
 ```
 
 We can query the number of nodes in the tree by using the `0-+-monoid` and
 letting `f = const 1`:
 
 ```agda
-size : ℕ
-size = summarize 0-+-monoid (λ { x → 1 }) example
+  size : ℕ
+  size = summarize (mkMonoid 0-+-monoid) (λ { x → 1 }) example
 
--- size = 3
+  _ : size ≡ 3
+  _ = refl
 ```
 
 We can instead flatten the tree into a list (with the query: what are the
@@ -311,25 +331,27 @@ elements of the list?) by using the `[]-++-monoid` and letting `f = [_]` (the
 singleton list injection):
 
 ```agda
-elements : List String
-elements = summarize []-++-monoid [_] example
+  elements : List String
+  elements = summarize (mkMonoid []-++-monoid) [_] example
 
--- elements = "Glass" ∷ "Teflon" ∷ "Argon" ∷ []
+  _ : elements ≡ "Glass" ∷ "Teflon" ∷ "Argon" ∷ []
+  _ = refl
 ```
 
 Or we can query whether `"Sandwich"` is in the tree by using `false-or-monoid`:
 
 ```agda
-has-sandwich : Bool
-has-sandwich =
-  summarize
-    false-or-monoid
-      (λ { "sandwich" → true
-         ; x          → false
-         }
-      ) example
+  has-sandwich : Bool
+  has-sandwich =
+    summarize
+      (mkMonoid false-or-monoid)
+        (λ { "sandwich" → true
+          ; x          → false
+          }
+        ) example
 
--- has-sandwich = false
+  _ : has-sandwich ≡ false
+  _ = refl
 ```
 
 These results are remarkable; all we did was write one function that takes a
@@ -449,28 +471,25 @@ Because we'll need the two monoids in scope first, we can parameterize our
 module over them:
 
 ```agda
-module monoid-hom {c₁ l₁ c₂ l₂ : Level}
-            {s1 : Setoid c₁ l₁}
-            {s2 : Setoid c₂ l₂}
-            (m1 : monoid.Monoid s1)
-            (m2 : monoid.Monoid s2) where
-  open monoid
+module _ {c₁ l₁ c₂ l₂ : Level}
+            (m₁ : Monoid c₁ l₁)
+            (m₂ : Monoid c₂ l₂) where
 ```
 
 Our next step is to get the types `A` and `B` into scope by renaming the
 underlying carriers of our monoids:
 
 ```agda
-  open Setoid s1 renaming (Carrier to A; _≈_ to _≈₁_)
-  open Setoid s2 renaming (Carrier to B; _≈_ to _≈₂_)
+  -- open Setoid s1 renaming (Carrier to A; _≈_ to _≈₁_)
+  -- open Setoid s2 renaming (Carrier to B; _≈_ to _≈₂_)
 ```
 
 Next, we will unpack the two monoids, renaming their units and operations so we
 can differentiate between the two like above with subscripts:
 
 ```agda
-  open Monoid m1 renaming (_∙_ to _∙₁_; ε to ε₁)
-  open Monoid m2 renaming (_∙_ to _∙₂_; ε to ε₂)
+  open Monoid m₁ renaming (_∙_ to _∙₁_; ε to ε₁; M to A; _≈_ to _≈₁_)
+  open Monoid m₂ renaming (_∙_ to _∙₂_; ε to ε₂; M to B; _≈_ to _≈₂_)
 ```
 
 Finally we're ready to get to the meat of our monoid homomorphism. Whenever you
@@ -479,6 +498,9 @@ type. We still have to tie the homomorphic function into the mix, so we can
 parameterize the record by the function in question:
 
 ```agda
+  open Relation.Binary
+    using (_Preserves_⟶_)
+
   record IsMonoidHom (f : A → B) : Set (c₁ ⊔l c₂ ⊔l l₁ ⊔l l₂) where
 ```
 
@@ -487,7 +509,7 @@ And then we can write our desired laws down verbatim:
 ```agda
     field
       preserves-ε : f ε₁ ≈₂ ε₂
-      preserves-∙ : (a b : A) → f (a ∙₁ b) ≈₂ f a ∙₂ f b
+      preserves-∙ : (x y : A) → f (x ∙₁ y) ≈₂ f x ∙₂ f y
 ```
 
 In addition, we require one final, additional law that isn't written down in the
@@ -498,7 +520,7 @@ of equality, and this law does not hold by default. Therefore, we must also
 introduce the `f-cong` law:
 
 ```agda
-      f-cong : (a b : A) → a ≈₁ b → f a ≈₂ f b
+      f-cong : f Preserves _≈₁_ ⟶ _≈₂_
 ```
 
 Now that we have the machinery in place to prove we're not fooling ourselves,
@@ -509,7 +531,6 @@ monoids.
 
 ```agda
 module _ where
-  open monoid-hom true-and-monoid false-or-monoid
   open IsMonoidHom
 ```
 
@@ -519,7 +540,7 @@ functions, `const false` and `not`. The latter seems more promising, so let's
 try that:
 
 ```agda
-  not-hom₁ : IsMonoidHom not
+  not-hom₁ : IsMonoidHom (mkMonoid true-and-monoid) (mkMonoid false-or-monoid) not
 ```
 
 The proofs, as it happen, are trivial:
@@ -528,7 +549,7 @@ The proofs, as it happen, are trivial:
   preserves-ε not-hom₁ = refl
   preserves-∙ not-hom₁ false b = refl
   preserves-∙ not-hom₁ true b  = refl
-  f-cong not-hom₁ a .a refl = refl
+  f-cong not-hom₁ refl = refl
 ```
 
 which works like a charm.
@@ -543,11 +564,11 @@ Solution
 
 :   ```agda
   open import Function
-  dumb : IsMonoidHom (const false)
+  dumb : IsMonoidHom (mkMonoid true-and-monoid) (mkMonoid false-or-monoid) (const false)
   preserves-ε dumb = refl
   preserves-∙ dumb false b = refl
   preserves-∙ dumb true b  = refl
-  f-cong dumb a .a refl = refl
+  f-cong dumb refl = refl
     ```
 
 Returning to `not-hom₁`, we have shown (via `preserves-∙`):
@@ -568,12 +589,6 @@ homomorphism. Before we were looking for a homomorphism from `true-and-monoid`
 to `false-or-monoid`, but now we need to go the other way around. Thus we can
 start a new module and instantiate `IsMonoidHom` in the desired direction:
 
-```agda
-module _ where
-  open monoid-hom false-or-monoid true-and-monoid
-  open IsMonoidHom
-```
-
 
 Exercise
 
@@ -583,11 +598,11 @@ Exercise
 Solution
 
 :   ```agda
-  not-hom₂ : IsMonoidHom not
+  not-hom₂ : IsMonoidHom (mkMonoid false-or-monoid) (mkMonoid true-and-monoid) not
   preserves-ε not-hom₂ = refl
   preserves-∙ not-hom₂ false b = refl
   preserves-∙ not-hom₂ true b  = refl
-  f-cong not-hom₂ a .a refl = refl
+  f-cong not-hom₂ refl = refl
     ```
 
 Perhaps you're beginning to see, if not yet the use, at least the importance of
@@ -617,21 +632,26 @@ call, it's time to start looking for a monoid homomorphism. In this case, we'd
 like one between `[]-++-monoid` and `0-+-monoid`:
 
 ```agda
-module _ {A : Set} where
-  open monoid-hom ([]-++-monoid {A}) 0-+-monoid
-  open IsMonoidHom
+-- module _ {A : Set} where
+  -- open monoid-hom ([]-++-monoid {A}) 0-+-monoid
+  -- open IsMonoidHom
 ```
 
 As previously identified, `length` forms a homomorphism between these two
 monoids. All we have left to do is to show it:
 
 ```agda
-  length-hom : IsMonoidHom length
+  length-hom
+      : {c : Level} {A : Set c}
+      → IsMonoidHom
+          (mkMonoid ([]-++-monoid {A = A}))
+          (mkMonoid 0-+-monoid)
+          length
   preserves-ε length-hom = refl
   preserves-∙ length-hom [] b = refl
   preserves-∙ length-hom (x ∷ a) b =
     cong suc (preserves-∙ length-hom a b)
-  f-cong length-hom a .a refl = refl
+  f-cong length-hom refl = refl
 ```
 
 Monoid homomorphisms allow us to reify this idea that there are two ways to get
@@ -653,19 +673,19 @@ For example, consider some function-like data structure, maybe we'll call it
 
 ```agda
 module Example where
-  open monoid
-  postulate
-    Map Key Val : Set
+  -- open monoid
+  -- postulate
+  --   Map Key Val : Set
 
-    get : Key → Map → Val
-    set : Map → Key → Val → Map
+  --   get : Key → Map → Val
+  --   set : Map → Key → Val → Map
 ```
 
 and two monoids, one over `Map`s and one over `Val`s:
 
 ```agda
-    map-monoid : Monoid (setoid Map)
-    val-monoid : Monoid (setoid Val)
+    -- map-monoid : Monoid (setoid Map)
+    -- val-monoid : Monoid (setoid Val)
 ```
 
 With this infrastructure in place, we can assert a huge amount of "does what
@@ -673,12 +693,12 @@ you'd expect" on the implementations of `get` and `set` by showing the following
 two monoid homomorphisms:
 
 ```agda
-  open monoid-hom
+  -- open monoid-hom
 
-  postulate
-    get-hom
-      : (k : Key)
-      → IsMonoidHom map-monoid val-monoid (get k)
+  -- postulate
+  --   get-hom
+  --     : (k : Key)
+  --     → IsMonoidHom map-monoid val-monoid (get k)
 ```
 
 You'll notice here that we haven't instantiated the `homs` module with any
@@ -713,10 +733,10 @@ A `get`-based monoid homomorphism seems like it correctly classifies the
 behavior we'd like. Is the same true for `set-hom`?
 
 ```agda
-    set-hom
-      : (m : Map)
-      → (k : Key)
-      → IsMonoidHom val-monoid map-monoid (set m k)
+    -- set-hom
+    --   : (m : Map)
+    --   → (k : Key)
+    --   → IsMonoidHom val-monoid map-monoid (set m k)
 ```
 
 What laws fall out of this? The first is that we have a distribution of `_∙_`
@@ -735,17 +755,15 @@ indication that this is the wrong law? I would argue no; we can get the
 "replacement"-style implementation by choosing the "last value wins" monoid:
 
 ```agda
-module _ {A : Set} where
-  open monoid (setoid (Maybe A))
-  open Monoid
+-- module _ {A : Set} where
+  -- open monoid (setoid (Maybe A))
+  open IsMonoid
 
-  last : Maybe A → Maybe A → Maybe A
+  last : {A : Set} → Maybe A → Maybe A → Maybe A
   last a (just x) = just x
   last a nothing = a
 
-  last-monoid : Monoid
-  _∙_ last-monoid = last
-  ε last-monoid = nothing
+  last-monoid : {A : Set} → IsMonoid (setoid (Maybe A)) last nothing
   ∙-assoc last-monoid a b (just x) = refl
   ∙-assoc last-monoid a b nothing = refl
   ε-unitˡ last-monoid (just x) = refl
@@ -788,13 +806,13 @@ operation, in an algebraic structure known as a *semigroup:*
 
 ```agda
 module semigroup {c l : Level} (eq : Setoid c l)  where
-  open Setoid eq renaming (_≈_ to _≈_; Carrier to A)
-  record Semigroup : Set (lsuc (c ⊔l l)) where
-    constructor semigroup
-    infixr 5 _∙_
-    field
-      _∙_ : A → A → A
-      ∙-assoc : (a b c : A) → (a ∙ b) ∙ c ≈ a ∙ (b ∙ c)
+  -- open Setoid eq renaming (_≈_ to _≈_; Carrier to A)
+  -- record Semigroup : Set (lsuc (c ⊔l l)) where
+  --   constructor semigroup
+  --   infixr 5 _∙_
+  --   field
+  --     _∙_ : A → A → A
+  --     ∙-assoc : (a b c : A) → (a ∙ b) ∙ c ≈ a ∙ (b ∙ c)
 ```
 
 Exercise
@@ -806,16 +824,16 @@ Solution
 
 :   ```agda
 module _ {c l : Level} (eq : Setoid c l) where
-  open monoid eq
-  open semigroup eq
-  open Semigroup
-  open Monoid
-    ```
+  -- open monoid eq
+  -- open semigroup eq
+  -- open Semigroup
+  -- open Monoid
+  --   ```
 
-    ```agda
-  monoid→semigroup : Monoid → Semigroup
-  _∙_ (monoid→semigroup x) = x ._∙_
-  ∙-assoc (monoid→semigroup x) = x .∙-assoc
+  --   ```agda
+  -- monoid→semigroup : Monoid → Semigroup
+  -- _∙_ (monoid→semigroup x) = x ._∙_
+  -- ∙-assoc (monoid→semigroup x) = x .∙-assoc
     ```
 
 
@@ -825,17 +843,17 @@ naturals:
 
 ```agda
 module _ where
-  open monoid (setoid ℕ)
-  open Monoid
-  open import Data.Nat.Properties
+  -- open monoid (setoid ℕ)
+  -- open Monoid
+  -- open import Data.Nat.Properties
 
-  max-monoid : Monoid
-  _∙_ max-monoid = _⊔_
-  ε max-monoid = 0
-  ∙-assoc max-monoid = ⊔-assoc
-  ε-unitˡ max-monoid = ⊔-identityˡ
-  ε-unitʳ max-monoid = ⊔-identityʳ
-  ∙-cong₂ max-monoid refl refl = refl
+  -- max-monoid : Monoid
+  -- _∙_ max-monoid = _⊔_
+  -- ε max-monoid = 0
+  -- ∙-assoc max-monoid = ⊔-assoc
+  -- ε-unitˡ max-monoid = ⊔-identityˡ
+  -- ε-unitʳ max-monoid = ⊔-identityʳ
+  -- ∙-cong₂ max-monoid refl refl = refl
 ```
 
 which uses 0 as the identity element, since it's the smallest possible natural
@@ -846,33 +864,33 @@ settle for building a semigroup. We will do the latter here.
 
 ```agda
 module _ where
-  open semigroup (setoid ℕ)
-  open Semigroup
-  open import Data.Nat.Properties
+  -- open semigroup (setoid ℕ)
+  -- open Semigroup
+  -- open import Data.Nat.Properties
 
-  min-semigroup : Semigroup
-  _∙_ min-semigroup = _⊓_
-  ∙-assoc min-semigroup = ⊓-assoc
+  -- min-semigroup : Semigroup
+  -- _∙_ min-semigroup = _⊓_
+  -- ∙-assoc min-semigroup = ⊓-assoc
 ```
 
 We can follow the same pattern as when we defined monoid homomorphisms to build
 semigroup homomorphisms:
 
-```agda
-module semigroup-hom {c l : Level}
-            {s1 s2 : Setoid c l}
-            (m1 : semigroup.Semigroup s1)
-            (m2 : semigroup.Semigroup s2) where
-  open semigroup
-  open Setoid s1 renaming (Carrier to A; _≈_ to _≈₁_)
-  open Setoid s2 renaming (Carrier to B; _≈_ to _≈₂_)
-  open Semigroup m1 renaming (_∙_ to _∙₁_)
-  open Semigroup m2 renaming (_∙_ to _∙₂_)
+-- ```agda
+-- module semigroup-hom {c l : Level}
+--             {s1 s2 : Setoid c l}
+--             (m1 : semigroup.Semigroup s1)
+--             (m2 : semigroup.Semigroup s2) where
+--   open semigroup
+--   open Setoid s1 renaming (Carrier to A; _≈_ to _≈₁_)
+--   open Setoid s2 renaming (Carrier to B; _≈_ to _≈₂_)
+--   open Semigroup m1 renaming (_∙_ to _∙₁_)
+--   open Semigroup m2 renaming (_∙_ to _∙₂_)
 
-  record IsSemigroupHom (f : A → B) : Set (lsuc (c ⊔l l)) where
-    field
-      preserves-∙ : (a b : A) → f (a ∙₁ b) ≈₂ f a ∙₂ f b
-      f-cong : (a b : A) → a ≈₁ b → f a ≈₂ f b
+  -- record IsSemigroupHom (f : A → B) : Set (lsuc (c ⊔l l)) where
+  --   field
+  --     preserves-∙ : (a b : A) → f (a ∙₁ b) ≈₂ f a ∙₂ f b
+  --     f-cong : (a b : A) → a ≈₁ b → f a ≈₂ f b
 ```
 
 Exercise
@@ -883,20 +901,20 @@ Exercise
 Solution
 
 :   ```agda
-module _ {c l : Level} {s1 s2 : Setoid c l}
-    (m1 : monoid.Monoid s1)
-    (m2 : monoid.Monoid s2) where
-  open Setoid s1 renaming (Carrier to A)
-  open Setoid s2 renaming (Carrier to B)
-  open monoid-hom m1 m2
-  open semigroup-hom (monoid→semigroup s1 m1) (monoid→semigroup s2 m2)
-  open IsMonoidHom
-  open IsSemigroupHom
+-- module _ {c l : Level} {s1 s2 : Setoid c l}
+--     (m1 : monoid.Monoid s1)
+--     (m2 : monoid.Monoid s2) where
+--   open Setoid s1 renaming (Carrier to A)
+--   open Setoid s2 renaming (Carrier to B)
+--   open monoid-hom m1 m2
+--   open semigroup-hom (monoid→semigroup s1 m1) (monoid→semigroup s2 m2)
+--   open IsMonoidHom
+--   open IsSemigroupHom
     ```
 
     ```agda
-  monoid-hom→semigroup-hom : {f : A → B} → IsMonoidHom f → IsSemigroupHom f
-  preserves-∙ (monoid-hom→semigroup-hom x) = x .preserves-∙
-  f-cong (monoid-hom→semigroup-hom x) = x .f-cong
+  -- monoid-hom→semigroup-hom : {f : A → B} → IsMonoidHom f → IsSemigroupHom f
+  -- preserves-∙ (monoid-hom→semigroup-hom x) = x .preserves-∙
+  -- f-cong (monoid-hom→semigroup-hom x) = x .f-cong
     ```
 

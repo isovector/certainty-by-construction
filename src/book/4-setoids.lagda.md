@@ -80,17 +80,17 @@ equal if they map inputs to equal outputs. That is to say, given two functions
 ```agda
   open import Relation.Binary.PropositionalEquality hiding (_≗_)
   open import Level using (Level; _⊔_)
+  open import Relation.Binary using (Rel)
 
   _≗_
       : {a b : Level} {A : Set a} {B : A → Set b}  -- ! 1
-      → (f g : (x : A) → B x)  -- ! 2
-      → Set (a ⊔ b)
+      → Rel ((x : A) → B x) _ -- ! 2
   _≗_ f g = ∀ x → f x ≡ g x
 ```
 
 The type here is rather involved, where we have made `B` a type dependent on `A`
-at `ann:1`, and then made both `f` and `g` pass their argument to `B` for their
-output at `ann:2`. A more intuitive type for `def:_≗_` is:
+at [1](Ann), and then made both `f` and `g` pass their argument to `B` for their
+output at [2](Ann). A more intuitive type for `def:_≗_` is:
 
 ```type
 _≗_ : {A B : Set} → Rel (A → B) _
@@ -171,9 +171,9 @@ Therefore `def:_≗_` is an equivalence relation:
 
 ```agda
     ≗-equiv : IsEquivalence {A = Fn} _≗_
-    IsEquivalence.refl ≗-equiv = ≗-refl
-    IsEquivalence.sym ≗-equiv = ≗-sym
-    IsEquivalence.trans ≗-equiv = ≗-trans
+    IsEquivalence.refl   ≗-equiv = ≗-refl
+    IsEquivalence.sym    ≗-equiv = ≗-sym
+    IsEquivalence.trans  ≗-equiv = ≗-trans
 ```
 
 
@@ -269,9 +269,9 @@ and then show that `def:_≈/f_` is an equivalence relation:
 
 ```agda
     ≈/f-equiv : IsEquivalence _≈/f_
-    IsEquivalence.refl ≈/f-equiv = IsEquivalence.refl ≈-equiv
-    IsEquivalence.sym ≈/f-equiv = IsEquivalence.sym ≈-equiv
-    IsEquivalence.trans ≈/f-equiv = IsEquivalence.trans ≈-equiv
+    IsEquivalence.refl   ≈/f-equiv = IsEquivalence.refl ≈-equiv
+    IsEquivalence.sym    ≈/f-equiv = IsEquivalence.sym ≈-equiv
+    IsEquivalence.trans  ≈/f-equiv = IsEquivalence.trans ≈-equiv
 ```
 
 Showing `def:≈/f-equiv` is rather annoying, in that we must copattern match and
@@ -320,8 +320,8 @@ itself:
 
 ```agda
   data List (A : Set) : Set where
-    [] : List A
-    _∷_ : A → List A → List A
+    []   : List A
+    _∷_  : A → List A → List A
   infixr 4 _∷_
 ```
 
@@ -378,7 +378,7 @@ illustrated thusly:
 ```
 
 but the two do have the same elements in the same order, and thus we can show
-they are equal under quotienting by `contents`:
+they are equal under quotienting by `def:contents`:
 
 ```agda
     open Sandbox-Quotient (contents {ℕ}) ≡-equiv
@@ -662,11 +662,15 @@ open import Relation.Binary
 
 module Sandbox-Setoids where
   open import Level
-  record Setoid (c ℓ : Level) : Set (suc c ⊔ suc ℓ) where
+    using (Level; _⊔_)
+    renaming (suc to lsuc)
+  record Setoid (c ℓ : Level) : Set (lsuc c ⊔ lsuc ℓ) where
     field
-      Carrier : Set c
-      _≈_ : Rel Carrier ℓ
-      isEquivalence : IsEquivalence _≈_
+      Carrier        : Set c
+      _≈_            : Rel Carrier ℓ
+      isEquivalence  : IsEquivalence _≈_
+
+    open IsEquivalence isEquivalence public
 
 ```
 
@@ -679,14 +683,33 @@ Given this, it's trivial to show now that `_≈_⟨mod_⟩` forms a setoid:
 ```agda
   mod-setoid : ℕ → Setoid _ _
   mod-setoid n = record
-    { Carrier = ℕ
-    ; _≈_ = _≈_
-    ; isEquivalence = ≈-equiv
+    { Carrier        = ℕ
+    ; _≈_            = _≈_
+    ; isEquivalence  = ≈-equiv
     }
     where open ℕ/nℕ n
+
+  open import Relation.Binary.PropositionalEquality as PropEq
+    using (_≡_)
+
+  open Setoid
+
+  setoid : ∀ {ℓ} (A : Set ℓ) → Setoid _ _
+  Carrier (setoid A) = A
+  _≈_ (setoid A) = _≡_
+  IsEquivalence.refl (isEquivalence (setoid A)) = PropEq.refl
+  IsEquivalence.sym (isEquivalence (setoid A)) = PropEq.sym
+  IsEquivalence.trans (isEquivalence (setoid A)) = PropEq.trans
 ```
 
 ```agda
+
+module Setoid-Examples where
+  open import Level using (Level; _⊔_)
+  open import Relation.Binary using (Setoid)
+  open import Relation.Binary.PropositionalEquality using (setoid)
+  open Setoid
+
   module _ where
     open Sandbox-IntensionalExtensional
 
@@ -698,6 +721,28 @@ Given this, it's trivial to show now that `_≈_⟨mod_⟩` forms a setoid:
     Setoid.Carrier        (ext-setoid A B) = (a : A) → B a
     Setoid._≈_            (ext-setoid A B) = _≗_
     Setoid.isEquivalence  (ext-setoid A B) = ≗-equiv
+
+  module _ {ℓ : Level} (A : Set ℓ) {n : ℕ} where
+    open import Data.Vec
+
+    length-setoid : Setoid _ _
+    Carrier length-setoid = _
+    _≈_ length-setoid = _
+    isEquivalence length-setoid = ≈/f-equiv
+      where
+        open Sandbox-Quotient
+            (length {A = A} {n = n})
+            (Setoid.isEquivalence (setoid _))
+
+    head-setoid : Setoid _ _
+    Carrier head-setoid = _
+    _≈_ head-setoid = _
+    isEquivalence head-setoid = ≈/f-equiv
+      where
+        open Sandbox-Quotient
+            (head {A = A} {n = n})
+            (Setoid.isEquivalence (setoid _))
+
 ```
 
 We're almost ready to build some interesting proofs; but we're going to need to
