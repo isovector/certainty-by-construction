@@ -669,9 +669,9 @@ argument. With this feature, we can rewrite `type:_∈_` in a much terser, but
 
 ```agda
   data _∈_ : A → BinTree A → Set where
-    here  :         a ∈ branch l a r
-    left  : a ∈ l → a ∈ branch l b r
-    right : a ∈ r → a ∈ branch l b r
+    here   :          a ∈ branch l a r
+    left   : a ∈ l →  a ∈ branch l b r
+    right  : a ∈ r →  a ∈ branch l b r
 ```
 
 Just to demonstrate that everything works, we can make a little tree:
@@ -700,8 +700,8 @@ left with a reminiscent definition:
 
 ```agda
   data All (P : A → Set) : BinTree A → Set where
-    empty : All P empty
-    branch : All P l → P a → All P r → All P (branch l a r)
+    empty   : All P empty
+    branch  : All P l → P a → All P r → All P (branch l a r)
 ```
 
 A pattern definition doesn't come with a type signature, and thus it only works
@@ -731,8 +731,8 @@ natural numbers, and does not exist in the standard library.
     using (_+_)
 
   data IsEven : ℕ → Set where
-    z-even : IsEven 0
-    ss-even : {n : ℕ} → IsEven n → IsEven (2 + n)
+    z-even   : IsEven 0
+    ss-even  : {n : ℕ} → IsEven n → IsEven (2 + n)
 ```
 
 It's now possible to show every element in `def:tree` is even. In fact, Agda can
@@ -986,9 +986,9 @@ notion of trichotomy shouldn't be earth-shattering. We can define `type:Tri`
 
 ```agda
   data Tri (A B C : Set) : Set where
-    tri< : A → ¬ B → ¬ C → Tri A B C
-    tri≈ : ¬ A → B → ¬ C → Tri A B C
-    tri> : ¬ A → ¬ B → C → Tri A B C
+    tri< :    A → ¬  B → ¬  C → Tri A B C
+    tri≈ : ¬  A →    B → ¬  C → Tri A B C
+    tri> : ¬  A → ¬  B →    C → Tri A B C
 ```
 
 and we can lift this notion to `type:Trichotomous`, stating that for two relations,
@@ -1087,8 +1087,8 @@ we can now ask for a [MakeCase:all-pt](AgdaCmd):
     all-insert⅋₂
         : {P : A → Set} → (a : A) → P a → {t : BinTree A}
         → All P t → All P (insert a t)
-    all-insert⅋₂ a pa {.empty} empty = {! !}
-    all-insert⅋₂ a pa {.(branch _ _ _)}
+    all-insert⅋₂ a pa  {.empty} empty = {! !}
+    all-insert⅋₂ a pa  {.(branch _ _ _)}
                      (branch all-pt x all-pt₁) = {! !}
 ```
 
@@ -1103,8 +1103,8 @@ we're allowed to replace it with a regular pattern match, as in:
     all-insert⅋₃
         : {P : A → Set} → (a : A) → P a → {t : BinTree A}
         → All P t → All P (insert a t)
-    all-insert⅋₃ a pa {empty} empty = {! !}
-    all-insert⅋₃ a pa {branch _ _ _}
+    all-insert⅋₃ a pa  {empty} empty = {! !}
+    all-insert⅋₃ a pa  {branch _ _ _}
                      (branch all-pt x all-pt₁) = {! !}
 ```
 
@@ -1116,8 +1116,8 @@ automatically generated other bindings at the same time:
     all-insert⅋₄
         : {P : A → Set} → (a : A) → P a → {t : BinTree A}
         → All P t → All P (insert a t)
-    all-insert⅋₄ a pa {empty} empty = {! !}
-    all-insert⅋₄ a pa {branch l x r}
+    all-insert⅋₄ a pa  {empty} empty = {! !}
+    all-insert⅋₄ a pa  {branch l x r}
                      (branch l<x px x<r) = {! !}
 ```
 
@@ -1128,8 +1128,8 @@ help us bring any new variables into scope.
     all-insert⅋₅
         : {P : A → Set} → (a : A) → P a → {t : BinTree A}
         → All P t → All P (insert a t)
-    all-insert⅋₅ a pa empty = {! !}
-    all-insert⅋₅ a pa {branch l x r}
+    all-insert⅋₅ a pa  empty = {! !}
+    all-insert⅋₅ a pa  {branch l x r}
                      (branch l<x px x<r) = {! !}
 ```
 
@@ -1140,8 +1140,8 @@ which is our `ctor:leaf` constructor:
     all-insert⅋₆
         : {P : A → Set} → (a : A) → P a → {t : BinTree A}
         → All P t → All P (insert a t)
-    all-insert⅋₆ a pa empty = leaf pa
-    all-insert⅋₆ a pa {branch l x r}
+    all-insert⅋₆ a pa  empty = leaf pa
+    all-insert⅋₆ a pa  {branch l x r}
                      (branch l<x px x<r) = {! !}
 ```
 
@@ -1391,8 +1391,8 @@ module Intrinsic-BST
           (<-cmp : Trichotomous _≡_ _<_) where
 
   data ∞ : Set where
-    -∞ +∞ : ∞
-    [_] : A → ∞
+    -∞ +∞  : ∞
+    [_]    : A → ∞
 ```
 
 The `ctor:[_]` constructor lifts an `A` into `type:∞`, and it is through this mechanism by
@@ -1401,9 +1401,9 @@ hard to define a `type:_<_` relationship over `type:∞`:
 
 ```agda
   data _<∞_ : ∞ → ∞ → Set where
-    -∞<[] : {x : A} → -∞ <∞ [ x ]
-    []<[] : {x y : A} → x < y → [ x ] <∞ [ y ]
-    []<+∞ : {x : A} → [ x ] <∞ +∞
+    -∞<[] : {x    : A}          → -∞     <∞ [ x ]
+    []<[] : {x y  : A} → x < y  → [ x ]  <∞ [ y ]
+    []<+∞ : {x    : A}          → [ x ]  <∞ +∞
     -∞<+∞ : -∞ <∞ +∞
 ```
 
@@ -1421,14 +1421,14 @@ us by now, and indeed Agda can do the first several cases for us automatically:
   open Tri
 
   <∞-cmp : Trichotomous _≡_ _<∞_
-  <∞-cmp -∞ -∞ = tri≈ (λ ()) refl (λ ())
-  <∞-cmp -∞ +∞ = tri< -∞<+∞ (λ ()) (λ ())
-  <∞-cmp -∞ [ _ ] = tri< -∞<[] (λ ()) (λ ())
-  <∞-cmp +∞ -∞ = tri> (λ ()) (λ ()) -∞<+∞
-  <∞-cmp +∞ +∞ = tri≈ (λ ()) refl (λ ())
-  <∞-cmp +∞ [ _ ] = tri> (λ ()) (λ ()) []<+∞
-  <∞-cmp [ _ ] -∞ = tri> (λ ()) (λ ()) -∞<[]
-  <∞-cmp [ _ ] +∞ = tri< []<+∞ (λ ()) (λ ())
+  <∞-cmp  -∞     -∞     = tri≈ (λ ())  refl    (λ ())
+  <∞-cmp  -∞     +∞     = tri< -∞<+∞   (λ ())  (λ ())
+  <∞-cmp  -∞     [ _ ]  = tri< -∞<[]   (λ ())  (λ ())
+  <∞-cmp  +∞     -∞     = tri> (λ ())  (λ ())  -∞<+∞
+  <∞-cmp  +∞     +∞     = tri≈ (λ ())  refl    (λ ())
+  <∞-cmp  +∞     [ _ ]  = tri> (λ ())  (λ ())  []<+∞
+  <∞-cmp  [ _ ]  -∞     = tri> (λ ())  (λ ())  -∞<[]
+  <∞-cmp  [ _ ]  +∞     = tri< []<+∞   (λ ())  (λ ())
 ```
 
 All that's left is lifting `<-cmp`, which we must do by hand:

@@ -384,8 +384,8 @@ stuckness is pattern matching:
 
 ```agda
   x+0≡x⅋₀ : (x : ℕ) → x + zero ≡ x
-  x+0≡x⅋₀ zero = {! !}
-  x+0≡x⅋₀ (suc x) = {! !}
+  x+0≡x⅋₀ zero     = {! !}
+  x+0≡x⅋₀ (suc x)  = {! !}
 ```
 
 Immediately, Agda gets unstuck, and tells us now the type of the first hole is
@@ -393,8 +393,8 @@ Immediately, Agda gets unstuck, and tells us now the type of the first hole is
 
 ```agda
   x+0≡x⅋₁ : (x : ℕ) → x + zero ≡ x
-  x+0≡x⅋₁ zero = refl
-  x+0≡x⅋₁ (suc x) = {! !}
+  x+0≡x⅋₁ zero     = refl
+  x+0≡x⅋₁ (suc x)  = {! !}
 ```
 
 This second goal here is `suc (x + zero) ≡ suc x`, which has arisen from
@@ -457,8 +457,8 @@ relevant variables.
       : {A B : Set}
       → {x y : A}
       → (f : A → B)
-      → x ≡ y
-      → f x ≡ f y
+      →    x ≡ y
+      → f  x ≡ f y
   cong⅋₀ f x≡y = ?
 ```
 
@@ -471,8 +471,8 @@ type as `x`. Thus, after a [MakeCase:x≡y](AgdaCmd):
       : {A B : Set}
       → {x y : A}
       → (f : A → B)
-      → x ≡ y
-      → f x ≡ f y
+      →    x ≡ y
+      → f  x ≡ f y
   cong⅋₁ f refl = {! !}
 ```
 
@@ -483,8 +483,8 @@ our new goal has type `f x ≡ f y`, which is trivially a call to `ctor:refl`.
       : {A B : Set}
       → {x y : A}
       → (f : A → B)
-      → x ≡ y
-      → f x ≡ f y
+      →    x ≡ y
+      → f  x ≡ f y
   cong f refl = refl
 ```
 
@@ -498,24 +498,24 @@ proof:
 
 ```agda
   x+0≡x⅋₂ : (x : ℕ) → x + zero ≡ x
-  x+0≡x⅋₂ zero = refl
-  x+0≡x⅋₂ (suc x) = {! !}
+  x+0≡x⅋₂ zero     = refl
+  x+0≡x⅋₂ (suc x)  = {! !}
 ```
 
 Our new `def:cong` function fits nicely into this hole:
 
 ```agda
   x+0≡x⅋₃ : (x : ℕ) → x + zero ≡ x
-  x+0≡x⅋₃ zero = refl
-  x+0≡x⅋₃ (suc x) = cong suc {! !}
+  x+0≡x⅋₃ zero     = refl
+  x+0≡x⅋₃ (suc x)  = cong suc {! !}
 ```
 
 which [Auto](AgdaCmd) will now happily fill for us using recursion:
 
 ```agda
   x+0≡x : (x : ℕ) → x + zero ≡ x
-  x+0≡x zero = refl
-  x+0≡x (suc x) = cong suc (x+0≡x x)
+  x+0≡x zero     = refl
+  x+0≡x (suc x)  = cong suc (x+0≡x x)
 ```
 
 Congruence is an excellent tool for doing induction in proofs. You can do
@@ -567,8 +567,8 @@ Solution
 
 :     ```agda
   *-identityʳ : (x : ℕ) → x * one ≡ x
-  *-identityʳ zero = refl
-  *-identityʳ (suc x) = cong suc (*-identityʳ x)
+  *-identityʳ zero     = refl
+  *-identityʳ (suc x)  = cong suc (*-identityʳ x)
     ```
 
 
@@ -581,8 +581,8 @@ Solution
 
 :     ```agda
   *-identityˡ : (x : ℕ) → one * x ≡ x
-  *-identityˡ zero = refl
-  *-identityˡ (suc x) = cong suc (+-identityʳ x)
+  *-identityˡ zero     = refl
+  *-identityˡ (suc x)  = cong suc (+-identityʳ x)
     ```
 
 Exercise
@@ -596,8 +596,8 @@ Solution
 
 :     ```agda
   ^-identityʳ : (x : ℕ) → x ^ one ≡ x
-  ^-identityʳ zero = refl
-  ^-identityʳ (suc x) = cong suc (*-identityʳ x)
+  ^-identityʳ zero     = refl
+  ^-identityʳ (suc x)  = cong suc (*-identityʳ x)
     ```
 
 
@@ -696,8 +696,8 @@ example we've already run into, `not : Bool → Bool` is also involutive:
   open 1-agda.Booleans
 
   not-involutive : (x : Bool) → not (not x) ≡ x
-  not-involutive false = refl
-  not-involutive true = refl
+  not-involutive false  = refl
+  not-involutive true   = refl
 ```
 
 Throughout this book, we will encounter more and more algebraic properties like
@@ -944,8 +944,8 @@ operator with an underscore, as in the factorial function:
 
 ```agda
   _! : ℕ → ℕ
-  zero ! = one
-  suc n ! = suc n * n !  -- ! 1
+  zero   ! = one
+  suc n  ! = suc n * n !  -- ! 1
 ```
 
 -- TODO(sandy): is this claim true?
@@ -1082,8 +1082,8 @@ This definition takes advantage of Agda's pattern-matching lambda, as in:
 ```agda
   _ : ℕ
   _ = case not true of λ
-        { false → one
-        ; true → four
+        { false  → one
+        ; true   → four
         }
 ```
 
@@ -1404,8 +1404,8 @@ A quick binding of variables, induction on `x`, and obvious use of `ctor:refl` g
 us to this step:
 
 ```agda
-  +-assoc⅋₀ zero y z = refl
-  +-assoc⅋₀ (suc x) y z = ?
+  +-assoc⅋₀ zero     y z = refl
+  +-assoc⅋₀ (suc x)  y z = ?
 ```
 
 We're ready to start a reasoning block, and thus we can use our
@@ -1413,8 +1413,8 @@ We're ready to start a reasoning block, and thus we can use our
 
 ```agda
   +-assoc⅋₁ : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
-  +-assoc⅋₁ zero y z = refl
-  +-assoc⅋₁ (suc x) y z = begin
+  +-assoc⅋₁ zero     y z = refl
+  +-assoc⅋₁ (suc x)  y z = begin
     ?  ≡⟨ ? ⟩
     ?  ∎
     where open ≡-Reasoning
@@ -1433,8 +1433,8 @@ fill in the terms---the two things that eventually need to be equal:
 
 ```agda
   +-assoc⅋₂ : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
-  +-assoc⅋₂ zero y z = refl
-  +-assoc⅋₂ (suc x) y z = begin
+  +-assoc⅋₂ zero     y z = refl
+  +-assoc⅋₂ (suc x)  y z = begin
     suc x + y + z    ≡⟨ ? ⟩
     suc x + (y + z)  ∎
     where open ≡-Reasoning
@@ -1444,8 +1444,8 @@ I always like to subsequently extend the top and bottom sides like this:
 
 ```agda
   +-assoc⅋₃ : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
-  +-assoc⅋₃ zero y z = refl
-  +-assoc⅋₃ (suc x) y z = begin
+  +-assoc⅋₃ zero     y z = refl
+  +-assoc⅋₃ (suc x)  y z = begin
     suc x + y + z    ≡⟨⟩
     ?                ≡⟨ ? ⟩
     ?                ≡⟨⟩
@@ -1462,8 +1462,8 @@ The result looks like this:
 
 ```agda
   +-assoc⅋₄ : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
-  +-assoc⅋₄ zero y z = refl
-  +-assoc⅋₄ (suc x) y z = begin
+  +-assoc⅋₄ zero     y z = refl
+  +-assoc⅋₄ (suc x)  y z = begin
     suc x + y + z      ≡⟨⟩
     suc (x + y + z)    ≡⟨ ? ⟩
     suc (x + (y + z))  ≡⟨⟩
@@ -1476,8 +1476,8 @@ invoke [Auto](AgdaCmd) to search for the remainder of the proof:
 
 ```agda
   +-assoc : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
-  +-assoc zero y z = refl
-  +-assoc (suc x) y z = begin
+  +-assoc zero     y z = refl
+  +-assoc (suc x)  y z = begin
     suc x + y + z      ≡⟨⟩
     suc (x + y + z)    ≡⟨ cong suc (+-assoc x y z) ⟩
     suc (x + (y + z))  ≡⟨⟩
@@ -1495,8 +1495,8 @@ dash out a quick lemma:
 
 ```agda
   +-suc : (x y : ℕ) → x + suc y ≡ suc (x + y)
-  +-suc zero y = refl
-  +-suc (suc x) y = cong suc (+-suc x y)
+  +-suc zero     y = refl
+  +-suc (suc x)  y = cong suc (+-suc x y)
 ```
 
 and now would like to show the *commutativity* of addition, which is,
@@ -1520,8 +1520,8 @@ Solution
 
 :     ```agda
   +-comm⅋₀ : (x y : ℕ) → x + y ≡ y + x
-  +-comm⅋₀ zero y = sym (+-identityʳ y)
-  +-comm⅋₀ (suc x) y = ?
+  +-comm⅋₀ zero     y = sym (+-identityʳ y)
+  +-comm⅋₀ (suc x)  y = ?
     ```
 
 Let's start with a [`begin`](AgdaMode) snippet, this time filling the top and
@@ -1529,8 +1529,8 @@ bottom holes via [Solve/Normalise](AgdaCmd) directly:
 
 ```agda
   +-comm⅋₁ : (x y : ℕ) → x + y ≡ y + x
-  +-comm⅋₁ zero y = sym (+-identityʳ y)
-  +-comm⅋₁ (suc x) y = begin
+  +-comm⅋₁ zero     y = sym (+-identityʳ y)
+  +-comm⅋₁ (suc x)  y = begin
     suc (x + y)  ≡⟨ ? ⟩
     y + suc x    ∎
     where open ≡-Reasoning
@@ -1542,8 +1542,8 @@ yellow as Agda now has too many degrees of freedom to work out what you mean:
 
 ```agda
   +-comm⅋₂ : (x y : ℕ) → x + y ≡ y + x
-  +-comm⅋₂ zero y = sym (+-identityʳ y)
-  +-comm⅋₂ (suc x) y = begin
+  +-comm⅋₂ zero     y = sym (+-identityʳ y)
+  +-comm⅋₂ (suc x)  y = begin
     suc (x + y)  ≡⟨ ? ⟩
     ?            ≡⟨ ? ⟩
     y + suc x    ∎
@@ -1555,8 +1555,8 @@ lemma from just now:
 
 ```agda
   +-comm⅋₃ : (x y : ℕ) → x + y ≡ y + x
-  +-comm⅋₃ zero y = sym (+-identityʳ y)
-  +-comm⅋₃ (suc x) y = begin
+  +-comm⅋₃ zero     y = sym (+-identityʳ y)
+  +-comm⅋₃ (suc x)  y = begin
     suc (x + y)  ≡⟨ ? ⟩
     ?            ≡⟨ sym (+-suc y x) ⟩
     y + suc x    ∎
@@ -1568,8 +1568,8 @@ term-level hole, again via [Solve/Normalise](AgdaCmd):
 
 ```agda
   +-comm⅋₄ : (x y : ℕ) → x + y ≡ y + x
-  +-comm⅋₄ zero y = sym (+-identityʳ y)
-  +-comm⅋₄ (suc x) y = begin
+  +-comm⅋₄ zero     y = sym (+-identityʳ y)
+  +-comm⅋₄ (suc x)  y = begin
     suc (x + y)  ≡⟨ ? ⟩
     suc (y + x)  ≡⟨ sym (+-suc y x) ⟩
     y + suc x    ∎
@@ -1580,8 +1580,8 @@ which makes the solution obvious:
 
 ```agda
   +-comm : (x y : ℕ) → x + y ≡ y + x
-  +-comm zero y = sym (+-identityʳ y)
-  +-comm (suc x) y = begin
+  +-comm zero     y = sym (+-identityʳ y)
+  +-comm (suc x)  y = begin
     suc (x + y)  ≡⟨ cong suc (+-comm x y) ⟩
     suc (y + x)  ≡⟨ sym (+-suc y x) ⟩
     y + suc x    ∎
@@ -1599,8 +1599,8 @@ of a multiplication term:
 
 ```agda
   *-suc : (x y : ℕ) → x * suc y ≡ x + x * y
-  *-suc zero y = refl
-  *-suc (suc x) y = begin
+  *-suc zero     y = refl
+  *-suc (suc x)  y = begin
     suc x * suc y          ≡⟨⟩
     suc y + x * suc y      ≡⟨ cong (λ φ → suc y + φ) (*-suc x y) ⟩
     suc y + (x + x * y)    ≡⟨⟩
@@ -1627,8 +1627,8 @@ Solution
 
 :       ```agda
   *-comm : (x y : ℕ) → x * y ≡ y * x
-  *-comm zero y = sym (*-zeroʳ y)
-  *-comm (suc x) y = begin
+  *-comm zero     y = sym (*-zeroʳ y)
+  *-comm (suc x)  y = begin
     suc x * y  ≡⟨⟩
     y + x * y  ≡⟨ cong (y +_) (*-comm x y) ⟩
     y + y * x  ≡⟨ sym (*-suc y x) ⟩
@@ -1638,8 +1638,8 @@ Solution
 
 ```agda
   *-distribʳ-+ : (x y z : ℕ) → (y + z) * x ≡ y * x + z * x
-  *-distribʳ-+ x zero z = refl
-  *-distribʳ-+ x (suc y) z = begin
+  *-distribʳ-+ x zero     z = refl
+  *-distribʳ-+ x (suc y)  z = begin
     (suc y + z) * x      ≡⟨⟩
     x + (y + z) * x      ≡⟨ cong (x +_) (*-distribʳ-+ x y z) ⟩
     x + (y * x + z * x)  ≡⟨ sym (+-assoc x (y * x) (z * x)) ⟩
@@ -1648,8 +1648,8 @@ Solution
     where open ≡-Reasoning
 
   *-assoc : (x y z : ℕ) → (x * y) * z ≡ x * (y * z)
-  *-assoc zero y z = refl
-  *-assoc (suc x) y z = begin
+  *-assoc zero     y z = refl
+  *-assoc (suc x)  y z = begin
     suc x * y * z        ≡⟨⟩
     (y + x * y) * z      ≡⟨ *-distribʳ-+ z y (x * y) ⟩
     y * z + (x * y) * z  ≡⟨ cong (λ φ → y * z + φ) (*-assoc x y z) ⟩

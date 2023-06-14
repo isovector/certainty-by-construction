@@ -106,6 +106,7 @@ mathematics:
         : {A : Set a} {B : Set b}
         → (f : A → B)
         → REL A B _
+    -- TODO(sandy): not true! we need to show x is unique too
     IsFunction f A B = ∀ x y → f x ≡ y
 ```
 
@@ -198,9 +199,9 @@ given relation, to show that it is indeed an equivalence relation.
   record IsEquivalence
           {A : Set a} (_~_ : Rel A ℓ) : Set (a ⊔ ℓ) where
     field
-      refl : Reflexive _~_
-      sym : Symmetric _~_
-      trans : Transitive _~_
+      refl   : Reflexive   _~_
+      sym    : Symmetric   _~_
+      trans  : Transitive  _~_
 ```
 
 It's easy to show that `type:_≡_` forms an equivalence relation, since we came up
@@ -224,9 +225,9 @@ trivial:
     open IsEquivalence
 
     ≡-equiv : IsEquivalence {A = A} _≡_
-    refl  ≡-equiv = PropEq.refl
-    trans ≡-equiv = PropEq.trans
-    sym   ≡-equiv = PropEq.sym
+    refl   ≡-equiv = PropEq.refl
+    trans  ≡-equiv = PropEq.trans
+    sym    ≡-equiv = PropEq.sym
 ```
 
 We will explore equivalence relations in further detail soon when we discuss
@@ -607,8 +608,8 @@ much easier to implement:
 
 ```agda
   ≤-refl : Reflexive _≤_
-  ≤-refl {zero} = z≤n
-  ≤-refl {suc x} = s≤s ≤-refl
+  ≤-refl {zero}   = z≤n
+  ≤-refl {suc x}  = s≤s ≤-refl
 ```
 
 We also have transitivity:
@@ -668,8 +669,8 @@ transitivity---are so common that they have a bespoke name. We call such things
   record IsPreorder
           {A : Set a} (_~_ : Rel A ℓ) : Set (a ⊔ ℓ) where
     field
-      refl : Reflexive _~_
-      trans : Transitive _~_
+      refl   : Reflexive   _~_
+      trans  : Transitive  _~_
 ```
 
 
@@ -721,16 +722,16 @@ record.
 
 ```agda
   ≤-preorder⅋₃ : IsPreorder _≤_
-  IsPreorder.refl ≤-preorder⅋₃ = {! !}
-  IsPreorder.trans ≤-preorder⅋₃ = {! !}
+  IsPreorder.refl   ≤-preorder⅋₃ = {! !}
+  IsPreorder.trans  ≤-preorder⅋₃ = {! !}
 ```
 
 These holes are easily filled, as before:
 
 ```agda
   ≤-preorder : IsPreorder _≤_
-  IsPreorder.refl ≤-preorder = ≤-refl
-  IsPreorder.trans ≤-preorder = ≤-trans
+  IsPreorder.refl   ≤-preorder = ≤-refl
+  IsPreorder.trans  ≤-preorder = ≤-trans
 ```
 
 Agda is almost unique among programming languages in its support for copattern
@@ -766,8 +767,8 @@ Solution
   equiv→preorder
       : {_~_ : Rel A ℓ}
       → IsEquivalence _~_ → IsPreorder _~_
-  IsPreorder.refl (equiv→preorder x) = IsEquivalence.refl x
-  IsPreorder.trans (equiv→preorder x) = IsEquivalence.trans x
+  IsPreorder.refl  (equiv→preorder x) = IsEquivalence.refl   x
+  IsPreorder.trans (equiv→preorder x) = IsEquivalence.trans  x
           ```
 
 
@@ -828,8 +829,8 @@ gives rise to a very straightforward definition:
       v v₁ v₂ v₃ : V
 
     data Path : Rel V (e ⊔ ℓ) where
-      here : Path v v
-      follow : v₁ ⇒ v₂ → Path v₁ v₂
+      here    : Path v v
+      follow  : v₁ ⇒ v₂ → Path v₁ v₂
       connect
         : Path v₁ v₂
         → Path v₂ v₃
@@ -840,8 +841,8 @@ It is not difficult to show that `type:Path` forms a preorder:
 
 ```agda
     Path-preorder : IsPreorder Path
-    IsPreorder.refl Path-preorder = here
-    IsPreorder.trans Path-preorder = connect
+    IsPreorder.refl   Path-preorder = here
+    IsPreorder.trans  Path-preorder = connect
 ```
 
 This technique is very general and reusable. We were given some arbitrary
@@ -950,17 +951,17 @@ Some of these people are friends, which we can use as edges in our graph:
     private variable
       p₁ p₂ : Person
 
-    data AreFriends : Rel Person lzero where
-      marcus-will : AreFriends marcus will
-      fiona-marcus : AreFriends fiona marcus
-      fiona-susie : AreFriends fiona susie
+    data _IsFriendsWith_ : Rel Person lzero where
+      marcus-will   : marcus  IsFriendsWith will
+      fiona-marcus  : fiona   IsFriendsWith marcus
+      fiona-susie   : fiona   IsFriendsWith susie
 ```
 
 and of course, friendship is symmetric, which we can encode as another
 constructor:
 
 ```agda
-      sym : AreFriends p₁ p₂ → AreFriends p₂ p₁
+      sym : p₁ IsFriendsWith p₂ → p₂ IsFriendsWith p₁
 ```
 
 What excellent romantic comedy from the early noughties is complete without a
@@ -969,19 +970,19 @@ source of edges in our graph:
 
 ```agda
     data _IsInterestedIn_ : Rel Person lzero where
-      marcus-ellie : marcus IsInterestedIn ellie
-      will-rachel : will IsInterestedIn rachel
-      rachel-will : rachel IsInterestedIn will
-      susie-will : susie IsInterestedIn will
+      marcus-ellie  : marcus  IsInterestedIn ellie
+      will-rachel   : will    IsInterestedIn rachel
+      rachel-will   : rachel  IsInterestedIn will
+      susie-will    : susie   IsInterestedIn will
 ```
 
-Finally, we can tie together `type:AreFriends` and `type:_IsInterestedIn_` with
-`type:SocialTie` which serves as the definitive set of edges in our graph.
+Finally, we can tie together `type:_IsFriendsWith_` and `type:_IsInterestedIn_`
+with `type:SocialTie` which serves as the definitive set of edges in our graph.
 
 ```agda
     data SocialTie : Rel Person lzero where
-      friendship : AreFriends p₁ p₂ → SocialTie p₁ p₂
-      interest : p₁ IsInterestedIn p₂ → SocialTie p₁ p₂
+      friendship  : p₁ IsFriendsWith p₂   → SocialTie p₁ p₂
+      interest    : p₁ IsInterestedIn p₂  → SocialTie p₁ p₂
 ```
 
 There is no preorder on `type:SocialTie`, but we can get one for free by using

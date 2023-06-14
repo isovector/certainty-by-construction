@@ -486,7 +486,8 @@ open import Relation.Binary
 module Setoid-Examples where
   open import Level using (Level; _⊔_)
   open import Relation.Binary using (Setoid)
-  open import Relation.Binary.PropositionalEquality using (setoid)
+  open import Relation.Binary.PropositionalEquality
+    using (setoid)
   open Setoid
 
   module _ where

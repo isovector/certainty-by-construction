@@ -488,8 +488,18 @@ Next, we will unpack the two monoids, renaming their units and operations so we
 can differentiate between the two like above with subscripts:
 
 ```agda
-  open Monoid m₁ renaming (_∙_ to _∙₁_; ε to ε₁; M to A; _≈_ to _≈₁_)
-  open Monoid m₂ renaming (_∙_ to _∙₂_; ε to ε₂; M to B; _≈_ to _≈₂_)
+  open Monoid m₁ renaming
+    ( _∙_  to _∙₁_
+    ; ε    to ε₁
+    ; M    to A
+    ; _≈_  to _≈₁_
+    )
+  open Monoid m₂ renaming
+    (_∙_   to _∙₂_
+    ; ε    to ε₂
+    ; M    to B
+    ; _≈_  to _≈₂_
+    )
 ```
 
 Finally we're ready to get to the meat of our monoid homomorphism. Whenever you
@@ -540,16 +550,18 @@ functions, `const false` and `not`. The latter seems more promising, so let's
 try that:
 
 ```agda
-  not-hom₁ : IsMonoidHom (mkMonoid true-and-monoid) (mkMonoid false-or-monoid) not
+  not-hom₁ : IsMonoidHom  (mkMonoid true-and-monoid)
+                          (mkMonoid false-or-monoid)
+                          not
 ```
 
 The proofs, as it happen, are trivial:
 
 ```agda
-  preserves-ε not-hom₁ = refl
-  preserves-∙ not-hom₁ false b = refl
-  preserves-∙ not-hom₁ true b  = refl
-  f-cong not-hom₁ refl = refl
+  preserves-ε  not-hom₁ = refl
+  preserves-∙  not-hom₁ false  b = refl
+  preserves-∙  not-hom₁ true   b = refl
+  f-cong       not-hom₁ refl = refl
 ```
 
 which works like a charm.
@@ -564,11 +576,13 @@ Solution
 
 :   ```agda
   open import Function
-  dumb : IsMonoidHom (mkMonoid true-and-monoid) (mkMonoid false-or-monoid) (const false)
-  preserves-ε dumb = refl
-  preserves-∙ dumb false b = refl
-  preserves-∙ dumb true b  = refl
-  f-cong dumb refl = refl
+  dumb : IsMonoidHom  (mkMonoid true-and-monoid)
+                      (mkMonoid false-or-monoid)
+                      (const false)
+  preserves-ε  dumb = refl
+  preserves-∙  dumb false  b = refl
+  preserves-∙  dumb true   b = refl
+  f-cong       dumb refl = refl
     ```
 
 Returning to `not-hom₁`, we have shown (via `preserves-∙`):
@@ -598,11 +612,13 @@ Exercise
 Solution
 
 :   ```agda
-  not-hom₂ : IsMonoidHom (mkMonoid false-or-monoid) (mkMonoid true-and-monoid) not
-  preserves-ε not-hom₂ = refl
-  preserves-∙ not-hom₂ false b = refl
-  preserves-∙ not-hom₂ true b  = refl
-  f-cong not-hom₂ refl = refl
+  not-hom₂ : IsMonoidHom  (mkMonoid false-or-monoid)
+                          (mkMonoid true-and-monoid)
+                          not
+  preserves-ε  not-hom₂ = refl
+  preserves-∙  not-hom₂ false  b = refl
+  preserves-∙  not-hom₂ true   b = refl
+  f-cong       not-hom₂ refl = refl
     ```
 
 Perhaps you're beginning to see, if not yet the use, at least the importance of
@@ -643,13 +659,12 @@ monoids. All we have left to do is to show it:
 ```agda
   length-hom
       : {c : Level} {A : Set c}
-      → IsMonoidHom
-          (mkMonoid ([]-++-monoid {A = A}))
-          (mkMonoid 0-+-monoid)
-          length
-  preserves-ε length-hom = refl
-  preserves-∙ length-hom [] b = refl
-  preserves-∙ length-hom (x ∷ a) b =
+      → IsMonoidHom  (mkMonoid ([]-++-monoid {A = A}))
+                     (mkMonoid 0-+-monoid)
+                     length
+  preserves-ε  length-hom = refl
+  preserves-∙  length-hom []       b = refl
+  preserves-∙  length-hom (x ∷ a)  b =
     cong suc (preserves-∙ length-hom a b)
   f-cong length-hom refl = refl
 ```
@@ -763,12 +778,14 @@ indication that this is the wrong law? I would argue no; we can get the
   last a (just x) = just x
   last a nothing = a
 
-  last-monoid : {A : Set} → IsMonoid (setoid (Maybe A)) last nothing
-  ∙-assoc last-monoid a b (just x) = refl
-  ∙-assoc last-monoid a b nothing = refl
-  ε-unitˡ last-monoid (just x) = refl
-  ε-unitˡ last-monoid nothing = refl
-  ε-unitʳ last-monoid a = refl
+  last-monoid
+      : {A : Set}
+      → IsMonoid (setoid (Maybe A)) last nothing
+  ∙-assoc last-monoid a b (just x)  = refl
+  ∙-assoc last-monoid a b nothing   = refl
+  ε-unitˡ last-monoid (just x)  = refl
+  ε-unitˡ last-monoid nothing   = refl
+  ε-unitʳ last-monoid a         = refl
   ∙-cong₂ last-monoid refl refl = refl
 ```
 

@@ -148,12 +148,10 @@ is quite gnarly:
 ```agda
   open import Relation.Binary.PropositionalEquality
 
-  -- TODO(sandy): these work, but are make interactive editing slow
-  -- uncomment them when done
-  -- lemma₁
-  --     : (a c n x z : ℕ)
-  --     → a * c + (c * x + a * z + x * z * n) * n
-  --     ≡ c * (a + x * n) + z * n * (a + x * n)
+  lemma₁
+      : (a c n x z : ℕ)
+      → a * c + (c * x + a * z + x * z * n) * n
+      ≡ c * (a + x * n) + z * n * (a + x * n)
 ```
 
 Inside of `module:+-*-Solver` is `def:solve`, which is our front-end for
@@ -179,11 +177,11 @@ be used without any adjustment.
 Thus the full implementation of `def:lemma₁` is:
 
 ```agda
-  -- lemma₁ = solve 5
-  --   (λ a c n x z
-  --       →  a :* c :+ (c :* x :+ a :* z :+ x :* z :* n) :* n
-  --       := c :* (a :+ x :* n) :+ z :* n :* (a :+ x :* n)
-  --   ) refl
+  lemma₁ = solve 5
+    (λ a c n x z
+        →  a :* c :+ (c :* x :+ a :* z :+ x :* z :* n) :* n
+        := c :* (a :+ x :* n) :+ z :* n :* (a :+ x :* n)
+    ) refl
 ```
 
 It's certainly not the most beautiful sight to behold, but you must admit that
@@ -260,22 +258,22 @@ module Example-Tactical where
 We can then show `def:≈-trans`:
 
 ```agda
-  -- open import Data.Nat
-  -- open import Relation.Binary.PropositionalEquality
+  open import Data.Nat
+  open import Relation.Binary.PropositionalEquality
 
-  -- ≈-trans
-  --     : (a b c n x y z w : ℕ)
-  --     → a + x * n ≡ b + y * n
-  --     → b + z * n ≡ c + w * n
-  --     → a + (x + z) * n ≡ c + (w + y) * n
-  -- ≈-trans a b c n x y z w pxy pzw = begin
-  --   a + (x + z) * n      ≡⟨ solve (a ∷ x ∷ z ∷ n ∷ []) ⟩
-  --   (a + x * n) + z * n  ≡⟨ cong (_+ z * n) pxy ⟩
-  --   (b + y * n) + z * n  ≡⟨ solve (b ∷ y ∷ n ∷ z ∷ []) ⟩
-  --   (b + z * n) + y * n  ≡⟨ cong (_+ y * n) pzw ⟩
-  --   c + w * n + y * n    ≡⟨ solve (c ∷ w ∷ n ∷ y ∷ []) ⟩
-  --   c + (w + y) * n      ∎
-  --   where open ≡-Reasoning
+  ≈-trans
+      : (a b c n x y z w : ℕ)
+      → a + x * n ≡ b + y * n
+      → b + z * n ≡ c + w * n
+      → a + (x + z) * n ≡ c + (w + y) * n
+  ≈-trans a b c n x y z w pxy pzw = begin
+    a + (x + z) * n      ≡⟨ solve (a ∷ x ∷ z ∷ n ∷ []) ⟩
+    (a + x * n) + z * n  ≡⟨ cong (_+ z * n) pxy ⟩
+    (b + y * n) + z * n  ≡⟨ solve (b ∷ y ∷ n ∷ z ∷ []) ⟩
+    (b + z * n) + y * n  ≡⟨ cong (_+ y * n) pzw ⟩
+    c + w * n + y * n    ≡⟨ solve (c ∷ w ∷ n ∷ y ∷ []) ⟩
+    c + (w + y) * n      ∎
+    where open ≡-Reasoning
 ```
 
 The `macro:solve` macro only works for terms of type `type:x ≡ y`, which means
@@ -284,11 +282,11 @@ For that, we can instead invoke `macro:solve-∀`:
 
 
 ```agda
-  -- lemma₁
-  --     : (a c n x z : ℕ)
-  --     → a * c + (c * x + a * z + x * z * n) * n
-  --     ≡ c * (a + x * n) + z * n * (a + x * n)
-  -- lemma₁ = solve-∀
+  lemma₁
+      : (a c n x z : ℕ)
+      → a * c + (c * x + a * z + x * z * n) * n
+      ≡ c * (a + x * n) + z * n * (a + x * n)
+  lemma₁ = solve-∀
 ```
 
 As you can see, ring solving is an extremely powerful technique, capable of
@@ -629,11 +627,11 @@ terms:
 
 ```agda
   _⊕_ : HNF n → HNF n → HNF n
-  const a ⊕ const b = const (a + b)
-  coeff a ⊕ coeff b = coeff (a ⊕ b)
-  coeff a ⊕ (b *x+ c) = b *x+ (a ⊕ c)
-  (a *x+ b) ⊕ coeff c = a *x+ (b ⊕ c)
-  (a *x+ b) ⊕ (c *x+ d) = (a ⊕ c) *x+ (b ⊕ d)
+  const a    ⊕ const b    = const (a + b)
+  coeff a    ⊕ coeff b    = coeff (a ⊕ b)
+  coeff a    ⊕ (b *x+ c)  = b *x+ (a ⊕ c)
+  (a *x+ b)  ⊕ coeff c    = a *x+ (b ⊕ c)
+  (a *x+ b)  ⊕ (c *x+ d)  = (a ⊕ c) *x+ (b ⊕ d)
   infixr 5 _⊕_
 ```
 
@@ -649,8 +647,8 @@ to stick in a `ctor:const`. This is given by `def:↪`:
 
 ```agda
   ↪ : 𝔸 → HNF n
-  ↪ {zero} a = const a
-  ↪ {suc n} a = coeff (↪ a)
+  ↪ {zero}   a = const a
+  ↪ {suc n}  a = coeff (↪ a)
 ```
 
 We can now lift `0#` and `1#` into any polynomial simply by injecting them:
@@ -679,11 +677,11 @@ foiling rule that $(ax+b)(cx+d) = acx^2 + acd + bcx + bd$.
 
 ```agda
   _⊗_ : HNF n → HNF n → HNF n
-  const a ⊗ const b = const (a * b)
-  coeff a ⊗ coeff b = coeff (a ⊗ b)
-  coeff a ⊗ (b *x+ c) = (coeff a ⊗ b) *x+ (a ⊗ c)
-  (a *x+ b) ⊗ coeff c = (a ⊗ coeff c) *x+ (b ⊗ c)
-  (a *x+ b) ⊗ (c *x+ d)
+  const a    ⊗ const b    = const (a * b)
+  coeff a    ⊗ coeff b    = coeff (a ⊗ b)
+  coeff a    ⊗ (b *x+ c)  = (coeff a ⊗ b) *x+ (a ⊗ c)
+  (a *x+ b)  ⊗ coeff c    = (a ⊗ coeff c) *x+ (b ⊗ c)
+  (a *x+ b)  ⊗ (c *x+ d)
       = x* (x* (a ⊗ c))
      ⊕ x* ((a ⊗ coeff d)
      ⊕ (c ⊗ coeff b))
@@ -718,9 +716,9 @@ n → 𝔸`. Thus, we have:
     using (Fin; zero; suc)
 
   eval : (Fin n → 𝔸) → HNF n → 𝔸
-  eval v (const a) = a
-  eval v (coeff a) = eval (v ∘ suc) a
-  eval v (a *x+ b) = v zero * eval v a + eval (v ∘ suc) b
+  eval v (const a)  = a
+  eval v (coeff a)  = eval (v ∘ suc) a
+  eval v (a *x+ b)  = v zero * eval v a + eval (v ∘ suc) b
 ```
 
 Given a model of `type:HNF`, we would now like to show that everything we've
@@ -776,8 +774,8 @@ n` into the corresponding variable in the correct coefficient space:
 
 ```agda
   to-var : Fin n → HNF n
-  to-var zero = x* 1H
-  to-var (suc x) = coeff (to-var x)
+  to-var zero     = x* 1H
+  to-var (suc x)  = coeff (to-var x)
 ```
 
 We would like to show that the evaluation of this term is equivalent to just
