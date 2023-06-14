@@ -876,7 +876,7 @@ module _ where
 We can follow the same pattern as when we defined monoid homomorphisms to build
 semigroup homomorphisms:
 
--- ```agda
+```agda
 -- module semigroup-hom {c l : Level}
 --             {s1 s2 : Setoid c l}
 --             (m1 : semigroup.Semigroup s1)
@@ -912,9 +912,9 @@ Solution
 --   open IsSemigroupHom
     ```
 
-    ```agda
+```agda
   -- monoid-hom→semigroup-hom : {f : A → B} → IsMonoidHom f → IsSemigroupHom f
   -- preserves-∙ (monoid-hom→semigroup-hom x) = x .preserves-∙
   -- f-cong (monoid-hom→semigroup-hom x) = x .f-cong
-    ```
+```
 

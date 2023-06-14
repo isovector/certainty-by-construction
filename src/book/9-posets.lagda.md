@@ -209,7 +209,7 @@ that's required is to match on the constructors and use the only thing that can
 possibly type check to fill the holes. The poset is presented without further
 comment.
 
-```
+```agda
   ≤B-poset : Poset _≤B_
   ≤-refl ≤B-poset {false} = f≤b
   ≤-refl ≤B-poset {true} = t≤t
@@ -257,8 +257,8 @@ the only difference is the requirement of a `cong` to show antisymmetry in the
   ≤ℕ-poset : Poset _≤ℕ_
   ≤-refl ≤ℕ-poset {zero} = z≤n
   ≤-refl ≤ℕ-poset {suc x} = s≤s (≤-refl ≤ℕ-poset)
-  ≤-antisym ≤ℕ-poset {.zero} {.zero} z≤n z≤n = refl
-  ≤-antisym ≤ℕ-poset {.(suc _)} {.(suc _)} (s≤s a≤b) (s≤s b≤a) =
+  ≤-antisym ≤ℕ-poset z≤n z≤n = refl
+  ≤-antisym ≤ℕ-poset (s≤s a≤b) (s≤s b≤a) =
     cong suc (≤-antisym ≤ℕ-poset a≤b b≤a)
   ≤-trans ≤ℕ-poset z≤n b≤c = z≤n
   ≤-trans ≤ℕ-poset (s≤s a≤b) (s≤s b≤c) =
