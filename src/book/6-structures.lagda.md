@@ -281,6 +281,23 @@ Considered as a query, `def:+-0` asks "what's the total sum?" In the special
 case where every `type:ℕ` considered is 1, `def:+-0` instead asks "how many are
 there?"
 
+Monoids over a given type are not unique, as we saw with `def:∨-false` and
+`def:∧-true`. Likewise, there is another monoid over the natural numbers, which
+is where the terminology of "multiplication" for `field:_∙_` comes from:
+
+```agda
+  open Data.Nat using (_*_)
+  open Data.Nat.Properties
+    using (*-assoc; *-identityˡ; *-identityʳ)
+
+  *-1 : Monoid ℕ
+  Monoid._∙_  *-1 = _*_
+  Monoid.ε    *-1 = 1
+  Monoid.assoc      *-1 = *-assoc
+  Monoid.identityˡ  *-1 = *-identityˡ
+  Monoid.identityʳ  *-1 = *-identityʳ
+```
+
 There are infinitely many monoids. A good habit to get into is to look for a
 monoid whenever you see a binary operation. For example, concatenation of lists
 is a binary operation, and correspondingly has a monoid using `ctor:[]` as its
@@ -1069,14 +1086,35 @@ One cool thing about Agda records is that you don't need to define all of your
 [2](Ann) we use a `keyword:renaming` modifier in order to attach an otherwise
 missing `keyword:infix` declaration.
 
-After all of this labor, we are now ready to finally implement the
-`def:pointwise` monoid. First, we can show that `type:_≗_` forms a
-`type:Setoid`:
+Given our new definition, it's possible to mechnically translate every "naive"
+`type:Monoid` into this type, as given by `def:recover`.
 
 ```agda
   private variable
     a b c ℓ : Level
     A : Set a
+
+  module Naive = Sandbox-Naive-Monoids
+  import Relation.Binary.PropositionalEquality as PropEq
+
+  recover : {A : Set a} → Naive.Monoid A → Monoid a a
+  recover {A = A} x = record
+    { setoid = prop-setoid A
+    ; _∙_ = _∙_
+    ; ε = ε
+    ; assoc = assoc
+    ; identityˡ = identityˡ
+    ; identityʳ = identityʳ
+    ; ∙-cong = λ { PropEq.refl PropEq.refl → PropEq.refl }
+    }
+    where open Naive.Monoid x
+```
+
+After all of this labor, we are now ready to finally implement the
+`def:pointwise` monoid. First, we can show that `type:_≗_` forms a
+`type:Setoid`:
+
+```agda
 
   module ≗-Def {A : Set a} (setoid : Setoid c ℓ) where
     open Setoid renaming (isEquivalence to eq)
@@ -1129,4 +1167,216 @@ straightforward as it feels like it ought to be.
 
 
 ## Monoid Homomorphisms
+
+One particularly fruitful area of using mathematics for real problems is to
+investigate functions which *preserve* structured sets. That is, given two
+`type:Monoid`s, one on `A` and another on `B`, which are the functions `A → B`
+that are *well-behaved* with respect to the monoids? A well behaved function, in
+this context, is one which preserves the monoid structure. In equations, that
+means:
+
+$$
+f(\varepsilon) = \varepsilon
+$$
+
+and
+
+$$
+f(a \cdot b) = f(a) \cdot f(b)
+$$
+
+
+At first glance, these two equations might not appear to typecheck. This is an
+unfortunate but common situation in math, arising from its history having been
+done by pen and paper. The necessary mental process is that of *elaboration:*
+a fancy word for "fiddling with the equation as written, filling in details
+until it makes sense." In this case, remember that we have two monoids in play,
+and thus two units `field:ε` and two binary operators `field:_∙_`. Let's say the
+`A`-side monoid is the first one, and the `B`-side is the second. Rewriting our
+equations above with this new elaboration, we get:
+
+$$
+f(\varepsilon_1) =_2 \varepsilon_2
+$$
+
+and
+
+$$
+f(a \cdot_1 b) =_2 f(a) \cdot_2 f(b)
+$$
+
+where we have been careful to add a subscript even to the equality---since we
+might have *different* notions of equality on either side of the function!
+
+It's important to point out that while these equations look simple, they are
+much harder to get right than they seem at first blush. The reason is that the
+notation $f(a \cdot_1 b)$ is just *syntax.* Assuming a potential monoid
+homomorphism between `def:+-0` and `def:*-1`, in the wild these equations might
+look like any of the following:
+
+$$
+\begin{aligned}
+f(13) &= f(10) \cdot f(3) \\
+f(13) &= f(13) \cdot f(0) \\
+f(13) &= 1 \cdot f(13) \\
+f(13) &= 30
+\end{aligned}
+$$
+
+depending on exactly how much normalization occurred before we got a chance to
+look at it. As you can see, being a homomorphism is an extremely stringent
+requirement of a function, due to the astronomical number of equations that it
+must satisfy.
+
+Nevertheless, we can set up the type `type:MonHom`, which witnesses that a given
+function is a homomorphism between two monoids. Due to the two monoids we have
+in scope, we go through the instance argument song and dance again, which makes
+this definition a little more of a mouthful:
+
+```agda
+module Sandbox-MonoidHomomorphisms where
+  open Sandbox-Monoids
+
+  private variable
+    c₁ c₂ ℓ₁ ℓ₂ : Level
+
+  module _ (m₁ : Monoid c₁ ℓ₁) (m₂ : Monoid c₂ ℓ₂) where
+    open import Relation.Binary using (_Preserves_⟶_)
+    open Monoid m₁ using () renaming (Carrier to A)
+    open Monoid m₂ using () renaming (Carrier to B)
+    open Monoid ⦃ ... ⦄
+
+    instance
+      _ = m₁
+      _ = m₂
+
+    record MonHom (f : A → B)
+         : Set (c₁ ⊔l c₂ ⊔l ℓ₁ ⊔l ℓ₂) where
+      field
+        preserves-ε  : f ε ≈ ε
+        preserves-∙  : (x y : A) → f (x ∙ y) ≈ f x ∙ f y
+        f-cong       : f Preserves _≈_ ⟶ _≈_
+```
+
+With the definition in front of us, it's clear that not all functions preserve
+monoids. In fact, there is even a simple proof. We have seen that there are at
+least two monoids over the booleans, `def:∧-true` and `def:-∨-false`. But these
+two monoids have different units. Therefore, no function that maps into
+`type:Bool` can possibly preserve both units at once.
+
+We can now `def:recover` some of our simple monoids back into scope, in order to
+show some homomorphisms between them.
+
+```agda
+  ∧-true   = recover Naive.∧-true
+  ∨-false  = recover Naive.∨-false
+  +-0      = recover Naive.+-0
+  *-1      = recover Naive.*-1
+
+  private variable
+    a : Level
+    A : Set a
+
+  ++-[] : {A} → Monoid _ _
+  ++-[] {A = A} = recover (Naive.++-[] {A = A})
+
+  ∘-id : {A} → Monoid _ _
+  ∘-id {A = A} = recover (Naive.∘-id {A = A})
+```
+
+Now that we have the machinery in place to prove we're not fooling ourselves,
+let's begin our hunt for a monoid homomorphism. The simplest monoids we have are
+those over the booleans, so let's try to find a homomorphism between
+`def:∧-true` and `def:∨-false`. Given the constraints of the problem, we thus
+are looking for a function `f : Bool → Bool`, with the property that `f true ≡
+false`. There are only two such functions, `const false` and `def:not`. The
+latter seems more promising, so let's try that:
+
+```agda
+  open import Data.Bool
+    using (true; false; not)
+
+  open MonHom
+  module _ where
+    open import Relation.Binary.PropositionalEquality
+
+    not-hom₁ : MonHom ∧-true ∨-false not
+    preserves-ε  not-hom₁           = refl
+    preserves-∙  not-hom₁ false  y  = refl
+    preserves-∙  not-hom₁ true   y  = refl
+    f-cong       not-hom₁ refl      = refl
+```
+
+However, interestingly, `const false` is *also* a homomorphism between these two
+monoids, albeit not a very interesting one:
+
+```agda
+    open import Function using (const)
+
+    false-hom : MonHom ∧-true ∨-false (const false)
+    preserves-ε  false-hom       = refl
+    preserves-∙  false-hom x y   = refl
+    f-cong       false-hom refl  = refl
+```
+
+Did we just happen to get lucky when deciding to look for a homomorphism between
+`def:∧-true` and `def:∨-false`? Do we get the same `def:not` homomorphisms going
+the other way between the monoids? As it happens, we do indeed get one for
+`def:not`:
+
+```agda
+    not-hom₂ : MonHom ∨-false ∧-true not
+    preserves-ε  not-hom₂           = refl
+    preserves-∙  not-hom₂ false  y  = refl
+    preserves-∙  not-hom₂ true   y  = refl
+    f-cong       not-hom₂ refl      = refl
+```
+
+But there is not a monoid homomorphism going this direction for `const false`,
+since it would violate the law that `false = const false ε` `= f ε` `= ε =
+true`. We can show that there is no such homomorphism by deriving exactly this
+contradiction:
+
+```agda
+    open import Relation.Nullary
+
+    not-false-hom₂ : ¬ MonHom ∨-false ∧-true (const false)
+    not-false-hom₂ x with preserves-ε x
+    ... | ()
+```
+
+For a given `type:Monoid`, there are always at least two monoid homomorphisms:
+the trivial one, which maps elements to themselves; and the degenerate one,
+which maps every element in some other monoid to `field:ε`:
+
+```agda
+  open import Function using (const; id)
+
+  trivial : (m : Monoid c₂ ℓ₂) → MonHom m m id
+  trivial m = record
+    { preserves-ε  = refl
+    ; preserves-∙  = λ  x y → refl
+    ; f-cong       = λ  x → x
+    }
+    where open Monoid m
+
+  degenerate
+      : {m₁ : Monoid c₁ ℓ₁}
+      → (m : Monoid c₂ ℓ₂)
+      → MonHom m₁ m (const (Monoid.ε m))
+  degenerate m = record
+    { preserves-ε  = refl
+    ; preserves-∙  = λ  x y → sym (identityʳ _)
+    ; f-cong       = λ  x → refl
+    }
+    where open Monoid m
+```
+
+-- TODO(sandy): other examples?
+
+
+## Monoid Homomorphisms for Designing Software
+
+
+
 
