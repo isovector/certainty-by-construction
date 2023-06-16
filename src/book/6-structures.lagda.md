@@ -36,7 +36,7 @@ relative mathematical simplicity, and their extreme relevance in programming.
 The definition of a monoid is given as:
 
 > A monoid is a set equipped with an associative binary operation `field:_∙_`
-and an > identity element `field:ε`.
+> and an identity element `field:ε`.
 
 Left implicit, but not unsaid, in this definition are the laws to which monoids
 are subject. We are told that `field:_∙_` is associative, which means the
