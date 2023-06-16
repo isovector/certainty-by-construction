@@ -827,7 +827,213 @@ particular monoid? Funext is a big pill to swallow. Postulating it makes sense
 when we're in a *particular domain* in which we'd like it to hold, but do we
 really want this particular monoid to exist only in case funext holds?
 
-Rather than fire off at  full speed down that path, let's instead rephrase the
+Rather than fire off at full speed down that path, let's instead rephrase the
 definition of a monoid so as to not require full funext.
 
+
+## Setoids
+
+Returning to our definition of `type:Monoid`, it's rather unclear where exactly
+things have gone wrong. Nowhere in the definition do we seem to use
+propositional equality! No, the problem is in fact earlier, when we imported
+`module:Algebra.Definitions` in this manner:
+
+```agda
+  open import Relation.Binary.PropositionalEquality
+  import Algebra.Definitions
+
+  open module Def {ℓ} {A : Set ℓ}
+    = Algebra.Definitions {A = A} _≡_
+```
+
+As it happens, we are not the first people to run into the problem that
+sometimes we need a weaker notion of equality than the propositional variety.
+Thus, you'll notice that the `module:Algebra.Definitions` module itself is
+parameterized by an equivalence relation, which we chose to be `type:_≡_`.
+
+The solution to all of our problems is simply to make this dependency explicit.
+We must choose a particular equivalence relation that we will use when proving
+the monoid laws hold, and pack this relation into the definition of the
+`type:Monoid` itself.
+
+Our second attempt at the problem looks like this:
+
+```agda
+module Sandbox-Monoids where
+  open import Algebra
+    using (Op₂; Associative; LeftIdentity; RightIdentity)
+  open import Relation.Binary
+    using (Rel; IsEquivalence; _Preserves₂_⟶_⟶_)
+
+  record Monoid₂ {a} (Carrier : Set a) (ℓ : Level)
+        : Set (a ⊔l lsuc ℓ) where
+    infix   4 _≈_
+    infixl  7 _∙_
+    field
+      _∙_      : Op₂ Carrier
+      ε        : Carrier
+      _≈_      : Rel Carrier ℓ  -- ! 1
+      isEquivalence : IsEquivalence _≈_  -- ! 2
+      assoc      : Associative    _≈_ _∙_
+      identityˡ  : LeftIdentity   _≈_ ε  _∙_
+      identityʳ  : RightIdentity  _≈_ ε  _∙_
+      ∙-cong     : _∙_ Preserves₂ _≈_ ⟶ _≈_ ⟶ _≈_  -- ! 3
+```
+
+You will notice three additions to this version of `type:Monoid₂`, indicated by
+markers. At [1](Ann) we have a new `field:_≈_`, which we assert is an
+equivalence relation at [2](Ann). This part is expected, but what is rather more
+surprising is the addition of `field:∙-cong` at [3](Ann), which witnesses the
+important fact that `field:_∙_` preserves the `field:_≈_` relation. The mere
+existence of `field:∙-cong` is a taste of the difficulties that lay down this
+path.
+
+Imagine reassembling each of our old monoid example anew as a `type:Monoid₂`.
+There would be a dramatic amount of overhead and shared code, where we'd need to
+show `field:isEquivalence` every time, even though we were merely using
+`type:_≡_` for our equivalence relation.
+
+Thus, this is not exactly the formation we will use going forwards. Instead, we
+will factor out the equivalence relation, into an object known as a *setoid.*
+Setoids are a common proof assistant idiom for dealing with abstract notions of
+equality, in that they package up the `field:Carrier` set, and the equivalence
+relation all into one object:
+
+```agda
+  module Sandbox-Setoids where
+    record Setoid (c ℓ : Level) : Set (lsuc (c ⊔l ℓ)) where
+      field
+        Carrier        : Set c
+        _≈_            : Rel Carrier ℓ
+        isEquivalence  : IsEquivalence _≈_
+
+      open IsEquivalence isEquivalence public  -- ! 1
+```
+
+Notice at [1](Ann) we open the `field:isEquivalence` record, which brings
+`field:refl`, `field:sym`, and `refl:trans` into scope. In practice, these
+appear as properties of the `type:Setoid` itself, and mean we can reference
+these common operations without needing to go through the `type:IsEquivalence`
+interface every time.
+
+For every type, we also have a canonical setoid given by propositional equality:
+
+```agda
+    open import Relation.Binary.PropositionalEquality as PropEq
+      using (_≡_)
+
+    open Setoid
+
+    setoid : Set → Setoid _ _
+    Carrier (setoid A) = A
+    _≈_ (setoid A) = PropEq._≡_
+    IsEquivalence.refl   (isEquivalence (setoid A)) = PropEq.refl
+    IsEquivalence.sym    (isEquivalence (setoid A)) = PropEq.sym
+    IsEquivalence.trans  (isEquivalence (setoid A)) = PropEq.trans
+```
+
+Because setoids are extremely common objects in the Agda standard library, we
+will prefer to import their definition from the library, so that we can
+interoperate between the things we build and the functionality provided to us.
+
+```agda
+  open import Relation.Binary
+    using (Setoid)
+  open import Relation.Binary.PropositionalEquality
+    using ()
+    renaming (setoid to prop-setoid)
+```
+
+We can now define `type:Monoid` for the third and final time. On this attempt,
+we will use a `type:Setoid` to wrangle as much of the complexity for us as
+possible.
+
+```agda
+  record Monoid (c ℓ : Level) : Set (lsuc (c ⊔l ℓ)) where
+    field
+      setoid : Setoid c ℓ
+
+    open Setoid setoid  -- ! 1
+      renaming (_≈_ to infix 4 _≈_)   -- ! 2
+      public
+
+    infixl  7 _∙_
+    field
+      _∙_      : Op₂ Carrier
+      ε        : Carrier
+      assoc      : Associative    _≈_ _∙_
+      identityˡ  : LeftIdentity   _≈_ ε  _∙_
+      identityʳ  : RightIdentity  _≈_ ε  _∙_
+      ∙-cong     : _∙_ Preserves₂ _≈_ ⟶ _≈_ ⟶ _≈_
+
+    module Reasoning where
+      open import Relation.Binary.Reasoning.Setoid setoid public
+```
+
+One cool thing about Agda records is that you don't need to define all of your
+`keyword:field`s at once. At [1](Ann), we open up the `field:setoid`, and at
+[2](Ann) we use a `keyword:renaming` modifier in order to attach an otherwise
+missing `keyword:infix` declaration.
+
+After all of this labor, we are now ready to finally implement the
+`def:pointwise` monoid. First, we can show that `type:_≗_` forms a
+`type:Setoid`:
+
+```agda
+  private variable
+    a b c ℓ : Level
+    A : Set a
+
+  module ≗-Def {A : Set a} (setoid : Setoid c ℓ) where
+    open Setoid renaming (isEquivalence to eq)
+    open IsEquivalence
+    open Setoid setoid
+      using ()
+      renaming ( Carrier to B
+               ; _≈_ to _≈ᵇ_
+               )
+      public
+
+    _≗_ : Rel (A → B) _
+    f ≗ g = (a : A) → f a ≈ᵇ g a
+
+    ≗-setoid : Setoid _ _
+    Carrier  ≗-setoid = A → B
+    _≈_      ≗-setoid = _≗_
+    refl   (eq ≗-setoid)          a  = refl   setoid
+    sym    (eq ≗-setoid) f≗g      a  = sym    setoid (f≗g a)
+    trans  (eq ≗-setoid) f≗g g≗h  a  = trans  setoid (f≗g a) (g≗h a)
+```
+
+and then use this fact to construct `def:pointwise` proper:
+
+```agda
+  module _ (A : Set a) (mb : Monoid c ℓ) where
+    open ≗-Def {A = A} (Monoid.setoid mb)
+    open Monoid mb
+      using ()
+      renaming ( _∙_  to _∙ᵇ_
+               ; ε    to εᵇ
+               )
+
+    ⊙ : Op₂ (A → B)
+    ⊙ f g = λ x → f x ∙ᵇ g x
+
+    →ε : A → B
+    →ε = λ _ → εᵇ
+```
+
+
+```agda
+    open Monoid
+
+    pointwise : Monoid _ _
+    setoid pointwise = ≗-setoid
+    _∙_  pointwise = ⊙
+    ε    pointwise = →ε
+    assoc      pointwise f g h a    = assoc mb _ _ _
+    identityˡ  pointwise f a        = identityˡ mb _
+    identityʳ  pointwise f a        = identityʳ mb _
+    ∙-cong     pointwise f≗g h≗i a  = ∙-cong mb (f≗g a) (h≗i a)
+```
 
