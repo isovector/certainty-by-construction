@@ -58,6 +58,11 @@ x \cdot \epsilon &= x
 \end{aligned}
 $$
 
+As a note on terminology, the `field:_∙_` operator is often called
+*multiplication*, and `field:ε` is often called the *unit.* These are historical
+artifacts from the early days, but the usage is widespread and we will continue
+in that tradition here unless the use would be confusing in context.
+
 Let's see what happens when we code up all of this structure. There are some
 subtleties here that we don't yet have the experience to appreciate, so we'll
 sandbox our definition into a "naive" module:
@@ -300,6 +305,24 @@ identity:
   Monoid.identityʳ ++-[] = ++-identityʳ
 ```
 
+Interestingly, we can often derive monoids from other monoids. Consider as an
+example, `def:dual`, which reverses the order in which multiplication occurs:
+
+```agda
+  flip : (A → B → C) → B → A → C
+  flip f b a = f a b
+
+  module _ (m : Monoid A) where
+    open Monoid m
+
+    dual : Monoid A
+    Monoid._∙_  dual = flip _∙_
+    Monoid.ε    dual = ε
+    Monoid.assoc      dual x y z  = sym (assoc z y x)
+    Monoid.identityˡ  dual        = identityʳ
+    Monoid.identityʳ  dual        = identityˡ
+```
+
 
 ## Summarizing Data Structures
 
@@ -348,19 +371,44 @@ Furthermore, by using the identity function which maps a value to itself:
   id a = a
 ```
 
-we can specialize `def:summarizeList` in order to add its elements, and to
-flatten nested lists:
+we can specialize `def:summarizeList` in order to add its elements:
 
 ```agda
   sum : List ℕ → ℕ
   sum = summarizeList +-0 id
 
-  flatten : List (List A) → List A
-  flatten = summarizeList ++-[] id
+  _ : sum (1 ∷ 10 ∷ 100 ∷ []) ≡ 111
+  _ = refl
 ```
 
-We can also use `def:summarizeList` to query information about the container
-structure itself, by using a function that ignores its argument:
+or to flatten nested lists:
+
+
+```agda
+  flatten : List (List A) → List A
+  flatten = summarizeList ++-[] id
+
+  _ : flatten  ( (1 ∷ 2 ∷ 3 ∷ [])
+               ∷ (4 ∷ 5 ∷ []) ∷ []
+               )
+        ≡ 1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ []
+  _ = refl
+```
+
+By mapping every element of a list into a singleton list, and using `def:dual`,
+we can even use `def:summarize` to *reverse* a list:
+
+```agda
+  reverse : List A → List A
+  reverse = summarizeList (dual ++-[]) (_∷ [])
+
+  _ : reverse (1 ∷ 2 ∷ 3 ∷ []) ≡ 3 ∷ 2 ∷ 1 ∷ []
+  _ = refl
+```
+
+But that's not all! We can also use `def:summarizeList` to query information
+about the container structure itself, by using a function that ignores its
+argument:
 
 ```agda
   const : A → B → A
@@ -371,8 +419,11 @@ Thus, we can determine the length of the list by mapping every element to 1 and
 then accumulating via `def:+-0`:
 
 ```agda
-  length : List A → ℕ
-  length = summarizeList +-0 (const 1)
+  size : List A → ℕ
+  size = summarizeList +-0 (const 1)
+
+  _ : size (true ∷ false ∷ []) ≡ 2
+  _ = refl
 ```
 
 Similarly, we can determine if a list is empty by checking if it has any
@@ -401,15 +452,58 @@ a bit gnarly:
       → Set (lsuc ℓa ⊔l ℓf ⊔l lsuc ℓb)
   Foldable {ℓb = ℓb} _ F =
     ∀ {A} {B : Set ℓb} → Monoid B → (A → B) → F A → B
+
+  private variable
+    ℓ₁ ℓ₂ : Level
+
+  foldableList : Foldable {ℓ₁} {ℓ₂} _ List
+  foldableList = summarizeList
 ```
 
-but, given `type:Foldable`, we can write amazing things like `def:length′`,
-which are capable of counting every element in any data structure you throw at
-it:
+Of course, `def:foldableList` is not the only inhabitant of `type:Foldable`.
+`type:BinTree`s, for example, are also foldable:
 
 ```agda
-  length′ : ∀ {ℓ F} → Foldable ℓ F → F A → ℕ
-  length′ fold = fold +-0 (const 1)
+  import  4-decidability
+  open 4-decidability.BinaryTrees
+    using (BinTree; leaf; branch; empty)
+
+  foldableBinTree : Foldable {lzero} {ℓ₁} lzero BinTree
+  foldableBinTree m f empty = ε
+    where open Monoid m
+  foldableBinTree m f (branch l x r) =
+    foldableBinTree m f l ∙ f x ∙ foldableBinTree m f r
+    where open Monoid m
+```
+
+Coming up with `type:Foldable`s for other types is done in a similar manner.
+Pattern match on the data constructors, and use `field:ε` for any which don't
+contain the type parameter. If there is a raw occurrence of the parameter,
+apply the function to it, and otherwise use recursion to eliminate inductive
+cases.
+
+Given `type:Foldable`, we can write amazing things like `def:size′`, which are
+capable of counting every element in any data structure you throw at it:
+
+```agda
+  size′ : ∀ {ℓ F} → Foldable ℓ F → F A → ℕ
+  size′ fold = fold +-0 (const 1)
+
+  _ : size′ foldableList
+        (1 ∷ 1 ∷ 2 ∷ 3 ∷ []) ≡ 4
+  _ = refl
+
+  _ : size′ foldableBinTree
+        (branch (leaf true) false (leaf true)) ≡ 3
+  _ = refl
+```
+
+In this more general domain, there is an interesting summarization, which turns
+any `type:Foldable` into a list:
+
+```agda
+  toList : ∀ {ℓ F} → Foldable ℓ F → F A → List A
+  toList fold = fold ++-[] (_∷ [])
 ```
 
 In fact, every function we defined over lists is amenable to this treatment;
@@ -1015,25 +1109,24 @@ and then use this fact to construct `def:pointwise` proper:
       renaming ( _∙_  to _∙ᵇ_
                ; ε    to εᵇ
                )
-
-    ⊙ : Op₂ (A → B)
-    ⊙ f g = λ x → f x ∙ᵇ g x
-
-    →ε : A → B
-    →ε = λ _ → εᵇ
 ```
 
+Our hard work is rewarded, in that the definition of `def:pointwise` is as
+straightforward as it feels like it ought to be.
 
 ```agda
     open Monoid
 
     pointwise : Monoid _ _
     setoid pointwise = ≗-setoid
-    _∙_  pointwise = ⊙
-    ε    pointwise = →ε
+    _∙_  pointwise f g  = λ x → f x ∙ᵇ g x
+    ε    pointwise      = λ _ → εᵇ
     assoc      pointwise f g h a    = assoc mb _ _ _
     identityˡ  pointwise f a        = identityˡ mb _
     identityʳ  pointwise f a        = identityʳ mb _
     ∙-cong     pointwise f≗g h≗i a  = ∙-cong mb (f≗g a) (h≗i a)
 ```
+
+
+## Monoid Homomorphisms
 
