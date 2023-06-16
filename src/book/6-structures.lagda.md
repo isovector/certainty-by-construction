@@ -1,5 +1,12 @@
 # Structured Sets
 
+Hidden
+
+:   ```agda
+{-# OPTIONS --allow-unsolved-metas #-}
+    ```
+
+
 ```agda
 module 6-structures where
 
@@ -75,12 +82,14 @@ following, even without necessarily knowing why:
 
 ```agda
   open import Relation.Binary.PropositionalEquality
+  import Algebra.Definitions
 
   -- TODO(sandy): just define assoc / identity for ourselves?
-  module _ {ℓ : Level} {A : Set ℓ} where
-    open import Algebra.Definitions (_≡_ {A = A})  -- ! 1
-      public  -- ! 2
+  open module Def {ℓ} {A : Set ℓ}
+    = Algebra.Definitions {A = A} _≡_
 ```
+
+-- TODO(sandy): rewrite this paragraph
 
 The module `module:Algebra.Definitions` is parameterized by an equality
 relationship, which we must fill in before we can use its definitions. We'd like
@@ -278,9 +287,10 @@ identity:
     using (++-assoc; ++-identityˡ; ++-identityʳ)
 
   private variable
-    a b : Level
+    a b c : Level
     A : Set a
     B : Set b
+    C : Set c
 
   ++-[] : Monoid (List A)
   Monoid._∙_ ++-[] = _++_
@@ -289,6 +299,9 @@ identity:
   Monoid.identityˡ ++-[] = ++-identityˡ
   Monoid.identityʳ ++-[] = ++-identityʳ
 ```
+
+
+## Summarizing Data Structures
 
 We now have sufficient examples under our belt to show off just how cool monoids
 are. Monoids give us a convenient means of querying data structures like lists,
@@ -404,10 +417,417 @@ meaning that for the price of thinking through a few monoids, we managed to
 write summarizing functions over every possible data structure. This amazing
 feat is possible because we *factored* the algorithms into three pieces:
 
-1. Traversing the data structure (`fold`)
+1. Traversing the data structure (`type:Foldable`)
 2. Summarizing the data (the function)
 3. Combining the results (the `type:Monoid`)
 
 
+## Instance Arguments
+
+Not only can we build monoids out of binary operations, but we can also compose
+monoids to build bigger ones. For example, given monoids on `type:A` and
+`type:B`, we can build one on `type:A × B` by treating each projection
+separately.
+
+When we have more than one monoid in scope at a time, it can be tedious to keep
+track of exactly which monoid operation we're talking about. Rather than try to
+open the `type:Monoid` modules and rename everything to a unique identifier, we
+can instead fall back on Agda's *instance arguments.*
+
+```agda
+  module _ (ma : Monoid A) (mb : Monoid B) where
+    open Monoid ⦃ ... ⦄  -- ! 1
+```
+
+Here we've bound our two monoids, and then at [1](Ann) we've opened the
+`module:Monoid` module with this funny `⦃ ... ⦄` syntax. When you open a record
+module this way, Agda brings all of the fields into scope, with the module
+parameter itself left as an instance argument. We can get a better sense for
+what's happening here by invoking [Normalize:ε](AgdaCmd), which responds with:
+
+```info
+λ ⦃ r ⦄ → Monoid.ε r
+```
+
+You'll notice the `r` parameter is wrapped in the same `⦃⦄` braces that we used
+to open the `module:Monoid` record in the first place. Whenever you see a
+term wrapped in `⦃⦄`, it means that Agda will automatically try to fill in this
+parameter for you, using *instance search.* In practice, this all works out to
+"Agda will figure out what you mean from context."
+
+We can make suggestions to Agda's instance search by way of the
+`keyword:instance` keyword. This creates a new layout block in which definitions
+are allowed to occur, and anything defined in the `keyword:instance` block will
+be available for Agda to use during instance search:
+
+```agda
+    instance
+      _ : Monoid A
+      _ = ma
+
+      _ : Monoid B
+      _ = mb
+```
+
+Since `def:ma` and `def:mb` are already in scope, we don't actually need to give
+the type annotations here, and can write the above more tersely as:
+
+```agda
+    instance
+      _ = ma
+      _ = mb
+```
+
+What has all this instance search stuff bought us? It means Agda can now figure
+out which `type:Monoid` we'd like to use, based only on the desired type:
+
+```agda
+    ex₄ : A
+    ex₄ = ε
+
+    ex₅ : B → B
+    ex₅ b = b ∙ b ∙ b
+```
+
+With instance arguments under our belt, we can now proceed to creating a monoid
+for a pair of out a pair of monoids:
+
+```agda
+    open import Data.Product
+      using (_×_; _,_)
+
+    ×-monoid : Monoid (A × B)
+    Monoid._∙_  ×-monoid (a₁ , b₁) (a₂ , b₂) = a₁ ∙ a₂ , b₁ ∙ b₂
+    Monoid.ε    ×-monoid = ε , ε
+    Monoid.assoc ×-monoid  (a₁ , b₁) (a₂ , b₂) (a₃ , b₃)
+      rewrite assoc a₁ a₂ a₃
+      rewrite assoc b₁ b₂ b₃
+        = refl
+    Monoid.identityˡ ×-monoid (a , b)
+      rewrite identityˡ a
+      rewrite identityˡ b
+        = refl
+    Monoid.identityʳ ×-monoid (a , b)
+      rewrite identityʳ a
+      rewrite identityʳ b
+        = refl
+```
+
+Note that in the above, not only are `field:_∙_` and `field:ε` available to us
+via instance search, but so too are `field:assoc`, `field:identityˡ`, and
+`field:identityʳ`.
+
+
 ## Monoids over Functions
+
+All of the monoids we have looked at thus far have been over regular, everyday
+sorts of data types. But there are also monoids over more interesting
+mathematical objects, like functions. One example of this is the *monoid of
+endomorphisms,* which is the monoid whose binary operation is function
+composition. In order for such a thing to type check, it must be the case that
+the domain and codomain of each function are the same.
+
+First, we can define function composition:
+
+```agda
+  _∘_ : (B → C) → (A → B) → (A → C)
+  (g ∘ f) x = g (f x)
+```
+
+and then give the monoid over it:
+
+```agda
+  ∘-id : Monoid (A → A)
+  Monoid._∙_  ∘-id = _∘_
+  Monoid.ε    ∘-id = id
+  Monoid.assoc      ∘-id x y z = refl
+  Monoid.identityˡ  ∘-id x = refl
+  Monoid.identityʳ  ∘-id x = refl
+```
+
+I personally use `def:∘-id` extremely often. This monoid is useful for
+accumulating small changes over big data structures. For example, when writing a
+program with message passing, you might want every message to have an observable
+effect. You can transform each message into an endomorphism of type
+`type:AppState → AppState`, and then use `def:∘-id` to apply all of the
+accumulated changes to `type:AppState` at once.
+
+There is another interesting monoid over functions. This one, given a monoid on
+`B`, constructs a monoid on *functions* whose codomain is `B`. The binary
+operator here is a `type:Op₂ (A → B)`, which runs both functions at the same
+input, and combines their results. That is:
+
+```agda
+  ⊙ : Monoid B → Op₂ (A → B)
+  ⊙ m f g = λ x → f x ∙ g x
+    where open Monoid m
+```
+
+We can construct a trivial identity element for these functions simply by always
+returning the identity element from the monoid:
+
+```agda
+  →ε : Monoid B → (A → B)
+  →ε m = λ _ → ε
+    where open Monoid m
+```
+
+The claim is that `def:⊙` and `def:→ε` form a monoid over functions `A → B`,
+whenever we know `type:Monoid B`. Showing this fact should be straightforward,
+since it's clear that `type:Monoid B` is the one doing all the work here.
+Unfortunately, proving this is harder than we might expect:
+
+```agda
+  pointwise : Monoid B → Monoid (A → B)
+  Monoid._∙_  (pointwise m) = ⊙   m
+  Monoid.ε    (pointwise m) = →ε  m
+  Monoid.assoc      (pointwise m) x y z = {! !}
+  Monoid.identityˡ  (pointwise m) = {! !}
+  Monoid.identityʳ  (pointwise m) = {! !}
+```
+
+We can look at the type of the first goal here, and see:
+
+```info
+Goal: ⊙ m (⊙ m x y) z ≡ ⊙ m x (⊙ m y z)
+———————————————————————————————————————
+m : Monoid B
+x y z : A → B
+```
+
+This looks plausible, but things become more worrisome when we use
+[TypeContext/Normalised](AgdaCmd) in order to fully evaluate the types involved.
+Ther resulting goal looks like this:
+
+```info
+Goal: (λ x₁ → (m Monoid.∙ (m Monoid.∙ x x₁) (y x₁)) (z x₁))
+    ≡ (λ x₁ → (m Monoid.∙ x x₁) ((m Monoid.∙ y x₁) (z x₁)))
+———————————————————————————————————————
+m : Monoid B
+x y z : A → B
+```
+
+
+This was the point of subtlety I mentioned earlier.
+
+The problem here is that we are being asked to show propositional equality of
+two *functions.* While we have everything we need from `type:Monoid B` in order
+to prove this fact for *any specific* `x₁`, we are unable to do it in general.
+Why not? Because we need to show `(λ x₁ → lhs) ≡ (λ x₁ → rhs)`, but given our
+current tools, all we can show is `λ x₁ → lhs ≡ rhs`. What's gone wrong is that
+the variable we need to prove things about *only* exists inside of the proof
+term, not outside of it. Thus, try as we might, there is just no way to use our
+propositional equality machinery in order to finagle a proof that shows these
+two terms are equal.
+
+
+## Intentional vs Extensional Equality
+
+This brings up a foundationally interesting question: when are two functions
+equal? The answer is not very cut and dry. This is a hard problem. Consider
+functions `def:ex₁`, `def:ex₂` and `def:ex₃`:
+
+```agda
+module Sandbox-IntensionalExtensional where
+  open import Data.Nat
+    using (ℕ; _+_;  _*_)
+  open ℕ
+
+  ex₁ : ℕ → ℕ
+  ex₁ x = x + 2
+
+  ex₂ : ℕ → ℕ
+  ex₂ x = 2 * x
+
+  ex₃ : ℕ → ℕ
+  ex₃ x = suc (suc x)
+```
+
+Clearly functions `def:ex₁` and `def:ex₂` are *not* equal. But the answer is less
+clear as to whether `def:ex₁` and `def:ex₃` are. The two functions are syntactically
+entirely different, but compute the same output given the same input. If you
+were to draw the plots of these two functions, they'd look identical.
+
+But this isn't necessarily the whole story; are bubble sort and merge sort
+the same function? They both return the same outputs given the same inputs,
+however, they do so in entirely different ways, and with entirely different
+computational behaviors. What a mess we find ourselves in.
+
+Many programming languages sidestep the problem by comparing functions by their
+pointer equality. In these cases, two functions are the same if they occur at
+the same place in memory. But this is unsatisfying on many levels. First and
+foremost, it is an abstraction leak. Functions are mathematical ideas,
+completely separate from the hardware they run on. There exist models of
+computation that don't have memory, and thus such a decision allows you to
+deduce properties of the hardware you're running on---which ought to be a
+no-no. Mathematics doesn't run on any hardware; it just *is.* Equally abhorrent
+in pointer equality of functions is that it means two identical, syntactically
+byte-for-byte source identical functions might not compare equal, due to
+unpredictable quirks of how the runtime has decided to lay out memory. This
+means that a program which might work today could fail tomorrow based only on a
+differing mood of the runtime. There are many ways to describe this behavior,
+but neither "sane" nor "mathematical" nor even "good programming practice" are
+one.
+
+The solution to this problem is to split equality of function types into two
+camps. The mathematicians take a stand and say that yes, bubble sort and merge
+sort *are* the same function. The computer scientists argue that no, they are
+not. In the first world, we care only that the functions map equal inputs to
+equal outputs. In the latter, we require the two functions to be defined in
+exactly the same way. These two approaches to equality are known as
+*extensional* and *intensional* equality, respectively.
+
+Intensionality continues to be a challenge to define. Do variable names matter?
+What about no-ops? The entire question is a quagmire, and we will not delve
+deeper into this idea here.
+
+Instead, we will worry only about extensional equality. Two functions are thus
+equal if they map inputs to equal outputs. That is to say, given two functions
+`f` and `g`, we'd like the following property to hold:
+
+```agda
+  open import Relation.Binary.PropositionalEquality
+    using (_≡_; refl; cong; sym; trans)
+  open import Relation.Binary using (Rel)
+
+  _≗_
+      : {a b : Level} {A : Set a} {B : A → Set b}  -- ! 1
+      → Rel ((x : A) → B x) _ -- ! 2
+  _≗_ f g = ∀ x → f x ≡ g x
+```
+
+The type here is rather involved, where we have made `B` a type dependent on `A`
+at [1](Ann), and then made both `f` and `g` pass their argument to `B` for their
+output at [2](Ann). A more intuitive type for `def:_≗_` is:
+
+```type
+_≗_ : {A B : Set} → Rel (A → B) _
+```
+
+but the extra generality means we can use `def:_≗_` with indexed types and
+dependent functions as well. This doesn't matter most of the time, but will lead
+to obscure problems if you are not mindful of it.
+
+Given the definition of `def:_≗_`, we can show that `def:ex₁` and `def:ex₃` are
+indeed extensionally equal:
+
+```agda
+  open import Data.Nat.Properties
+    using (+-comm)
+
+  ex₁≗ex₃ : ex₁ ≗ ex₃
+  ex₁≗ex₃ zero = refl
+  ex₁≗ex₃ (suc x) = cong suc (+-comm x 2)
+```
+
+The curious reader might wonder whether `def:_≗_` forms a preorder or an
+equivalence relation. In fact it does, given simply by fanning out the argument
+to both functions and then using the underling equivalence on `type:_≡_`. Once
+you know the trick, it's not very difficult to show on paper, but doing it in
+Agda requires jumping through a couple of hoops.
+
+We'd like to bind `A` and `B` once and for all as implicit variables, and then
+show that `def:_≗_` is `type:Reflexive`, `type:Symmetric` and `type:Transitive`.
+Unfortunately, `def:_≗_` has too many implicit variables for Agda to figure out
+the types involved on its own. Thus in order to avoid unsolved metas, we must
+explicitly give some types to `type:Reflexive` et al.,
+
+Due to a technical quirk with how Agda handles implicits defined via
+`keyword:variable`, it's rather more verbose to do our usual thing here. So
+rather than defining our implicits in a `keyword:variable` block, we will
+instead construct a private module and add the implicits as parameters to that.
+The exact details aren't of importance here, but the dedicated student is
+encouraged to repeat this section on their own using a `keyword:variable` block
+and see for themself what goes wrong.
+
+```agda
+  module _ {a b : Level} {A : Set a} {B : A → Set b} where
+```
+
+With our implicits now in scope, we can define an alias for dependent functions:
+
+```agda
+    private
+      Fn : Set _
+      Fn = (x : A) → B x
+```
+
+and now show that `def:_≗_` is `type:Reflexive` when its `A` parameter is
+instantiated at `type:Fn`:
+
+```agda
+    open import Relation.Binary
+      using (Reflexive; Symmetric; Transitive; IsEquivalence)
+
+    ≗-refl : Reflexive {A = Fn} _≗_
+    ≗-refl x = refl
+```
+
+With the `type:Fn` trick sorted out, it's not very hard to define symmetry or
+transitivity---just apply the extensional equality, and perform the underlying
+operation on the result:
+
+```agda
+    ≗-sym : Symmetric {A = Fn} _≗_
+    ≗-sym f≗g a = sym (f≗g a)
+
+    ≗-trans : Transitive {A = Fn} _≗_
+    ≗-trans f≗g g≗h a = trans (f≗g a) (g≗h a)
+```
+
+Therefore `def:_≗_` is an equivalence relation:
+
+```agda
+    ≗-equiv : IsEquivalence {A = Fn} _≗_
+    IsEquivalence.refl   ≗-equiv = ≗-refl
+    IsEquivalence.sym    ≗-equiv = ≗-sym
+    IsEquivalence.trans  ≗-equiv = ≗-trans
+```
+
+
+## Function Extensionality
+
+If you are working in more of a mathematical domain (as opposed to a
+computational one), you might want to postulate *function extensionality*: the
+notion that extensionally equal functions are in fact *propositionally equal.*
+As we have seen, this doesn't make sense when computation is your main goal, but
+if you are simply modeling the world, it's an extremely convenient thing to have
+around. We can postulate `def:fun-ext` as follows:
+
+```agda
+  postulate
+    fun-ext
+        : {a b : Level} {A : Set a} {B : A → Set b}
+        → {f g : (x : A) → B x}
+        → f ≗ g → f ≡ g
+```
+
+Function extensionality doesn't exist in the standard library; while Agda is
+compatible with the idea, function extensionality can be neither proven nor
+disproven in Agda. Therefore, it's up to you to decide whether or not it holds.
+
+Given `def:fun-ext`, we can trivially lift our proof `def:ex₁≗ex₃` into a proof
+that the two functions are propositionally equal:
+
+```agda
+  ex₁≡ex₃ : ex₁ ≡ ex₃
+  ex₁≡ex₃ = fun-ext ex₁≗ex₃
+```
+
+Of course, you don't need to postulate `def:fun-ext`; you can always work
+directly with extensional equality itself, instantiating it to get whatever
+proof of equality you actually need. But the ergonomics around `def:fun-ext` can
+dramatically improve the story, if you're willing to give up on computability
+for it.
+
+Returning to our `def:pointwise` monoid, if we were willing to postulate
+function extensionality all of our problems would go away. But, are we really
+willing to add such a strong axiom as function extensionality merely to define a
+particular monoid? Funext is a big pill to swallow. Postulating it makes sense
+when we're in a *particular domain* in which we'd like it to hold, but do we
+really want this particular monoid to exist only in case funext holds?
+
+Rather than fire off at  full speed down that path, let's instead rephrase the
+definition of a monoid so as to not require full funext.
+
 
