@@ -6,7 +6,6 @@ Hidden
 {-# OPTIONS --allow-unsolved-metas #-}
     ```
 
-
 ```agda
 module 6-structures where
 
@@ -14,6 +13,15 @@ open import Level
   using (Level)
   renaming (zero to lzero; suc to lsuc; _⊔_ to _⊔l_)
 ```
+
+-- TODO(sandy): removeme
+
+```agda
+postulate
+  leave-me-as-a-hole : {a : Level} {A : Set a} → A
+```
+
+
 
 A huge amount of mathematical objects are the *structured sets*---that is,
 objects defined by the following template:
@@ -692,9 +700,10 @@ Unfortunately, proving this is harder than we might expect:
   pointwise : Monoid B → Monoid (A → B)
   Monoid._∙_  (pointwise m) = ⊙   m
   Monoid.ε    (pointwise m) = →ε  m
-  Monoid.assoc      (pointwise m) x y z = {! !}
-  Monoid.identityˡ  (pointwise m) = {! !}
-  Monoid.identityʳ  (pointwise m) = {! !}
+  -- TODO(sandy): leave me as a hole!
+  Monoid.assoc      (pointwise m) x y z = leave-me-as-a-hole
+  Monoid.identityˡ  (pointwise m) = leave-me-as-a-hole
+  Monoid.identityʳ  (pointwise m) = leave-me-as-a-hole
 ```
 
 We can look at the type of the first goal here, and see:
@@ -1116,7 +1125,7 @@ After all of this labor, we are now ready to finally implement the
 
 ```agda
 
-  module ≗-Def {A : Set a} (setoid : Setoid c ℓ) where
+  module _ (A : Set a) (setoid : Setoid c ℓ) where
     open Setoid renaming (isEquivalence to eq)
     open IsEquivalence
     open Setoid setoid
@@ -1124,7 +1133,6 @@ After all of this labor, we are now ready to finally implement the
       renaming ( Carrier to B
                ; _≈_ to _≈ᵇ_
                )
-      public
 
     _≗_ : Rel (A → B) _
     f ≗ g = (a : A) → f a ≈ᵇ g a
@@ -1141,7 +1149,7 @@ and then use this fact to construct `def:pointwise` proper:
 
 ```agda
   module _ (A : Set a) (mb : Monoid c ℓ) where
-    open ≗-Def {A = A} (Monoid.setoid mb)
+    -- open ≗-Def {A = A}
     open Monoid mb
       using ()
       renaming ( _∙_  to _∙ᵇ_
@@ -1156,9 +1164,9 @@ straightforward as it feels like it ought to be.
     open Monoid
 
     pointwise : Monoid _ _
-    setoid pointwise = ≗-setoid
-    _∙_  pointwise f g  = λ x → f x ∙ᵇ g x
-    ε    pointwise      = λ _ → εᵇ
+    setoid pointwise      = ≗-setoid A (Monoid.setoid mb)
+    _∙_    pointwise f g  = λ x → f x ∙ᵇ g x
+    ε      pointwise      = λ _ → εᵇ
     assoc      pointwise f g h a    = assoc      mb _ _ _
     identityˡ  pointwise f a        = identityˡ  mb _
     identityʳ  pointwise f a        = identityʳ  mb _
@@ -1280,8 +1288,8 @@ show some homomorphisms between them.
   ++-[] : (A : Set a) → Monoid _ _
   ++-[] A = recover (Naive.++-[] {A = A})
 
-  ∘-id : (A : Set a) → Monoid _ _
-  ∘-id A = recover (Naive.∘-id {A = A})
+--   ∘-id : (A : Set a) → Monoid _ _
+--   ∘-id A = recover (Naive.∘-id {A = A})
 
   open import Function using (flip)
 
@@ -1382,17 +1390,42 @@ there is no such homomorphism by deriving exactly this contradiction:
     ... | ()
 ```
 
+
 ## Finding Equivalent Computations
 
+Armed with some understanding of the importance of monoid homomorphisms, let's
+now attempt to develop an intuition as to what they *are.* If a function `f` is
+a monoid homomorphism it means we can play fast-and-loose about when we want to
+apply `f`. Maybe `f` is expensive, so we'd like to batch all of our combining
+work first, and only ever call `f` once. Alternatively, maybe `field:_∙₁_` is
+expensive, in which case we might prefer to map every `A` term into a `B` before
+accumulating them together.
 
+Consider the case of list appending; each call to `def:_++_` is $O(n)$ time, and
+thus we run in quadratic time when we have a linear number of lists to append.
+If all we'd like to do is count the number of elements in the resulting list, we
+have two options: concatenate the lists and subsequently take the length of the
+result, or take the lengths individually and add them. Because addition runs in
+$O(1)$ time, it is asymptotically faster to add the lengths rather than taking
+the length of the concatenation. And it is the existence of the `def:length-hom`
+monoid homomorphism that ensures these two algorithms compute the same result.
 
 ```agda
-  -- TODO(sandy):  write about me
+  open import Data.Nat using (ℕ)
+  open import Data.List
+    using (List; []; _∷_)
+
+  open import Relation.Binary.PropositionalEquality
+    using ()
+    renaming (setoid to prop-setoid)
+
   module _ where
     open import Relation.Binary.PropositionalEquality
-    open import Data.List
 
-    length-hom : (A : Set a) → MonHom (++-[] A) +-0 Naive.size
+    length : List A → ℕ
+    length = Naive.size
+
+    length-hom : (A : Set a) → MonHom (++-[] A) +-0 length
     preserves-ε (length-hom A) = refl
     preserves-∙ (length-hom A) [] y = refl
     preserves-∙ (length-hom A) (x ∷ xs) y
@@ -1400,6 +1433,131 @@ there is no such homomorphism by deriving exactly this contradiction:
         = refl
     f-cong (length-hom A) refl = refl
 ```
+
+It's interesting to note that list concatenation is not *intrinsically* slow;
+merely that `x ++ y` has linear runtime in the length of `x`. Therefore, it's
+much more efficient to compute `x ++ (y ++ (z ++ w))` than it is to compute `((x
+++ y) ++ z) ++ w`.
+
+-- TODO(sandy): quick point about how this is unfortunate, because we almost
+-- always build the first things first, and thus the association is wrong
+
+This is the key insight behind *string builders,* which are
+types that, as expected, efficiently build big strings. String builders are
+cleverly implemented to ensure that all the strings they combine are
+right-associated, and thus take advantage of this linear runtime.
+
+By this point in the chapter, you will not be surprised to learn that string
+builders---also known as *difference lists*, or *dlists* for short---take
+advantage of a monoid homomorphism.
+
+```agda
+    open Function using (_∘_; id)
+
+    ∘-id : Set a → Monoid _ _
+    Monoid.setoid  (∘-id A)      = ≗-setoid A (prop-setoid A)
+    Monoid._∙_     (∘-id A) g f  = g ∘ f
+    Monoid.ε       (∘-id A)      = id
+    Monoid.assoc      (∘-id A) x y z a  = refl
+    Monoid.identityˡ  (∘-id A) x a      = refl
+    Monoid.identityʳ  (∘-id A) x a      = refl
+    Monoid.∙-cong     (∘-id A) x≗y u≗v a
+      rewrite u≗v a = x≗y _
+```
+
+We can construct dlists by first making the relevant monoid, and then extracting
+its carrier to get the definition of a `type:DList`:
+
+```agda
+    module DList where
+      open Data.List using (_++_)
+      open import Data.List.Properties
+        using (++-identityʳ; ++-assoc)
+
+      dlist-mon : Set a → Monoid _ _
+      dlist-mon A = ∘-id (List A)
+
+      DList : Set a → Set a
+      DList A = Monoid.Carrier (dlist-mon A)
+```
+
+There is an isomorphism between `type:List` and `type:DList`, given by:
+
+```agda
+      toDList : List A → DList A
+      toDList = _++_
+
+      fromDList : DList A → List A
+      fromDList dl = dl []
+```
+
+although the proof of this fact is left as an exercise to the reader. Finally,
+we can show that `def:toDList` is a monoid homomorphism between lists under
+concatenation and `def:dlist-mon`:
+
+```agda
+      dlist-hom : MonHom (++-[] A) (dlist-mon A) toDList
+      preserves-ε  dlist-hom a = refl
+      preserves-∙  dlist-hom = ++-assoc
+      f-cong       dlist-hom refl a = refl
+```
+
+While `def:dlist-hom` is in fact a proof that `type:DList` and `type:List`
+behave identically under their relevant monoid multiplications, it can be hard
+to *feel* this fact. Thus, even though it is completely unnecessary, we can
+write a little test with a concrete example:
+
+```agda
+      ex-dlist
+        = fromDList
+          ( toDList (1 ∷ 2 ∷ [])
+          ∙ toDList (3 ∷ 4 ∷ [])
+          ∙ toDList (5 ∷ [])
+          )
+        where
+          open Monoid (dlist-mon ℕ)
+
+      _ : ex-dlist  ≡ 1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ []
+      _ = refl
+```
+
+We're left with only one question---why exactly does all of this work? Our
+`field:preserves-∙` law gets instantiated as:
+
+```type
+  toDList (x ++ y) = toDList x ∘ toDList y
+```
+
+which when we expand out the definition of `def:_∘_` gives us:
+
+```type
+  toDList (x ++ y) = λ z → toDList x (toDList y z)
+```
+
+and then the definition of `def:toDList`:
+
+```type
+  λ z → (x ++ y) ++ z = λ z → x ++ (y ++ z)
+```
+
+After an invocation of function extensionality for pedagogical reasons, we can
+drop the lambdas:
+
+```type
+  (x ++ y) ++ z = x ++ (y ++ z)
+```
+
+which shows that using the `def:DList` multiplication ensures that all uses of
+`def:_++_` are right-associative, and therefore provide exactly the asymptotic
+speedup we were looking for.
+
+This trick---using a function encoding of an object in order to reassociate
+expressions into an optimal form---is general and widely applicable. The more
+general theorem here is known as *Yoneda's lemma,* which we will explore in
+@sec:yoneda.
+
+
+## Theorems about Monoids
 
 For a given `type:Monoid`, there are always at least two monoid homomorphisms:
 the trivial one, which maps elements to themselves; and the degenerate one,
@@ -1426,6 +1584,9 @@ which maps every element in some other monoid to `field:ε`:
     ; f-cong       = λ  x → refl
     }
     where open Monoid m
+
+  -- identities are unique
+  -- homs are not invertible in general
 ```
 
 -- TODO(sandy): other examples?
@@ -1440,10 +1601,6 @@ which maps every element in some other monoid to `field:ε`:
           ; <∣>-identityˡ
           ; <∣>-identityʳ
           )
-
-  open import Relation.Binary.PropositionalEquality
-    using ()
-    renaming (setoid to prop-setoid)
 
 
   module _ where

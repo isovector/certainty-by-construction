@@ -1,10 +1,4 @@
 
-Returning to `not-hom₁`, we have shown (via `preserves-∙`):
-
-$$
-\neg (a \wedge b) = \neg a \vee \neg b
-$$
-
 which is one half of the famous "De Morgan's laws." Can we show the other
 direction, namely
 
@@ -34,12 +28,6 @@ Solution
   preserves-∙  not-hom₂ true   b = refl
   f-cong       not-hom₂ refl = refl
     ```
-
-Perhaps you're beginning to see, if not yet the use, at least the importance of
-monoid homomorphisms. We managed to rediscover an important mathematical fact
-simply by looking for an example! By looking for monoid homomorphisms, we have
-seemingly found a good means of pruning the mathematical search space of good
-ideas.
 
 Armed with some understanding of the importance of monoid homomorphisms, let's
 now attempt to develop an intuition as to what they *are.* If a function `f` is
