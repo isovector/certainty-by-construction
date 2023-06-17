@@ -1099,13 +1099,13 @@ Given our new definition, it's possible to mechnically translate every "naive"
 
   recover : {A : Set a} → Naive.Monoid A → Monoid a a
   recover {A = A} x = record
-    { setoid = prop-setoid A
-    ; _∙_ = _∙_
-    ; ε = ε
-    ; assoc = assoc
-    ; identityˡ = identityˡ
-    ; identityʳ = identityʳ
-    ; ∙-cong = λ { PropEq.refl PropEq.refl → PropEq.refl }
+    { setoid     = prop-setoid A
+    ; _∙_        = _∙_
+    ; ε          = ε
+    ; assoc      = assoc
+    ; identityˡ  = identityˡ
+    ; identityʳ  = identityʳ
+    ; ∙-cong     = λ { PropEq.refl PropEq.refl → PropEq.refl }
     }
     where open Naive.Monoid x
 ```
@@ -1159,10 +1159,10 @@ straightforward as it feels like it ought to be.
     setoid pointwise = ≗-setoid
     _∙_  pointwise f g  = λ x → f x ∙ᵇ g x
     ε    pointwise      = λ _ → εᵇ
-    assoc      pointwise f g h a    = assoc mb _ _ _
-    identityˡ  pointwise f a        = identityˡ mb _
-    identityʳ  pointwise f a        = identityʳ mb _
-    ∙-cong     pointwise f≗g h≗i a  = ∙-cong mb (f≗g a) (h≗i a)
+    assoc      pointwise f g h a    = assoc      mb _ _ _
+    identityˡ  pointwise f a        = identityˡ  mb _
+    identityʳ  pointwise f a        = identityʳ  mb _
+    ∙-cong     pointwise f≗g h≗i a  = ∙-cong     mb (f≗g a) (h≗i a)
 ```
 
 
@@ -1238,7 +1238,7 @@ module Sandbox-MonoidHomomorphisms where
   open Sandbox-Monoids
 
   private variable
-    c₁ c₂ ℓ₁ ℓ₂ : Level
+    c c₁ c₂ ℓ ℓ₁ ℓ₂ : Level
 
   module _ (m₁ : Monoid c₁ ℓ₁) (m₂ : Monoid c₂ ℓ₂) where
     open import Relation.Binary using (_Preserves_⟶_)
@@ -1277,11 +1277,25 @@ show some homomorphisms between them.
     a : Level
     A : Set a
 
-  ++-[] : {A} → Monoid _ _
-  ++-[] {A = A} = recover (Naive.++-[] {A = A})
+  ++-[] : (A : Set a) → Monoid _ _
+  ++-[] A = recover (Naive.++-[] {A = A})
 
-  ∘-id : {A} → Monoid _ _
-  ∘-id {A = A} = recover (Naive.∘-id {A = A})
+  ∘-id : (A : Set a) → Monoid _ _
+  ∘-id A = recover (Naive.∘-id {A = A})
+
+  open import Function using (flip)
+
+  dual : (m : Monoid c ℓ) → Monoid c ℓ
+  dual m = record
+    { setoid     = setoid
+    ; _∙_        = flip _∙_
+    ; ε          = ε
+    ; assoc      = λ _ _ _ → sym (assoc _ _ _)
+    ; identityˡ  = identityʳ
+    ; identityʳ  = identityˡ
+    ; ∙-cong     = flip ∙-cong
+    }
+    where open Monoid m
 ```
 
 Now that we have the machinery in place to prove we're not fooling ourselves,
@@ -1319,10 +1333,25 @@ monoids, albeit not a very interesting one:
     f-cong       false-hom refl  = refl
 ```
 
-Did we just happen to get lucky when deciding to look for a homomorphism between
-`def:∧-true` and `def:∨-false`? Do we get the same `def:not` homomorphisms going
-the other way between the monoids? As it happens, we do indeed get one for
-`def:not`:
+Returning to `def:not-hom₁`, expanding out the definition of `field:preserves-∙`
+gives us the following equation:
+
+$$
+\neg (a \wedge b) = \neg a \vee \neg b
+$$
+
+which is an exceptionally famous mathematical theorem, known as one half of *De
+Morgan's laws.* Believe it or not, I did not plan on this result; it simply fell
+out when I was looking for simple examples of monoid homomorphisms to illustrate
+this section. The other direction of De Morgan's laws is the fact that
+
+$$
+\neg (a \vee b) = \neg a \wedge \neg b
+$$
+
+This law also looks suspiciously like a monoid homomorphism, albeit this time
+from `def:∨-false` to `def:∧-true`. As it happens, it's not any harder to show
+`def:not-hom₂`:
 
 ```agda
     not-hom₂ : MonHom ∨-false ∧-true not
@@ -1332,10 +1361,18 @@ the other way between the monoids? As it happens, we do indeed get one for
     f-cong       not-hom₂ refl      = refl
 ```
 
-But there is not a monoid homomorphism going this direction for `const false`,
-since it would violate the law that `false = const false ε` `= f ε` `= ε =
-true`. We can show that there is no such homomorphism by deriving exactly this
-contradiction:
+Perhaps you're beginning to see the importance of---if maybe not yet the use
+of---monoid homomorphisms. We managed to rediscover an important mathematical
+fact simply by looking for an example! By looking for monoid homomorphisms, we
+have seemingly stumbled across a good strategy for pruning the mathematical
+search space.
+
+Hot off the success of deriving `def:not-hom₂` from looking only at
+`def:not-hom₁`, can we switch around the monoids in `def:false-hom` to find a
+homomorphism going the other direction for `const false`? A little investigation
+shows that no, we cannot find such a homomorphism. Its existence would violate
+the law that `false = const false ε` `= f ε` `= ε = true`. We can show that
+there is no such homomorphism by deriving exactly this contradiction:
 
 ```agda
     open import Relation.Nullary
@@ -1343,6 +1380,25 @@ contradiction:
     not-false-hom₂ : ¬ MonHom ∨-false ∧-true (const false)
     not-false-hom₂ x with preserves-ε x
     ... | ()
+```
+
+## Finding Equivalent Computations
+
+
+
+```agda
+  -- TODO(sandy):  write about me
+  module _ where
+    open import Relation.Binary.PropositionalEquality
+    open import Data.List
+
+    length-hom : (A : Set a) → MonHom (++-[] A) +-0 Naive.size
+    preserves-ε (length-hom A) = refl
+    preserves-∙ (length-hom A) [] y = refl
+    preserves-∙ (length-hom A) (x ∷ xs) y
+      rewrite preserves-∙ (length-hom A) xs y
+        = refl
+    f-cong (length-hom A) refl = refl
 ```
 
 For a given `type:Monoid`, there are always at least two monoid homomorphisms:
@@ -1377,6 +1433,43 @@ which maps every element in some other monoid to `field:ε`:
 
 ## Monoid Homomorphisms for Designing Software
 
+```agda
+  open import Data.Maybe
+  open import Data.Maybe.Properties
+    using ( <∣>-assoc
+          ; <∣>-identityˡ
+          ; <∣>-identityʳ
+          )
+
+  open import Relation.Binary.PropositionalEquality
+    using ()
+    renaming (setoid to prop-setoid)
 
 
+  module _ where
+    open import Relation.Binary.PropositionalEquality
+
+    first : (A : Set a) → Monoid _ _
+    Monoid.setoid (first A) = prop-setoid (Maybe A)
+    Monoid._∙_ (first A) = _<∣>_
+    Monoid.ε (first A) = nothing
+    Monoid.assoc (first A) = <∣>-assoc
+    Monoid.identityˡ (first A) = <∣>-identityˡ
+    Monoid.identityʳ (first A) = <∣>-identityʳ
+    Monoid.∙-cong (first A) refl refl = refl
+
+    last : (A : Set a) → Monoid _ _
+    last A = dual (first A)
+
+
+  module KeyValStore (Key : Set c₁) (val-monoid : Monoid c₂ ℓ₂) where
+    open Monoid val-monoid using () renaming (Carrier to Val)
+
+    KVStore : Set (c₁ ⊔l c₂)
+    KVStore = Key → Val
+
+    _[_] : KVStore → Key → Val
+    kv [ ix ] = kv ix
+
+```
 
