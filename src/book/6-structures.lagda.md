@@ -1321,25 +1321,10 @@ show some homomorphisms between them.
     a : Level
     A : Set a
 
-  ++-[] : (A : Set a) → Monoid _ _
-  ++-[] A = recover (Naive.++-[] {A = A})
-
---   ∘-id : (A : Set a) → Monoid _ _
---   ∘-id A = recover (Naive.∘-id {A = A})
-
-  open import Function using (flip)
-
-  dual : (m : Monoid c ℓ) → Monoid c ℓ
-  dual m = record
-    { setoid     = setoid
-    ; _∙_        = flip _∙_
-    ; ε          = ε
-    ; assoc      = λ _ _ _ → sym (assoc _ _ _)
-    ; identityˡ  = identityʳ
-    ; identityʳ  = identityˡ
-    ; ∙-cong     = flip ∙-cong
-    }
-    where open Monoid m
+  ++-[] first last : (A : Set a) → Monoid _ _
+  ++-[]  A = recover (Naive.++-[] {A = A})
+  first  A = recover (Naive.first A)
+  last   A = recover (Naive.last A)
 ```
 
 
@@ -1489,7 +1474,7 @@ builders---also known as *difference lists*, or *dlists* for short---take
 advantage of a monoid homomorphism.
 
 ```agda
-    open Function using (_∘_; id)
+    open import Function using (_∘_; id)
 
     ∘-id : Set a → Monoid _ _
     Monoid.setoid  (∘-id A)      = ≗-setoid A (prop-setoid A)
