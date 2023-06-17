@@ -348,6 +348,31 @@ example, `def:dual`, which reverses the order in which multiplication occurs:
     Monoid.identityʳ  dual        = identityˡ
 ```
 
+There also exist some more degenerate monoids, such as `def:first` which keeps
+track of the first element it sees, and completely ignores every subsequent
+value multiplied in:
+
+```agda
+  open import Data.Maybe
+  open import Data.Maybe.Properties
+    using (<∣>-assoc; <∣>-identityˡ; <∣>-identityʳ)
+
+  first : (A : Set a) → Monoid (Maybe A)
+  Monoid._∙_ (first A) = _<∣>_
+  Monoid.ε (first A) = nothing
+  Monoid.assoc (first A) = <∣>-assoc
+  Monoid.identityˡ (first A) = <∣>-identityˡ
+  Monoid.identityʳ (first A) = <∣>-identityʳ
+```
+
+We can also dualize `def:first` in order to get a monoid which tracks only the
+last element it has seen:
+
+```agda
+  last : (A : Set a) → Monoid (Maybe A)
+  last A = dual (first A)
+```
+
 
 ## Summarizing Data Structures
 
@@ -420,6 +445,17 @@ or to flatten nested lists:
   _ = refl
 ```
 
+We can extract the first and last elements from a list by using `def:first` and
+`def:last`, respectively:
+
+```agda
+  head : List A → Maybe A
+  head = summarizeList (first _) just
+
+  foot : List A → Maybe A
+  foot = summarizeList (last _) just
+```
+
 By mapping every element of a list into a singleton list, and using `def:dual`,
 we can even use `def:summarize` to *reverse* a list:
 
@@ -431,7 +467,7 @@ we can even use `def:summarize` to *reverse* a list:
   _ = refl
 ```
 
-But that's not all! We can also use `def:summarizeList` to query information
+But that's not all. We can also use `def:summarizeList` to query information
 about the container structure itself, by using a function that ignores its
 argument:
 
@@ -1306,6 +1342,7 @@ show some homomorphisms between them.
     where open Monoid m
 ```
 
+
 Now that we have the machinery in place to prove we're not fooling ourselves,
 let's begin our hunt for a monoid homomorphism. The simplest monoids we have are
 those over the booleans, so let's try to find a homomorphism between
@@ -1567,30 +1604,6 @@ implementation or the conceptual model.
 
 ## Homomorphisms in Software Design
 
-```agda
-  open import Data.Maybe
-  open import Data.Maybe.Properties
-    using ( <∣>-assoc
-          ; <∣>-identityˡ
-          ; <∣>-identityʳ
-          )
-
-
-  module _ where
-    open import Relation.Binary.PropositionalEquality
-
-    first : (A : Set a) → Monoid _ _
-    Monoid.setoid  (first A) = prop-setoid (Maybe A)
-    Monoid._∙_     (first A) = _<∣>_
-    Monoid.ε       (first A) = nothing
-    Monoid.assoc      (first A) = <∣>-assoc
-    Monoid.identityˡ  (first A) = <∣>-identityˡ
-    Monoid.identityʳ  (first A) = <∣>-identityʳ
-    Monoid.∙-cong     (first A) refl refl = refl
-
-    last : (A : Set a) → Monoid _ _
-    last A = dual (first A)
-```
 
 ```agda
   module KeyValStore (Key : Set c₁) (val-monoid : Monoid c₂ ℓ₂) where
