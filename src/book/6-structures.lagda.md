@@ -1556,6 +1556,55 @@ expressions into an optimal form---is general and widely applicable. The more
 general theorem here is known as *Yoneda's lemma,* which we will explore in
 @sec:yoneda.
 
+To hammer home the point; to a computer scientist, the only salient pieces
+here are the definitions `type:DList`, `def:toDList`, `def:fromDList`, and
+the dlist `field:_∙_`. This is the entirety of the interface that users of your
+library need be aware of. But it is `def:dlist-hom` which proves that our dlist
+optimization does exactly what it promises to. The monoids do the actual work,
+while the homomorphism proves that there are no bugs in either the
+implementation or the conceptual model.
+
+
+## Homomorphisms in Software Design
+
+```agda
+  open import Data.Maybe
+  open import Data.Maybe.Properties
+    using ( <∣>-assoc
+          ; <∣>-identityˡ
+          ; <∣>-identityʳ
+          )
+
+
+  module _ where
+    open import Relation.Binary.PropositionalEquality
+
+    first : (A : Set a) → Monoid _ _
+    Monoid.setoid  (first A) = prop-setoid (Maybe A)
+    Monoid._∙_     (first A) = _<∣>_
+    Monoid.ε       (first A) = nothing
+    Monoid.assoc      (first A) = <∣>-assoc
+    Monoid.identityˡ  (first A) = <∣>-identityˡ
+    Monoid.identityʳ  (first A) = <∣>-identityʳ
+    Monoid.∙-cong     (first A) refl refl = refl
+
+    last : (A : Set a) → Monoid _ _
+    last A = dual (first A)
+```
+
+```agda
+  module KeyValStore (Key : Set c₁) (val-monoid : Monoid c₂ ℓ₂) where
+    open Monoid val-monoid using () renaming (Carrier to Val)
+
+    KVStore : Set (c₁ ⊔l c₂)
+    KVStore = Key → Val
+
+    _[_] : KVStore → Key → Val
+    kv [ ix ] = kv ix
+
+```
+
+
 
 ## Theorems about Monoids
 
@@ -1591,42 +1640,4 @@ which maps every element in some other monoid to `field:ε`:
 
 -- TODO(sandy): other examples?
 
-
-## Monoid Homomorphisms for Designing Software
-
-```agda
-  open import Data.Maybe
-  open import Data.Maybe.Properties
-    using ( <∣>-assoc
-          ; <∣>-identityˡ
-          ; <∣>-identityʳ
-          )
-
-
-  module _ where
-    open import Relation.Binary.PropositionalEquality
-
-    first : (A : Set a) → Monoid _ _
-    Monoid.setoid (first A) = prop-setoid (Maybe A)
-    Monoid._∙_ (first A) = _<∣>_
-    Monoid.ε (first A) = nothing
-    Monoid.assoc (first A) = <∣>-assoc
-    Monoid.identityˡ (first A) = <∣>-identityˡ
-    Monoid.identityʳ (first A) = <∣>-identityʳ
-    Monoid.∙-cong (first A) refl refl = refl
-
-    last : (A : Set a) → Monoid _ _
-    last A = dual (first A)
-
-
-  module KeyValStore (Key : Set c₁) (val-monoid : Monoid c₂ ℓ₂) where
-    open Monoid val-monoid using () renaming (Carrier to Val)
-
-    KVStore : Set (c₁ ⊔l c₂)
-    KVStore = Key → Val
-
-    _[_] : KVStore → Key → Val
-    kv [ ix ] = kv ix
-
-```
 
