@@ -1060,12 +1060,8 @@ preserves `type:All`! The type we need to show is that if `P a` and `All P t` ho
 
 ```agda
     all-insert⅋₀
-        : {P : A → Set}
-        → (a : A)
-        → P a
-        → {t : BinTree A}  -- ! 1
-        → All P t
-        → All P (insert a t)
+        : {P : A → Set} → (a : A) → P a → {t : BinTree A}  -- ! 1
+        → All P t → All P (insert a t)
     all-insert⅋₀ = ?
 ```
 

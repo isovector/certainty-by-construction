@@ -886,12 +886,9 @@ brought in as part of the proof that `𝔸` is a (semi)ring in the first place.
   eval-⊕ f (const a) (const b) = refl
   eval-⊕ f (coeff a) (coeff b) = eval-⊕ (f ∘ suc) a b
   eval-⊕ f (coeff a) (b *x+ c)
-    rewrite eval-⊕ (f ∘ suc) a c =
-      begin
-        f zero * eval f b + eval f' a + eval f' c
-      ≡⟨ …algebra… ⟩
-        eval f' a + f zero * eval f b + eval f' c
-      ∎
+    rewrite eval-⊕ (f ∘ suc) a c = begin
+      f zero * eval f b + eval f' a + eval f' c  ≡⟨ …algebra… ⟩
+      eval f' a + f zero * eval f b + eval f' c  ∎
     where f' = f ∘ suc
   eval-⊕ f (a *x+ b) (coeff c)
     rewrite eval-⊕ (f ∘ suc) b c =
@@ -1223,8 +1220,8 @@ By renaming `ctor:_,_` to `ctor:_:=_`, we can now write a syntactic equality as
 
 There is one final thing to do, and that's to generate a vector full of distinct
 variables that we can inject into the syntax lambda that the user gives us. This
-is done in two pieces: the first step builds the distinct `type:Fin` values, and the
-second then executes `def:map` in order to transform them into `type:Syn`.
+is done in two pieces: the first step builds the distinct `type:Fin` values, and
+the second then executes `def:map` in order to transform them into `type:Syn`.
 
 ```agda
   fins : Vec (Fin n) n

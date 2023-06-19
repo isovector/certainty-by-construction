@@ -68,10 +68,11 @@ $endif$
 \makeatletter
 \@ifundefined{KOMAClassName}{% if non-KOMA class
   \IfFileExists{parskip.sty}{%
-    \usepackage{parskip}
+    % \usepackage{parskip}
   }{% else
-    \setlength{\parindent}{0pt}
-    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+    % \setlength{\parindent}{0pt}
+    % \setlength{\parskip}{6pt plus 2pt minus 1pt}
+    }
 }{% if KOMA class
   \KOMAoptions{parskip=half}}
 \makeatother
@@ -355,7 +356,7 @@ $endif$
 
 \newcommand{\AgdaCmd}[1]{{\tt#1}}
 \newcommand{\AgdaEmacsInput}[1]{ (\agdainput{\tt #1} in Emacs and VS Code)}
-\newcommand{\AgdaCmdArg}[1]{ with argument {\tt #1}}
+\newcommand{\AgdaCmdArg}[1]{ with argument {\AgdaHole{#1}}}
 \newcommand{\AgdaCmdNoArg}[1]{ without any argument}
 \newcommand{\agdamode}[1]{\tcbox[enhanced, box align=base, nobeforeafter, colframe=black, size=small, boxsep=2pt]{\tt \textbackslash{#1}}}
 
@@ -542,6 +543,9 @@ Version 0.0.5 / 2023-06-16 / 97d324
 \justify
 
 \vfill\vfill
+
+% \tcbset{listing engine=listings}
+% \tcbset{no listing options}
 
 % TODO(sandy): end
 
