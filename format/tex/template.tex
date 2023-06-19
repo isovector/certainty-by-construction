@@ -79,7 +79,7 @@ $if(verbatim-in-note)$
 \usepackage{fancyvrb}
 $endif$
 \usepackage{xcolor}
-\usepackage[paperwidth=6.25in,paperheight=9.25in,inner=1.25in]{geometry}
+\usepackage[paperwidth=6.25in,paperheight=9.25in,inner=1in, outer=1.5cm, top=2cm, bottom=12mm]{geometry}
 $if(listings)$
 \usepackage{listings}
 \newcommand{\passthrough}[1]{#1}
@@ -247,11 +247,29 @@ $endif$
 % NOTE(sandy): here is where my stuff lives
 
 
+\usepackage{sectsty}
+
+
 \usepackage{listings}
 \usepackage[many]{tcolorbox}
 \tcbuselibrary{xparse}
 \tcbuselibrary{listings}
 \usepackage{titlesec}
+
+\titleformat{\chapter}[display]
+  {\bfseries\Large}
+  {\filright\MakeUppercase{\chaptertitlename} \Huge\thechapter}
+  {1ex}
+  {\titlerule\vspace{0.7ex}\filleft\impact\huge}
+  [\vspace{1ex}\titlerule]
+
+% \titleformat{\chapter}[display]
+%   {\normalsize \huge  \color{black}}%
+%   {\flushright\normalsize%
+%    \MakeUppercase{\chaptertitlename}\hspace{1ex}%
+%    {\fontfamily{mdugm}\fontsize{60}{60}\selectfont\thechapter}}%
+%   {10 pt}%
+%   {\bfseries\huge}%
 
 \newcommand{\hidestart}{}
 \newcommand{\hideend}{}
@@ -259,7 +277,7 @@ $endif$
 \usepackage{comment}
 \excludecomment{hidden}
 
-\usepackage{tex/agda}
+\usepackage[bw]{tex/agda}
 
 \setlength{\agdaindent}{0cm}
 
@@ -302,6 +320,7 @@ $endif$
 \newunicodechar{⦄}{\iosevka{}⦄}
 \newunicodechar{⨄}{\iosevka{}⨄}
 \newunicodechar{𝔸}{\iosevka{}𝔸}
+\allsectionsfont{\impact}
 
 \newfontfamily{\substitutefont}[Scale=MatchLowercase]{Noto Sans}
 
@@ -318,16 +337,19 @@ $endif$
 
 
 
+\newfontfamily{\impact}{SofiaSansCondensed-Medium}
 
 \pagestyle{fancy}
-\setlength{\headheight}{13.6pt}
+\setlength{\headheight}{14.0pt}
+\renewcommand{\headrulewidth}{0pt}
 % \renewcommand{\headrulewidth}{0pt}
 % \renewcommand{\footrulewidth}{0pt}
-\fancyhead[LE]{\thepage}
-\fancyhead[LO]{\rightmark}
-\fancyhead[RO]{\thepage}
+\fancyhead[LE]{\large\impact\thepage}
+\fancyhead[LO]{\large\impact\rightmark}
+\fancyhead[RO]{\large\impact\thepage}
+\fancyhead[RE]{\large\impact\leftmark}
 % \fancyfoot[C]{\footnotesize revision \texttt{\input{.current-revision}}}
-\fancyfoot[C]{}
+\fancyfoot{}
 
 \newcommand{\agdainput}[1]{\tcbox[enhanced, box align=base, nobeforeafter, colframe=black, size=small, boxsep=2pt]{#1}}
 
