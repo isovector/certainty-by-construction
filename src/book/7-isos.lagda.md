@@ -1,10 +1,290 @@
-# Isomorphism
+# Isomorphisms
 
 ```agda
-{-# OPTIONS --allow-unsolved-metas #-}
+module 7-isos where
+```
 
-open import Relation.Binary using (Setoid; _Preserves_⟶_)
+In this chapter we will discuss when are two *types* the same, in essence,
+looking for a suitable notion of equality for types themselves. Surprisingly,
+this is not merely an exercise in learning obscure facts---the theory here gives
+rise to some incredibly powerful techniques in programming, like automatic
+asymptotic-improvement for many classes of algorithms. In order to motivate the
+techniques involved, we will first discuss the countability of a type, develop a
+robust mechanism for operating with equal type, and finally explore applications
+of these techniques.
+
+
+## Finite Numbers
+
+Although we have spent an eternity discussing different sorts of numbers, we
+have one final variety to define and work though. These are the *finite
+numbers,* which, unlike the infinity of the natural numbers, are bounded in the
+largest number they can represent. Finite numbers are all around us, from the 64
+bit integers (of which the biggest representable number is
+18446744073709551615), to the numbers we should be using to index arrays---after
+all, the safest way to avoid a bounds check at runtime is to ensure the number
+you're trying to index against is guaranteed to be less than the length of the
+array in question.
+
+Contrasting the 64 bit integer use-case against the array bounds use-case is
+informative, in that in the latter, we might not know exactly what the biggest
+representable number should be. Rather than doing the usual thing and defining
+completely different types for `Word8`, `Word16`, `Word32`, etc., we can instead
+make a single type constructor for all finite numbers, indexed by how many
+distinct numbers it can represent. We'll call this type `type:Fin`, and would
+like the property that `type:Fin 2` has exactly two values, while `type:Fin 13`
+has 13. By picking absurdly large values of `n`, we can use `type:Fin n` to
+represent the machine words, and instead by using `n` in a dependent way, we can
+ensure it matches the length of an array. We will look at examples of both of
+these use cases in a moment, but first we must define the type.
+
+```agda
+open import Data.Nat as ℕ using (ℕ)
+private variable
+  n : ℕ
+
+
+module Definition-Fin where
+  data Fin : ℕ → Set where
+    zero  : Fin (ℕ.suc n)
+    suc   : Fin n → Fin (ℕ.suc n)  -- ! 1
+```
+
+`type:Fin`, like `type:ℕ`, is a unary encoding of the natural numbers, but you
+will notice that each of its constructors produces a `type:Fin` indexed by a
+`ctor:ℕ.suc`. Agda technically doesn't require use to use a fully qualified
+`ctor:ℕ.suc` here, instead we could simply use `ctor:suc`, but it helps to
+differentiate against the `type:Fin`-valued `ctor:suc` defined at [1](Ann).
+
+Because each data constructor is indexed by `ctor:ℕ.suc`, there is simply no way
+to build a `type:Fin 0`, which is consistent with our desideratum that `type:Fin
+n` have $n$ distinct values. Every time we invoke `ctor:suc`, however, we lose
+some "capacity" in the index, until we are eventually *forced* to use
+`ctor:zero`. Because every time we use `ctor:suc`, we lose a `ctor:ℕ.suc` in the
+index, we are allowed to call `ctor:suc` exactly $n - 1$ times before we are
+required to call `ctor:zero`. And it is exactly this `ctor:zero` which explains
+the discrepancy between the $n - 1$ potential calls to `ctor:suc` and the $n$
+values that `type:Fin n` is promised to have. It's just like how the biggest
+number we can store in a byte is 255, even though there are 256 values in a
+byte---we just have to remember to count zero!
+
+To illustrate that this all works, we can give the five values of `Fin 5`:
+
+```agda
+  module Examples where
+    0f 1f 2f 3f 4f : Fin 5
+    0f = zero
+    1f = suc zero
+    2f = suc (suc zero)
+    3f = suc (suc (suc zero))
+    4f = suc (suc (suc (suc zero)))
+```
+
+In an attempt to continue the pattern, we can try:
+
+```illegal
+    5f : Fin 5
+    5f = suc (suc (suc (suc (suc zero))))
+```
+
+but Agda instead insists that this is not allowed:
+
+```info
+(ℕ.suc _n_37) != ℕ.zero of type ℕ
+when checking that the expression zero has type Fin 0
+```
+
+Therefore, we can conclude that `type:Fin` behaves as we'd like it to.
+
+Of course, we can always forget the index, and transform a `type:Fin` into a
+`type:ℕ`:
+
+```agda
+  toℕ : Fin n → ℕ
+  toℕ zero     = ℕ.zero
+  toℕ (suc x)  = ℕ.suc (toℕ x)
+```
+
+Rather than using our own definition for the remainder of this chapter, we will
+instead import an equivalently-defined version from the standard library:
+
+```agda
+open import Data.Fin using (Fin; zero; suc)
+open import Data.Nat using (ℕ; zero; suc)
+```
+
+## Finites for Vector Lookup
+
+Functional programming usually eschews arrays, because they are *non-inductive*
+(that is, not built from smaller copies of themselves) data structures. Instead,
+we prefer to use linked lists, which are equivalently good, up to some
+definition of equivalence that pays no attention to matters of performance on
+a traditional Von Neumann architecture computer. However, that notion of
+equivalence *does* include notions of program correctness and composition of
+reasoning.
+
+Vectors are a version of linked lists whose type is annotated with the number of
+elements in the list. Thus, vectors are an excellent stand-in for arrays when
+considered as contiguous blocks of memory which must be allocated somewhere. The
+definition of a vector is straightforward---every time you stick an element in,
+we increase its length type index:
+
+```agda
 open import Level
+  renaming (zero to lzero; suc to lsuc; _⊔_ to _⊔l_)
+
+private variable
+  ℓ : Level
+
+module Example-Vectors where
+  data Vec (A : Set ℓ) : ℕ → Set ℓ where
+    []   : Vec A 0
+    _∷_  : A → Vec A n → Vec A (suc n)
+  -- TODO(sandy): check this precedence
+  infixr 4 _∷_
+```
+
+Extracting the length of a vector is very easy; simply take the index and return
+it:
+
+```agda
+  private variable
+    A : Set ℓ
+
+  length : Vec A n → ℕ
+  length {n = n} _ = n
+```
+
+However, most relevant to our previous discussion about the finite numbers, we
+can use a `type:Fin` to extract a single element from the vector. By indexing
+the `type:Vec` and the `type:Fin` by the same `n`, we can ensure that it's a
+type error to request a value beyond the bounds of the array:
+
+```agda
+  lookup : Vec A n → Fin n → A
+  lookup (a ∷ as) zero      = a
+  lookup (a ∷ as) (suc ix)  = lookup as ix
+```
+
+To illustrate this function, we can show that it works as expected:
+
+```agda
+  open import Data.Char
+  open import Relation.Binary.PropositionalEquality
+    using (_≡_; refl)
+
+  _ : lookup ('a' ∷ 'b' ∷ 'c' ∷ []) (suc zero) ≡ 'b'
+  _ = refl
+```
+
+As a quick note, `def:lookup` is known in more traditional, ALGOL-like
+languages, as `def:_[_]`:
+
+```agda
+  _[_] : Vec A n → Fin n → A
+  _[_] = lookup
+
+  _ : ('a' ∷ 'b' ∷ 'c' ∷ []) [ suc (suc zero) ] ≡ 'c'
+  _ = refl
+```
+
+## Characteristic Functions
+
+An interesting realization is that the `def:lookup` completely characterizes the
+`type:Vec` type. Another way of saying that is that there is exactly as much
+information in `type:Vec` as there is in this alternative definition of
+`type:Vec′`:
+
+```agda
+  Vec′ : Set ℓ → ℕ → Set ℓ
+  Vec′ A n = Fin n → A
+```
+
+Given this definition, we have alternative implementations of `def:length′` and
+`def:lookup′`:
+
+```agda
+  length′ : Vec′ A n → ℕ
+  length′ {n = n} _ = n
+
+  lookup′ : Vec′ A n → Fin n → A
+  lookup′ f ix = f ix
+```
+
+Despite these definitions, you are probably not yet convinced that `type:Vec`
+and `type:Vec′` are equivalent, and will remain so until I have put forth a
+convincing proof. This is good skepticism, and the sort of thing we'd like to
+foster. Nevertheless, I can present a proof that these two definitions of
+vectors are equivalent---namely, by giving a function which transform one
+type to the other, and a second function which goes the other direction. Going
+the one way is easy, it's just `def:lookup`:
+
+```agda
+  toVec′ : Vec A n → Vec′ A n
+  toVec′ = lookup
+```
+
+The other direction is slightly more subtle, and requires pattern matching on
+the size of the vector:
+
+```agda
+  open import Function using (_∘_)
+
+  fromVec′ : Vec′ A n → Vec A n
+  fromVec′ {n = zero}   v = []
+  fromVec′ {n = suc n}  v = v zero ∷ fromVec′ (v ∘ suc)  -- ! 1
+```
+
+You'll notice at [1](Ann), we must stick a call to `ctor:suc` in before we
+invoke `v`. This is a common idiom when doing induction with data structures
+represented as functions, which we will briefly discuss in the next section.
+-- TODO(sandy): add a section ref. For the time being, it suffices to note that
+in effect, this composition automatically adds one to any index that is looked
+up in `v`---in essence, chopping off the 0th element, since it can no longer be
+referenced.
+
+To complete our proof, we must finally show that `def:fromVec′` and `def:toVec′`
+are *inverses* of one another. That is, for any given vector, we should be able
+to go to and fro(m), ending up exactly where we started. If we can do so for
+every possible `type:Vec` and every possible `type:Vec′`, we have shown that
+every vector can be encoded as either type, and thus that they are both equally
+good representations of vectors. When we are working with `type:Vec` directly,
+it suffices to show propositional equality:
+
+```agda
+  from∘to : (v : Vec A n) → fromVec′ (toVec′ v) ≡ v
+  from∘to [] = refl
+  from∘to (x ∷ v)
+    rewrite from∘to v = refl
+```
+
+The other direction is slightly harder, since we do not have propositional
+equality for function types. Instead, we can show the extensional equality of
+the two `type:Vec′`s---that they store the same value at every possible index:
+
+```agda
+  to∘from
+      : (v : Vec′ A n) → (ix : Fin n)
+      → toVec′ (fromVec′ v) ix ≡ v ix
+  to∘from v zero      = refl
+  to∘from v (suc ix)  = to∘from (v ∘ suc) (ix)
+```
+
+This completes the proof that `def:fromVec′` and `def:toVec′` are inverses of
+one another, and therefore, that `type:Vec` and `type:Vec′` are equivalent
+types. Because `type:Vec′` is just the type of `def:lookup` curried with the
+vector you'd like to look at, we say that `def:lookup` is the *characteristic
+function.*
+
+As we will see later in this chapter, the existence of a characteristic function
+(in this sense) is exactly what defines the concept of "data structure" in the
+first place.
+
+
+## more
+
+```agda
+open import Relation.Binary using (Setoid; _Preserves_⟶_)
 open import Algebra using (LeftInverse; RightInverse)
 
 private variable
@@ -13,7 +293,7 @@ private variable
 record Iso
       (s₁ : Setoid c₁ ℓ₁)
       (s₂ : Setoid c₂ ℓ₂)
-      : Set (c₁ ⊔ c₂ ⊔ ℓ₁ ⊔ ℓ₂) where
+      : Set (c₁ ⊔l c₂ ⊔l ℓ₁ ⊔l ℓ₂) where
   constructor iso
 
   open Setoid s₁ using ()
@@ -40,7 +320,7 @@ record Iso
 
 _↔_ = Iso
 
-open import Function using (id)
+open import Function using (id; _∘_)
 
 module _ {s₁ : Setoid c₁ ℓ₁} where
   open Setoid s₁
@@ -52,12 +332,56 @@ module _ {s₁ : Setoid c₁ ℓ₁} where
   ↔-sym (iso to from from∘to≈id to∘from≈id to-cong from-cong)
     = iso from to to∘from≈id from∘to≈id from-cong to-cong
 
+module _ where
+  open Iso
+
   ↔-trans
-      : {s₂ : Setoid c₂ ℓ₂} {s₃ : Setoid c₃ ℓ₃}
+      : {s₁ : Setoid c₁ ℓ₁} {s₂ : Setoid c₂ ℓ₂} {s₃ : Setoid c₃ ℓ₃}
       → s₁ ↔ s₂
-      → s₂ ↔ s₂
+      → s₂ ↔ s₃
       → s₁ ↔ s₃
-  ↔-trans x x₁ = {! !}
+  to    (↔-trans f g) = to g ∘ to f
+  from  (↔-trans f g) = from f ∘ from g
+  from∘to≈id (↔-trans {s₁ = s} f g) x = begin
+    from f (from g (to g (to f x)))  ≈⟨ from-cong f (from∘to≈id g _) ⟩
+    from f (to f x)                  ≈⟨ from∘to≈id f x ⟩
+    x                                ∎
+    where open import Relation.Binary.Reasoning.Setoid s
+  to∘from≈id (↔-trans {s₃ = s} f g) x = begin
+    to g (to f (from f (from g x)))  ≈⟨ to-cong g (to∘from≈id f _) ⟩
+    to g (from g x)                  ≈⟨ to∘from≈id g x ⟩
+    x                                ∎
+    where open import Relation.Binary.Reasoning.Setoid s
+  to-cong    (↔-trans f g) x≈y = to-cong    g (to-cong    f x≈y)
+  from-cong  (↔-trans f g) x≈y = from-cong  f (from-cong  g x≈y)
+
+open import Data.Fin using (Fin; zero; suc)
+open import Relation.Binary.PropositionalEquality
+  using ()
+  renaming (setoid to prop-setoid)
+
+module Sandbox-Finite where
+  _Has_Elements : Setoid c₁ ℓ₁ → ℕ → Set (c₁ ⊔l ℓ₁)
+  s Has cardinality Elements = s ↔ prop-setoid (Fin cardinality)
+
+  open import Data.Bool using (Bool; true; false)
+  open Iso
+
+  open Relation.Binary.PropositionalEquality
+
+  bool-is-2 : prop-setoid Bool Has 2 Elements
+  to    bool-is-2 false       = zero
+  to    bool-is-2 true        = suc zero
+  from  bool-is-2 zero        = false
+  from  bool-is-2 (suc zero)  = true
+  from∘to≈id bool-is-2 false       = refl
+  from∘to≈id bool-is-2 true        = refl
+  to∘from≈id bool-is-2 zero        = refl
+  to∘from≈id bool-is-2 (suc zero)  = refl
+  to-cong    bool-is-2 refl = refl
+  from-cong  bool-is-2 refl = refl
+
+
 
 open import Data.Unit
   using (⊤; tt)
