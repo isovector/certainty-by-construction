@@ -1,17 +1,21 @@
 # Isomorphism
 
 ```agda
+{-# OPTIONS --allow-unsolved-metas #-}
+
 open import Relation.Binary using (Setoid; _Preserves_⟶_)
 open import Level
 open import Algebra using (LeftInverse; RightInverse)
 
 private variable
-  a b c₁ c₂ ℓ₁ ℓ₂ : Level
+  a b c₁ c₂ c₃ ℓ₁ ℓ₂ ℓ₃ : Level
 
 record Iso
       (s₁ : Setoid c₁ ℓ₁)
       (s₂ : Setoid c₂ ℓ₂)
       : Set (c₁ ⊔ c₂ ⊔ ℓ₁ ⊔ ℓ₂) where
+  constructor iso
+
   open Setoid s₁ using ()
       renaming (Carrier to A; _≈_ to _≈₁_)
       public
@@ -38,16 +42,22 @@ _↔_ = Iso
 
 open import Function using (id)
 
-module _ {s : Setoid c₁ ℓ₁} where
-  open Setoid s
+module _ {s₁ : Setoid c₁ ℓ₁} where
+  open Setoid s₁
 
-  ↔-refl : s ↔ s
-  Iso.to          ↔-refl    = id
-  Iso.from        ↔-refl    = id
-  Iso.from∘to≈id  ↔-refl x  = refl
-  Iso.to∘from≈id  ↔-refl x  = refl
-  Iso.to-cong     ↔-refl    = id
-  Iso.from-cong   ↔-refl    = id
+  ↔-refl : s₁ ↔ s₁
+  ↔-refl = iso id id (λ x → refl) (λ x → refl) id id
+
+  ↔-sym : {s₂ : Setoid c₂ ℓ₂} → s₁ ↔ s₂ → s₂ ↔ s₁
+  ↔-sym (iso to from from∘to≈id to∘from≈id to-cong from-cong)
+    = iso from to to∘from≈id from∘to≈id from-cong to-cong
+
+  ↔-trans
+      : {s₂ : Setoid c₂ ℓ₂} {s₃ : Setoid c₃ ℓ₃}
+      → s₁ ↔ s₂
+      → s₂ ↔ s₂
+      → s₁ ↔ s₃
+  ↔-trans x x₁ = {! !}
 
 open import Data.Unit
   using (⊤; tt)
