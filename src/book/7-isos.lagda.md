@@ -281,28 +281,48 @@ As we will see later in this chapter, the existence of a characteristic function
 first place.
 
 
-## more
+## Isomorphisms
+
+The argument presented above---that two types are equivalent if we can transform
+between them without losing any information---is completely general, and goes by
+the name *isomorphism.* We can bundle the whole proof argument together into a
+record---although in doing so, we will generalize from propositional equality to
+using setoids. The setoids add some cruft, but their added generality will
+quickly come in handy. First, we can define the type itself, as a relation
+between two setoids:
 
 ```agda
-open import Relation.Binary using (Setoid; _Preserves_⟶_)
-open import Algebra using (LeftInverse; RightInverse)
+open import Relation.Binary
+  using (Setoid; _Preserves_⟶_)
 
 private variable
-  a b c₁ c₂ c₃ ℓ₁ ℓ₂ ℓ₃ : Level
+  c₁ c₂ c₃ ℓ₁ ℓ₂ ℓ₃ : Level
 
 record Iso
       (s₁ : Setoid c₁ ℓ₁)
       (s₂ : Setoid c₂ ℓ₂)
       : Set (c₁ ⊔l c₂ ⊔l ℓ₁ ⊔l ℓ₂) where
   constructor iso
+```
 
+Still inside the definition, we will publicly open our setoids, giving them
+canonical names that we can use in later fields of `type:Iso`:
+
+```agda
   open Setoid s₁ using ()
       renaming (Carrier to A; _≈_ to _≈₁_)
       public
   open Setoid s₂ using ()
       renaming (Carrier to B; _≈_ to _≈₂_)
       public
+```
 
+Now for our fields, which package up all the pieces of the proof that we gave
+when showing the two equivalent types for vectors. In addition, since we're now
+working with setoids, we must show that `field:to` and `field:from` preserve the
+relevant equalities:
+
+```agda
   field
     to   : A → B
     from : B → A
@@ -310,51 +330,102 @@ record Iso
     to∘from≈id  : (x : B) → to (from x) ≈₂ x
     to-cong    : to    Preserves _≈₁_ ⟶ _≈₂_
     from-cong  : from  Preserves _≈₂_ ⟶ _≈₁_
+```
 
+One last thing that we'll pack inside the definition of `type:Iso` are
+facilities for using setoid reasoning over both `s₁` and `s₂`, which we will
+name `module:A-Reasoning` and `module:B-Reasoning`---corresponding to the types
+`A` and `B` for the respective carriers.
+
+```agda
   module A-Reasoning where
     open import Relation.Binary.Reasoning.Setoid s₁
       public
   module B-Reasoning where
     open import Relation.Binary.Reasoning.Setoid s₂
       public
+```
 
+While `type:Iso` is a good name for the record, and especially when doing
+copattern matching---it's not the name that mathematicians normally use for this
+concept. Instead, they go with `def:_↔_` (input as [`<->`](AgdaMode).)
+
+```agda
 _↔_ = Iso
+```
 
+I have been implicitly claiming that isomorphism is a good notion of equality
+for types. We will now justify that, by showing that isomorphisms do indeed form
+an equivalence relation. Reflexivity is trivial, because we need to map a type
+to itself in both directions:
+
+```agda
+private variable
+  s₁ : Setoid c₁ ℓ₁
+  s₂ : Setoid c₂ ℓ₂
+  s₃ : Setoid c₃ ℓ₃
+
+open import Relation.Binary using (Reflexive; Symmetric; Transitive)
 open import Function using (id; _∘_)
 
-module _ {s₁ : Setoid c₁ ℓ₁} where
-  open Setoid s₁
+↔-refl : s₁ ↔ s₁
+↔-refl {s₁ = s} =
+  iso id id (λ x → Setoid.refl s) (λ x → Setoid.refl s) id id
+```
 
-  ↔-refl : s₁ ↔ s₁
-  ↔-refl = iso id id (λ x → refl) (λ x → refl) id id
+Showing symmetry requires us only to change which function we're calling
+`field:to` and which we're calling `field:from`:
 
-  ↔-sym : {s₂ : Setoid c₂ ℓ₂} → s₁ ↔ s₂ → s₂ ↔ s₁
-  ↔-sym (iso to from from∘to≈id to∘from≈id to-cong from-cong)
-    = iso from to to∘from≈id from∘to≈id from-cong to-cong
+```agda
+↔-sym : s₁ ↔ s₂ → s₂ ↔ s₁
+↔-sym (iso to from from∘to≈id to∘from≈id to-cong from-cong)
+  = iso from to to∘from≈id from∘to≈id from-cong to-cong
+```
 
+Transitivity is more work than the other two cases, but it's not much harder
+conceptually. The trick is merely to compose the two `field:to` fields together,
+and the two `field:from` together, and then find the right invocation of the
+laws to show that these new compositions are also lawful.
+
+```agda
 module _ where
   open Iso
 
-  ↔-trans
-      : {s₁ : Setoid c₁ ℓ₁} {s₂ : Setoid c₂ ℓ₂} {s₃ : Setoid c₃ ℓ₃}
-      → s₁ ↔ s₂
-      → s₂ ↔ s₃
-      → s₁ ↔ s₃
+  ↔-trans : s₁ ↔ s₂ → s₂ ↔ s₃ → s₁ ↔ s₃
   to    (↔-trans f g) = to g ∘ to f
   from  (↔-trans f g) = from f ∘ from g
-  from∘to≈id (↔-trans {s₁ = s} f g) x = begin
+  from∘to≈id (↔-trans f g) x = begin
     from f (from g (to g (to f x)))  ≈⟨ from-cong f (from∘to≈id g _) ⟩
     from f (to f x)                  ≈⟨ from∘to≈id f x ⟩
     x                                ∎
-    where open import Relation.Binary.Reasoning.Setoid s
-  to∘from≈id (↔-trans {s₃ = s} f g) x = begin
+    where open A-Reasoning f
+  to∘from≈id (↔-trans f g) x = begin
     to g (to f (from f (from g x)))  ≈⟨ to-cong g (to∘from≈id f _) ⟩
     to g (from g x)                  ≈⟨ to∘from≈id g x ⟩
     x                                ∎
-    where open import Relation.Binary.Reasoning.Setoid s
+    where open B-Reasoning g
   to-cong    (↔-trans f g) x≈y = to-cong    g (to-cong    f x≈y)
   from-cong  (↔-trans f g) x≈y = from-cong  f (from-cong  g x≈y)
+```
 
+These three proofs together show that `type:_↔_` is indeed an equivalence
+relation, although we must restrict the levels on both sides to be the same in
+order for the standard machinery to agree with this fact:
+
+```agda
+open Relation.Binary using (IsEquivalence)
+
+↔-equiv : IsEquivalence (_↔_ {c₁ = c₁} {ℓ₁ = ℓ₁})
+IsEquivalence.refl   ↔-equiv = ↔-refl
+IsEquivalence.sym    ↔-equiv = ↔-sym
+IsEquivalence.trans  ↔-equiv = ↔-trans
+```
+
+
+## Countable Types
+
+
+```agda
 open import Data.Fin using (Fin; zero; suc)
 open import Relation.Binary.PropositionalEquality
   using ()
@@ -407,6 +478,7 @@ from-cong   (s ¹) f     = f tt
 open import Data.Product using (_×_; _,_)
 
 private variable
+  a b : Level
   X : Set a
   Y : Set b
 
