@@ -1083,9 +1083,8 @@ we can now ask for a [MakeCase:all-pt](AgdaCmd):
     all-insert⅋₂
         : {P : A → Set} → (a : A) → P a → {t : BinTree A}
         → All P t → All P (insert a t)
-    all-insert⅋₂ a pa  {.empty} empty = {! !}
-    all-insert⅋₂ a pa  {.(branch _ _ _)}
-                     (branch all-pt x all-pt₁) = {! !}
+    all-insert⅋₂ a pa {.empty} empty = {! !}
+    all-insert⅋₂ a pa {.(branch _ _ _)} (branch l<x px x<r) = {! !}
 ```
 
 Notice that when we pattern matched on `all-pt`, Agda realized that this fully
@@ -1099,9 +1098,8 @@ we're allowed to replace it with a regular pattern match, as in:
     all-insert⅋₃
         : {P : A → Set} → (a : A) → P a → {t : BinTree A}
         → All P t → All P (insert a t)
-    all-insert⅋₃ a pa  {empty} empty = {! !}
-    all-insert⅋₃ a pa  {branch _ _ _}
-                     (branch all-pt x all-pt₁) = {! !}
+    all-insert⅋₃ a pa {empty} empty = {! !}
+    all-insert⅋₃ a pa {branch _ _ _} (branch l<x xp x<r) = {! !}
 ```
 
 The point of this is really to get the pieces of the `t : BinTree` into scope,
@@ -1112,9 +1110,8 @@ automatically generated other bindings at the same time:
     all-insert⅋₄
         : {P : A → Set} → (a : A) → P a → {t : BinTree A}
         → All P t → All P (insert a t)
-    all-insert⅋₄ a pa  {empty} empty = {! !}
-    all-insert⅋₄ a pa  {branch l x r}
-                     (branch l<x px x<r) = {! !}
+    all-insert⅋₄ a pa {empty} empty = {! !}
+    all-insert⅋₄ a pa {branch l x r} (branch l<x px x<r) = {! !}
 ```
 
 Finally, there is no reason to pattern match on the `ctor:{empty}`, since it doesn't
@@ -1124,9 +1121,8 @@ help us bring any new variables into scope.
     all-insert⅋₅
         : {P : A → Set} → (a : A) → P a → {t : BinTree A}
         → All P t → All P (insert a t)
-    all-insert⅋₅ a pa  empty = {! !}
-    all-insert⅋₅ a pa  {branch l x r}
-                     (branch l<x px x<r) = {! !}
+    all-insert⅋₅ a pa empty = {! !}
+    all-insert⅋₅ a pa {branch l x r} (branch l<x px x<r) = {! !}
 ```
 
 Filling the first hole is merely showing that we have `type:All` for a singleton,
@@ -1136,9 +1132,8 @@ which is our `ctor:leaf` constructor:
     all-insert⅋₆
         : {P : A → Set} → (a : A) → P a → {t : BinTree A}
         → All P t → All P (insert a t)
-    all-insert⅋₆ a pa  empty = leaf pa
-    all-insert⅋₆ a pa  {branch l x r}
-                     (branch l<x px x<r) = {! !}
+    all-insert⅋₆ a pa empty = leaf pa
+    all-insert⅋₆ a pa {branch l x r} (branch l<x px x<r) = {! !}
 ```
 
 A funny thing happens here. We know this remaining hole must be a `ctor:branch`, but
@@ -1159,8 +1154,7 @@ abstraction over `<-cmp a x` and subsequently pattern match on the result:
         : {P : A → Set} → (a : A) → P a → {t : BinTree A}
         → All P t → All P (insert a t)
     all-insert⅋₇ a pa empty = leaf pa
-    all-insert⅋₇ a pa {branch l x r}
-                     (branch l<x px x<r)
+    all-insert⅋₇ a pa {branch l x r} (branch l<x px x<r)
       with <-cmp a x
     ... | tri< a<x _ _ = {! !}
     ... | tri≈ _ a=x _ = {! !}
@@ -1176,14 +1170,11 @@ to complete the function on your own:
         : {P : A → Set} → (a : A) → P a → {t : BinTree A}
         → All P t → All P (insert a t)
     all-insert a pa empty = leaf pa
-    all-insert a pa {branch l x r} (branch all-l px all-r)
+    all-insert a pa {branch l x r} (branch l<x px x<r)
       with <-cmp a x
-    ... | tri< a<x _ _ =
-            branch (all-insert a pa all-l) px all-r
-    ... | tri≈ _ a=x _ =
-            branch all-l px all-r
-    ... | tri> _ _ x<a =
-            branch all-l px (all-insert a pa all-r)
+    ... | tri< a<x _ _  = branch (all-insert a pa l<x) px x<r
+    ... | tri≈ _ a=x _  = branch l<x px x<r
+    ... | tri> _ _ x<a  = branch l<x px (all-insert a pa x<r)
 ```
 
 Now that we've finished the `def:all-insert` lemma, we're ready to show that
