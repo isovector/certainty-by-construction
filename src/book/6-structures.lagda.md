@@ -1067,7 +1067,7 @@ relation all into one object:
 ```
 
 Notice at [1](Ann) we open the `field:isEquivalence` record, which brings
-`field:refl`, `field:sym`, and `refl:trans` into scope. In practice, these
+`field:refl`, `field:sym`, and `field:trans` into scope. In practice, these
 appear as properties of the `type:Setoid` itself, and mean we can reference
 these common operations without needing to go through the `type:IsEquivalence`
 interface every time.
