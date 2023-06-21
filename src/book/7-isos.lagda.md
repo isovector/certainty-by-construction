@@ -434,7 +434,9 @@ open import Relation.Binary.PropositionalEquality
 module Sandbox-Finite where
   _Has_Elements : Setoid c₁ ℓ₁ → ℕ → Set (c₁ ⊔l ℓ₁)
   s Has cardinality Elements = s ↔ prop-setoid (Fin cardinality)
+```
 
+```agda
   open import Data.Bool using (Bool; true; false)
   open Iso
 
@@ -451,9 +453,23 @@ module Sandbox-Finite where
   to∘from≈id bool-is-2 (suc zero)  = refl
   to-cong    bool-is-2 refl = refl
   from-cong  bool-is-2 refl = refl
+```
+
+From which we can immediately derive the fact that any two types with the same
+number of elements are isomorphic to one another:
+
+```agda
+  fin-iso : s₁ Has n Elements → s₂ Has n Elements → s₁ ↔ s₂
+  fin-iso i₁ i₂ = ↔-trans i₁ (↔-sym i₂)
+```
 
 
+## Sigma Types
 
+
+## Exponent Laws
+
+```agda
 open import Data.Unit
   using (⊤; tt)
 
@@ -513,5 +529,8 @@ to-cong     (hmm2 s) f = (λ x → f (inj₁ x))
                        , (λ y → f (inj₂ y))
 from-cong   (hmm2 s) (fx , fy) (inj₁ x) = fx x
 from-cong   (hmm2 s) (fx , fy) (inj₂ y) = fy y
-
 ```
+
+
+## Automatic Memoization
+

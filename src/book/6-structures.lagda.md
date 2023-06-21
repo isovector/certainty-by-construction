@@ -1589,7 +1589,6 @@ implementation or the conceptual model.
 
 ## Homomorphisms in Software Design
 
-
 ```agda
   module KeyValStore (Key : Set c₁) (val-monoid : Monoid c₂ ℓ₂) where
     open Monoid val-monoid using () renaming (Carrier to Val)

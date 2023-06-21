@@ -231,15 +231,14 @@ most help I can give to the reader of this book in hard copy.
 
 As a quick guide, you can visually spot the following pieces of Agda:
 
-- \AgdaKeyword{orange}: keywords
-- \AgdaInductiveConstructor{green}: constructors
+- \AgdaKeyword{yellow}: keywords
+- \AgdaInductiveConstructor{red}: constructors
 - \AgdaBound{black}: bound variables
-- \AgdaField{salmon}: record fields
-- \AgdaModule{purple}: modules
-- \AgdaFunction{blue}: other definitions
-- \AgdaMacro{olive}: macro invocations
-- \AgdaHole{green background}: interactive holes
-- \AgdaUnsolvedMeta{yellow background}: underspecified elaboration
+- \AgdaField{green}: record fields
+- \AgdaModule{black}: modules
+- \AgdaFunction{blue}: functions and types
+- \AgdaHole{light yellow background}: interactive holes
+- \AgdaUnsolvedMeta{deep yellow background}: underspecified elaboration
 
 We haven't yet discussed all of these ideas, but these conventions will be used
 throughout the book. Feel free to return to this section if you're ever having a
