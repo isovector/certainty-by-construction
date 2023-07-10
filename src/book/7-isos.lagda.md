@@ -138,12 +138,19 @@ open import Level
 private variable
   ℓ : Level
 
-module Example-Vectors where
+module Definition-Vectors where
   data Vec (A : Set ℓ) : ℕ → Set ℓ where
     []   : Vec A 0
     _∷_  : A → Vec A n → Vec A (suc n)
   -- TODO(sandy): check this precedence
   infixr 4 _∷_
+```
+
+```agda
+-- TODO(sandy): use the std lib; write a bit about this
+module Example-Vectors where
+  open import Data.Vec using (Vec) public
+  open Vec public
 ```
 
 Extracting the length of a vector is very easy; simply take the index and return
@@ -374,7 +381,7 @@ open Iso
 module _ where
   open Example-Vectors
 
-  open Relation.Binary.PropositionalEquality using (refl; _≡_)
+  open Relation.Binary.PropositionalEquality using (refl; _≡_; cong)
   open import Function using (_∘_)
 ```
 
@@ -386,15 +393,30 @@ done the heavy lifting. However, showing `field:from-cong` takes some effort
 doesn't automatically fall out from computation.
 
 ```agda
+  open import Function.Equality
+    using (_⇨_)
+    renaming (_⟨$⟩_ to func; cong to fcong)
+
+  open import Data.Vec.Relation.Binary.Equality.Setoid
+    using ([]; _∷_; ≋-refl)
+    renaming (≋-setoid to vec-setoid)
+  open import Data.Vec.Relation.Binary.Pointwise.Inductive
+    using (Pointwise-≡⇒≡; ≡⇒Pointwise-≡)
+
   vec-iso
       : {A : Set c₁}
-      → prop-setoid (Vec A n) ↔ ≗-setoid (Fin n) (prop-setoid A)
-  to          vec-iso                     = lookup
-  from        vec-iso                     = fromVec′
-  from∘to≈id  vec-iso                     = from∘to
-  to∘from≈id  vec-iso                     = to∘from
-  to-cong     vec-iso refl a              = refl
-  from-cong   (vec-iso {A = A}) {x} {y} f = lemma _ x y f
+      → vec-setoid (prop-setoid A) n
+      ↔ (prop-setoid (Fin n) ⇨ (prop-setoid A))
+  func   (to  vec-iso x)                 = lookup x
+  fcong  (to  vec-iso x)                 = cong (lookup x)
+  from        vec-iso                    = fromVec′ ∘ func
+  from∘to≈id  vec-iso x
+                rewrite from∘to x        = ≋-refl (prop-setoid _)
+  to∘from≈id  vec-iso x {ix} refl        = to∘from (func x) ix
+  to-cong     vec-iso x refl
+                rewrite Pointwise-≡⇒≡ x  = refl
+  from-cong   (vec-iso {A = A}) {x} {y} f
+    = ≡⇒Pointwise-≡ (lemma _ (func x) (func y) λ { a → f refl })
 ```
 
 In order to show the `def:lemma`, we must prove that every element in
@@ -675,61 +697,81 @@ from-cong   (hmm2 s) (fx , fy) (inj₂ y) = fy y
 open Data.Nat using (_^_)
 open Sandbox-Finite
 
--- TODO(sandy): this is not for an arbitrary setoid iso in the codomain
+open import Function.Equality
+  using (_⇨_)
+  renaming (_⟨$⟩_ to func; cong to fcong)
+
 →-preserves-↔
     : s₁ ↔ s₂ → s₃ ↔ s₄
-    → ≗-setoid (s₁ .Carrier) s₃ ↔ ≗-setoid (s₂ .Carrier) s₄
-to (→-preserves-↔ s t) f = to t ∘ f ∘ from s
-from (→-preserves-↔ s t) f = from t ∘ f ∘ to s
-from∘to≈id (→-preserves-↔ s t) f x =
-  begin
-    from t (to t (f (from s (to s x))))
-  ≈⟨ from∘to≈id t _ ⟩
-    f (from s (to s x))
-  ≈⟨ ? ⟩
-    f x
-  ∎
+    → (s₁ ⇨ s₃) ↔ (s₂ ⇨ s₄)
+func (to (→-preserves-↔ s t) f) = to t ∘ func f ∘ from s
+fcong (to (→-preserves-↔ s t) f) = to-cong t ∘ fcong f ∘ from-cong s
+func (from (→-preserves-↔ s t) f) = from t ∘ func f ∘ to s
+fcong (from (→-preserves-↔ s t) f) = from-cong t ∘ fcong f ∘ to-cong s
+from∘to≈id (→-preserves-↔ s t) f {x} {y} a = begin
+  from t (to t (func f (from s (to s x))))  ≈⟨ from∘to≈id t _ ⟩
+  func f (from s (to s x))                  ≈⟨ fcong f (from∘to≈id s x) ⟩
+  func f x                                  ≈⟨ fcong f a ⟩
+  func f y                                  ∎
   where open A-Reasoning t
-to∘from≈id (→-preserves-↔ s t) f x = {! !}
-to-cong (→-preserves-↔ s t) f x = to-cong t (f (from s x))
-from-cong (→-preserves-↔ s t) f x = from-cong t (f (to s x))
+to∘from≈id (→-preserves-↔ s t) f {x} {y} a = begin
+  to t (from t (func f (to s (from s x))))  ≈⟨ to∘from≈id t _ ⟩
+  func f (to s (from s x))                  ≈⟨ fcong f (to∘from≈id s x) ⟩
+  func f x                                  ≈⟨ fcong f a ⟩
+  func f y                                  ∎
+  where open B-Reasoning t
+to-cong (→-preserves-↔ {s₁ = s₁} s t) {g} {h} f {x} {y} a = begin
+  to t (func g (from s x)) ≈⟨ to-cong t (fcong g (from-cong s a)) ⟩
+  to t (func g (from s y)) ≈⟨ to-cong t (f (refl s₁)) ⟩
+  to t (func h (from s y)) ∎
+  where open B-Reasoning t
+from-cong (→-preserves-↔ {s₂ = s₂} s t) {g} {h} f {x} {y} a = begin
+  from t (func g (to s x)) ≈⟨ from-cong t (fcong g (to-cong s a)) ⟩
+  from t (func g (to s y)) ≈⟨ from-cong t (f (refl s₂)) ⟩
+  from t (func h (to s y)) ∎
+  where open A-Reasoning t
 
 open Example-Vectors using (Vec; []; _∷_)
 
 module _ where
   import Relation.Binary.PropositionalEquality as ≡
 
+  open import Data.Vec.Relation.Binary.Equality.Setoid
+    using ([]; _∷_; ≋-refl)
+    renaming (≋-setoid to vec-setoid)
+
   vec-fin₀
-    : ∀ {A : Set c₁} → prop-setoid (Vec A 0) Has 1 Elements
+    : vec-setoid s₁ 0 Has 1 Elements
   to vec-fin₀ [] = zero
   from vec-fin₀ zero = []
-  from∘to≈id vec-fin₀ [] = ≡.refl
+  from∘to≈id vec-fin₀ [] = []
   to∘from≈id vec-fin₀ zero = ≡.refl
-  to-cong vec-fin₀ ≡.refl = ≡.refl
-  from-cong vec-fin₀ ≡.refl = ≡.refl
+  to-cong vec-fin₀ [] = ≡.refl
+  from-cong (vec-fin₀ {s₁ = s}) ≡.refl = ≋-refl s
 
   vec-rep
-      : prop-setoid (Vec (s₁ .Carrier) (suc n))
-        ↔ ×-setoid s₁ (prop-setoid (Vec (s₁ .Carrier) n))
+      : vec-setoid s₁ (suc n)
+        ↔ ×-setoid s₁ (vec-setoid s₁ n)
   to vec-rep (x ∷ xs) = x , xs
   from vec-rep (x , xs) = x ∷ xs
-  from∘to≈id vec-rep (x ∷ xs) = ≡.refl
-  to∘from≈id (vec-rep {s₁ = s}) (x , xs) = refl s , ≡.refl
-  to-cong (vec-rep {s₁ = s}) ≡.refl = refl s , ≡.refl
-  from-cong (vec-rep {s₁ = s}) (fst , ≡.refl) = {! !}
-
+  from∘to≈id (vec-rep {s₁ = s}) (x ∷ xs) = refl s ∷ ≋-refl s
+  to∘from≈id (vec-rep {s₁ = s}) (x , xs) = refl s , ≋-refl s
+  to-cong (vec-rep {s₁ = s}) (x ∷ xs) = x , xs
+  from-cong (vec-rep {s₁ = s}) (x , xs) = x ∷ xs
 
   vec-fin
-    : s₁ Has m Elements
-    → prop-setoid (Vec (s₁ .Carrier) n) Has (m ^ n) Elements
+    : ∀ {c} {s : Setoid c c}
+    → s Has m Elements
+    → vec-setoid s n Has (m ^ n) Elements
   vec-fin {n = zero} s = vec-fin₀
   vec-fin {n = suc n} s
-    = ↔-trans (vec-rep)
+    = ↔-trans vec-rep
     ( ↔-trans (×-preserves-↔ s (vec-fin s))
     ( (↔-sym *-fin) ))
 
+
 →-fin : s₁ Has m Elements → s₂ Has n Elements
-      → ≗-setoid (s₁ .Carrier) s₂ Has (n ^ m) Elements
+      → (s₁ ⇨ s₂) Has (n ^ m) Elements
 →-fin s t
   = ↔-trans (→-preserves-↔ s t)
       (↔-trans (↔-sym vec-iso) (vec-fin ↔-refl))
