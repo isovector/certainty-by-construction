@@ -1,6 +1,8 @@
 # Isomorphisms
 
 ```agda
+{-# OPTIONS --allow-unsolved-metas #-}
+
 module 7-isos where
 ```
 
@@ -41,7 +43,7 @@ these use cases in a moment, but first we must define the type.
 ```agda
 open import Data.Nat as ℕ using (ℕ)
 private variable
-  n : ℕ
+  m n : ℕ
 
 
 module Definition-Fin where
@@ -296,7 +298,7 @@ open import Relation.Binary
   using (Setoid; _Preserves_⟶_)
 
 private variable
-  c₁ c₂ c₃ ℓ₁ ℓ₂ ℓ₃ : Level
+  c₁ c₂ c₃ c₄ ℓ₁ ℓ₂ ℓ₃ ℓ₄ : Level
 
 record Iso
       (s₁ : Setoid c₁ ℓ₁)
@@ -354,6 +356,67 @@ concept. Instead, they go with `def:_↔_` (input as [`<->`](AgdaMode).)
 _↔_ = Iso
 ```
 
+Before we go on to say too much more about isomorphisms, we can first show that
+`type:Vec` and `type:Vec′` are indeed isomorphic to one another. After a little
+import wrangling:
+
+```agda
+open import Relation.Binary.PropositionalEquality
+  using ()
+  renaming (setoid to prop-setoid)
+
+import 6-structures
+open 6-structures.Sandbox-Monoids
+  using (≗-setoid)
+
+open Iso
+
+module _ where
+  open Example-Vectors
+
+  open Relation.Binary.PropositionalEquality using (refl; _≡_)
+  open import Function using (_∘_)
+```
+
+we are now ready to show `def:vec-iso`, which states there is an isomorphism
+between the propositional equality setoid on `type:Vec` and the `def:≗-setoid`
+equality over `type:Vec′`. This proof is mostly trivial, since we've already
+done the heavy lifting. However, showing `field:from-cong` takes some effort
+(and a lemma, defined immediately after in a `keyword:where` block) since it
+doesn't automatically fall out from computation.
+
+```agda
+  vec-iso
+      : {A : Set c₁}
+      → prop-setoid (Vec A n) ↔ ≗-setoid (Fin n) (prop-setoid A)
+  to          vec-iso                     = lookup
+  from        vec-iso                     = fromVec′
+  from∘to≈id  vec-iso                     = from∘to
+  to∘from≈id  vec-iso                     = to∘from
+  to-cong     vec-iso refl a              = refl
+  from-cong   (vec-iso {A = A}) {x} {y} f = lemma _ x y f
+```
+
+In order to show the `def:lemma`, we must prove that every element in
+`def:fromVec′` of `x` is equal to every element of the same on `y`. This is done
+via induction on `n`, and proceeds methodically:
+
+```agda
+    where
+      lemma
+          : ∀ n → (x y : Fin n → A)
+          → (f : ∀ a → x a ≡ y a)
+          → fromVec′ x ≡ fromVec′ y
+      lemma zero x y f = refl
+      lemma (suc n) x y f
+        rewrite f zero
+        rewrite lemma n (x ∘ suc) (y ∘ suc) (f ∘ suc)
+          = refl
+```
+
+
+## Isomorphisms Form an Equivalence Relation
+
 I have been implicitly claiming that isomorphism is a good notion of equality
 for types. We will now justify that, by showing that isomorphisms do indeed form
 an equivalence relation. Reflexivity is trivial, because we need to map a type
@@ -364,6 +427,7 @@ private variable
   s₁ : Setoid c₁ ℓ₁
   s₂ : Setoid c₂ ℓ₂
   s₃ : Setoid c₃ ℓ₃
+  s₄ : Setoid c₄ ℓ₄
 
 open import Relation.Binary using (Reflexive; Symmetric; Transitive)
 open import Function using (id; _∘_)
@@ -427,9 +491,6 @@ IsEquivalence.trans  ↔-equiv = ↔-trans
 
 ```agda
 open import Data.Fin using (Fin; zero; suc)
-open import Relation.Binary.PropositionalEquality
-  using ()
-  renaming (setoid to prop-setoid)
 
 module Sandbox-Finite where
   _Has_Elements : Setoid c₁ ℓ₁ → ℕ → Set (c₁ ⊔l ℓ₁)
@@ -441,6 +502,7 @@ module Sandbox-Finite where
   open Iso
 
   open Relation.Binary.PropositionalEquality
+    hiding ([_])
 
   bool-is-2 : prop-setoid Bool Has 2 Elements
   to    bool-is-2 false       = zero
@@ -463,6 +525,80 @@ number of elements are isomorphic to one another:
   fin-iso i₁ i₂ = ↔-trans i₁ (↔-sym i₂)
 ```
 
+```agda
+  open Data.Nat using (_*_; _+_)
+
+  open import Data.Product using (_×_; _,_; proj₁; proj₂)
+  import Data.Product as ×
+  open import Data.Fin using (combine; remQuot)
+  open import Data.Fin.Properties
+
+  open import Data.Product.Relation.Binary.Pointwise.NonDependent
+    using (×-setoid)
+
+  ×-preserves-↔ : s₁ ↔ s₂ → s₃ ↔ s₄ → ×-setoid s₁ s₃ ↔ ×-setoid s₂ s₄
+  to    (×-preserves-↔ s t) = ×.map (to s) (to t)
+  from  (×-preserves-↔ s t) = ×.map (from s) (from t)
+  from∘to≈id (×-preserves-↔ s t) (x , y) =
+    from∘to≈id s x , from∘to≈id t y
+  to∘from≈id (×-preserves-↔ s t) (x , y) =
+    to∘from≈id s x , to∘from≈id t y
+  to-cong    (×-preserves-↔ s t) = ×.map (to-cong s) (to-cong t)
+  from-cong  (×-preserves-↔ s t) = ×.map (from-cong s) (from-cong t)
+
+  *-fin
+      : prop-setoid (Fin (m * n))
+      ↔ ×-setoid (prop-setoid (Fin m)) (prop-setoid (Fin n))
+  to          *-fin = remQuot _
+  from        *-fin (fst , snd)  = combine fst snd
+  from∘to≈id  (*-fin {m = m}) x  = combine-remQuot {m} _ x
+  to∘from≈id  *-fin (x , y) with remQuot-combine x y
+  ... | p = cong proj₁ p , cong proj₂ p
+  to-cong *-fin refl = refl , refl
+  from-cong *-fin (refl , refl) = refl
+
+  ×-fin : s₁ Has m Elements → s₂ Has n Elements
+        → ×-setoid s₁ s₂ Has m * n Elements
+  ×-fin fin₁ fin₂ = ↔-trans (×-preserves-↔ fin₁ fin₂) (↔-sym *-fin)
+```
+
+```agda
+  open import Data.Sum.Relation.Binary.Pointwise
+    using (⊎-setoid; ⊎-refl; inj₁; inj₂; ≡⇒Pointwise-≡)
+
+  open Data.Fin using (splitAt; join)
+  open import Data.Sum
+  import Data.Sum as +
+
+  ⊎-preserves-↔ : s₁ ↔ s₂ → s₃ ↔ s₄ → ⊎-setoid s₁ s₃ ↔ ⊎-setoid s₂ s₄
+  to    (⊎-preserves-↔ s t) = +.map (to s) (to t)
+  from  (⊎-preserves-↔ s t) = +.map (from s) (from t)
+  from∘to≈id (⊎-preserves-↔ s t) (inj₁ x) = inj₁ (from∘to≈id s x)
+  from∘to≈id (⊎-preserves-↔ s t) (inj₂ y) = inj₂ (from∘to≈id t y)
+  to∘from≈id (⊎-preserves-↔ s t) (inj₁ x) = inj₁ (to∘from≈id s x)
+  to∘from≈id (⊎-preserves-↔ s t) (inj₂ y) = inj₂ (to∘from≈id t y)
+  to-cong (⊎-preserves-↔ s t) (inj₁ x) = inj₁ (to-cong s x)
+  to-cong (⊎-preserves-↔ s t) (inj₂ x) = inj₂ (to-cong t x)
+  from-cong (⊎-preserves-↔ s t) (inj₁ x) = inj₁ (from-cong s x)
+  from-cong (⊎-preserves-↔ s t) (inj₂ x) = inj₂ (from-cong t x)
+
+  +-fin
+      : prop-setoid (Fin (m + n))
+      ↔ ⊎-setoid (prop-setoid (Fin m)) (prop-setoid (Fin n))
+  to    +-fin = splitAt _
+  from  +-fin = join _ _
+  from∘to≈id (+-fin {m = m})  = join-splitAt m _
+  to∘from≈id +-fin x          = ≡⇒Pointwise-≡ (splitAt-join _ _ x)
+  to-cong    +-fin refl        = ⊎-refl refl refl
+  from-cong  +-fin (inj₁ refl) = refl
+  from-cong  +-fin (inj₂ refl) = refl
+
+  ⊎-fin : s₁ Has m Elements → s₂ Has n Elements
+        → ⊎-setoid s₁ s₂ Has m + n Elements
+  ⊎-fin fin₁ fin₂ = ↔-trans (⊎-preserves-↔ fin₁ fin₂) (↔-sym +-fin)
+
+```
+
 
 ## Sigma Types
 
@@ -473,15 +609,8 @@ number of elements are isomorphic to one another:
 open import Data.Unit
   using (⊤; tt)
 
-open import Relation.Binary.PropositionalEquality
-  using (setoid)
-
-import 6-structures
-open 6-structures.Sandbox-Monoids
-  using (≗-setoid)
-
-open Iso
 open Setoid
+
 
 _¹ : (s : Setoid c₁ ℓ₁) → s ↔ ≗-setoid ⊤ s
 to          (s ¹) x _   = x
@@ -497,6 +626,18 @@ private variable
   a b : Level
   X : Set a
   Y : Set b
+
+open import Function using (flip)
+
+flip-iso
+  : (s : Setoid c₁ ℓ₁)
+  → ≗-setoid X (≗-setoid Y s) ↔ ≗-setoid Y (≗-setoid X s)
+to          (flip-iso s)       = flip
+from        (flip-iso s)       = flip
+from∘to≈id  (flip-iso s) f x y = refl s
+to∘from≈id  (flip-iso s) f x y = refl s
+to-cong     (flip-iso s) f     = flip f
+from-cong   (flip-iso s) f     = flip f
 
 hmm
   : (s : Setoid c₁ ℓ₁)
@@ -529,6 +670,69 @@ to-cong     (hmm2 s) f = (λ x → f (inj₁ x))
                        , (λ y → f (inj₂ y))
 from-cong   (hmm2 s) (fx , fy) (inj₁ x) = fx x
 from-cong   (hmm2 s) (fx , fy) (inj₂ y) = fy y
+
+
+open Data.Nat using (_^_)
+open Sandbox-Finite
+
+-- TODO(sandy): this is not for an arbitrary setoid iso in the codomain
+→-preserves-↔
+    : s₁ ↔ s₂ → s₃ ↔ s₄
+    → ≗-setoid (s₁ .Carrier) s₃ ↔ ≗-setoid (s₂ .Carrier) s₄
+to (→-preserves-↔ s t) f = to t ∘ f ∘ from s
+from (→-preserves-↔ s t) f = from t ∘ f ∘ to s
+from∘to≈id (→-preserves-↔ s t) f x =
+  begin
+    from t (to t (f (from s (to s x))))
+  ≈⟨ from∘to≈id t _ ⟩
+    f (from s (to s x))
+  ≈⟨ ? ⟩
+    f x
+  ∎
+  where open A-Reasoning t
+to∘from≈id (→-preserves-↔ s t) f x = {! !}
+to-cong (→-preserves-↔ s t) f x = to-cong t (f (from s x))
+from-cong (→-preserves-↔ s t) f x = from-cong t (f (to s x))
+
+open Example-Vectors using (Vec; []; _∷_)
+
+module _ where
+  import Relation.Binary.PropositionalEquality as ≡
+
+  vec-fin₀
+    : ∀ {A : Set c₁} → prop-setoid (Vec A 0) Has 1 Elements
+  to vec-fin₀ [] = zero
+  from vec-fin₀ zero = []
+  from∘to≈id vec-fin₀ [] = ≡.refl
+  to∘from≈id vec-fin₀ zero = ≡.refl
+  to-cong vec-fin₀ ≡.refl = ≡.refl
+  from-cong vec-fin₀ ≡.refl = ≡.refl
+
+  vec-rep
+      : prop-setoid (Vec (s₁ .Carrier) (suc n))
+        ↔ ×-setoid s₁ (prop-setoid (Vec (s₁ .Carrier) n))
+  to vec-rep (x ∷ xs) = x , xs
+  from vec-rep (x , xs) = x ∷ xs
+  from∘to≈id vec-rep (x ∷ xs) = ≡.refl
+  to∘from≈id (vec-rep {s₁ = s}) (x , xs) = refl s , ≡.refl
+  to-cong (vec-rep {s₁ = s}) ≡.refl = refl s , ≡.refl
+  from-cong (vec-rep {s₁ = s}) (fst , ≡.refl) = {! !}
+
+
+  vec-fin
+    : s₁ Has m Elements
+    → prop-setoid (Vec (s₁ .Carrier) n) Has (m ^ n) Elements
+  vec-fin {n = zero} s = vec-fin₀
+  vec-fin {n = suc n} s
+    = ↔-trans (vec-rep)
+    ( ↔-trans (×-preserves-↔ s (vec-fin s))
+    ( (↔-sym *-fin) ))
+
+→-fin : s₁ Has m Elements → s₂ Has n Elements
+      → ≗-setoid (s₁ .Carrier) s₂ Has (n ^ m) Elements
+→-fin s t
+  = ↔-trans (→-preserves-↔ s t)
+      (↔-trans (↔-sym vec-iso) (vec-fin ↔-refl))
 ```
 
 
