@@ -749,34 +749,25 @@ of its projections, albeit invoking `def:×-preserves-↔` and
 ```
 
 
+## Functions as Exponents
 
-## Sigma Types
+In a non-dependent world, we have three interesting type formers---products,
+coproducts, and functions. Having looked already at the first two, we now turn
+our attention to the cardinalities of functions.
 
-
-## Exponent Laws
+First, we note that there exists a more interesting setoid over functions than
+the `def:≗-setoid` that we have been considering thus far. We need a setoid over
+functions which preserves all equalities in the domain into the codomain. This
+is a property we have seen already a thousand times, it's known as congruence.
+Thus, we need a setoid over congruent functions. Given such a thing, it's easy
+(though rather verbose) to show that it preserves isomorphisms:
 
 ```agda
-open import Data.Unit
-  using (⊤; tt)
-
 open Setoid
 
-
-open import Data.Product using (_×_; _,_)
-
-private variable
-  a b : Level
-  X : Set a
-  Y : Set b
-
-open import Data.Sum using (_⊎_; inj₁; inj₂)
-
+open import Data.Product using (_,_)
 open import Data.Product.Relation.Binary.Pointwise.NonDependent
   using (×-setoid)
-
-
-open Data.Nat using (_^_)
-open Sandbox-Finite
 
 open import Function.Equality
   using (_⇨_)
@@ -811,6 +802,11 @@ from-cong (→-preserves-↔ {s₂ = s₂} s t) {g} {h} f {x} {y} a = begin
   from t (func g (to s y)) ≈⟨ from-cong t (f (refl s₂)) ⟩
   from t (func h (to s y)) ∎
   where open A-Reasoning t
+```
+
+```agda
+open Data.Nat using (_^_)
+open Sandbox-Finite
 
 open Example-Vectors using (Vec; []; _∷_)
 
