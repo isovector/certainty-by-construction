@@ -696,9 +696,12 @@ and its inverse via the awkwardly named `def:remQuot (short for
 "remainder/quotient")
 
 ```agda
+    open import Data.Nat.Properties
+
     remQuot : (n : ℕ) → Fin (m * n) → Fin m × Fin n
-    remQuot zero x = ?
-    remQuot (suc n) x = {! !}
+    remQuot {m = suc m} n x with splitAt n x
+    ... | inj₁ l = zero , l
+    ... | inj₂ r = ×.map₁ suc (remQuot {m} n r)
 ```
 
 Again, showing that these are in fact inverses of one another is left as an
@@ -723,13 +726,9 @@ products, as in `def:combine-remQuot-iso`:
   from-cong  combine-remQuot-iso (refl , refl)  = refl
 ```
 
-```agda
-  ×-fin : s₁ Has m Elements → s₂ Has n Elements
-        → ×-setoid s₁ s₂ Has m * n Elements
-  ×-fin fin₁ fin₂
-    = ↔-trans (×-preserves-↔ fin₁ fin₂) (↔-sym combine-remQuot-iso)
-```
-
+At long last, we are now ready to show that coproducts add the cardinalities of
+their injections. The trick is to map both finite isomorphisms across the
+`type:_⊎_`, and then invoke `def:join-splitAt-iso`, as in the following:
 
 ```agda
   ⊎-fin : s₁ Has m Elements → s₂ Has n Elements
@@ -737,6 +736,18 @@ products, as in `def:combine-remQuot-iso`:
   ⊎-fin fin₁ fin₂
     = ↔-trans (⊎-preserves-↔ fin₁ fin₂) (↔-sym join-splitAt-iso)
 ```
+
+We can do a similar trick to show that `type:_×_` multiplies the cardinalities
+of its projections, albeit invoking `def:×-preserves-↔` and
+`def:combine-remQuot-iso` instead:
+
+```agda
+  ×-fin : s₁ Has m Elements → s₂ Has n Elements
+        → ×-setoid s₁ s₂ Has m * n Elements
+  ×-fin fin₁ fin₂
+    = ↔-trans (×-preserves-↔ fin₁ fin₂) (↔-sym combine-remQuot-iso)
+```
+
 
 
 ## Sigma Types
@@ -774,10 +785,10 @@ open import Function.Equality
 →-preserves-↔
     : s₁ ↔ s₂ → s₃ ↔ s₄
     → (s₁ ⇨ s₃) ↔ (s₂ ⇨ s₄)
-func (to (→-preserves-↔ s t) f) = to t ∘ func f ∘ from s
-fcong (to (→-preserves-↔ s t) f) = to-cong t ∘ fcong f ∘ from-cong s
-func (from (→-preserves-↔ s t) f) = from t ∘ func f ∘ to s
-fcong (from (→-preserves-↔ s t) f) = from-cong t ∘ fcong f ∘ to-cong s
+func   (to (→-preserves-↔ s t) f) = to t ∘ func f ∘ from s
+fcong  (to (→-preserves-↔ s t) f) = to-cong t ∘ fcong f ∘ from-cong s
+func   (from (→-preserves-↔ s t) f) = from t ∘ func f ∘ to s
+fcong  (from (→-preserves-↔ s t) f) = from-cong t ∘ fcong f ∘ to-cong s
 from∘to (→-preserves-↔ s t) f {x} {y} a = begin
   from t (to t (func f (from s (to s x))))  ≈⟨ from∘to t _ ⟩
   func f (from s (to s x))                  ≈⟨ fcong f (from∘to s x) ⟩
