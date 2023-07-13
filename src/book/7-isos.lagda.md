@@ -804,6 +804,21 @@ from-cong (→-preserves-↔ {s₂ = s₂} s t) {g} {h} f {x} {y} a = begin
   where open A-Reasoning t
 ```
 
+Now, given a setoid over elements, we can construct a setoid over vectors where
+the elements are considered pointwise. That is, two vectors are equal only when
+each of their elements are equal. Under such a setoid, it's easy to see that if
+the vector has length $n$ and the element-wise setoid has cardinality $k$, the
+cardinality of the possible vectors is $k^n$. Why is this? Because each of the
+$n$ elements can be one of $k$ distinct possibilities. Combinatorially
+therefore, we have the following:
+
+$$
+\underbrace{k \times k \times \cdots \times k}_{\text{$n$ times}} = k^n
+$$
+
+We can prove this in three parts; first by showing that a vector of length zero
+has cardinality one:
+
 ```agda
 open Data.Nat using (_^_)
 open Sandbox-Finite
@@ -817,43 +832,168 @@ module _ where
     using ([]; _∷_; ≋-refl)
     renaming (≋-setoid to vec-setoid)
 
-  vec-fin₀
-    : vec-setoid s₁ 0 Has 1 Elements
-  to vec-fin₀ [] = zero
-  from vec-fin₀ zero = []
-  from∘to vec-fin₀ [] = []
-  to∘from vec-fin₀ zero = ≡.refl
-  to-cong vec-fin₀ [] = ≡.refl
-  from-cong (vec-fin₀ {s₁ = s}) ≡.refl = ≋-refl s
+  vec-fin₀ : vec-setoid s₁ 0 Has 1 Elements
+  to         vec-fin₀ []                 = zero
+  from       vec-fin₀ zero               = []
+  from∘to    vec-fin₀ []                 = []
+  to∘from    vec-fin₀ zero               = ≡.refl
+  to-cong    vec-fin₀ []                 = ≡.refl
+  from-cong  (vec-fin₀ {s₁ = s}) ≡.refl  = ≋-refl s
+```
 
+Then, by showing a lemma that is there an isomorphism between `type:Vec A (suc
+n)` and `type:A × Vec A n`:
+
+```agda
   vec-rep
       : vec-setoid s₁ (suc n)
         ↔ ×-setoid s₁ (vec-setoid s₁ n)
-  to vec-rep (x ∷ xs) = x , xs
-  from vec-rep (x , xs) = x ∷ xs
-  from∘to (vec-rep {s₁ = s}) (x ∷ xs) = refl s ∷ ≋-refl s
-  to∘from (vec-rep {s₁ = s}) (x , xs) = refl s , ≋-refl s
-  to-cong (vec-rep {s₁ = s}) (x ∷ xs) = x , xs
-  from-cong (vec-rep {s₁ = s}) (x , xs) = x ∷ xs
+  to vec-rep    (x ∷ xs)                     = x , xs
+  from vec-rep  (x , xs)                     = x ∷ xs
+  from∘to       (vec-rep {s₁ = s}) (x ∷ xs)  = refl s ∷ ≋-refl s
+  to∘from       (vec-rep {s₁ = s}) (x , xs)  = refl s , ≋-refl s
+  to-cong       (vec-rep {s₁ = s}) (x ∷ xs)  = x , xs
+  from-cong     (vec-rep {s₁ = s}) (x , xs)  = x ∷ xs
+```
 
+We can combine these two facts into the desired proof that vectors have an
+exponential cardinality:
+
+```agda
   vec-fin
-    : ∀ {c} {s : Setoid c c}
-    → s Has m Elements
-    → vec-setoid s n Has (m ^ n) Elements
-  vec-fin {n = zero} s = vec-fin₀
-  vec-fin {n = suc n} s
+    : s₁ Has m Elements
+    → vec-setoid s₁ n Has (m ^ n) Elements
+  vec-fin {n = zero}   s = vec-fin₀
+  vec-fin {n = suc n}  s
     = ↔-trans vec-rep
     ( ↔-trans (×-preserves-↔ s (vec-fin s))
-    ( (↔-sym combine-remQuot-iso) ))
+              (↔-sym combine-remQuot-iso))
+```
 
+And now, to tie everything together, we can show that functions themselves also
+have an exponential cardinality. This is a straightforward application of
+`def:→-preserves-↔`, `def:vec-iso` and `vec-fin`. In essence, we transform our
+function `A → B` into a function `Fin m → Fin n`, and then use the
+characteristic function of vectors to reinterpret that function as a vector of
+length `m`. Finally, we know the cardinality of such a vector, as shown just now
+by `def:vec-fin`.
 
-→-fin : s₁ Has m Elements → s₂ Has n Elements
-      → (s₁ ⇨ s₂) Has (n ^ m) Elements
-→-fin s t
-  = ↔-trans (→-preserves-↔ s t)
-      (↔-trans (↔-sym vec-iso) (vec-fin ↔-refl))
+```agda
+  →-fin : s₁ Has m Elements → s₂ Has n Elements
+        → (s₁ ⇨ s₂) Has (n ^ m) Elements
+  →-fin s t
+    = ↔-trans (→-preserves-↔ s t)
+    ( ↔-trans (↔-sym vec-iso)
+              (vec-fin ↔-refl))
 ```
 
 
 ## Automatic Memoization
+
+While counting cardinalities is fun and all, it can be easy to miss the forest
+for the trees. Why might J. Random Hacker care about isomorphisms? Perhaps the
+most salient application of theory I have ever seen is the use of isomorphism to
+*automatically improve* an algorithms runtime by an asymptotic factor.
+
+How can such a thing be possible? The answer lies in the observation that while
+meaning is preserved by isomorphism, computational properties are not. Most
+obviously, several algorithms for sorting lists have been famously studied. Each
+of these algorithms has type `Vec A n → Vec A n` (and are thus isomorphic to one
+another via `def:↔-refl`.) But as we know, bubble sort performs significantly
+worse than merge sort does. It is the exploitation of exactly this sort of
+observation that we can use to automatically improve our algorithms.
+
+At a high level, the goal is to find an alternative representation of our
+function as some other type---some other type which has more desirable
+computational properties. As an illustration, every cache layer ever put in
+front of a computation is an unprincipled attempt towards this end. The common
+dynamic programming approach of memoizing partial results in an
+appropriately-sized array is another example.
+
+But caching of results is not the only possible way we can exploit an
+isomorphism over a function. The somewhat-esoteric *trie* data structure is
+commonly used for filtering big lists of strings (known, for obvious reasons, as
+a dictionary) by a prefix. The idea behind tries is to break each word in the
+list into a linked list of its characters, each pointing at the next, and then
+to merge each of these linked lists into one big tree structure. The root node
+then has one child for every possible starting letter in the set of words.
+Moving to any particular branch necessarily filters away all of the words which
+*don't* start with that letter. We can treat our new node as the root, and
+recurse---this time, the node has children only for the possible *second*
+letters of words in the dictionary that begin with the prefix of nodes you've
+already traversed.
+
+It's a clever encoding scheme that allows for an incremental refinement of a
+dictionary, and this incremental refinement is exactly the sort of computational
+property we're looking to exploit in our isomorphisms out of functions. When you
+step back and think about the characteristic function of the trie, you see that
+really all it is answering is the question "does this string exist in the
+dictionary?"---or, put another way, it is any function of type `String → Bool`.
+
+Exploiting isomorphisms is an excellent way of coming up with clever data
+structures like tries, without the necessity that oneself be clever in the first
+place. It's a great hack for convincing colleagues of your keen
+computer-science mind. And the canonical isomorphisms given by a types'
+cardinalities is an excellent means of exploring which isomorphisms actually
+exist in order to exploit.
+
+As a silly example, let's consider functions out of `type:Bool` and into some
+arbitrary type `A`. We therefore know that such a thing has cardinality equal to
+the cardinality of `A` squared. Using the notation $\abs{A}$ to mean "the
+cardinality of `A`", we know that these functions have cardinality $\abs{A}^2$.
+But from school arithmetic, such a thing is also equal to
+$\abs{A}\times\abs{A}$---which doesn't take much imagination to interpret as a
+pair.
+
+And this isn't surprising when we stop to think about it; we can replace any
+function `Bool → A` with `A × A` because we only need to store two `A`s---the
+one resulting from `ctor:false`, and the other which comes from `ctor:true`.
+There are no other `type:Bool`s to which we can apply the function, and thus
+there are no other `A`s that can be produced.
+
+Of course, this is a silly example. I did warn you. But it serves to illustrate
+an important point, that through these isomorphisms we can transport the
+entirety of our knowledge about discrete mathematics into the realm of
+programming. In fact, if we know that two natural numbers are equal, we can use
+that fact to induce an isomorphism:
+
+```agda
+  import Relation.Binary.PropositionalEquality as PropEq
+  open PropEq using (_≡_; cong)
+
+  ↔-subst : m ≡ n → prop-setoid (Fin m) ↔ prop-setoid (Fin n)
+  ↔-subst PropEq.refl = ↔-refl
+```
+
+```agda
+  open import Data.Vec as V
+  open import Data.Vec.Properties
+
+  vec-preserves-↔ : s₁ ↔ s₂ → vec-setoid s₁ n ↔ vec-setoid s₂ n
+  to (vec-preserves-↔ s) = V.map (to s)
+  from (vec-preserves-↔ s) = V.map (from s)
+  from∘to (vec-preserves-↔ s) x
+    rewrite PropEq.sym (map-∘ (from s) (to s) x)
+      = {! !}
+  to∘from (vec-preserves-↔ s) x
+    rewrite PropEq.sym (map-∘ (to s) (from s) x)
+      = {! !}
+  to-cong (vec-preserves-↔ s) x = {! !}
+  from-cong (vec-preserves-↔ s) = {! !}
+
+  -- open Data.Nat using (_*_)
+  -- open import Data.Nat.Properties
+
+  -- chunking
+  --   : s₁ Has m Elements
+  --   → (k : ℕ)
+  --   → vec-setoid s₁ (n * k) ↔ vec-setoid (vec-setoid s₁ k) n
+  -- chunking {m = m} {n = n} s-fin k
+  --   = ↔-trans (vec-fin s-fin)
+  --   ( ↔-trans (↔-subst (cong (m ^_) (*-comm n k)))
+  --   ( ↔-trans ? (↔-sym (vec-fin (vec-preserves-↔ s-fin)))
+  --   )
+  --   )
+```
+
 
