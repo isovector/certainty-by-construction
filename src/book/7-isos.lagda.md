@@ -969,6 +969,8 @@ that fact to induce an isomorphism:
 ## Automatic Memoization
 
 ```agda
+  -- TODO(sandy): I think this is a bad example
+
   data Size : Set where
     const : ℕ → Size
     times : Size → Size → Size
@@ -986,10 +988,6 @@ that fact to induce an isomorphism:
   open import Data.Product using (_×_)
   open import Data.Sum using (_⊎_)
 
-  data Key : Size → Set where
-    const : Fin n → Key (const n)
-    times : (m n : Size) → Key (times m n)
-
   ⌊_⌋ : Size → Set
   ⌊ const x    ⌋ = Fin x
   ⌊ times x y  ⌋ = ⌊ x ⌋ ×  ⌊ y ⌋
@@ -998,10 +996,6 @@ that fact to induce an isomorphism:
 
   postulate
     size-fin : (s : Size) → prop-setoid ⌊ s ⌋ Has ∣ s ∣ Elements
---   size-fin (const x) = ↔-refl
---   size-fin (times s t) = {! !}
---   size-fin (plus s t) = {! !}
---   size-fin (power s t) = {! !}
 
   data Trie (B : Set ℓ) : Size → Set ℓ where
     miss : ∀ {n} → Trie B n
@@ -1013,6 +1007,7 @@ that fact to induce an isomorphism:
   open import Data.Maybe
 
   record MemoTrie {ℓ₂ : Level} (s : Setoid c₁ ℓ₁) (B : Set ℓ₂) : Set (ℓ₁ ⊔l ℓ₂ ⊔l c₁) where
+    constructor mt
     field
       func : s .Carrier → B
       size : Size
@@ -1022,14 +1017,11 @@ that fact to induce an isomorphism:
     key : s ↔ prop-setoid ⌊ size ⌋
     key = ↔-trans s-fin (↔-sym (size-fin size))
 
-    hit : s .Carrier → Maybe B
-    hit a with to key a
-    ... | k = ?
-
---   lookup : ∀ {ℓ} {B : Set ℓ} → MemoTrie s₁ B → s₁ .Carrier → B × MemoTrie s₁ B
---   lookup x a = {! !}
-
-
+  lookup : ∀ {ℓ} {B : Set ℓ} → MemoTrie s₁ B → s₁ .Carrier → B × MemoTrie s₁ B
+  lookup (mt func₁ (const x) s-fin cache) a = {! !}
+  lookup (mt func₁ (times size size₁) s-fin cache) a = {! !}
+  lookup (mt func₁ (plus size size₁) s-fin cache) a = {! !}
+  lookup (mt func₁ (power size size₁) s-fin cache) a = {! !}
 ```
 
 
