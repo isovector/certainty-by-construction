@@ -539,17 +539,17 @@ can show that `type:Bool` has two inhabitants:
 
   open Relation.Binary.PropositionalEquality using (refl; cong)
 
-  bool-is-2 : prop-setoid Bool Has 2 Elements
-  to         bool-is-2 false       = zero
-  to         bool-is-2 true        = suc zero
-  from       bool-is-2 zero        = false
-  from       bool-is-2 (suc zero)  = true
-  from∘to    bool-is-2 false       = refl
-  from∘to    bool-is-2 true        = refl
-  to∘from    bool-is-2 zero        = refl
-  to∘from    bool-is-2 (suc zero)  = refl
-  to-cong    bool-is-2 refl        = refl
-  from-cong  bool-is-2 refl        = refl
+  bool-fin : prop-setoid Bool Has 2 Elements
+  to         bool-fin false       = zero
+  to         bool-fin true        = suc zero
+  from       bool-fin zero        = false
+  from       bool-fin (suc zero)  = true
+  from∘to    bool-fin false       = refl
+  from∘to    bool-fin true        = refl
+  to∘from    bool-fin zero        = refl
+  to∘from    bool-fin (suc zero)  = refl
+  to-cong    bool-fin refl        = refl
+  from-cong  bool-fin refl        = refl
 ```
 
 While we don't need an isomorphism to convince ourselves that `type:Bool` does
@@ -888,7 +888,7 @@ by `def:vec-fin`.
 ```
 
 
-## Automatic Memoization
+## Isomorphisms for Program Optimization
 
 While counting cardinalities is fun and all, it can be easy to miss the forest
 for the trees. Why might J. Random Hacker care about isomorphisms? Perhaps the
@@ -965,35 +965,71 @@ that fact to induce an isomorphism:
   ↔-subst PropEq.refl = ↔-refl
 ```
 
+
+## Automatic Memoization
+
 ```agda
-  open import Data.Vec as V
-  open import Data.Vec.Properties
+  data Size : Set where
+    const : ℕ → Size
+    times : Size → Size → Size
+    plus  : Size → Size → Size
+    power : Size → Size → Size
 
-  vec-preserves-↔ : s₁ ↔ s₂ → vec-setoid s₁ n ↔ vec-setoid s₂ n
-  to (vec-preserves-↔ s) = V.map (to s)
-  from (vec-preserves-↔ s) = V.map (from s)
-  from∘to (vec-preserves-↔ s) x
-    rewrite PropEq.sym (map-∘ (from s) (to s) x)
-      = {! !}
-  to∘from (vec-preserves-↔ s) x
-    rewrite PropEq.sym (map-∘ (to s) (from s) x)
-      = {! !}
-  to-cong (vec-preserves-↔ s) x = {! !}
-  from-cong (vec-preserves-↔ s) = {! !}
+  open import Data.Nat using (_+_; _*_; _^_)
 
-  -- open Data.Nat using (_*_)
-  -- open import Data.Nat.Properties
+  ∣_∣ : Size → ℕ
+  ∣ const  x    ∣ = x
+  ∣ times  x y  ∣ = ∣ x  ∣ *  ∣ y ∣
+  ∣ plus   x y  ∣ = ∣ x  ∣ +  ∣ y ∣
+  ∣ power  x y  ∣ = ∣ y  ∣ ^  ∣ x ∣
 
-  -- chunking
-  --   : s₁ Has m Elements
-  --   → (k : ℕ)
-  --   → vec-setoid s₁ (n * k) ↔ vec-setoid (vec-setoid s₁ k) n
-  -- chunking {m = m} {n = n} s-fin k
-  --   = ↔-trans (vec-fin s-fin)
-  --   ( ↔-trans (↔-subst (cong (m ^_) (*-comm n k)))
-  --   ( ↔-trans ? (↔-sym (vec-fin (vec-preserves-↔ s-fin)))
-  --   )
-  --   )
+  open import Data.Product using (_×_)
+  open import Data.Sum using (_⊎_)
+
+  data Key : Size → Set where
+    const : Fin n → Key (const n)
+    times : (m n : Size) → Key (times m n)
+
+  ⌊_⌋ : Size → Set
+  ⌊ const x    ⌋ = Fin x
+  ⌊ times x y  ⌋ = ⌊ x ⌋ ×  ⌊ y ⌋
+  ⌊ plus  x y  ⌋ = ⌊ x ⌋ ⊎  ⌊ y ⌋
+  ⌊ power x y  ⌋ = ⌊ x ⌋ →  ⌊ y ⌋
+
+  postulate
+    size-fin : (s : Size) → prop-setoid ⌊ s ⌋ Has ∣ s ∣ Elements
+--   size-fin (const x) = ↔-refl
+--   size-fin (times s t) = {! !}
+--   size-fin (plus s t) = {! !}
+--   size-fin (power s t) = {! !}
+
+  data Trie (B : Set ℓ) : Size → Set ℓ where
+    miss : ∀ {n} → Trie B n
+    one : B → Trie B (const 1)
+    or : ∀ {m n} → Trie B m → Trie B n → Trie B (plus m n)
+    and : ∀ {m n} → Trie (Trie B n) m → Trie B (times m n)
+
+
+  open import Data.Maybe
+
+  record MemoTrie {ℓ₂ : Level} (s : Setoid c₁ ℓ₁) (B : Set ℓ₂) : Set (ℓ₁ ⊔l ℓ₂ ⊔l c₁) where
+    field
+      func : s .Carrier → B
+      size : Size
+      s-fin : s Has ∣ size ∣ Elements
+      cache : Trie B size
+
+    key : s ↔ prop-setoid ⌊ size ⌋
+    key = ↔-trans s-fin (↔-sym (size-fin size))
+
+    hit : s .Carrier → Maybe B
+    hit a with to key a
+    ... | k = ?
+
+--   lookup : ∀ {ℓ} {B : Set ℓ} → MemoTrie s₁ B → s₁ .Carrier → B × MemoTrie s₁ B
+--   lookup x a = {! !}
+
+
 ```
 
 
