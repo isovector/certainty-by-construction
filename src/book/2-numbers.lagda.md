@@ -1098,8 +1098,15 @@ issue---there are now two (and exactly two) representations of zero:
 ```
 
 Perhaps there are some number systems in which it's desirable to have (distinct)
-positive and negative zeroes, but this is not one of them. Unfortunately, our
-second attempt at defining the integers is also flawed, but it points us in the
+positive and negative zeroes, but this is not one of them. We are stuck with two
+uncomfortable options---keep the two zeroes and insist that they are in fact two
+different numbers, or duplicate all of our proof effort and somehow work in the
+fact that the two zeroes are different encodings of the same thing. Such a thing
+can work, but it's inelegant and pushes our poor decisions down the line to
+every subsequent user of our numbers.
+
+There really is no good solution here, so we must conclude that our second
+attempt at defining the integers is also flawed. However, it points us in the
 right direction. Really, the only problem here is our *interpretation of the
 syntax.* This brings us to our third, and final implementation for the integers:
 
@@ -1115,10 +1122,10 @@ module Sandbox-Integers where
 ```
 
 You'll notice this definition of `type:ℤ` is identical to the one from
-`module:Naive-Integers₂`; the only difference is that we've renamed `ctor:-_` to `ctor:-[1+_]`.
-This new name suggests the numbers are one "more negative" than the wrapped
-natural would otherwise indicate. We can then name three particularly
-interesting integers:
+`module:Naive-Integers₂`; the only difference is that we've renamed `ctor:-_` to
+`ctor:-[1+_]`. This new name suggests the numbers are one "more negative" than
+the wrapped natural would otherwise indicate. We can then name three
+particularly interesting integers:
 
 ```agda
   0ℤ : ℤ

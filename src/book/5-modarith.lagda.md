@@ -42,10 +42,7 @@ module ModularArithmetic where
 ```
 
 Notice that we use propositional equality at [1](Ann) to assert that we're
-witnessing the fact that these two expressions *really are the same!* But that's
-merely an implementation detail.
-
--- TODO(sandy): what does it mean that this is only an impl detail?
+witnessing the fact that these two expressions *really are the same!*
 
 We can now show that our clock example works as expected:
 
