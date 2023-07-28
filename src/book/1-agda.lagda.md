@@ -1,21 +1,28 @@
-# Introduction to Agda
+# A Gentle Introduction to Agda
 
 This book is no ordinary prose. It is not just a book, but it is also a piece of
-software. Literate programming is a technique for interspersing prose and
-computer programs in the same document. The result is a *polyglot*: a single
-artifact that can be interpreted simultaneously as a book written in English, or
-a series of program modules written in Agda.
+software. Literate programming is a technique for interspersing text and
+computer programs in the same document. The result is a single artifact that can
+be interpreted simultaneously as a book written in English, or a series of
+modules written in Agda.
 
-By virtue of being a literate program, this book is only capable of being
-typeset if all of the code actually compiles; it's not by the virtue of having
-had a diligent copy-editor! The book simply will not compile if any of the Agda
-code presented in it doesn't typecheck, or if any of its tests fail. And as we
-will see shortly, Agda programs come with very extensive tests.
+Most technical books work only by dint of having been read by a diligent
+copy-editor. But technical editors are fallible, and can nevertheless miss some
+details. The compiler, however, is superhuman in its level of nitpicking
+pedantry. By virtue of being a literate program, this book is capable of being
+typeset only when all of the code actually works The book simply will not
+compile if any of the Agda code presented in it doesn't typecheck, or if any of
+its tests fail.
+
+This last point is particularly important. As we will see shortly, Agda programs
+come with *very* extensive tests.
 
 In this chapter we will get acquainted with Agda's syntax, core ideas, and
 interactive tooling. By the end, you will be able to parse Agda code mentally,
 be able to write simple functions, and type the many funny Unicode characters
-which are ubiquitous in real Agda code.
+which are ubiquitous in real Agda code. Despite being written in Agda, this book
+is not *about* Agda, and so the goal is to get you to a minimum degree of
+competency as quickly as possible. Let's get going!
 
 
 ## Modules and Imports
@@ -28,48 +35,61 @@ Hidden
     ```
 
 
-When code is presented in this book, it will come in a box like the following:
+When code is presented in this book, it will be shown with a thick left rule, as
+below:
 
 ```agda
 module 1-agda where
 ```
 
-This is not just an example of a code block: it's necessary preamble when
-starting a new Agda file. Every Agda file must begin with a `keyword:module`
-definition, and since this book is a real Agda program, every chapter must
-contain a `keyword:module` definition before we can write any code.
+This one-line example is not merely an illustration to the reader. By virtue of
+being a literate document, every chapter in this book must be a valid Agda file,
+and every Agda file begins with a *module declaration* like above. This
+declaration is mandatory prefacing every chapter, and we're not allowed to write
+any code until we've done the `keyword:module` ritual.
 
 The module is Agda's simplest unit of compilation.
 
 > TODO(sandy): change me when publishing
 
-Every Agda source file must begin with a module declaration corresponding to the
-file name. Since this module is called `module:1-agda`, if you want to follow
-along at home, you will have to save your file as `1-agda.agda`.
+Every Agda source file must begin with a module declaration which matches the
+name of the file. Since this module is called `module:1-agda`, if you'd like to
+follow along at home, you must save your file as `1-agda.agda`. Failure to do so
+will result in a helpful error message:
 
-Agda modules can contain other modules, in which case they act as tools for
-namespacing. For example, we can make a submodule inside of `module:1-agda`:
+```info
+The name of the top level module does not match the file name.
+```
+
+Whenever feedback from the compiler is presented in this book, we will typeset
+it as above. You'll learn how to interact with the compiler momentarily.
+
+Agda modules act as namespaces: limiting access and visibility to definitions
+within. Modules can be nested inside of one another, as in the following example:
 
 ```agda
 module example where
   -- This is a comment
 ```
 
-This introduces a new module `module:example` inside of `module:1-agda`. Unlike
-many programming languages, Agda doesn't use delimiters to indicate blocks;
-instead, it uses *significant whitespace.* That is, in order to show that the
-comment is inside the module `module:example`, it must be indented relative to
-the `keyword:module` keyword. Because leading whitespace is meaningful in Agda,
-we must be careful to get our indentation right.
+This introduces a new module `module:example` inside of `module:1-agda`. You
+will notice a lack of curly braces here. Unlike many programming languages, Agda
+doesn't use delimiters to indicate blocks; instead, it uses *significant
+whitespace.* That is, in order for the comment to be inside the module
+`module:example`, it must be indented relative to the `keyword:module` keyword.
+Because leading whitespace is meaningful in Agda, we must be careful to get our
+indentation right.
 
 
 OnlyBook
 
 :   This nested indentation can get very deep in real programs. It's not a
-    problem in a text editor, but in print, real-estate is very expensive.
-    Therefore, we will try to elide as much indentation as possible. You might
-    have noticed a little number 0 in the left margin gutter of each code block.
-    This indicates how many spaces should precede each line of the code block.
+    problem in a text editor, but in print---like you are reading now---,
+    real-estate is very expensive. Therefore, we will try to elide as much
+    indentation as possible. You might have noticed a little number 0 in the
+    left margin gutter of each code block. This indicates how many spaces should
+    precede each line of the code block. In this case, there should be no
+    preceding indentation.
 
 :   If the first line of block of code is at the same relative indent level as
     the last line of the previous one, we'll just mark the column depth in the
@@ -83,26 +103,37 @@ OnlyBook
     scheme; $\rightarrowbar$ 8 means that you should *begin* in column 8, *not*
     that you should add 8 additional spaces relative to the previous line.
 
-:   To illustrate, these four code blocks:
+:   To illustrate this convention, we can look at four code blocks presented
+    separately. The first is a new module `module:foo`.
 
 :     ```agda
 module foo⅋ where
       ```
+
+:   The second contains a doubly-nested submodule, first `module:bar` and then
+    `module:qux`:
 
 :     ```agda
   module bar⅋ where
     module qux⅋ where
       ```
 
+:   Our third code block introduces yet another module---this time at the same
+    relative indentation:
+
 :     ```agda
     module zaz⅋ where
       ```
+
+:   And finally, we come to our last code block illustrating the indentation
+    convention of the book:
 
 :     ```agda
   module ram⅋ where
       ```
 
-:   should be laid out in your Agda file like this:
+:   If we wanted to lay out these four preceding blocks into our Agda file, the
+    actual indentation for everything should look like this:
 
 ```agda
 module foo where
@@ -115,18 +146,24 @@ module foo where
 
 OnlyBook
 
-:   Don't worry; this will be much less tedious throughout the book than it
-    seems. The illustration here is merely to get you paying attention to the
-    indicators. Our actual code will require dramatically less changing of
-    indentation.
+:   Don't worry; this indentation convention will be much less tedious
+    throughout the book than it seems. The illustration here is merely to get
+    you paying attention to the indicators. Our actual code will require
+    dramatically less changing of indentation.
 
 :   The important point here is that you should indent when you see a
     $\rightarrowbar$, and likewise de-dent when you see a $\barleftarrow$. If
-    you or Agda ever confused about where your indentation should be, use a
-    number of spaces equal to number indicated.
+    you (or Agda) ever confused about where your indentation should be, use a
+    number of spaces equal to number indicated. Getting your indentation wrong
+    is a serious error that the compiler *will* complain about, so if you get
+    mysterious errors when working through the code presented here, the first
+    diagnostic step is to ensure your indentation is correct.
 
-In this the code block example above, we have defined five sub-modules, which
-have the *fully-qualified* names:
+I said earlier that modules act as namespaces. In the case of multiple modules
+in a single file, the modules are given *full-qualified name*, in which they
+inherit the names of all of their parent modules as well. For example, in the
+code block above, we have defined five sub-modules, which have the
+fully-qualified names:
 
 - `module:1-agda.foo`
 - `module:1-agda.foo.bar`
@@ -134,11 +171,15 @@ have the *fully-qualified* names:
 - `module:1-agda.foo.bar.zaz`
 - `module:1-agda.foo.ram`
 
-We will use many modules throughout this book---albeit ones which are much more
-interesting than the ones presented thus far. Our primary use for them will be
-to scope out sections of prose. And since modules act as namespaces, we will
-often open a new one in order to illustrate anti-patterns and false starts,
-without polluting our main results.
+The module structure of an Agda program always forms a tree.
+
+We will use many modules throughout this book---albeit ones much more
+interesting than presented thus far. A common pattern we will take is to
+introduce a new module whenever we'd like to explore a new line of reasoning.
+The idea being that learning abstract things like math requires lots of specific
+examples, from which we will generalize. Thus, we need a mechanism to work out
+the gory details of a specific example without "polluting" our eventual
+results.
 
 One distinct advantage of organizing chapters into modules is that chapters thus
 become conceptual units in our program. If a later chapter depends on an earlier
@@ -168,22 +209,30 @@ every code block.
 
 ## Importing Code
 
-However, we will break this define-it-before-you-import-it rule just once to
-illustrate how Agda's import syntax works. Imports are also scoped to the
-current module, so we will first start a new module to sandbox the imports, and
-immediately follow up with how you can define them for yourself.
-
-We can import the `Data.Bool` module as follows:
+We will break our define-it-before-you-import-it rule just once to illustrate
+how Agda's module importing system works. Because imports are scoped to the
+currently open module, we will first open a new module:
 
 ```agda
-module Sandbox-Bool where
+module Example-Imports where
+```
+
+Inside this module we are free to import and define anything we like, without
+fear that it will leak into `module:1-agda` where we will do the majority of our
+work.
+
+We can import the booleans from the `module:Data.Bool` module as follows:
+
+```agda
   import Data.Bool
 ```
 
 This line tells Agda to go find a module called `module:Data.Bool` somewhere (which it
 will do by looking in the current project and any globally-installed libraries
 for a file called `Data/Bool.agda`.) Just importing it, however, is rarely what
-we want, as all the identifiers have come in fully-qualified:
+we want, as all the identifiers have come in fully-qualified. Ignoring the
+syntax for a moment, you will notice the following code example is much more
+verbose than we'd like:
 
 ```agda
   _ : Data.Bool.Bool
@@ -193,20 +242,26 @@ we want, as all the identifiers have come in fully-qualified:
 We will dive into the exact syntax here more fully in a moment, but first, it's
 worth learning how to avoid the fully-qualified names. After importing a module,
 we can also `open` it, in which case, all of its contents get dumped into the
-current environment:
+current environment. Thus, we can rewrite the previous two code blocks as:
 
 ```agda
+  import Data.Bool
   open Data.Bool
 
   _  : Bool
   _ = false
 ```
 
-Of course, this is quite a lot of work, so we can combine the `keyword:import` and
-`keyword:open` statements together rather than doing them separately:
+Of course, it's rather annoying to need to `keyword:import` and open a
+`keyword:module` every time we'd like to use it. Thankfully, Agda provides us
+some syntactic sugar here, via `keyword: open import`. Rewriting the code again,
+we get:
 
 ```agda
   open import Data.Bool
+
+  _  : Bool
+  _ = false
 ```
 
 There is significantly more to say about Agda's module system, but this is
@@ -214,35 +269,46 @@ enough to get you up and running. We will cover the more advanced topics when we
 come to them.
 
 
-## Syntax Highlighting
+## Semantic Highlighting
 
 Unlike most programming languages, syntax highlighting in Agda is performed *by
-the compiler,* rather than just some hodgepodge set of regular expressions that
-hope to do a reasonably good job of parsing the program. Therefore, it's more
-correct to call this *semantic highlighting* rather than syntax highlighting.
-Since Agda's parser is so flexible, getting trustworthy highlighting information
-from the compiler is a necessity for quickly parsing what's going on. This,
-along with the lack of [`GotoDefinition`](AgdaCmd), is the main reason Agda is
-challenging to read outside of a text editor.
+the compiler,* rather than some hodgepodge regular expressions that do their
+best to parse the program. Therefore, it's more correct to call Agda's
+highlighting *semantic* rather than syntactic. Since Agda's grammar is so
+flexible, getting trustworthy highlighting information from the compiler is a
+necessity for quickly parsing what's going on. The lack of semantic highlighting
+outside of text editors makes Agda a much harder language to read casually. If
+you're ever snooping through Agda code, do yourself a favor and load it into an
+editor to ensure you get the semantic highlighting. It makes a world of
+difference.
 
-Because this book is a literate Agda document, all of the syntax highlighting
-you see was produced directly by the Agda compiler. This is unfortunately the
-most help I can give to the reader of this book in hard copy.
+The highlighting in this book was generated directly from the Agda compiler. The
+default colors that Agda chooses when doing highlighting are helpful for
+quickly conveying information, but they are by no means beautiful. For the sake
+of the reader's enjoyment, I have chosen my own color-scheme for this book. It
+is presented below, alongside the standard Agda colors, if you'd like a guide
+for translating between the book and your editor:
 
-As a quick guide, you can visually spot the following pieces of Agda:
+|                    Element |                 Book                 |                     Editor                     |
+|---------------------------:|:------------------------------------:|:----------------------------------------------:|
+|                   Keywords |         \AgdaKeyword{goldenrod}      |         \AgdaKeyword[Standard]{orange}         |
+|               Constructors |    \AgdaInductiveConstructor{red}    |   \AgdaInductiveConstructor[Standard]{green}   |
+|            Bound Variables |           \AgdaBound{black}          |        \AgdaBound[Standard]{also black}        |
+|              Record Fields |       \AgdaField{forest green}       |           \AgdaField[Standard]{pink}           |
+|               Module Names |          \AgdaModule{black}          |          \AgdaModule[Standard]{purple}         |
+|                  Functions |          \AgdaFunction{blue}         |     \AgdaFunction[Standard]{even more blue}    |
+|          Interactive Holes |  \AgdaHole{goldenrod background}     |   \AgdaHole[Standard]{green background}        |
+| Underspecified Elaboration | \AgdaUnsolvedMeta{orange background} | \AgdaUnsolvedMeta[Standard]{bright yellow background} |
 
-- \AgdaKeyword{yellow}: keywords
-- \AgdaInductiveConstructor{red}: constructors
-- \AgdaBound{black}: bound variables
-- \AgdaField{green}: record fields
-- \AgdaModule{black}: modules
-- \AgdaFunction{blue}: functions and types
-- \AgdaHole{light yellow background}: interactive holes
-- \AgdaUnsolvedMeta{deep yellow background}: underspecified elaboration
+We haven't yet discussed most of these ideas, but perhaps you can see why we
+have not followed the standard color-scheme in this book; its high information
+density comes at the cost of a comfortable reading experience.
 
-We haven't yet discussed all of these ideas, but these conventions will be used
-throughout the book. Feel free to return to this section if you're ever having a
-hard time mentally parsing what's going on.
+Don't feel like you need to memorize this table. Whenever a new concept is
+introduced, I'll share the relevant highlighting information, both in the book
+and in your editor. And with a little bit of experience, you'll internalize it
+all just from exposure. But feel free to return to this section if you're ever
+having a hard time mentally parsing what's going on.
 
 
 ## Types and Values

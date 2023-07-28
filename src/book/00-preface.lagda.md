@@ -80,7 +80,7 @@ assistants. Proof assistants are essentially programming languages meant for
 doing mathematics, and stumbling across them gave me a taste of what was
 possible. The selling point is that these languages come with a *standard
 library of mathematical theorems.* As a software guy, I know how to push
-programming knowledge into my brain. You bite off a module of the standard
+programming knowledge into my brain. You bite off one module of the standard
 library at a time, learning what's there, inlining definitions, and reading
 code. If you ever need to check your understanding, you just code up something
 that seems to make sense and see if the compiler accepts it. Now, as they say,
@@ -142,6 +142,6 @@ lies; at least, none mathematically. I am not an expert in this field, but have
 stumbled across a fantastic method of learning and teaching mathematics.
 
 This textbook is the book I wish I had found ten years ago. It would have saved
-me a great deal of wasted effort and false starts. I hope it can save you the
-same. Good luck, godspeed, and welcome aboard.
+me a great deal of wasted effort and false starts. I hope it can save you from
+the same. Good luck, godspeed, and welcome aboard.
 
