@@ -291,18 +291,21 @@ for translating between the book and your editor:
 
 |                    Element |                 Book                 |                     Editor                     |
 |---------------------------:|:------------------------------------:|:----------------------------------------------:|
-|                   Keywords |         \AgdaKeyword{goldenrod}      |         \AgdaKeyword[Standard]{orange}         |
+|                    Numbers |         \AgdaNumber{grey}            |         \AgdaNumber[Standard]{purple}          |
+|                    Strings |         \AgdaString{grey}            |         \AgdaString[Standard]{red}             |
+|                   Comments |         \AgdaComment{red}            |         \AgdaComment[Standard]{red}            |
+|                   Keywords |         \AgdaKeyword{yellow}         |         \AgdaKeyword[Standard]{orange}         |
 |               Constructors |    \AgdaInductiveConstructor{red}    |   \AgdaInductiveConstructor[Standard]{green}   |
-|            Bound Variables |           \AgdaBound{black}          |        \AgdaBound[Standard]{also black}        |
+|            Bound Variables |           \AgdaBound{grey}           |        \AgdaBound[Standard]{black}             |
 |              Record Fields |       \AgdaField{forest green}       |           \AgdaField[Standard]{pink}           |
 |               Module Names |          \AgdaModule{black}          |          \AgdaModule[Standard]{purple}         |
 |                  Functions |          \AgdaFunction{blue}         |     \AgdaFunction[Standard]{even more blue}    |
-|          Interactive Holes |  \AgdaHole{goldenrod background}     |   \AgdaHole[Standard]{green background}        |
-| Underspecified Elaboration | \AgdaUnsolvedMeta{orange background} | \AgdaUnsolvedMeta[Standard]{bright yellow background} |
+|          Interactive Holes |  \AgdaHole{papaya background}     |   \AgdaHole[Standard]{green background}        |
+| Underspecified Elaboration | \AgdaUnsolvedMeta{saffron background} | \AgdaUnsolvedMeta[Standard]{bright yellow background} |
 
 We haven't yet discussed most of these ideas, but perhaps you can see why we
 have not followed the standard color-scheme in this book; its high information
-density comes at the cost of a comfortable reading experience.
+density comes at the cost of frenetic, psychedelic experience.
 
 Don't feel like you need to memorize this table. Whenever a new concept is
 introduced, I'll share the relevant highlighting information, both in the book
@@ -313,66 +316,66 @@ having a hard time mentally parsing what's going on.
 
 ## Types and Values
 
-Because this is a book about mathematics for programmers, it bears discussing a
+Since this is a book about using programming to do mathematics, it bears discussing a
 great deal around *data*---that of the utmost importance to programmers. On a
 physical machine, all data is stored as small valences of electrical charge,
 arranged into a matrix of cells laid out onto physical wafers, mapped by the
 operating system into a logical view that we pretend is laid out linearly into
 neat chunks of eight or 64 pieces, that we then interpret as numbers in binary,
 and which we then shuffle into higher order assemblages, building
-domain- and application-specific logical structure on top again.
+domain- and application-specific logical structure on top.
 
 This is a physical fact, caused by the path dependency that computation has
 taken over history. Programmers are often split into two camps: those who
 worship and count bits as if they are precious, and those of the opinion that we
-have lots of memory, and thus room to ignore it. Curiously, there are very few
-alive today who think about memory at a lower level than it is presented in C;
-perhaps the human mind simply isn't capable of keeping track of all the layers
-of abstraction.
+have lots of memory, and thus room to ignore it.
 
 Regardless of what camp you find yourself in, thinking about data in terms of
 this hierarchy of abstraction will not be conducive to our purposes. A great
 deal of this book involves *crafting* data; that is, designing the shapes that
-constrain values we are interested in discussing. Most problems in mathematics
-and in programming reduce to finding the right set of constraints, and
-rigorously pushing them from one form of data to another.
+constrain the values we are interested in discussing. Most problems in
+mathematics and in programming reduce to finding the right set of constraints,
+and rigorously pushing them from one form of data to another.
 
 Data is constrained by *types,* which are rigorous means of constructing and
-deconstructing data. You likely already have a notion of what types are and what
-they do, but the following section will nevertheless be informative and
-elucidating.
+deconstructing data. You likely already have a notion of what types are, what
+they do, and whether or not you like them, but the following section will
+nevertheless be informative and elucidating.
 
 Agda takes its types extremely seriously; it is strongly unlikely you have ever
 used a language with a type system one tenth as powerful as Agda's. This is true
 even if you're intimately familiar with strongly-typed languages like Rust,
 TypeScript, Haskell, C++, or Scala. Agda is a *dependently-typed* programming
 language, which means its types can be *computed.* For example, you might make a
-function that returns a `String` if (and only if) the 10th Fibonacci number is
-56 (it isn't.) At first blush, this seems impractical---if not useless---but it
-is in fact the defining feature which makes Agda suitable for doing mathematics.
-But let's not get ahead of ourselves.
+function that returns a `String` if the 10th Fibonacci number is
+56, and a `Boolean` otherwise. At first blush, this seems impractical---if not
+useless---but it is in fact the defining feature which makes Agda suitable for
+doing mathematics. But let's not get ahead of ourselves.
 
-Of utmost importance in Agda is the notion of a *typing judgment:* the (static)
+Of utmost importance in Agda is the notion of a *typing judgment:* the static
 assertion that a particular value has a particular type. A typing judgment is
-the fancy, academic name for a type declaration. Because `true` is a
+the fancy, academic name for a type declaration. For example, let's consider the
+booleans, of which we have two values: `true` and `false`. Because `true` is a
 `type:Bool`, we would write the judgment `true : Bool`, where the colon can be
 read aloud as "has the type," or "is of type." We can't yet write this judgment
 down, since we are in a new module and thus have lost our imports that brought
 `true` and `type:Bool` into scope.
 
 In Agda, we can assert the existence of things without having to give them a
-definition by using the `postulate` keyword. As we will see later, this is can
-be a very useful tool. For now, we can use it to explicitly write down some
-typing judgments. First, we assert that the type `type:Bool` exists:
+definition by using the `keyword:postulate` keyword. As we will see later, this is can
+be a very powerful tool, which must be used with great caution since it is an
+excellent foot-gun. For now, we will be reckless, and use a postulate to
+explicitly write down some typing judgments. First, we assert that the type
+`type:Bool` exists:
 
 ```agda
-module Sandbox-Judgments where
+module Example-TypingJudgments where
   postulate
     Bool : Set
 ```
 
-and then, at the same level of indentation, we can postulate two booleans into
-existence by giving them typing judgments as well:
+and then, at the same level of indentation, we can postulate the existence of
+our two booleans by also giving them typing judgments:
 
 ```agda
     false  : Bool
@@ -380,11 +383,12 @@ existence by giving them typing judgments as well:
 ```
 
 You will have noticed that `type:Bool : Set` itself looks a great deal like a
-typing judgment. And in fact, it is. `Set` is one of the few built-in things in
-Agda, and it corresponds, as a first approximation, to "the type of all types."
-That is, the judgment `type:Bool : Set` says "`type:Bool` is a type." Since
-`type:Bool` is a type, we are therefore justified in saying that `def:false` and
-`def:true` are of type `type:Bool`.
+typing judgment. And in fact, it is. `type:Set` is one of the few built-in
+things in Agda, and it corresponds as a first approximation to "the type of all
+types." That is, the judgment `type:Bool : Set` says "`type:Bool` is a type."
+
+And therefore, since `type:Bool` is a type, we are thus justified in saying
+that `def:false` and `def:true` are of type `type:Bool`.
 
 But we can't just put any old thing on the right side of the typing colon!
 Try, for example, adding the following judgment to our postulate block:
@@ -393,7 +397,7 @@ Try, for example, adding the following judgment to our postulate block:
     illegal : false
 ```
 
-If you attempt to load this definition into Agda (via [`Load`](AgdaCmd)), you'll
+If you attempt to load this definition into Agda via [`Load`](AgdaCmd), you'll
 get an angry error message stating:
 
 ```info
@@ -402,10 +406,10 @@ when checking that the expression false has type _4
 ```
 
 This is not the easiest thing to decipher, but what Agda is trying to tell you
-is that `def:false` is not a type, and thus it has no business being on the
-right-hand side of a colon. The general rule here is that you can only put
-`type:Foo` on the *right side* of a colon if you have earlier put it on the
-*left* of `type:Set`. That is,
+is that `def:false` is not a type, and therefore that it has no business being
+on the right-hand side of a colon. The general rule here is that you can only
+put `type:Foo` on the *right side* of a colon if you have earlier put it on the
+*left* of `type:Set`. In code, we can say:
 
 ```agda
     Foo : Set
@@ -420,10 +424,9 @@ matter of convention, types' names will always begin with capital letters, while
 values will be given lowercase names. This is not required by Agda; it's merely
 for the sake of our respective sanities when the types inevitably get hairy.
 
-Furthermore, it's important to note that while types may have many values, every
-value has exactly one type. Since we know that `bar : Foo`, we know for a fact
-that `bar` is NOT of type `Qux` (unless `Foo` and `Qux` happen to be the same
-type.)
+It's important to note that while types may have many values, every value has
+exactly one type. Since we know that `bar : Foo`, we know for a fact that `bar`
+is NOT of type `Qux` (unless `Foo` and `Qux` happen to be the same type.)
 
 Postulating types and values like we have been is a helpful piece of pedagogy,
 but it's not how things usually get done. Just as Dijkstra popularized the role
@@ -470,7 +473,7 @@ often call `ctor:false` and `ctor:true` the *data constructors* or the
 *introductory forms* of `type:Bool`.
 
 After all of this preamble, you are probably itching to write a program in Agda.
-As a first step, let's write the `not` function, which transforms `ctor:false`
+As a first step, let's write the `def:not` function, which transforms `ctor:false`
 into `ctor:true` and vice-versa. Functions in Agda begin with a typing judgment
 using a *function* arrow (which you can type in your editor via
 [`to`](AgdaMode)), and are immediately followed by a *definition* of the
@@ -496,7 +499,7 @@ done.
 Incomplete programs are programs that contain one or more *holes* in them, where
 a hole is part of the program that you haven't written yet. Thanks to Agda's
 exceptionally strong type system, it knows a great deal about what shape your
-hole must have, and what sorts of programs-fragments would successfully fill the
+hole must have, and what sorts of program-fragments would successfully fill the
 hole. In the process of filling a hole, perhaps by calling a function that
 returns the correct type, you will create new holes, in this case corresponding
 to the *arguments* of that function call. Thus the model is to slowly refine a
@@ -504,10 +507,10 @@ hole by filling in more and more details, possibly creating new, smaller holes
 in the process. As you continue solving holes, eventually there will be no more
 left, and then your program will be complete.
 
-The question mark above at [2](Ann) is one of these holes. After reloading the
-file in Agda ([`Load`](AgdaCmd)), we can ask it for help in implementing `not`.
-Position your cursor on the hole and invoke the [`MakeCase`](AgdaCmd), which
-will replace our definition with:
+The question mark above at [2](Ann) is one of these holes. After invoking
+[`Load`](AgdaCmd) on our file, we can ask it for help in implementing `def:not`.
+Position your cursor on the hole and invoke [`MakeCase`](AgdaCmd), which will
+replace our definition with:
 
 ```agda
   not⅋ : Bool → Bool
@@ -532,8 +535,8 @@ to
 
 The changes engendered by invoking [`MakeCase`](AgdaCmd) like we did have a lot
 to teach us about how Agda works. Our first hole, way back at [1](Ann) had type
-`Bool → Bool`, because we had written `not = ?`, and we knew already that `not`
-had type `Bool → Bool`. In giving a definition for `not`, we had better give a
+`Bool → Bool`, because we had written `not = ?`, and we knew already that `def:not`
+had type `Bool → Bool`. In giving a definition for `def:not`, we had better give a
 definition that has the same type as the one we claimed!
 
 After [`MakeCase`](AgdaCmd) however, we instead had `not x = {! !}`, with the
@@ -782,7 +785,7 @@ baz(0, f(false), foo(bar, 5, true))
 While it might feel like an unnecessarily annoying break in conventional syntax,
 there are mightily-good theoretical reasons for it, addressed soon. Given this
 new lens on the syntax of function calls, it's informative to look back at our
-definition of `not`; recall:
+definition of `def:not`; recall:
 
 ```agda
   not⅋⅋⅋⅋ : Bool → Bool

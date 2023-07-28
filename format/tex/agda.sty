@@ -181,7 +181,7 @@
     \definecolor{AgdaComment}      {HTML}{d42a20}
     \definecolor{AgdaPragma}       {HTML}{c49822}
     \definecolor{AgdaKeyword}      {HTML}{c49822}
-    \definecolor{AgdaString}       {HTML}{000000}
+    \definecolor{AgdaString}       {HTML}{3f3c36}
     \definecolor{AgdaNumber}       {HTML}{3f3c36}
     \definecolor{AgdaSymbol}       {HTML}{000000}
     \definecolor{AgdaPrimitiveType}{HTML}{0F698C}
@@ -261,16 +261,16 @@
     {\begingroup\thickmuskip=0mu\medmuskip=0mu#1\endgroup}
 
 % Aspect commands.
-\newcommand{\AgdaComment}     [1]
-    {\AgdaNoSpaceMath{\textcolor{AgdaComment}{\AgdaCommentFontStyle{#1}}}}
+\newcommand{\AgdaComment}     [2][]
+    {\AgdaNoSpaceMath{\textcolor{#1AgdaComment}{\AgdaCommentFontStyle{#2}}}}
 \newcommand{\AgdaPragma}      [1]
     {\AgdaNoSpaceMath{\textcolor{AgdaPragma}{\AgdaCommentFontStyle{#1}}}}
 \newcommand{\AgdaKeyword}     [2][]
     {\AgdaNoSpaceMath{\textcolor{#1AgdaKeyword}{\AgdaKeywordFontStyle{#2}}}}
-\newcommand{\AgdaString}      [1]
-    {\AgdaNoSpaceMath{\textcolor{AgdaString}{\AgdaStringFontStyle{#1}}}}
-\newcommand{\AgdaNumber}      [1]
-    {\AgdaNoSpaceMath{\textcolor{AgdaNumber}{\AgdaFontStyle{#1}}}}
+\newcommand{\AgdaString}      [2][]
+    {\AgdaNoSpaceMath{\textcolor{#1AgdaString}{\AgdaStringFontStyle{#2}}}}
+\newcommand{\AgdaNumber}      [2][]
+    {\AgdaNoSpaceMath{\textcolor{#1AgdaNumber}{\AgdaFontStyle{#2}}}}
 \newcommand{\AgdaSymbol}      [1]
     {\AgdaNoSpaceMath{\textcolor{AgdaSymbol}{\AgdaFontStyle{#1}}}}
 \newcommand{\AgdaPrimitiveType}[1]
