@@ -362,9 +362,9 @@ down, since we are in a new module and thus have lost our imports that brought
 `true` and `type:Bool` into scope.
 
 In Agda, we can assert the existence of things without having to give them a
-definition by using the `keyword:postulate` keyword. As we will see later, this is can
-be a very powerful tool, which must be used with great caution since it is an
-excellent foot-gun. For now, we will be reckless, and use a postulate to
+definition by using the `keyword:postulate` keyword. As we will see later, this
+is can be a very powerful tool, which must be used with great caution since it
+is an excellent foot-gun. For now, we will be reckless, and use a postulate to
 explicitly write down some typing judgments. First, we assert that the type
 `type:Bool` exists:
 
@@ -472,10 +472,13 @@ all the booleans. There are, and can be, no others. When written like this, we
 often call `ctor:false` and `ctor:true` the *data constructors* or the
 *introductory forms* of `type:Bool`.
 
+
+## Your First Function
+
 After all of this preamble, you are probably itching to write a program in Agda.
-As a first step, let's write the `def:not` function, which transforms `ctor:false`
-into `ctor:true` and vice-versa. Functions in Agda begin with a typing judgment
-using a *function* arrow (which you can type in your editor via
+As a first step, let's write the `def:not` function, which transforms
+`ctor:false` into `ctor:true` and vice-versa. Functions in Agda begin with a
+typing judgment using a *function* arrow (which you can type in your editor via
 [`to`](AgdaMode)), and are immediately followed by a *definition* of the
 function:
 
@@ -517,11 +520,11 @@ replace our definition with:
   not⅋ x = {! !}
 ```
 
-You will notice two things have happened; Agda wrote `x` on the left side of the
-equals sign, and it replaced our `?` with `{! !}`. The latter is slightly
-different syntax for a hole that has some benefits, but is a few more keystrokes
-for a human to type for themselves. The reader playing along at home will also
-have noticed the "visible goal" in the info panel has changed from
+You will notice two things have now happened; Agda wrote `x` on the left side of
+the equals sign, and it replaced our `?` with `{! !}`. This latter change is a
+no-op; `?` and `{! !}` are different syntax for the same thing---a hole. As a
+reader playing at home, you will also have noticed Agda's info panel has
+changed, updating our "visible" goal from
 
 ```info
 ?1 : Bool → Bool
@@ -533,22 +536,22 @@ to
 ?1 : Bool
 ```
 
-The changes engendered by invoking [`MakeCase`](AgdaCmd) like we did have a lot
-to teach us about how Agda works. Our first hole, way back at [1](Ann) had type
-`Bool → Bool`, because we had written `not = ?`, and we knew already that `def:not`
-had type `Bool → Bool`. In giving a definition for `def:not`, we had better give a
-definition that has the same type as the one we claimed!
+Believe it or not, these changes engendered by invoking [`MakeCase`](AgdaCmd)
+have a lot to teach us about how Agda works. Our first hole, way back at
+[1](Ann) had type `Bool → Bool`, because we had written `not = ?`. But we
+already knew what type `def:not` had, because of the type signature we gave it
+on the line immediately above (`type:Bool → Bool`).
 
-After [`MakeCase`](AgdaCmd) however, we instead had `not x = {! !}`, with the
-hole now having type `type:Bool`. Somehow we lost the `Bool →` part of the
-type---but where did it go? The answer is that the `Bool →` corresponded to the
-function's *parameter.* In addition to the type of the hole changing, we also
-obtained an `x` on the left of the equals sign. It's a good bet that this `x` is
-indeed our parameter.
+After running [`MakeCase`](AgdaCmd) however, our code is now `not x = {! !}`,
+and our hole has changed types, now bearing only `type:Bool`. Somehow we lost
+the `Bool →` part of the type---but where did it go? As it happens, this first
+`Bool →` in the type corresponded to the function's *parameter*. Saying `not :
+Bool → Bool` is the same as saying "`not` is a function that takes a `type:Bool`
+and returns a `type:Bool`."
 
-To verify this, we can put the cursor in the whole and this time invoke the
-[`TypeContext`](AgdaCmd) command, which will replace the info window with the
-following:
+We can verify this interpretation by asking Agda another question. By moving
+your cursor over the `hole:{! !}` and running [`TypeContext`](AgdaCmd), Agda
+will respond in the info window with:
 
 ```info
 Goal: Bool
@@ -556,13 +559,24 @@ Goal: Bool
 x : Bool
 ```
 
-[`TypeContext`](AgdaCmd) is useful whenever you'd like to "drill down" into a
-hole. Not only does it tell us what the type of the hole is, it also tells us
-everything else we have in scope. In this case, the only thing we have is `x :
-Bool`. Thus it's confirmed: `x` is indeed our function parameter.
+We can see now that the hole itself (called `Goal` in the info window) is a
+missing expression whose type should be `type:Bool`. But, more interestingly,
+Agda is also telling us that we now have a variable `bind:x` in scope, whose type
+is `type:Bool`. In order to pull the `Bool →` off of the type signature, we were
+forced to introduce a binding `bind:x` of type `type:Bool`, which corresponds
+exactly to `def:not`'s function argument.
 
-We can ask Agda for more help. This time, if we put our cursor in the hole and
-invoke [`MakeCase:x`](AgdaCmd), we will instead get:
+There is an important lesson to be learned here, more than just about how Agda's
+type system works. And that's that you can invoke [`TypeContext`](AgdaCmd) at
+any time, on any hole, in order to get a better sense of the big picture. In
+doing so, you can "drill down" into a hole, and see everything you have in
+scope, as well as what type of thing you need to build in order to fill the
+hole.
+
+We can ask Agda for more help to continue. This time, if we put our cursor in
+the hole and invoke [`MakeCase:x`](AgdaCmd), Agda will enumerate every possible
+constructor for `bind:x`, asking us to fill in the result of the function for
+each case. Here, that looks like:
 
 ```agda
   not⅋⅋ : Bool → Bool
@@ -570,12 +584,14 @@ invoke [`MakeCase:x`](AgdaCmd), we will instead get:
   not⅋⅋ true   = {! !}
 ```
 
-You'll notice where once there was one hole there are now two. We asked Agda to
-"pattern match" on `x`, which means it looked at `x`, determined it had type
-`type:Bool`, and subsequently split our goal into two---one for if the argument is
-`ctor:false`, and one for if it's `ctor:true`. From here, we know how to complete the
-function without any help from Agda; we'd like `ctor:false` to map to `ctor:true`, and
-vice versa:
+You'll notice where once there was one hole there are now two, one for every
+possible value that `bind:x` could have been. Since `bind:x` is a `type:Bool`,
+and we know there are exactly two booleans, Agda gives us two cases---one for
+`ctor:false` and another for `ctor:true`.
+
+From here, we know how to complete the function without any help from Agda; we'd
+like `ctor:false` to map to `ctor:true`, and vice versa. We can write this by
+hand; after all, we are not required to program interactively!
 
 ```agda
   not : Bool → Bool
@@ -583,37 +599,86 @@ vice versa:
   not true   = false
 ```
 
-Congratulations, you've just written your first Agda function!
+Congratulations, you've just written your first Agda function! Take a moment to
+reflect on this model of programming. The most salient aspect is that the
+compiler wrote most of this code for us, prompted only by our invocations of
+interactivity. Agda supports a great deal of interactive commands, and you will
+learn more as you progress through this book. The amount of work that Agda can
+do for you is astounding, and it is a good idea to remember what the commands do
+and how to quickly invoke them for yourself. In particular, you will get a huge
+amount of value out of [`MakeCase`](AgdaCmd) and [`TypeContext`](AgdaCmd); use
+the former to get Agda to split variables into their constituent values, and the
+latter to help you keep track of what's left to do in a given hole.
 
-This function gives us a taste of how we can do computation in Agda; on the left
-side of the equals, we match on the distinct possibilities for our parameters,
-and give a result for each on the right side of the equals sign.
+The other important point to reflect upon is the *declarative* style that an
+Agda program takes on. Rather than attempting to give an algorithm that
+transforms some bit pattern corresponding to `def:false` into one corresponding
+to `ctor:true`, we simply give a list of definitions and trust the compiler to
+work out the details. It doesn't matter *how* Agda decides to map `not false`
+into `ctor:true`, so long as it manages to!
 
-In implementing this little function, we learned quite a lot about how Agda's
-interactivity can help. We can admire our handiwork by interactively running
-[`Normalize:not false`](AgdaCmd), which will compute the result, and leave the
-answer in the info window:
+
+## Normalization
+
+At any point in time, we can ask Agda to *normalize* an expression for us,
+meaning we'd like to replace as many left-hand sides of equations with their
+right-hand sides. This is done via the [`Normalize`](AgdaCmd) command, which
+takes an argument asking us what exactly we'd like to normalize.
+
+But before running it for yourself, let's work out the details by hand to get a
+sense of what the machine is doing behind the scenes. Let's say we'd like to
+normalize the expression `not (not false)`---that is, figure out what it
+computes to.
+
+When we look at what "equations" we have to work with, we see that we have the
+two lines which define `def:not`. Inspecting our expression again, we see that
+there is no rule which matches the outermost `def:not`. The expression `not
+false` is neither of the form `ctor:false`, nor is it `ctor:true`, and so the
+outermost `def:not` can't expand to its definition.
+
+However, the innermost call to `def:not` is `not false`, which matches one of
+our equations exactly. Thus, we can rewrite `not false` to `ctor:true`, which
+means we can write the whole expression to `not true`.
+
+At this point, we now have an expression that matches one of our rules, and so
+the other rule kicks in, rewriting this to `ctor:false`. Because every "rewrite"
+equation comes from a function definition, and there are no more function calls
+in our expression, no more rewrite rules can match, and therefore we are done.
+Thus, the expression `not (not false)` normalizes to `ctor:false`.
+
+Of course, rather than do all of this work, we can just ask Agda to evaluate the
+whole expression for us. Try now invoking [`Normalize:not (not
+false)`](AgdaCmd). Agda will respond in the info window:
 
 ```info
-true
+false
 ```
+
+
+## Unit Testing
 
 While [`Normalize`](AgdaCmd) is a nice little tool for interactively computing
 small results, we can instead write a small unit test. Breaking our "don't
-import it before you define it" rule for the last time, we can write two unit
-tests as follows[^equals-sign]:
-
-[^equals-sign]: You can input `≡` by typing [`==`](AgdaMode).
+import it before you define it" rule again, we can bring some necessary
+machinery into scope:
 
 ```agda
   open import Relation.Binary.PropositionalEquality
+```
 
-  _ : not false ≡ true
-  _ = refl
+Now, we can write a unit test that asserts the fact that `not (not false)` is
+`ctor:false`, just as we'd expect. Using [`==`](AgdaMode), we can type the `≡`
+symbol, which is necessary in the following snippet:
 
-  _ : not true ≡ false
+```agda
+  _ : not (not false) ≡ false
   _ = refl
 ```
+
+Whenever we'd like to show that two expressions normalize to the same thing, we
+can write a little unit test of this form. Here, we've defined a value called
+`_` (which is the name we use for things we don't care about), and have given it
+a strange type and a stranger definition. We will work through all the details
 
 There's quite a lot going on here, which, rest assured, we will get into in
 @sec:propeq. For the time being, we will content ourselves with the knowledge
