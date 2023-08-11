@@ -783,6 +783,10 @@ press a series of characters that together build the one you want.
 To illustrate this composition of abstract symbols, we can take a look at some
 examples. None of these should be surprising to you.
 
+- `∙` is input by typing [`.`](AgdaMode)
+- `∘` is input by typing [`o`](AgdaMode)
+- `×` is input by typing [`x`](AgdaMode)
+- `¿` is input by typing [`?`](AgdaMode)
 - `⊎` is input by typing [`u+`](AgdaMode)
 - `⊚` is input by typing [`oo`](AgdaMode)
 - `⊗` is input by typing [`ox`](AgdaMode)
@@ -793,44 +797,54 @@ examples. None of these should be surprising to you.
 - `≗` is input by typing [`=o`](AgdaMode)
 - `≟` is input by typing [`=?`](AgdaMode).
 
-Not all symbols require two characters to input. For simple symbols, we can get
-away with just one:
-
-
-- `∙` is input by typing [`.`](AgdaMode)
-- `∘` is input by typing [`o`](AgdaMode)
-- `×` is input by typing [`x`](AgdaMode)
-- `¿` is input by typing [`?`](AgdaMode)
-
-
 As you have already seen, one common binding you'll need is that for function
 arrows, `→`. This is typed in the obvious way, [`->`](AgdaMode), but can also be
 written in fewer keystrokes as [`to`](AgdaMode). Typesetting aficionados might
 be delighted that this is mnemonic that LaTeX uses to inset the arrow symbol. If
-you're familiar with LaTeX, most bindings you know from there will also work in
-Agda.
+you're familiar with LaTeX, many bindings you know from there will also work in
+Agda:
+
+- typing [`to`](AgdaMode) produces `→`
+- typing [`in`](AgdaMode) produces `∈`
+- typing [`inn`](AgdaMode) produces `∉`
+- typing [`sub`](AgdaMode) produces `⊂`
+- typing [`neg`](AgdaMode) produces `¬`
+- typing [`top`](AgdaMode) produces `⊤`
+- typing [`bot`](AgdaMode) produces `⊥`
 
 Similarly to LaTeX, we can prefix bindings with `_` or `^` to make subscript or
-superscript versions of characters. That means we can get `₁` via
-[`_1`](AgdaMode), and get a squared symbol `²` via [`^2`](AgdaMode). All numbers
-have sub- and superscript versions, but only some letters do. This is not Agda's
-fault; address your complaints to the Unicode Consortium regarding the lack of
-subscript `f`.
+superscript versions of characters, as in:
 
-Mathematicians, and thus Agda-users, are also particularly fond of Greek
-letters. You can type Greek letters by prefixing the Latin-equivalent letter
-with [`G`](AgdaMode). That is, if you'd like a `λ` (lambda) you'd type
-[`Gl`](AgdaMode), because `λ` is the Greek version of the Latin letter `l`. And
-if you want an uppercase lambda `Λ`, well, that one is just [`GL`](AgdaMode). As
-you can see, the system is quite well organized when you wrap your head around
-it. Assuming you know Greek.
+- [`_1`](AgdaMode) for `₁`
+- [`_2`](AgdaMode) for `₂`
+- [`_x`](AgdaMode) for `ₓ`
+- [`^1`](AgdaMode) for `¹`
+- [`^f`](AgdaMode) for `ᶠ`
+- [`^z`](AgdaMode) for `ᶻ`
 
-The other block of symbols you'll probably need at first are the so-called
-*blackboard bold* letters, which are often used in mathematics to describe sets
-of numbers---the natural numbers being `ℕ`, the reals being `ℝ`, the rationals
-being `ℚ` (short for "quotients"), and so on. You can type blackboard bold
-numbers with the [`b`](AgdaMode) prefix. The three examples here are input as
-[`bN`](AgdaMode), [`bR`](AgdaMode) and [`bQ`](AgdaMode) respectively.
+All numbers have sub- and superscript versions, but only some letters do. This
+is not Agda's fault; address your complaints to the Unicode Consortium regarding
+the unfortunate lack of a subscript `f`.
+
+Mathematicians and Agda-users alike are very fond of Greek letters, which you
+can type by prefixing the Latin-equivalent letter with [`G`](AgdaMode).
+
+- type [`Ga`](AgdaMode) for `α`, which is the Greek letter for `a`
+- type [`Gd`](AgdaMode) for `δ`, which is the Greek letter for `d`
+- type [`GD`](AgdaMode) for `Δ`, which is the Greek letter for `D`
+- type [`Gl`](AgdaMode) for `λ`, which is the Greek letter for `l`
+- type [`GL`](AgdaMode) for `Λ`, which is the Greek letter for `L`
+
+As you can see, the input system is quite well organized when you wrap your head
+around it---assuming you know Greek!
+
+There is one other block of symbols you will probably need at first: the
+so-called *blackboard bold* letters. These are often used in mathematics to
+describe sets of numbers---the natural numbers being `ℕ`, the reals being `ℝ`,
+the rationals being `ℚ` (short for "quotients"), and so on. You can type
+blackboard bold numbers with the [`b`](AgdaMode) prefix. The three examples here
+are input as [`bN`](AgdaMode), [`bR`](AgdaMode) and [`bQ`](AgdaMode)
+respectively.
 
 Suspend your disbelief; programming in Unicode really is quite delightful if you
 can push through the first few hours. Having orders of magnitude more symbols
@@ -838,16 +852,16 @@ under your fingers is remarkably powerful, meaning you can shorten your
 identifiers without throwing away information. In addition, you will notice a
 common vocabulary for how these symbols get used. Being able to recognize more
 symbols means you can recognize more concepts at a distance. For example, we
-will often use the floor brackets `⌊⌋` for as a name for an evaluation function,
-and we will always build the union of types via the symbol `⊎`.
+will often use the floor brackets `⌊⌋` (given by [`clL`](AgdaMode) and
+[`clR`](AgdaMode)) for as a name for an "evaluation" function.
 
-And as a bonus, especially when transcribing mathematics, your program can look
-exceptionally close to the source material---nice to minimize the cognitive
-load. You're already dealing with big ideas, without having to add a layer of
-naming indirection into the mix.
+As a bonus, when transcribing mathematics, your program can look exceptionally
+close to the source material. This is nice, as it minimizes the cognitive load
+required to keep everything in your head. You're already dealing with big ideas,
+without having to add a layer of naming indirection into the mix.
 
 
-## A Note on Syntax
+## Expressions and Functions
 
 Agda descends from the ML family of languages, making it related to Elm, F#,
 Haskell, OCaml, PureScript, among many, many other cousins. This section will
