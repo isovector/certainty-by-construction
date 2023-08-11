@@ -1,7 +1,8 @@
 RULES := pdf
 CONTENT := book
 
-PANDOC_OPTS := --citeproc \
+PANDOC_OPTS := -F pandoc-crossref \
+               --citeproc \
                --filter design-tools-exe \
                --from markdown+fancy_lists+raw_tex \
                -t latex+lagda \

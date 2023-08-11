@@ -679,83 +679,129 @@ Whenever we'd like to show that two expressions normalize to the same thing, we
 can write a little unit test of this form. Here, we've defined a value called
 `_` (which is the name we use for things we don't care about), and have given it
 a strange type and a stranger definition. We will work through all the details
+later in @sec:propeq.
 
-There's quite a lot going on here, which, rest assured, we will get into in
-@sec:propeq. For the time being, we will content ourselves with the knowledge
-that these are automatically-run unit tests. You can convince yourself of this
-by writing another test with an intentionally wrong result:
+The important bits here are only the two expressions on either side of
+`type:_≡_`, namely `not (not false)` and `ctor:false`, which we'd like to show
+normalize to the same form.
+
+Attempting to [`Load`](AgdaCmd) the file at this point will be rather
+underwhelming, as nothing will happen. But that's both OK and to be expected;
+that means our unit test passed. Instead, we can try telling Agda a lie:
 
 ```illegal
-  _ : not true ≡ true
+  _ : not (not false) ≡ true
   _ = refl
 ```
 
-which results in an error message after running [`Load`](AgdaCmd):
+Try running [`Load`](AgdaCmd) again, which will cause Agda to loudly proclaim a
+problem in the info window:
 
 ```info
 false != true of type Bool
-when checking that the expression refl has type not true ≡ true
+when checking that the expression refl has type not (not false) ≡ true
 ```
 
-This error is telling us that our unit test failed; that `def:not` `ctor:true`
-is actually `ctor:false`, but we said it was `ctor:true`! We will discuss these
-strange `type:≡` and `ctor:refl` things in great detail soon enough.
+This error is telling us that our unit test failed; that `not (not false)`
+is actually `ctor:false`, but we said it was `ctor:true`. These unit tests only
+yell when they fail. In fact, it's worse than that; these unit tests *prevent
+compilation* if they fail. Thus when dealing with tests in Agda, it's just like
+the old proverb says---no news is good news!
 
 
 ## Dealing with Unicode
 
-Many programmers' biggest challenging coming to Agda, myself included, is
-learning to wrangle all of the Unicode characters. The field of programming has
-a peculiar affinity for the standard ASCII character set, which is somewhat odd
-when you think about it. What symbol is `==` supposed to be, anyway? Is it
-*merely* a standard equals sign? If so, why not just use `=`? Is it supposed to
-be an elongated equals sign? In the case we really wanted to stick with ASCII,
-surely `=?` would be a better choice, since this operator *tests* for equality.
-Agda follows this path, but decides that, since we have a perfectly good unicode
-symbol anyway, why not use `≟`?
+In the last section, we got our first taste of how Agda uses Unicode, when we
+were required to use the character `≡`. This is the first of much, much more
+Unicode in your future as an Agda programmer.
 
-There are two primary arguments here to make here against the usage of unicode.
+The field of programming has a peculiar affinity for the standard ASCII
+character set, which is somewhat odd when you think about it. What symbol is
+`==` supposed to be, anyway? Is it *merely* a standard equals sign? If so, why
+not just use a single `=`, which would be much more reasonable. Maybe instead
+it's supposed to be an elongated equals sign? Does that correspond to anything
+historically, or was it just a new symbol invented for the purpose? If we're
+inventing symbols anyway, surely `=?` would have been a better name for the
+test-for-equality operator.
 
-The first, is unfamiliarity with symbols when *reading* code. For example, when
-I was getting started, I was often flummoxed by the difference between `⊎` and
-`⨄`, which are easy to distinguish when placed beside one another, but much
-harder when they're in the wild. When you're reading code, how do you know which
-symbol is which? And how do you assign names to them?
+In fact, Agda follows this line of reasoning, but decides that, since we have a
+perfectly good Unicode symbol anyway, we ought to just use `≟` instead!
 
-Agda provides [`DescribeChar`](AgdaCmd) to help with this problem, which when
-run with the cursor over `⊎` will produce the following output:
+Unicode, more than the weird lack of computation and advanced type system, is
+many programmers' biggest challenging when coming to Agda. Learning to wrangle
+all of the Unicode characters is be daunting for at least three reasons---how
+can we distinguish all of these characters, what should we call them, and how in
+heck do we input them?
+
+The first problem---that of identification---is that there are great swathes of
+Unicode characters, many of which are identical.  For example, when I was
+getting started, I was often flummoxed by the difference between `⊎` and `⊎`.
+Believe it or not, the former symbol is extremely important in Agda, while the
+latter won't play nicely with the standard library. As it happens, the former
+symbol is the "multiset union", while the latter is the "n-ary union operator
+with plus." As far as Unicode (and Agda) is concerned, these are completely
+different characters, but, as far as you and I can tell, they are
+indistinguishable.
+
+Unfortunately, there is no real solution to this problem, other than putting in
+the time, and feeling the pain while you're sorting things out in your head.
+
+However, this is less of a problem in practice than it might seem. When you're
+first getting started, you're not going to dream up the `⊎` operator on your
+own. Instead, you'll just read some code that happens to use this operator, and
+thus we can apply the imitable monkey-see-monkey-do strategy. Whenever you
+encounter a symbol you aren't familiar with, simply invoke Agda's
+[`DescribeChar`](AgdaCmd) command. When invoked with the cursor over `⊎`, the
+info window will respond the following output:
 
 ```info
             character: ⊎ (displayed as ⊎)
-              charset: unicode
 code point in charset: 0x228E
-               script: symbol
-               syntax: w
-             category: .:Base
              to input: type "\u+" with Agda input method
 
 Character code properties:
   name: MULTISET UNION
-  general-category: Sm (Symbol, Math)
-  decomposition: (8846) ('⊎')
 ```
 
-In particular, we see the name of this symbol is *multiset union*, which is
-significantly more pronounceable than `⊎`.
+The real output from Agda has been truncated here, but there are two important
+pieces of information here. The first is under the *name* heading, which tells
+you what to call this particular symbol. And the other is under *to input*,
+which is how exactly you can type this character in your editor. Try typing
+[`u+`](AgdaMode) in your editor, and you should indeed get a `⊎` on screen.
 
-The second problem that beginners have with Unicode is the problem of how the
-heck do you actually type these strange characters? As you can see in the
-response from [`DescribeChar`](AgdaCmd) above, there's a little section labeled
-"to input."
+Of course, this hunt-and-peck approach works only when you're trying to learn
+how to input a particular symbol that you have access to in source code. What
+can you do instead if you have a particular symbol in mind? Thankfully we don't
+need to resort to skimming code, hoping to find what we're looking for. Instead,
+we can attempt to *compose* the symbol, by guessing the necessary keystrokes.
 
 When writing Agda, you can input Unicode characters by typing a backslash, and
 then a mnemonic for the character you'd like. There are a few different naming
 schemes used by Agda, but for abstract symbols like `⊎` a good bet is to try to
-press a series of characters that together build the one you want. For example,
-`≈` is input by typing [`~~`](AgdaMode), and `≋` is similarly just
-[`~~~`](AgdaMode). We can write `≗` via [`=o`](AgdaMode), and `≟` via
-[`=?`](AgdaMode). Some characters require only one additional keypress. We can
-write `∙` by typing [`.`](AgdaMode) and `∘` with [`o`](AgdaMode).
+press a series of characters that together build the one you want.
+
+To illustrate this composition of abstract symbols, we can take a look at some
+examples. None of these should be surprising to you.
+
+- `⊎` is input by typing [`u+`](AgdaMode)
+- `⊚` is input by typing [`oo`](AgdaMode)
+- `⊗` is input by typing [`ox`](AgdaMode)
+- `⊙` is input by typing [`o.`](AgdaMode)
+- `→` is input by typing [`->`](AgdaMode)
+- `←` is input by typing [`<-`](AgdaMode)
+- `≋` is input by typing [`~~~`](AgdaMode).
+- `≗` is input by typing [`=o`](AgdaMode)
+- `≟` is input by typing [`=?`](AgdaMode).
+
+Not all symbols require two characters to input. For simple symbols, we can get
+away with just one:
+
+
+- `∙` is input by typing [`.`](AgdaMode)
+- `∘` is input by typing [`o`](AgdaMode)
+- `×` is input by typing [`x`](AgdaMode)
+- `¿` is input by typing [`?`](AgdaMode)
+
 
 As you have already seen, one common binding you'll need is that for function
 arrows, `→`. This is typed in the obvious way, [`->`](AgdaMode), but can also be
