@@ -608,8 +608,8 @@ to prove `x ≡ one * x`? The obvious idea is to try simply to reuse our
 `*-identityˡ` proof, as in:
 
 ```illegal
-    *-identityˡ′⅋ : (x : ℕ) → x ≡ one * x
-    *-identityˡ′⅋ = *-identityˡ
+  *-identityˡ′⅋ : (x : ℕ) → x ≡ one * x
+  *-identityˡ′⅋ = *-identityˡ
 ```
 
 Unfortunately, Agda is unhappy with this definition, and it complains:
@@ -1244,14 +1244,14 @@ That is, if we make an invalid step, Agda will tell us. For example, perhaps we
 make an error in our proof, as in:
 
 ```illegal
-      _ : four ≡ suc (one + two)
-      _ =
-        four
-          ≡⟨⟩
-        one + two  -- ! 1
-          ≡⟨⟩
-        suc one + two
-          ∎
+    _ : four ≡ suc (one + two)
+    _ =
+      four
+        ≡⟨⟩
+      one + two  -- ! 1
+        ≡⟨⟩
+      suc one + two
+        ∎
 ```
 
 At [1](Ann) we accidentally dropped a `ctor:suc`. But, Agda is smart enough to catch
