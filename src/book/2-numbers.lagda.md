@@ -229,7 +229,7 @@ constructors:
 Interestingly, at [1](Ann), Agda has given us a new form, something we didn't
 see in the case of booleans. It gave us a pattern match `(suc x)`, which after
 some mental type-checking, makes sense. We said `n` was a `ℕ`, but `ctor:suc`
-has type `type:ℕ → ℕ`. That means, `n` can only be a natural number of the
+has type `expr:ℕ → ℕ`. That means, `n` can only be a natural number of the
 `ctor:suc` form *if that function has already been applied to some other
 number.*
 

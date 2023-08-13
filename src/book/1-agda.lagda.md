@@ -48,6 +48,7 @@ and every Agda file begins with a *module declaration* like above. This
 declaration is mandatory prefacing every chapter, and we're not allowed to write
 any code until we've done the `keyword:module` ritual.
 
+
 The module is Agda's simplest unit of compilation.
 
 > TODO(sandy): change me when publishing
@@ -63,6 +64,7 @@ The name of the top level module does not match the file name.
 
 Whenever feedback from the compiler is presented in this book, we will typeset
 it as above. You'll learn how to interact with the compiler momentarily.
+
 
 Agda modules act as namespaces: limiting access and visibility to definitions
 within. Modules can be nested inside of one another, as in the following example:
@@ -627,7 +629,7 @@ takes an argument asking us what exactly we'd like to normalize.
 
 But before running it for yourself, let's work out the details by hand to get a
 sense of what the machine is doing behind the scenes. Let's say we'd like to
-normalize the expression `not (not false)`---that is, figure out what it
+normalize the expression `expr:not (not false)`---that is, figure out what it
 computes to.
 
 When we look at what "equations" we have to work with, we see that we have the
@@ -636,15 +638,15 @@ there is no rule which matches the outermost `def:not`. The expression `not
 false` is neither of the form `ctor:false`, nor is it `ctor:true`, and so the
 outermost `def:not` can't expand to its definition.
 
-However, the innermost call to `def:not` is `not false`, which matches one of
-our equations exactly. Thus, we can rewrite `not false` to `ctor:true`, which
-means we can write the whole expression to `not true`.
+However, the innermost call to `def:not` is `expr:not false`, which matches one
+of our equations exactly. Thus, we can rewrite `expr:not false` to `ctor:true`,
+which means we can write the whole expression to `expr:not true`.
 
 At this point, we now have an expression that matches one of our rules, and so
 the other rule kicks in, rewriting this to `ctor:false`. Because every "rewrite"
 equation comes from a function definition, and there are no more function calls
 in our expression, no more rewrite rules can match, and therefore we are done.
-Thus, the expression `not (not false)` normalizes to `ctor:false`.
+Thus, the expression `expr:not (not false)` normalizes to `ctor:false`.
 
 Of course, rather than do all of this work, we can just ask Agda to evaluate the
 whole expression for us. Try now invoking [`Normalize:not (not
@@ -666,8 +668,9 @@ machinery into scope:
   open import Relation.Binary.PropositionalEquality
 ```
 
-Now, we can write a unit test that asserts the fact that `not (not false)` is
-`ctor:false`, just as we'd expect. Using [`==`](AgdaMode), we can type the `≡`
+Now, we can write a unit test that asserts the fact that `expr:not (not false)`
+is `ctor:false`, just as we'd expect. Using [`==`](AgdaMode), we can type the
+`≡`
 symbol, which is necessary in the following snippet:
 
 ```agda

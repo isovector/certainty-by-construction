@@ -48,6 +48,7 @@ build/tex/pdf.tex : $(ALL_TEX) format/tex/template.tex
 	pandoc $(PANDOC_PDF_OPTS) -o $@ $(ALL_TEX)
 	sed -i 's/\AgdaComment{--\\ !\\ \([0-9]\)}/annotate{\1}/g' $@
 	sed -i 's/⅋[^ {}()._\\]*//g' $@
+	sed -i 's/VERYILLEGALCODE/code/g' $@
 
 # Copy the agda style
 build/tex/agda.sty : format/tex/agda.sty

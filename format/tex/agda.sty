@@ -564,7 +564,10 @@
 \define@boolkey[Agda]{code}{hide}[true]{}
 
 \newcommand{\Agda@IndentSymbol}{}
-\define@key[Agda]{code}{indent}[0]{%
+\define@key[Agda]{code}{indent}[666]{%
+  \ifthenelse{\cnttest{#1}{=}{666}}
+  {\renewcommand{\Agda@IndentSymbol}{\ding{54}}}
+  {
   \ifthenelse{\cnttest{#1}{>}{\value{Agda@LastIndent}}}
     {\renewcommand{\Agda@IndentSymbol}{$\rightarrowbar$ #1}}
     {
@@ -572,6 +575,7 @@
       {\renewcommand{\Agda@IndentSymbol}{$\barleftarrow$ #1}}
       {\renewcommand{\Agda@IndentSymbol}{#1}}
     }
+  }
 }
 
 
