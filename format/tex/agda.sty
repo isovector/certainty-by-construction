@@ -196,7 +196,7 @@
     \definecolor{AgdaFunction}              {HTML}{0F698C}
     \definecolor{AgdaMacro}                 {HTML}{000000}
     \definecolor{AgdaModule}                {HTML}{000000}
-    \definecolor{AgdaPostulate}             {HTML}{0F698C}
+    \definecolor{AgdaPostulate}             {HTML}{c8ebf9}
     \definecolor{AgdaPrimitive}             {HTML}{0F698C}
     \definecolor{AgdaRecord}                {HTML}{0F698C}
     \definecolor{AgdaArgument}              {HTML}{3f3c36}
@@ -327,7 +327,7 @@
 \newcommand{\AgdaModule}[2][]
     {\AgdaNoSpaceMath{\textcolor{#1AgdaModule}{\AgdaFontStyle{\AgdaFormat{#2}{\AgdaLink{#2}}}}}}
 \newcommand{\AgdaPostulate}[1]
-    {\AgdaNoSpaceMath{\textcolor{AgdaPostulate}{\AgdaFontStyle{\AgdaFormat{#1}{\AgdaLink{#1}}}}}}
+    {\AgdaNoSpaceMath{\AgdaFontStyle{\colorbox{AgdaPostulate}{\AgdaFormat{#1}{\AgdaLink{#1}}}}}}
 \newcommand{\AgdaPrimitive}[1]
     {\AgdaNoSpaceMath{\textcolor{AgdaPrimitive}{\AgdaFontStyle{\AgdaFormat{#1}{#1}}}}}
 \newcommand{\AgdaRecord}[1]

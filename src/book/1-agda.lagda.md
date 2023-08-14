@@ -1107,7 +1107,7 @@ talking about something whose value we don't know, like the $x$ in the
 expression $f(x) = 2x$ (but not like the $x$ in $x^2 = 9$.) Here, $x$ exists,
 but its value is set once and for all by the user of $f$. When we are talking
 about $f(5)$, $x = 5$, and it is never the case that $x$ changes to 7 while
-still in the context of $f(5)$. In any given context, $f$ is always *bound* to a
+still in the context of $f(5)$. In any given context, $x$ is always *bound* to a
 specific value, even if we don't know what that value is. For this reason, we
 sometimes call variables *bindings.*
 
@@ -1137,27 +1137,45 @@ Besides the amount of code we needed to write, is there a reason to prefer
 [2](Ann) over [1](Ann)? These two implementations are equivalent, but have very
 different computational properties as Agda programs. Let's explore why that is.
 
+While [1](Ann) is perhaps slightly clearer if you're coming from a truth-table
+background, [2](Ann) is a better program because it branches less often. It's
+easy to read the branching factor directly off the definition: `def:_∨₁_` takes
+four lines to define, while `def:_∨₂_` requires only two. Every time we must
+inspect which particular boolean value a parameter has, we are required to
+bifurcate our program.
+
+We will return to this idea when we discuss writing proofs about functions like
+`def:_∨_`. But for the time being, we can directly observe the difference in how
+Agda computes between `def:_∨₁_` and `def:_∨₂_`.
+
 At its root, [2](Ann) is a better program *because* it needs to inspect less
 data in order to make a decision. `def:_∨₂_` is able to make meaningful progress
 towards an answer, even when the second argument isn't yet known, while `def:_v₁_`
-is required to wait for both arguments. We can observe this in action with the
-[`Normalise`](AgdaCmd) command, which asks Agda to evaluate an expression for us.
+is required to wait for both arguments.
 
-We can fill in only one argument to an operator by removing only one of the
-underscores. Thus, we can see what happens when we invoke `def:_v₂_` with only its
-first argument. This is known as a *segment.* Try invoking [`Normalise:true
-v₂_`](AgdaCmd), to which Agda will respond:
+Agda supports *partial application* of functions, which means we're allowed to
+see what would happen if we were to fill in some function arguments, while
+leaving others blank. The syntax for doing this on operators is to reintroduce
+an underscore on the side we'd like to leave indeterminate. For example, if we'd
+like to partially apply the first argument of `def:_∨₁_`, we could write
+`expr:true ∨₁_`, while we can partially apply the second argument via `expr:_∨₁
+true`. You will sometimes hear this called "taking a *section* of `def:_∨₁_`."
+
+We can observe the difference between `def:_∨₁_` and `def:_∨₂_` by looking at
+how Agda computes a section over each of their first arguments. We can evaluate
+arbitrary snippets of Agda code with the [`Normalise`](AgdaCmd) command. First,
+try normalizing `expr:true ∨₂_`, to which Agda will respond:
 
 ```info
 λ other → true
 ```
 
-This response is Agda's syntax for an anonymous function (also known as a
-*lambda*.) It takes an argument, called `other`, completely ignores it, and
-immediately returns `ctor:true`. Writing lambdas like this is valid Agda syntax,
-but we will not use it except for extremely small functions.
+The lambda notation here is Agda's syntax for an anonymous function. Thus, Agda
+tells us that `expr:true ∨₂_` is equal to a function which ignores its argument
+and always returns `ctor:true`. This is what we would expect semantically, based
+on the definitions we gave above for `def:_∨₂_`.
 
-Nevertheless, let's compare this output to the result of [`Normalise:true
+It's informative to compare these results against running [`Normalise:true
 ∨₁_`](AgdaCmd):
 
 ```info
@@ -1165,59 +1183,86 @@ true ∨₁_
 ```
 
 Here, Agda simply returns what we gave it, because it is unable to make any
-progress towards evaluating this value. Terms like this are called *stuck*, and
-can make no progress in evaluation until something unsticks them. In this case,
-because we don't know the value of the second argument, it is stuck, and thus
-the pattern match on it in `def:_∨₁_` is *also* stuck. When the second argument is
-provided, the pattern match will unstick, and so too will the final result.
+progress towards evaluating this value. There's simply no way to make any
+reductions until we know what the second argument is!
 
-We can see this behavior more clearly by postulating a boolean value. Postulated
-values are always stuck, and thus `def:always-stuck` is an apt name for one:
+
+## Stuckness
+
+Terms which are unable to reduce further are called *stuck*, and can make no
+progress in evaluation until something unsticks them. The usual reason something
+behind being stuck is that it's waiting to inspect a value which hasn't yet been
+provided.
+
+Stuckness can be quite a challenge to debug if you're unaware of it, so it bears
+some discussion.
+
+In our example trying to normalize `expr:true ∨₁_`, because we don't yet know
+the value of the second argument, our pattern match inside of `def:_∨₁_` is
+stuck, and thus the value of the call to `expr:true ∨₁_` is *also* stuck. As
+soon as the second argument is provided, the pattern match will unstick, and so
+too will the final result.
+
+Another way by which stuckness can occur is through use of postulated values.
+Recall that the `keyword:postulate` keyword allows us to bring into scope a
+variable of any type we'd like. However, we have no guarantee that such a thing
+necessarily exists. And so Agda offers us a compromise. We're allowed to work
+with postulated values, but they are always stuck, and our program will not be
+able to proceed if it ever needs to inspect a stuck value.
+
+To demonstrate this, we can postulate a boolean value aptly named
+`postulate:always-stuck`:
+
 
 ```agda
-  postulate
-    always-stuck : Bool
+  postulate always-stuck : Bool
 ```
 
-Our new `stuck` is always stuck. For example, we can learn nothing more about it
-with [`Normalise:always-stuck`](AgdaCmd):
+Our new `postulate:always-stuck` binding is, as its name suggests, always stuck.
+For example, we can learn nothing more about it by running
+[`Normalise:always-stuck`](AgdaCmd):
 
 ```info
 always-stuck
 ```
 
-Nor can we reduce [`Normalise:not always-stuck`](AgdaCmd) to a value:
+Nor can we reduce `expr:not always-stuck` to a value, because `def:not` must
+inspect its value in order to make progress:
 
 ```info
 not always-stuck
 ```
 
-Don't believe the response, this *is* indeed always stuck (although it is not
-the same as the `def:always-stuck` variable.) Rather, the entire call to `def:not`
-with argument `def:always-stuck` is stuck. And, as you might expect, [`Normalise:true ∨₁
-stuck`](AgdaCmd) is also stuck:
+Don't believe the response from [`Normalise:not always-stuck`](AgdaCmd);
+`expr:not always-stuck` is indeed always stuck (although it *is* distinct from
+`postulate:always-stuck`.) Rather, the entire call to `def:not`
+with argument `postulate:always-stuck` is stuck. And, as you might expect,
+[`Normalise:true ∨₁ always-stuck`](AgdaCmd) is also stuck:
 
 ```info
 true ∨₁ always-stuck
 ```
 
-Fascinatingly however, [`Normalise:true ∨₂ stuck`](AgdaCmd) computes just fine:
+Fascinatingly however, attempting to [`Normalise`](AgdaCmd) `expr:true ∨₂
+always-stuck` computes just fine:
 
 ```info
 true
 ```
 
-This progress of computation even when the second argument is stuck
-(`def:always-stuck`, or otherwise) is the reason by which we prefer `def:_∨₂_`
-over `def:_∨₁_`.
+It is exactly because of this computational progress, even when the second
+argument is stuck (`postulate:always-stuck` or otherwise), that we prefer
+`def:_∨₂_` over `def:_∨₁_`.
 
 While this example might seem somewhat contrived, you would be amazed at how
 often it comes up in practice. Avoiding a pattern match in an implementation
 means you can avoid a pattern match in every subsequent proof *about* the
 implementation, and can be the difference between a three line proof and an 81
-line proof. We will return to this point when we discuss proof techniques, but
-for now, try not to get into the habit of bashing your way through every
-implementation if you can at all help it.
+line proof.
+
+We will return to this point when we discuss proof techniques, but for now, try
+not to get into the habit of "bashing" your way through every implementation if
+you can help it.
 
 
 ## Records and Tuples
