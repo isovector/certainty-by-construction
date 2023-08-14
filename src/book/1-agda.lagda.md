@@ -317,7 +317,7 @@ all just from exposure. But feel free to return to this section if you're ever
 having a hard time mentally parsing what's going on.
 
 
-## Types and Values
+## Types and Values {#sec:bools}
 
 Since this is a book about using programming to do mathematics, it bears discussing a
 great deal around *data*---that of the utmost importance to programmers. On a
@@ -460,7 +460,7 @@ instead allows us to simultaneously define `type:Bool`, `def:false` and
 `def:true` into a *closed theory.* That is, we'd like to say that these are *the
 only* two booleans, allowing us and Agda to reason about that fact.
 
-To do this, we can use a `data` declaration:
+To do this, we can use a `keyword:data` declaration:
 
 ```agda
 module Booleans where
@@ -1233,7 +1233,7 @@ inspect its value in order to make progress:
 not always-stuck
 ```
 
-Don't believe the response from [`Normalise:not always-stuck`](AgdaCmd);
+Don't believe the response from [`Normalise`](AgdaCmd);
 `expr:not always-stuck` is indeed always stuck (although it *is* distinct from
 `postulate:always-stuck`.) Rather, the entire call to `def:not`
 with argument `postulate:always-stuck` is stuck. And, as you might expect,
@@ -1243,8 +1243,8 @@ with argument `postulate:always-stuck` is stuck. And, as you might expect,
 true ∨₁ always-stuck
 ```
 
-Fascinatingly however, attempting to [`Normalise`](AgdaCmd) `expr:true ∨₂
-always-stuck` computes just fine:
+Fascinatingly however, attempting to normalize `expr:true ∨₂ always-stuck`
+computes just fine:
 
 ```info
 true
@@ -1267,47 +1267,104 @@ you can help it.
 
 ## Records and Tuples
 
-In this section, we will play around with record types, as a lead up to
-discussing functions in more detail. These two seemingly disparate ideas have a
-surprising amount of interplay between them. We would like to motivate an answer
-to the question of "what's up with the funny arrow `→` in function types?" Why
-does `def:_∨_` have type `type:Bool → Bool → Bool`, instead of a more "standard"
-type like it would in most everyday programming languages. For example, you
-might argue that we should write `def:_∨_`'s type as `type:(Bool, Bool) → Bool`,
-so that it's very clear which are the parameters and which is the return.
+In @sec:bools, we saw how the `keyword:data` keyword could be used to create
+types with distinct values. Most programming languages do not admit any features
+analogous to the `keyword:data` type former, which is why booleans and
+numbers---two types that are *all about* distinct values---are usually baked
+directly into most languages. We have already looked at defining our own
+booleans, in @sec:numbers we will focus on defining numbers for ourselves.
 
-Types like `type:(Bool, Bool)` are known as *tuple* types, which we can encode
-to a in Agda as record types. Record types are types with a number of subfields.
-A special case of records are tuples, which we can think of as anonymous records
-with only two fields. As a first approximation, we can write the tuple type like
-this:
+To tide us over in the meantime, we will look at the more-familiar *record
+types*: those built by sticking a value of *this* type, and a value of *that*
+type, and maybe even *one of the other* type together, all at the same time.
+
+Let's put together a little example. Imagine we're modeling the employee
+database at a company. First, let's start a new module, bring our
+`module:Booleans` into scope, and import `def:String`s:
+
+```agda
+module Example-Employees where
+  open Booleans
+  open import Data.String
+    using (String)
+```
+
+Our company has five departments. Every employee must belong to one of these.
+Whenever you hear the words "one of" used to describe how a piece of
+information, you should think about modeling it using a `keyword:data` type:
+
+```agda
+  data Department : Set where
+    administrative engineering finance marketing sales : Department
+```
+
+Let's say employees at our company have three relevant pieces of information:
+their name, which department they're in, and whether they've been hired
+recently. Whenever you hear "and" when describing a type, you should think about
+using a `keyword:record`, as in:
+
+```agda
+  record Employee : Set where
+    field
+      name         : String
+      department   : Department
+      is-new-hire  : Bool
+```
+
+We can build a value of `type:Employee` also by using the `keyword:record`
+keyword, as in:
+
+```agda
+  tillman : Employee
+  tillman = record
+    { name         = "Tillman"
+    ; department   = engineering
+    ; is-new-hire  = false
+    }
+```
+
+Sometimes we'd like to just stick two pieces of information together, without
+going through the rigmarole of needing to make a custom type for the occassion.
+In these cases, we'll need a *generic* record type, capable of sticking any two
+values together.
+
+In essence, then, the goal is to build a record type with two generic,
+independently-typed fields. We can't hard-code the types we'd like for the
+fields, because then it wouldn't be generic. So instead, we do what we always do
+in situations like this, and parameterize things:
 
 ```agda
 module Sandbox-Tuples where
-  open Booleans
-
   record _×⅋_ (A : Set) (B : Set) : Set where  -- ! 1
-    field -- ! 2
+    field
       proj₁  : A
       proj₂  : B
 ```
 
-There is quite a lot going on here, which we will tackle one step at a time. At
-[1](Ann) we parameterize the entire type `type:_×_` by two other types, call
-them `A` and `B`. This is because we'd like to be able to form tuples of any two
-types, whether they be integers and booleans, tuples of tuples, or more exotic
-things still. Note that this name `type:_×_` is not the Latin letter `x`, but is
-instead the *times symbol,* input via [`x`](AgdaMode).
+There is quite a lot going on here. First, note that the name `type:_×_` here is
+not the Latin letter `x`, but is instead the *times symbol,* input as
+[`x`](AgdaMode).
 
-At [2](Ann) we say "inside of the `type:_×_` type, there are two fields." These
-two fields are named `field:proj₁` and `field:proj₂`, and have types `A` and
-`B`, respectively. This is what you would expect; if we have a record
-corresponding to a tuple of two things, *it should have two things in it.*
+At [1](Ann) we parameterize the our type `type:_×_` by two other types, called
+`A` and `B`. You can see from the black syntax highlighting on `A` and `B` that
+these are not types in their own right, but locally-bound variables which are
+later *instantiated* as types. The entire situation is analogous to functions;
+think of `type:_×_` as a function which takes two types and returns a third
+type.
+
+Inside the `keyword:record`, we've given two fields, `field:proj₁` and
+`field:proj₂`. These names are intentionally vague, since we have no idea how
+real people will end up using `type:_×_` in practice. Incidentally, "proj" is
+short for *projection*---which is the mathy word for reducing a complicated
+structure down along some axis. In this case we have two different "axes": the
+first and the second elements of our tuple.
 
 We can try out our new tuple type, as usual by plunking a hole down on the right
 hand side of the equals sign:
 
 ```agda
+  open Booleans
+
   my-tuple⅋⅋ : Bool ×⅋ Bool
   my-tuple⅋⅋ = ?
 ```
@@ -1330,9 +1387,45 @@ expressions:
 ```
 
 Congratulations! We've made a reusable---if not very syntactically
-beautiful---tuple type! We'd now like to extract the two fields from `my-tuple`.
-How can we do that? Agda provides two means of *projecting* fields from records;
-the first is with the *record access* syntax, where the field name is prepended
+beautiful---tuple type! We'd now like to extract the two fields from
+`def:my-tuple`. How can we do that? Agda provides three means of projecting
+fields out of records. The first is a regular old pattern match:
+
+```agda
+  first : Bool ×⅋ Bool → Bool
+  first record { proj₁ = proj₁ ; proj₂ = proj₂ } = proj₁
+```
+
+The syntax here brings pleasure to no one's heart, but it does work. There are
+some things to note. First, I didn't write this definition out by hand. I
+instead wrote down the type, stuck in a hole, and then invoked
+[`MakeCase`](AgdaCmd) twice. Nobody has type to write out this ugly syntax; just
+get the computer to do it for you.
+
+Second, once again, Agda's syntax highlighting has done us a great favor. Look
+at the unpacking happening inside the `keyword:record` constructor. We have a
+green `field:proj₁` being equal to a black `proj₁`. Agda highlights field names
+in green, and bindings in black, which means we know immediately know what this
+syntax must be doing. The green part is which field we're looking at, and the
+black piece is the name we'd like to bind it to. Thus, the following definition
+is equivalent:
+
+```agda
+  first⅋ : Bool ×⅋ Bool → Bool
+  first⅋ record { proj₁ = x ; proj₂ = y } = x
+```
+
+Even better, we don't need to bind fields that we don't intend to use, so we can
+write `def:first` more tersely again:
+
+```agda
+  first⅋₀ : Bool ×⅋ Bool → Bool
+  first⅋₀ record { proj₁ = x } = x
+```
+
+I said there were three ways to project a field out of a record. If we don't
+want to do a gnarly pattern match like this, what are our other options? One
+other means is via *record access* syntax, where the field name is prepended
 with a dot and given *after* the tuple:
 
 ```agda
@@ -1340,26 +1433,38 @@ with a dot and given *after* the tuple:
   my-tuple-first = my-tuple ._×⅋_.proj₁
 ```
 
-The other form is we can omit the dot, and put the field name *before* the tuple:
+You will notice that we needed to give a *fully-qualified* field name here.
+Rather than just writing `field:proj₁` we needed to give `expr:_×⅋_.proj₁` in
+full. But don't fret, this is still the field name. We'll see momentarily how to
+clean things up.
+
+Our other means for projecting fields out of records is via the *record
+selector* syntax. Under this syntax, we use the field name as if we were making
+a function call:
 
 ```agda
   my-tuple-second : Bool
   my-tuple-second = _×⅋_.proj₂ my-tuple
 ```
 
-The attentive reader will notice that this syntax looks a lot like a function
-call---which, in a very real sense, it is! These two syntactic forms are
-completely equivalent to Agda, and it's a matter of personal preference as to
-which you pick. Personally, I prefer using the prefix form, because it means I
-can forget the fact that I'm working with *records* and think only about
-*functions.*
+The reason that record selector syntax looks like a function call is because it
+*is* a function call. Every record field `field:f` of type `type:F` in record
+`type:R` gives rise to a function `field:f` `:` `type:R → F`.
+
+Record access and record selectors just different syntax for the exact same
+functionality, and it's a matter of personal preference as to which you pick.
+Personally, I like using record selectors, because it means I can forget the
+fact that I'm working with *records* and think only about *functions.*
 
 In reading the above, it cannot have escaped your attention that these two call
-sites are *ugly.* What is this `_×_.proj₁` nonsense? Do we really need to use a
-fully-qualified name every time we want to access a field? Fortunately, we do
-not. Believe it or not, every `record` creates a new `module` with the same
-name. Thus, we can bring `field:proj₁` and `field:proj₂` into the top-level scope by opening
-our new module, allowing us to rewrite the previous two definitions as such:
+sites are *ugly.* What is this `expr:_×⅋_.proj₁` nonsense? Do we really need to
+use a fully-qualified name every time we want to access a field? Fortunately, we
+do not.
+
+Believe it or not, every `keyword:record` creates a new `keyword:module` with
+the same name. Thus, we can bring `field:proj₁` and `field:proj₂` into the
+top-level scope by opening our new module, allowing us to rewrite the previous
+two definitions as:
 
 
 ```agda
@@ -1372,24 +1477,67 @@ our new module, allowing us to rewrite the previous two definitions as such:
   my-tuple-second⅋ = proj₂ my-tuple
 ```
 
-Much nicer, isn't it? All that's left is to clean up the syntax for
-*constructing* tuples in the first place. It would be really nice to be able to
-avoid the `record { proj₁ = ... }` boilerplate every time we wanted to make a
-tuple. Instead, we can write a helper function that will clean up the syntax for
-us.
+Much nicer, isn't it?
+
+
+## Copatterns and Constructors
+
+We now have nice syntax for projecting out of records. But can we do anything to
+improve the syntax involved in building them? It would be really nice to be able
+to avoid the `record { proj₁ = ... }` boilerplate every time we wanted to make a
+tuple.
+
+If we don't mind giving a name to our tuple, we can use *copattern* syntax to
+build one. The idea is rather than define the record itself, we need only give
+definitions for each of its fields. Agda can help us with this. Start as usual
+with a type and a hole:
+
+```agda
+  my-copattern⅋₀ : Bool ×⅋ Bool
+  my-copattern⅋₀ = ?
+```
+
+If we now attempt to perform a [`MakeCase:`](AgdaCmd) inside the hole, we will
+be rewarded with a copattern match:
+
+```agda
+  my-copattern⅋₁ : Bool ×⅋ Bool
+  proj₁ my-copattern⅋₁ = {! !}
+  proj₂ my-copattern⅋₁ = {! !}
+```
+
+Copatterns can be nested, for example, in the case when we have a nested tuple:
+
+```agda
+  nested-copattern⅋₁ : Bool ×⅋ (Bool ×⅋ Bool)
+  proj₁ nested-copattern⅋₁ = {! !}
+  proj₁ (proj₂ nested-copattern⅋₁) = {! !}
+  proj₂ (proj₂ nested-copattern⅋₁) = {! !}
+```
+
+We will make extensive use of copatterns later in this book, and will discuss
+them in much more depth in @sec:copatterns. For the time being, it's nice to
+know that this is an option.
+
+Suppose however, we'd like to not use copatterns---perhaps because we'd like to
+build an anonymous value of a record type. For that, we can instead write a
+helper function that will clean up the syntax for us.
 
 ```agda
   _,⅋_  : {A B : Set} → A → B → A ×⅋ B  -- ! 1
   _,⅋_  = ?
 ```
 
-The type of `def:_,_` should really be `A → B → A × B`, however, recall that `A` and
-`B` are variables standing in for *whatever type the user wants.* But those
-variables are not in scope, so we must bind them ourselves. This is the meaning
-of the `type:{A B : Set} →` prefix of the type at [1](Ann)---it's responsible for
-bringing `A` and `B` both into scope and letting Agda know they are both types
-(that is, they are both of type `type:Set`.) We will discuss Agda's scoping mechanism
-in more detail in @sec:implicits.
+The type of `def:_,_` should really be `A → B → A × B`. However, recall that `A`
+and `B` are variables standing in for *whatever type the user wants.*
+Unfortunately for us, we don't know what those types are yet, but we need them
+in order to give a proper type to `def:_⅋_`. Since those variables are not in
+scope, we must bind them ourselves.
+
+This binding is what's happening in the `{A B : Set}` syntax that prefixes the
+type at [1](Ann). It's responsible for bringing `A` and `B` both into scope, and
+letting Agda know they are both of type `type:Set`. We will discuss what exactly
+the curly braces mean momentarily, in @sec:implicits.
 
 Implementing `def:_,_` isn't hard to do by hand; but we can be lazy and ask Agda to
 do it for us. Begin as usual by getting Agda to bind our arguments, via
@@ -1402,45 +1550,42 @@ do it for us. Begin as usual by getting Agda to bind our arguments, via
 
 and follow up by invoking [`Auto`](AgdaCmd), which asks Agda to just write the
 function for you. Of course, this doesn't always work, but it's surprisingly
-good for little functions like this. The result is exactly what we'd expect it
-to be:
+good for little functions like `def:_,_`. The result is exactly what we'd expect
+it to be:
 
 ```agda
   _,⅋⅋⅋_  : {A B : Set} → A → B → A ×⅋ B
   x ,⅋⅋⅋ x₁ = record { proj₁ = x ; proj₂ = x₁ }
 ```
 
-Move the definition of `def:_,_` above the definition of `def:my-tuple`, which we can
-now reimplement:
+The `def:_,_` is now shorthand for writing out a `keyword:record` value. We can
+reimplement `def:my-tuple` thus:
 
 ```agda
-  my-tuple⅋⅋⅋ : Bool ×⅋ Bool
-  my-tuple⅋⅋⅋ = (true ∨ true) ,⅋⅋⅋ not true
+  my-tuple' : Bool ×⅋ Bool
+  my-tuple' = (true ∨ true) ,⅋⅋⅋ not true
 ```
 
 The parentheses here are necessary because Agda doesn't know if it should parse
-the expression `true ∨ true , not true` as `true ∨ (true , not true)` or as the
-intended expression above. Of course, we know that the other parse doesn't even
-typecheck and thus it must be the unintended one, but you can imagine a much
-larger expression could take an exponential amount of time in order to find a
-unique way of adding parentheses to make the types work out properly. This is
-not a hard limitation, but we will not fix it here, since the stack of concepts
-currently on the reader's brain is likely reaching its breaking point. We will
-solve this problem of helping Agda parse bigger expressions in a moment.
+the expression `ctor:true` `def:∨` `ctor:true` `def:,⅋` `def:not` `ctor:true` as
+`expr:true ∨ (true ,⅋ not true)` or as the expression intended above.
 
-Our exploration of this topic has gotten somewhat out of hand, requiring us to
-go back and amend definitions. To avoid the mental anguish of keeping ourselves
-all on the same page, let's just start a new sandbox module:
+Of course, you and I know that the other parse doesn't even typecheck, so it
+must be the unintended. You can, however, imagine a much larger expression could
+take an exponential amount of time in order to find a unique way of adding
+parentheses to make the types work out properly. We will fix this limitation
+in the next section.
+
+As it happens, we can get Agda to automatically create `def:_,_`, rather
+than needing to define it ourselves. Doing so, however, requires changing the
+definition of `def:_×⅋_`, which we are now unable to do, since we have defined
+things after the fact.
+
+Let's start a new module, and redefine `def:_×_` in order to get `def:_,_` for
+free.
 
 ```agda
 module Sandbox-Tuples₂ where
-  open Booleans
-```
-
-We will again define our tuple type; this time however, we will make one small
-addition:
-
-```agda
   record _×_ (A : Set) (B : Set) : Set where
     constructor _,_  -- ! 1
     field
@@ -1450,16 +1595,20 @@ addition:
   open _×_
 ```
 
-The keyword `keyword:constructor` at [1](Ann) tells Agda we'd like to avoid the whole
-`keyword:record { ... }` nonsense we had to deal with last on the go-around, instead
-asking it to just automate writing the `def:_,_` function for us. Sorry to have
-led you down the garden path, but it's nice to see for ourselves what tedium
-each language feature can assuage.
+There is one small change compared to our previous definition, and that's the
+`keyword:constructor` keyword at [1](Ann). Adding a `keyword:constructor`
+definition tells Agda that we'd like to avoid the whole `keyword:record` `{ ...
+}` nonsense. Instead, we we automatically get `ctor:_,_` for free, which you
+will notice is now colored red, to let us know that it is a constructor.
 
-We can return to the problem of getting Agda to correctly parse `true ∨ true ,
-false` with the implied parentheses on the left. Infix operators like `def:_∨_` and
-`ctor:_,_` are parsed, in every language, according to rules of *precedence* and
-*associativity.*
+
+## Fixities {#sec:fixity}
+
+We return now to the problem of getting Agda to correctly parse the expression
+`ctor:true` `def:∨` `ctor:true` `def:,⅋` `def:not` `ctor:true` the implied
+parentheses on the left. Infix operators like `def:_∨_` and `ctor:_,_` are
+parsed in every language according to rules of *precedence* and
+*associativity.* Together, these two concepts are known as *fixities.*
 
 The *precedence* of an operator lets the parser know how "tightly" an operator
 should bind with respect to other operators. In this case, because we'd like the
@@ -1476,32 +1625,31 @@ repeated applications of the operator. That is, should we parse `x , y , z` as
 *left-associative*, while the latter is, appropriately, *right-associative.* For
 reasons that will make sense later, we'd like `ctor:_,_` to be right-associative.
 
-We can tell Agda's parser about our preferences, that `ctor:_,_` be right-associative
-with precedence 4 with the following declaration:
+We can tell Agda's parser about our preferences, that `ctor:_,_` be
+right-associative with precedence 4 via the following declaration:
 
 ```agda
   infixr 4 _,_
 ```
 
-Here, the `r` at the end of `infixr` tells Agda about our associativity
-preference. Of course, you could use `infixl` instead if you wanted
-left-associativity (although you don't in this case.) Of course, if you ever
-*do* want an explicit left-nested tuple, you are free to insert the parentheses
-on the left yourself!
+Here, the `r` at the end of `keyword:infixr` tells Agda that our preference is
+for associativity to be to the right. The analogous keyword `keyword:infixl`
+informs Agda of the opposite decision. With this fixity in place, Agda will now
+automatically insert parentheses, parsing `expr:true , false , true , false` as
+`expr:true , (false , (true , false))`. Of course, if you ever *do* want an
+explicit left-nested tuple, you are free to insert the parentheses on the left
+yourself.
 
-While `ctor:_,_` is the operator for building *values* of tuple types, `type:_×_` is the
-operator for building the tuple type itself. The values and their types should
-be in one-to-one correspondence. That is to say, if we have `a : A`, `b : B` and
-`c : C`, we'd like it to be the case that `a , b , c` have type `type:A × B × C`. And
-thus, we must also choose right-associativity for `type:_×_`. For mysterious reasons,
-however, `type:_×_` is traditionally given a preference of 2:
+While `ctor:_,_` is the operator for building *values* of tuple types,
+`type:_×_` is the operator for building the tuple type itself. The values and
+their types should be in a one-to-one correspondence. That is to say, if we have
+`a : A`, `b : B` and `c : C`, we'd like that `a , b , c` have type `type:A × B ×
+C`. By this reasoning, must also choose right-associativity for `type:_×_`.
+Traditionally, `type:_×_` is given a precedence of 2.
 
 ```agda
   infixr 2 _×_
 ```
-
-We will end our discussion of record types here, as this is enough to get you
-started.
 
 
 ## Function Types
@@ -1731,7 +1879,7 @@ functions into the right shape so that they can be used in place of
 more-specific functions.
 
 
-## Implicit Arguments
+## Implicit Arguments {#sec:implicits}
 
 Let's try using our `def:uncurry` function from before. As a first example, we can
 uncurry the `def:_∨_` function. If we don't want to do the work to figure out what
@@ -1739,6 +1887,8 @@ type this thing should have, we can simply leave behind a hole in its type
 judgment:
 
 ```agda
+  open Booleans
+
   _ : ?
   _ = uncurry _∨_
 ```

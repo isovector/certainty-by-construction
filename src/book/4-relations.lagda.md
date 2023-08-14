@@ -698,7 +698,7 @@ and Agda will attempt to use those identifiers when attempting to synthesize
 terms.
 
 
-## Copatterns
+## Copatterns {#sec:copatterns}
 
 The definition given for `def:≤-preorder⅋₁` above is somewhat unsatisfactory, as
 it requires us to explicitly construct an object using `keyword:record` syntax.
