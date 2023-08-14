@@ -327,7 +327,9 @@
 \newcommand{\AgdaModule}[2][]
     {\AgdaNoSpaceMath{\textcolor{#1AgdaModule}{\AgdaFontStyle{\AgdaFormat{#2}{\AgdaLink{#2}}}}}}
 \newcommand{\AgdaPostulate}[1]
-    {\AgdaNoSpaceMath{\AgdaFontStyle{\colorbox{AgdaPostulate}{\AgdaFormat{#1}{\AgdaLink{#1}}}}}}
+    {\ifthenelse{\equal{\detokenize{#1}}{\detokenize{String}}}%
+{\AgdaFunction{#1}}%
+{\AgdaNoSpaceMath{\AgdaFontStyle{\colorbox{AgdaPostulate}{\AgdaFormat{#1}{\AgdaLink{#1}}}}}}}
 \newcommand{\AgdaPrimitive}[1]
     {\AgdaNoSpaceMath{\textcolor{AgdaPrimitive}{\AgdaFontStyle{\AgdaFormat{#1}{#1}}}}}
 \newcommand{\AgdaRecord}[1]
