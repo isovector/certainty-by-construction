@@ -32,6 +32,7 @@ Hidden
 
 :   ```agda
 {-# OPTIONS --allow-unsolved-metas #-}
+open import Data.Product using () renaming (_×_ to _,⅋₉_)
     ```
 
 
@@ -871,21 +872,62 @@ Haskell, OCaml, PureScript, among many, many other cousins. This section will
 give you a brief overview of how to conceptualize Agda as a programming
 language, including some sense of how to mentally parse it.
 
-Agda is divided into several distinct pieces of linguistic structure. First and
-foremost, it is an *expression-based* language, meaning there are no statements
-in the language. On the right side of every equals sign, Agda expects an
-expression, which is to say, a program tree that produces a value. If you are
-unfamiliar with ML-style languages, this will strike you as quite the
-restriction; Agda has no mutable variable assignment, `for` loops, or early
-`return` statements, because none of these things produce a value. Having no
-loops sounds limiting, but it's OK in practice: we simply use recursion instead.
+Agda is an expression-based language, meaning that every unit of code must
+produce a value. Therefore, there are no control-flow statements in this
+language, because control flow doesn't directly produce a value. Agda has no
+support for common constructions like `for` or `while` loops, and while it does
+support `if..then..else` its prevalence is very subdued. In Agda, we have much
+better tools for branching, as we will see soon in @sec:patterns.
 
-Syntactically, Agda's expression language can read a little peculiarly. While
-Agda supports many of the operators you know and love, its syntax for function
-calls is very different from that in other language families'. You are likely
-familiar with ALGOL-style function calls which look like this:
+This ascetic expression dedication precludes many other features that you might
+think be ubiquitous in programming languages. The most substantial of these
+elided features is that Agda does not support any form of mutable variables.
+While at first blush this feels like an insane limitation, mutable variables
+don't end up being a thing you miss after a little time apart.
+
+The problem with mutable variables is that code with access to them can no
+longer be isolated and studied on its own. In the presence of mutable variables,
+the behavior of a piece of code depends not only on the program snippet, but
+also implicitly on the historical context under which this snippet is being run.
+By the Law of Demeter---which states that code should assume as little as
+possible about anything---mutable variables are quite a taxing feature, in that
+they effectively limit our ability to confidently reuse code.
+
+Writing real code without mutable variables is surprisingly comfortable, once
+you've wrapped your head around how. The trick is a to perform a series of
+syntactic transformations which eliminate the mutation. For example, whenever
+you need to read from a mutable variable, instead, just pass in a function
+argument. That is, instead of:
 
 ```cpp
+int foo;
+
+function bar() {
+  // ...
+  int a = foo;
+  // ...
+}
+```
+
+you can write:
+
+```cpp
+function bar(int a) {
+  // ...
+}
+```
+
+If you'd like to *change* a mutable variable, instead, just return it as an
+additional result of the function! While this seems (and is) clunky in C-like
+languages, it's much less painful in Agda. We will not discuss the matter
+further, instead hoping the motivated reader will pick up the necessary tricks
+as we go.
+
+There is one further point about functions in Agda that I'd like to make,
+however. The syntax can be rather weird. You are likely familiar with
+C-style function calls which look like this:
+
+```c
 foo(bar, 5, true)
 ```
 
@@ -897,8 +939,8 @@ foo bar 5 true
 ```
 
 Note that the arguments here are separated here only by whitespace. If
-disambiguation is necessary (which it is, whenever we have nested function
-calls,) we surround the entire expression in parentheses:
+disambiguation is necessary (which it will be whenever we have nested function
+calls) we surround the entire expression in parentheses:
 
 ```example
 baz 0 (f false) (foo bar 5 true)
@@ -911,9 +953,9 @@ baz(0, f(false), foo(bar, 5, true))
 ```
 
 While it might feel like an unnecessarily annoying break in conventional syntax,
-there are mightily-good theoretical reasons for it, addressed soon. Given this
-new lens on the syntax of function calls, it's informative to look back at our
-definition of `def:not`; recall:
+there are mightily-good theoretical reasons for it, addressed in @sec:currying.
+Given this new lens on the syntax of function calls, it's informative to look
+back at our definition of `def:not`; recall:
 
 ```agda
   not⅋⅋⅋⅋ : Bool → Bool
@@ -921,60 +963,81 @@ definition of `def:not`; recall:
   not⅋⅋⅋⅋ true   = false
 ```
 
-we can now mentally parse these definitions differently, that is, reading them
-literally. The first of which, says "the function `def:not` called with argument
-`ctor:false` is equal to `ctor:true`". Thus, this equals sign is really and
-truly an *equals* sign. It is *not* the "assignment" operator found in all
-stateful descendants of ALGOL, nor is it some sort of test-for-equality that
-usually gets called `==`. No, we are saying the thing on the left side is
-exactly the same thing as on the right!
+we can now mentally parse these definitions differently, that is, we can read
+them *literally.* The left side of each equation is just a function call!
+Therefore, the first equation says "the function `def:not` called with argument
+`ctor:false` is equal to `ctor:true`".
+
+The equals sign is really and truly an *equals* sign; it denotes that we have
+*defined* `expr:not⅋⅋⅋⅋ false` to be `ctor:true`. And the funny thing about
+equalities is that they go both directions, so it's also correct to say that
+`ctor:true` is equal to `expr:not⅋⅋⅋⅋ false``.
 
 This equality is very deep. While Agda will simplify the left side to the right
-whenever possible, the two sides are exactly equivalent in all non-pattern
-(TODO: what does this mean?) contexts. Indeed, many proofs depend on finding two
-complicated expressions that are exactly equal in this way, and much of the work
-is in showing that equivalence.
+whenever possible, the two sides are exactly equivalent in all computational
+contexts, and we can pick whichever is the most helpful for our proof. Indeed,
+many proofs depend on finding two complicated expressions that are exactly equal
+in this way. Much of the work is in figuring out which two complicated
+expressions we need to find.
 
 
 ## Operators
 
-Another simple operation over booleans is logical OR; that is, the result is
-true if at least one of its arguments is true. Mathematicians often use the
-symbol $\vee$ (pronounced "vel") for this operation, which we will follow. Note
-that this is not the Latin letter `v`, but the Unicode character
-[`or`](AgdaMode).
+Armed with a better understanding of how Agda works, we can return to writing
+actual code. One simple operation over booleans is logical OR; that is, the
+result is true if at least one of its arguments is true. Mathematicians often
+use the symbol $\vee$ (pronounced "vel") for this operation, which we will
+follow. Note that this is not the Latin letter that comes before `w`, but
+instead the Unicode character produced by typing [`or`](AgdaMode).
 
-This odd choice for a function name is justified by our goal to reimplement the
-Agda standard library, with the same names. The standard library calls this
-`def:_∨_`, and so we will too. The underscores are also meaningful, as we will
-see momentarily.
+This odd choice for a function name is justified because that's what the
+standard library calls it, and we'd like to reimplement the standard library as
+a pedagogical exercise. Incidentally, the standard library didn't just make up
+this name; `∨` is the mathematical symbol used for joins in a semilattice, and
+`OR` is exactly that join on the boolean semilattice. Don't worry if you don't
+yet know what this means, as we'll look investigate semilattices in
+@sec:semilattices.
+
+We can start our implementation for `def:_∨⅋⅋_` by writing out a function
+signature, and then giving a hole on the next line, as in:
 
 ```agda
   _∨⅋⅋_ : Bool → Bool → Bool
   _∨⅋⅋_ = ?
 ```
 
-We will again interactively ask for Agda's help here. Place your cursor in the
-hole and run [`MakeCase`](AgdaCmd). Agda will respond:
+The function signature here is a little strange, as we'd expect it to be
+something more akin to `expr:(Bool ,⅋₉ Bool) → Bool`---that is, a function from
+two booleans to one. For the time being, just imagine that *is* the type
+signature. The point is rather subtle, and we will address the point of
+confusion soon, in @sec:currying.
+
+In order to implement `def:_∨⅋⅋_`, we will again interactively ask for Agda's
+help. Place your cursor in the hole and run [`MakeCase`](AgdaCmd). Agda will
+respond with:
 
 ```agda
   _∨⅋⅋⅋_ : Bool → Bool → Bool
   x ∨⅋⅋⅋ x₁ = {! !}
 ```
 
-You will notice that `def:_∨_` has been replaced with `x ∨ x₁`. The underscores
-are not literal underscores, but instead mark placeholders for the operator's
-syntax. If we fill the resulting hole with the names of both arguments `x` and
-`x₁`, we can again ask Agda to [`MakeCase`](AgdaCmd):
+You will notice that the left-hand side of our equation has changed. Where
+before we had two underscores, we now have `x` and `x₁`. As it happens, those
+underscores were not literal underscores, but instead marked placeholders for
+in the operator's syntax for its arguments.
+
+One advantage to the `hole:{! !}` form for Agda's holes is that we can type
+inside of them. If you fill the hole with `hole:{! x x₁ !}`, as in:
 
 ```agda
   _∨⅋⅋⅋⅋_ : Bool → Bool → Bool
   x ∨⅋⅋⅋⅋ x₁ = {! x x₁ !}
 ```
 
-This time Agda will use the variables named in the hole as input on what to
-split. The result is a very satisfying four lines of code that we didn't need to
-write for ourselves:
+you can now invoke [`MakeCase`](AgdaCmd), and rather than prompting you like
+usual, Agda will just use the arguments you wrote inside the hole. Thus, we
+receive a very satisfying four lines of code that we didn't have to write for
+ourselves:
 
 ```agda
   _∨⅋⅋⅋⅋⅋_ : Bool → Bool → Bool
@@ -984,8 +1047,8 @@ write for ourselves:
   true   ∨⅋⅋⅋⅋⅋ true   = {! !}
 ```
 
-We can finish the definition of `def:_∨_` by giving filling in the desired answers
-in each hole:
+We can finish the definition of `def:_∨_` by giving filling in the desired
+answers in each hole:
 
 ```agda
   _∨⅋_ : Bool → Bool → Bool
@@ -997,20 +1060,23 @@ in each hole:
 
 Here we have taken the same approach as in `def:not`: for each argument, we
 enumerate every possibilities, giving the answer on the right side of the equals
-sign. You will notice that this strategy grows enormously; a function of five
-booleans would require 32 clauses to enumerate every possibility. Fortunately,
-this is not the only way to define `def:_∨_`. We can instead throw some thought
-at the problem, and realize the goal is to identify whether or not one of the
-arguments is `ctor:true`. This doesn't require pattern matching on *both*
-parameters---some clever insight indicates we can get away with matching only on
-one.
+sign. You will quickly notice that this strategy grows exponentially fast; a
+function of five booleans would require 32 clauses to enumerate every
+possibility. Fortunately, this is not the only way to define `def:_∨_`. We can
+instead throw some thought at the problem, and realize the goal is to identify
+whether or not one of the arguments is `ctor:true`. This doesn't require pattern
+matching on *both* parameters---some clever insight indicates we can get away
+with matching only on one.
 
 If the argument we matched on is `ctor:true`, we're done, without needing to
-look at the other argument. If our matched argument is `ctor:false`, then the
-result is `ctor:true` only when the second argument is `ctor:true`. In neither
-case do we need to inspect both of the arguments! We can take advantage of this
-fact by using a variable to abstract over the second parameter. Instead, let us
-define `def:_∨_` in this way:
+inspect the other. Otherwise, if our matched argument is `ctor:false`, it
+doesn't affect the answer, because the result is `ctor:true` only with the other
+argument is `ctor:true`.
+
+Thus, in neither the `ctor:true` nor `ctor:false` case do we need to look at
+the second argument. We can take advantage of this fact by using a variable to
+abstract over the second parameter. Instead, let us define `def:_∨_` in this
+way:
 
 ```agda
   _∨_ : Bool → Bool → Bool
@@ -1018,14 +1084,25 @@ define `def:_∨_` in this way:
   true   ∨ other = true
 ```
 
-Because we wrote `other`---rather than any of the constructors of `type:Bool`--- Agda
-knows we don't want to perform a pattern match. Instead, this introduces a new
-variable `other : Bool`. In the `ctor:false` case, we simply return this argument,
-and in the `ctor:true` case we ignore it completely because we've already found the
-`ctor:true` we're looking for.
+Pay attention to the syntax highlighting here, as this is the first time it is
+taking advantage of the compiler's knowledge. Here, we've written `other` on the
+right side of `def:_∨_`, and Agda has colored it black rather than the usual
+red. This is because Agda reserves the red for *constructors* of the type, of
+which there are only two (`ctor:true` and `ctor:false`.) By writing anything
+*other* than the name of a constructor, Agda assumes we'd like to treat such a
+thing as a variable binding.
 
-Note that we call `other` a variable, but **it is a variable in the mathematical
-sense rather than in the usual programming sense.** This variable is a way of
+In both cases, we now have a new variable `other :` `type:Bool` in scope,
+although we only end up using it when the first argument was `ctor:false`.
+
+As our Agda examples get more complicated, being able to quickly read the
+information conveyed in the syntax highlighting will dramatically improve your
+life. Red identifiers are reserved for constructors of a type. Blue is for types
+and functions, and black is for locally-bound constant variables---all three of
+which are visible in this last example.
+
+Note that we call `other` a variable, but it is a variable in the mathematical
+sense rather than in the usual programming sense. This variable is a way of
 talking about something whose value we don't know, like the $x$ in the
 expression $f(x) = 2x$ (but not like the $x$ in $x^2 = 9$.) Here, $x$ exists,
 but its value is set once and for all by the user of $f$. When we are talking
