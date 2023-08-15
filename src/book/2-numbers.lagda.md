@@ -135,8 +135,8 @@ Hidden
 ```agda
 module Naturals where
   data ℕ : Set where
-    zero : ℕ
-    suc  : ℕ → ℕ  -- ! 1
+    zero  : ℕ
+    suc   : ℕ → ℕ  -- ! 1
 ```
 
 Hidden
@@ -244,25 +244,26 @@ defined `def:four` thusly:
 It is tempting to use the traditional base-ten symbols for numbers, and of
 course, Agda supports this (although setting it up will require a little more
 effort on our part.) However, we will persevere with our explicit unary encoding
-for the time being, to really hammer-in that there is no magic behind the scenes
-here.
+for the time being, to really hammer-in that there is no magic happening behind
+the scenes here.
 
 The simplest function we can write over the naturals is to determine whether or
 not the argument is equal to 0. For the same of simplicity, this function will
-return a boolean, but we note that this is a bad habit in Agda, and there are
-much better techniques that don't lead to *boolean blindness.* Thus, this
-function is only provided to help us get a feel for pattern matching over
-natural numbers.
+return a boolean, but note that this is a bad habit in Agda. There are
+much better techniques that don't lead to *boolean blindness* that we will
+explore in @sec:decidability. This function therefore is only provided to help
+us get a feel for pattern matching over natural numbers.
 
-Rather than using our home-grown booleans, we will fetch them from the standard
-library:
+We can get access to the booleans by importing them from our exports from
+@sec:chapter1:
 
 ```agda
-  open import Data.Bool
+  open 1-agda.Exports
     using (Bool; true; false)
 ```
 
-As always, we begin with our type signature, and a hole.
+The function we'd like to write determines if a given `type:ℕ` is equal to
+`ctor:zero`, so we can begin with a name, a type signature, and a hole:
 
 ```agda
   n=0?⅋₁ : ℕ → Bool
@@ -287,17 +288,20 @@ constructors:
 ```
 
 Interestingly, at [1](Ann), Agda has given us a new form, something we didn't
-see in the case of booleans. It gave us a pattern match `(suc x)`, which after
-some mental type-checking, makes sense. We said `n` was a `ℕ`, but `ctor:suc`
-has type `expr:ℕ → ℕ`. That means, `n` can only be a natural number of the
-`ctor:suc` form *if that function has already been applied to some other
-number.*
+see when considering the booleans. We now have a pattern match of the form
+`ctor:suc` `x`, which after some mental type-checking, makes sense. We said `n`
+was a `type:ℕ`, but `ctor:suc` has type `expr:ℕ → ℕ`. That means, `n` can only
+be a natural number of the `ctor:suc` form *if that function has already been
+applied to some other number.* And `x` is that other number.
 
 The interpretation you should give to this expression is that if $n$ is of the
-form `ctor:suc` `x`, then $x = n - 1$.
+form `ctor:suc` `x`, then $x = n - 1$. Note that `ctor:zero` is not of the form
+`ctor:suc` `x`, and thus we don't accidentally construct any negative numbers
+under this interpretation.
 
-In our case, we care only if `n` is equal to zero, which we can immediately
-solve from here, without needing to do anything with `x`.
+Returning to `def:n=0?`, we care only if our original argument `n` is
+`ctor:zero`, which we can immediately solve from here---without needing to do
+anything with `x`:
 
 ```agda
   n=0? : ℕ → Bool
@@ -311,7 +315,7 @@ a given natural is equal to 2.
 
 Exercise
 
-:   Implement `n=2? : ℕ → Bool`
+:   Implement `def:n=2?` `:` `expr:ℕ → Bool`
 
 
 Solution
@@ -322,6 +326,14 @@ Solution
   n=2? (suc zero)           = false
   n=2? (suc (suc zero))     = true
   n=2? (suc (suc (suc x)))  = false
+    ```
+
+:   or, alternatively:
+
+:   ```agda
+  n=2?⅋ : ℕ → Bool
+  n=2?⅋ (suc (suc zero))  = true
+  n=2?⅋ _                 = false
     ```
 
 

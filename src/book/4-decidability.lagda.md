@@ -1,4 +1,4 @@
-# Decidability
+# Decidability {#sec:decidability}
 
 Hidden
 
