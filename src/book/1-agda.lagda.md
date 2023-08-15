@@ -1815,7 +1815,6 @@ We begin with the "simplified" type of `def:curry`:
 
 ```illegal
   curry⅋₀ : (A × B → C) → (A → B → C)
-  curry⅋₀ = ?
 ```
 
 Because we know that `_→_` has lower precedence than `def:_×_`, we can add some
@@ -1823,7 +1822,6 @@ implicit parentheses:
 
 ```illegal
   curry⅋₁ : ((A × B) → C) → (A → B → C)
-  curry⅋₁ = ?
 ```
 
 Furthermore, we know that `_→_` is right associative, so a chain of multiple
@@ -1831,7 +1829,6 @@ function arrows nests its parentheses to the right, as in:
 
 ```illegal
   curry⅋₂ : ((A × B) → C) → (A → (B → C))
-  curry⅋₂ = ?
 ```
 
 Now, we know that a chain of rightward-nested function arrows is the same as a
@@ -1841,14 +1838,12 @@ parentheses on the right side of the outermost arrow. This results in:
 
 ```illegal
   curry⅋₄ : ((A × B) → C) → A → (B → C)
-  curry⅋₄ = ?
 ```
 
 Doing the same trick, we can eliminate another pair of parentheses:
 
 ```illegal
   curry⅋₅ : ((A × B) → C) → A → B → C
-  curry⅋₅ = ?
 ```
 
 This type is now as simple as we can make it. Although its first parameter is
@@ -1873,11 +1868,20 @@ our arguments:
 Hidden
 
 :     ```agda
+  curry⅋₅ = ?
+  curry⅋₄ = ?
+  curry⅋₂ = ?
+  curry⅋₁ = ?
+  curry⅋₀ = ?
+      ```
+
+:     ```agda
 module Sandbox-Tuples₂ where
   open Booleans
   open Sandbox-Tuples₂⅋ public
   open _×_
       ```
+
 
 ```agda
   curry : {A B C : Set} → (A × B → C) → (A → B → C)
@@ -2012,22 +2016,14 @@ everything by hand. In Agda like any other programming language, it's desirable
 to use existing machinery rather than build your own copy, although admittedly
 building it for yourself leads to better understanding.
 
-
-Hidden
-
-:   ```agda
-  mutual
-    -- fix indentation
-    ```
-
 Let's now look again at the types of `def:_,_`, `def:curry`, and `def:curry`, in
 their full curly-braced glory:
 
 
 ```agda
-    _,_⅋      : {A B : Set} → A → B → A × B
-    curry⅋    : {A B C : Set} → (A × B → C) → (A → B → C)
-    uncurry⅋  : {A B C : Set} → (A → B → C) → (A × B → C)
+  _,_⅋      : {A B : Set} → A → B → A × B
+  curry⅋    : {A B C : Set} → (A × B → C) → (A → B → C)
+  uncurry⅋  : {A B C : Set} → (A → B → C) → (A × B → C)
 ```
 
 Each of these types is preceded by curly braces containing a list of types,
@@ -2039,17 +2035,16 @@ for `{A : Set} → {B : Set}`, and so on for more variables. We can therefore
 rewrite the type of `def:_,_` more explicitly:
 
 ```agda
-    _,_⅋⅋ : {A : Set} → {B : Set} → A → B → A × B
+  _,_⅋⅋ : {A : Set} → {B : Set} → A → B → A × B
 ```
 
 Hidden
 
 :   ```agda
-    _,_⅋      = ?
-    curry⅋    = ?
-    uncurry⅋  = ?
-    _,_⅋⅋     = ?
-  -- fix indentation
+  _,_⅋      = ?
+  curry⅋    = ?
+  uncurry⅋  = ?
+  _,_⅋⅋     = ?
     ```
 
 In this form, it looks a lot like `A : Set` and `B : Set` are *arguments* to
@@ -2123,6 +2118,14 @@ very easy to spin up new types at will:
   data PrimaryColor : Set where
     red green blue : PrimaryColor
 ```
+
+
+Hidden
+
+:   ```agda
+  -- fix indentation
+    ```
+
 
 We can now see what happens when we fill in one of those `type:Bool`s with
 `type:PrimaryColor` instead:
@@ -2241,6 +2244,7 @@ module Exports where
   open import Data.Bool
     using (Bool; false; true; not; _∨_)
     public
+
   open import Data.Product public
     using (_×_; _,_; curry; uncurry; proj₁; proj₂)
     public
