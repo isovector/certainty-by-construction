@@ -1585,7 +1585,9 @@ Let's start a new module, and redefine `def:_×_` in order to get `def:_,_` for
 free.
 
 ```agda
-module Sandbox-Tuples₂ where
+module Sandbox-Tuples₂⅋ where
+  open Booleans
+
   record _×_ (A : Set) (B : Set) : Set where
     constructor _,_  -- ! 1
     field
@@ -1643,9 +1645,9 @@ yourself.
 While `ctor:_,_` is the operator for building *values* of tuple types,
 `type:_×_` is the operator for building the tuple type itself. The values and
 their types should be in a one-to-one correspondence. That is to say, if we have
-`a : A`, `b : B` and `c : C`, we'd like that `a , b , c` have type `type:A × B ×
-C`. By this reasoning, must also choose right-associativity for `type:_×_`.
-Traditionally, `type:_×_` is given a precedence of 2.
+`a : A`, `b : B` and `c : C`, we'd like that `a` `ctor:,` `b` `ctor:,` `c` have
+type `type:A × B × C`. By this reasoning, must also choose right-associativity
+for `type:_×_`. Traditionally, `type:_×_` is given a precedence of 2.
 
 ```agda
   infixr 2 _×_
@@ -1656,86 +1658,116 @@ Traditionally, `type:_×_` is given a precedence of 2.
 
 It is now time to tackle the question of what's up with the funny syntax for
 functions with multiple arguments. Most programming languages assign a type of
-the form `type:(A × B) → C` to functions with two arguments, while in Agda we instead
-write `type:A → B → C`. The reason for this is, in short, that they are equivalent,
-but that the latter is more useful.
+the form `type:(A × B) → C` to functions with two arguments, while in Agda we
+instead write `type:A → B → C`. Why is this?
 
-In order to see this equivalence directly, we can stop for a moment to think
+In order to help understand this type, we can stop for a moment to think
 about the issue of parsing again. Although the function arrow is intrinsically
-magical and built-in to Agda, we can ask ourselves how it ought to work.
-Spiritually, `type:_→_` is a binary operator, which means we can ask about its
-precedence and associativity. In Agda, the typing judgment `_:_` binds with the
-lowest precedence of all, while `type:_→_` comes in just after as the second-lowest
-precedence in the language. What this means is that in practice, `type:_→_` always
-acts as a separator between types, and we don't need to worry ourselves about
-where the parentheses should go.
+magical and built-in to Agda, let's ask ourselves how it *ought* to work.
 
-The associativity for `type:_→_`, on the other hand, is to the right. That means,
-given the type `type:A → B → C`, we must read it as `type:A → (B → C)`. A literal
-interpretation of such a thing is a function that takes an `A` argument and
-*returns a function.* That returned function itself takes a `B` argument and
-returns a `C`. At the end of the day, we did take two arguments, an `A` and a
-`B`, in order to produce a `C`.
+Spiritually, `type:_→_` is a binary operator, meaning we can ask about its
+precedence and associativity. In Agda, the typing judgment `_:_` binds with the
+lowest precedence of all, with `type:_→_` coming in as a close second. What this
+means is that in practice, `type:_→_` always acts as a separator between types,
+and we don't need to worry ourselves about where exactly the parentheses should
+go.
+
+The associativity for `type:_→_`, on the other hand, is to the right. That
+means, given the type `type:A → B → C`, we must read it as `type:A → (B → C)`. A
+literal interpretation of such a thing is a function that takes an `A` argument
+and *returns a function.* That returned function itself takes a `B` argument and
+then returns a `C`. At the end of the day, by the time we get a `C`, the
+function did indeed take two arguments: both an `A` and a `B`.
 
 What's nice about this encoding is that, unlike in most programming languages,
-we don't to give every argument at once. In fact, we can *specialize* a function
-call by slowly fixing its parameters as in this example:
+we are not required to give every argument at once.  In fact, we can
+*specialize* a function call by slowly filling in its parameters, one at a time.
+
+Let's take an example. The following models a family pet with a record. The
+`type:Pet` has a species, temperament, and a name.
 
 ```agda
-  module Example where
-    data AnimalVariety : Set where  -- ! 1
-      dog      : AnimalVariety
-      cat      : AnimalVariety
-      bird     : AnimalVariety
-      reptile  : AnimalVariety
+  module Example-Pets where
+    open import Data.String
+      using (String)
 
-    postulate
-      Name  : Set  -- ! 2
-      Age   : Set
-      SpecificAnimal : Set
+    data Species : Set where
+      bird cat dog reptile : Species
 
-      makeAnimal
-        : AnimalVariety → Age → Name → SpecificAnimal  -- ! 3
+    data Temperament  : Set where
+      anxious chill excitable grumpy : Temperament
 
-    makeBird : Age → Name → SpecificAnimal  -- ! 4
-    makeBird age name = makeAnimal bird age name
+    record Pet : Set where
+      constructor makePet
+      field
+        species      : Species
+        temperament  : Temperament
+        name         : String
 ```
 
-Here, we've made a new `keyword:data` type at [1](Ann), enumerating possible sorts of
-animals one might have. At [2](Ann) we postulate the existence of some other
-types with suggestive names, in order to give our postulated function
-`def:makeAnimal` a suggestive type at [3](Ann). Finally, at [4](Ann) we specialize
-the `def:makeAnimal` function into `def:makeBird`, where we always decide the animal
-variety should be a `bird`.
-
-This doesn't yet exhibit the desirability of one-at-a-time functions we'd like
-to showcase. But we will note that `def:makeBird` is a function whose definition
-binds two arguments (`age` and `name`), and simply passes them off to
-`def:makeAnimal`. If you were to drop a hole on the right side of this equation,
-you'd see that the type of the hole is `type:SpecificAnimal`. By the law of
-equality, this means the left-hand side must also have type
-`type:SpecificAnimal`. If we were to drop the `name` binding on the left side,
-the hole now has type `type:Name → SpecificAnimal`. Dropping now the `age`
-parameter too, we see the resulting hole now has type `type:Age → Name →
-SpecificAnimal`, exactly what we expect from the type definition.
-
-Are you ready for the cool part? If we insert the implicit parentheses into the
-type of `def:makeAnimal`, we get `type:AnimalVariety → (Age → (Name → SpecificAnimal))`;
-a creative reading of which will suggest to us that we can fill the hole with
-less ceremony:
+Imagine now we'd like to specialize the `ctor:makePet` constructor, so we can
+make a series of grumpy cats in rapid succession. Our first attempt is to write a
+helper function `def:makeGrumpyCat`:
 
 ```agda
-    makeBird⅋ : Age → Name → SpecificAnimal
-    makeBird⅋ = makeAnimal bird
+    makeGrumpyCat⅋ : String → Pet
+    makeGrumpyCat⅋ name = makePet cat grumpy name
+```
+
+This definition absolutely would work, but it doesn't demonstrate the cool part.
+Let's consider `ctor:makePet` as a function. It takes three arguments, before
+returning a `type:Pet`, and so its type *must be* `expr:Species → Temperament →
+String → Pet`.
+
+If we were to insert the implicit parentheses, we'd instead get
+`expr:Species → (Temperament → (String → Pet))`. You will note that the
+innermost parentheses here are `expr:String → Pet`, which just so happens to be
+the type of `def:makeGrumpyCat`. Thus, we can *define* `def:makeGrumpyCat` as
+being `ctor:makePet` applied to `ctor:cat` and `ctor:grumpy`, as in:
+
+```agda
+    makeGrumpyCat : String → Pet
+    makeGrumpyCat = makePet cat grumpy
 ```
 
 I like to think of this a lot like "canceling" in grade-school algebra. Because,
-in our original equation, both sides of the equality ended in `age name`, those
-arguments on either side cancel one another out, and we're left with a simpler
-equation.
+in our original equation, both sides of the equality ended in `name`, those
+arguments on either side cancel one another out, and we're left with this
+simpler definition for `def:makeGrumpyCat`.
+
+This ability to partially apply functions isn't a language feature of Agda. It
+arises simply from the fact that we write our functions' types as a big series
+of arrows, one for each argument.
 
 
 ## The Curry/Uncurry Isomorphism
+
+Of course, nothing stops us from encoding our functions in the more standard
+form, where we are required to give all arguments at once. The transformation is
+merely syntactic. We could write `def:_∨₂_` instead as a function `def:or`:
+
+```agda
+  or : Bool × Bool → Bool
+  or (false , y)  = y
+  or (true  , y)  = true
+```
+
+Rather amazingly, when we encode functions this way, we get back the same
+function-call notation that other languages use:
+
+```agda
+  _ : Bool
+  _ = or (true , false)
+```
+
+From this result, we can conclude that other languages' functional calling
+mechanisms are similar to Agda's. The only difference is that Agda lets you
+elide parentheses around a function call which requires only one argument.
+
+It feels "correct" that the difference between Agda and other languages'
+functions should be entirely syntactic; after all, presumably at the end of the
+day we're all talking about the same functions, regardless of the language used.
+But can we make this analogy more formal?
 
 A usual tool in mathematics to show two things are equivalent is the
 *isomorphism.* We will study this technique in much more detail in
@@ -1744,8 +1776,11 @@ functions which transform back and forth between two types. Whenever you have an
 isomorphism around, it means the two types you're transforming between are
 *equivalent* to one another.
 
+Of course, not just any two functions will do the trick; the two functions must
+"undo" one another, in a very particular sense that we will explore in a moment.
+
 So as to convince any potential doubters that our one-at-a-time function
-encoding (also known as *curried functions*) are equivalent to the usual "take
+encoding (also known as *curried functions*) is equivalent to the usual "take
 all your arguments at once as a big tuple," we can show an isomorphism between
 the two. That is, we'd like to be able to transform functions of the shape `type:A ×
 B → C` into `type:A → B → C` and vice versa. We'll work through the first half of
@@ -1753,38 +1788,82 @@ this isomorphism together, and leave the other direction as an exercise to try
 your hand at writing some Agda for yourself (or talking Agda into writing it for
 you!)
 
--- TODO(sandy): actually, do this example as an exercise, and show uncurry in
--- full
-
 In particular, the first function we'd like to write has this types:
 
 ```agda
-  curry : {A B C : Set} → (A × B → C) → (A → B → C)
+  curry⅋ : {A B C : Set} → (A × B → C) → (A → B → C)
+  curry⅋ = ?
 ```
 
-If this is your first time looking at function arrows, avoid the temptation to
-panic. The first step is always to parse out exactly what's going on. Let's look
-at `def:curry`. Let's ignore the `{A B C : Set} →` part, which you'll recall exists
-only to bring the type variables into scope:
+That's quite the intimidating type; avoid the temptation to panic, and we'll
+break it down together. Let's ignore the `{A B C : Set} →` part, which you'll
+recall exists only to bring the type variables into scope. Of course, these
+variables are necessary for our code to compile, so the next few code blocks
+won't actually work. Nevertheless, it will be instructive to study them,
+compiling or no.
 
-```type
-  curry : (A × B → C) → (A → B → C)
+
+Hidden
+
+:   ```agda
+module Invisible (A B C : Set) where
+  open Sandbox-Tuples₂⅋
+  open _×_
+    ```
+
+We begin with the "simplified" type of `def:curry`:
+
+```illegal
+  curry⅋₀ : (A × B → C) → (A → B → C)
+  curry⅋₀ = ?
 ```
 
-After inserting the parentheses arising from the interaction of
-`_→_` as the lowest precedence operator, we obtain some parentheses around the
-tuple:
+Because we know that `_→_` has lower precedence than `def:_×_`, we can add some
+implicit parentheses:
 
-```type
-  curry : ((A × B) → C) → (A → B → C)
+```illegal
+  curry⅋₁ : ((A × B) → C) → (A → B → C)
+  curry⅋₁ = ?
 ```
 
-We can then insert the parentheses from the function arrow's right-associativity
-to the innermost parentheses:
+Furthermore, we know that `_→_` is right associative, so a chain of multiple
+function arrows nests its parentheses to the right, as in:
 
-```type
-  curry : ((A × B) → C) → (A → (B → C))
+```illegal
+  curry⅋₂ : ((A × B) → C) → (A → (B → C))
+  curry⅋₂ = ?
 ```
+
+Now, we know that a chain of rightward-nested function arrows is the same as a
+function taking one argument at a time, so we can drop the outermost pair of
+parentheses on the right side of the outermost arrow. This results in:
+
+
+```illegal
+  curry⅋₄ : ((A × B) → C) → A → (B → C)
+  curry⅋₄ = ?
+```
+
+Doing the same trick, we can eliminate another pair of parentheses:
+
+```illegal
+  curry⅋₅ : ((A × B) → C) → A → B → C
+  curry⅋₅ = ?
+```
+
+This type is now as simple as we can make it. Although its first parameter is
+still rather scary, we can ignore the remaining set of parentheses for a moment,
+to see that `def:curry` is a function of three arguments, which eventually
+returns a `C`. The second and third arguments are easy enough, they are just `A`
+and `B`.
+
+Because the first set of parentheses themselves contain a function arrow, this
+means that the first parameter to `def:curry` is a *function.* What function is
+it? We're not sure, all we know is that it's a function which takes a tuple of
+`expr:A × B`, and produces a `C`.
+
+Thought about in this fashion, it's not too hard to see how to go about
+implementing `def:curry`.
 
 Written like this, we see that `def:curry` is a function which itself takes a
 *function* as an *argument,* and also produces a function as its *return type.*
@@ -1802,6 +1881,16 @@ implementing such a thing, while the previous form gives a better sense of what
 exactly you're trying to accomplish.
 
 
+Hidden
+
+:     ```agda
+module Sandbox-Tuples₂ where
+  open Booleans
+  open Sandbox-Tuples₂⅋ public
+  open _×_
+      ```
+
+
 Exercise
 
 :   Implement the `def:curry` function for yourself. If you get stuck, don't forget
@@ -1813,6 +1902,7 @@ Exercise
 Solution
 
 :   ```agda
+  curry : {A B C : Set} → (A × B → C) → (A → B → C)
   curry f a b = f (a , b)
     ```
 
@@ -1887,8 +1977,6 @@ type this thing should have, we can simply leave behind a hole in its type
 judgment:
 
 ```agda
-  open Booleans
-
   _ : ?
   _ = uncurry _∨_
 ```
