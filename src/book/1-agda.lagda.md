@@ -1897,67 +1897,79 @@ implement the other half of this isomorphism, using all of the tools you've now
 learned. The type you're looking for is:
 
 ```agda
-  uncurry : {A B C : Set} → (A → B → C) → (A × B → C)
+  uncurry⅋ : {A B C : Set} → (A → B → C) → (A × B → C)
+  uncurry⅋ = ?
+
 ```
 
 
 Exercise
 
-:   Implement `def:uncurry`.
+:   Implement `def:uncurry`. Remember that [`TypeContext`](AgdaCmd) is an
+    invaluable tool if you don't know how to make progress.
 
 
 Solution
 
 :    ```agda
+  uncurry : {A B C : Set} → (A → B → C) → (A × B → C)
   uncurry f (a , b) = f a b
      ```
 
 
-Because we were able to implement `def:curry` and `def:uncurry`, we have shown that
-curried functions (used in Agda) are equivalent in power to uncurried functions
-(used in most programming languages.) But the oddity of our choice leads to our
-ability to "cancel" arguments that are duplicated on either side of a function
-definition, and this happens to be extremely useful for "massaging" functions.
-Often, we have a very general function that we will need to specialize to solve
-a particular task, and we can do exactly that by partially filling in its
-arguments.
+Because we were able to implement `def:curry` and `def:uncurry`, we have shown
+that curried functions (used in Agda) are equivalent in power to uncurried
+functions (used in most programming languages.) But the oddity of our choice
+leads to our ability to "cancel" arguments that are duplicated on either side of
+a function definition, and this happens to be extremely useful for "massaging"
+functions. Often, we have a very general function that we will need to
+specialize to solve a particular task, and we can do exactly that by partially
+filling in its arguments.
 
 
 ## Implicit Arguments {#sec:implicits}
 
-Let's try using our `def:uncurry` function from before. As a first example, we can
-uncurry the `def:_∨_` function. If we don't want to do the work to figure out what
-type this thing should have, we can simply leave behind a hole in its type
-judgment:
+There is one final concept we must tackle before finishing this chapter. It's
+been a long slog, but there is light at the end of the tunnel. As our last
+push, we will investigate what exactly those curly braces mean in type
+signatures.
+
+As a motivating example, let's play around with our new `def:uncurry` function.
+In particular, let's try applying it to `def:_∨_`. What type must this thing
+have? If we don't want to do the thought-work ourselves, we can just leave a
+hole in the type signature:
 
 ```agda
   _ : ?
   _ = uncurry _∨_
 ```
 
-and then ask Agda to fill it in for us via [`Solve`](AgdaCmd):
+If Agda has enough information to work out the hole for itself, we can command
+it to do so via [`Solve`](AgdaCmd). The result is:
 
 ```agda
   _ : Bool × Bool → Bool
   _ = uncurry _∨_
 ```
 
-The [`Solve`](AgdaCmd) command asks Agda to infer the contents of a hole based on
-information it already knows from somewhere else. In this case, Agda knows the
-type of `def:_∨_` (that is, `Bool → Bool → Bool`,) and so it can infer the type of
-`uncurry _∨_` as `Bool × Bool → Bool`. Since this is the entire expression, the
-type of our definition is fully known to Agda, and it will happily fill it in
-for us.
+The [`Solve`](AgdaCmd) command asks Agda to infer the contents of a hole based
+on information it already knows from somewhere else. In this case, Agda knows
+the type of `def:_∨_` (that is, `expr:Bool → Bool → Bool`,) and so it can infer
+the type of `expr:uncurry _∨_` as `expr:Bool × Bool → Bool`. Since this is the
+entire expression, the type of our definition is fully known to Agda, and it
+will happily solve it for us.
 
-As you can see, Agda is quite the clever language! The constraint solving
-exhibited here is a generally useful tool when coding. For example, you can
-state a proof as being trivial, and then work backwards---asking Agda to
-synthesize the solution for you!
+As you can see, Agda is quite the clever! The constraint solving exhibited here
+is a generally useful tool when coding. For example, you can state a proof as
+being trivial, and then work backwards---asking Agda to synthesize the solution
+for you! It sounds absolutely bonkers, but somehow this actually works.
 
-Time to make a new sandbox. The booleans we implemented by hand in the previous
-section exist in the standard library, under the module `Data.Bool`. This is
-quite a big module, but we can import only the pieces we need via a `using`
-modifier:
+Let's explore this concept further. But first, we will make a new module. The
+booleans we implemented by hand in the previous section exist in the standard
+library, under the module `module:Data.Bool`. Better yet, they are defined
+identically to how we've built them, so there will be no surprises when bringing
+them in. `module:Data.Bool` is quite a big module, so we will take only the
+pieces we need via the `keyword:using` modifier:
 
 ```agda
 module Sandbox-Implicits where
@@ -1965,18 +1977,21 @@ module Sandbox-Implicits where
     using (Bool; false; true; not; _∨_)
 ```
 
-The tuple type exists under `Data.Product`:
+Additionally, tuples are also defined in the standard library, under
+`module:Data.Product`.
 
 ```agda
   open import Data.Product
     using (_×_; proj₁; proj₂)
 ```
 
-In addition, `Data.Product` also supplies `ctor:_,_`, `def:curry` and `def:uncurry`. However,
-the ones it implements are slightly more general than the ones we have looked
-at. The exact functions we wrote above are instead named `type:_,′_`, `def:curry′` and
-`def:uncurry′` in the standard library, so we can use a `renaming` modifier on our
-import in order to get our sandbox into an equivalent state as the one above:
+`module:Data.Product` also supplies `ctor:_,_`, `def:curry` and `def:uncurry`,
+but they are implemented in more generality than we've presented. Rather than
+get bogged down in the details, we can instead just import the specialized
+versions which *do* correspond to our implementations. By using the
+`keyword:renaming` modifier on this same `keyword:import` of
+`module:Data.Product`, we can ask Agda to shuffle some identifiers around for
+us:
 
 ```agda
     renaming ( _,′_      to _,_
@@ -1985,19 +2000,28 @@ import in order to get our sandbox into an equivalent state as the one above:
              )
 ```
 
-Note that these are *primes* at the end of `def:curry` and `def:uncurry`, not
-apostrophes. Primes can be input via [`'`](AgdaMode).
+Note that these tick marks at the end of `def:curry` and `def:uncurry` are
+*primes*, not apostrophes. Primes can be input via [`'`](AgdaMode).
 
-It is now time to investigate the mysterious curly braces that prefix several of
-our functions. As a reminder, we have the following functions in scope, with
-the given typing judgments:
+When you import `module:Data.Product` for yourself in the future, you won't need
+this `keyword:renaming`. It's necessary here only to simplify some details that
+we don't usually care about (or even notice.)
+
+Our sandbox is now be equivalent to our last environment, where we defined
+everything by hand. In Agda like any other programming language, it's desirable
+to use existing machinery rather than build your own copy, although admittedly
+building it for yourself leads to better understanding.
 
 
 Hidden
 
 :   ```agda
-  postulate
+  mutual
+    -- fix indentation
     ```
+
+Let's now look again at the types of `def:_,_`, `def:curry`, and `def:curry`, in
+their full curly-braced glory:
 
 
 ```agda
@@ -2012,17 +2036,27 @@ exactly is going on here?
 
 The first thing to realize is that the notation `{A B : Set}` is syntactic sugar
 for `{A : Set} → {B : Set}`, and so on for more variables. We can therefore
-rewrite the type of `ctor:_,_` in its full glory:
+rewrite the type of `def:_,_` more explicitly:
 
 ```agda
     _,_⅋⅋ : {A : Set} → {B : Set} → A → B → A × B
 ```
 
+Hidden
+
+:   ```agda
+    _,_⅋      = ?
+    curry⅋    = ?
+    uncurry⅋  = ?
+    _,_⅋⅋     = ?
+  -- fix indentation
+    ```
+
 In this form, it looks a lot like `A : Set` and `B : Set` are *arguments* to
-`ctor:_,_`. And rather amazingly, *they are!* The curly braces around them make these
-*invisible* arguments. Something interesting happens if we replace them with
-parentheses instead. Let's make a new function called `mk-tuple` using regular,
-visible arguments:
+`def:_,_`. Rather amazingly, *they are!* The curly braces around them make these
+*invisible,* or *implicit,* arguments. Something interesting happens if we
+replace them with regular parentheses instead of braces. Let's make a new
+function called `def:mk-tuple` using regular, visible arguments:
 
 ```agda
   mk-tuple⅋ : (A : Set) → (B : Set) → A → B → A × B
@@ -2043,16 +2077,18 @@ And then run [`Auto`](AgdaCmd) to implement the function for us.
   mk-tuple A B x x₁ = x , x₁
 ```
 
-Here you can see that the implementation of `mk-tuple` *completely ignores* its
-`A` and `B` arguments. Peculiar. We can try using `mk-tuple` to build ourselves
-a tuple. Starting from a delimited hole:
+Here you can see that the implementation of `def:mk-tuple` *completely ignores*
+its `A` and `B` arguments. That's peculiar, isn't it?
+
+We can try using `def:mk-tuple` to build ourselves a tuple. Starting from a
+delimited hole:
 
 ```agda
   _ : Bool × Bool
   _ = {! !}
 ```
 
-we can type `mk-tuple` *inside the hole:*
+we can type `def:mk-tuple` *inside the hole:*
 
 ```agda
   _ : Bool × Bool
@@ -2067,27 +2103,29 @@ to fill the hole:
   _ = mk-tuple {! !} {! !} {! !} {! !}
 ```
 
-This expression now has four holes for the four arguments to `mk-tuple`. The
-first two are the type parameters of the tuple, while the last two are the
-actual values we'd like to fill our tuple with. Thankfully, Agda can
-[`Solve`](AgdaCmd) the first two holes for us:
+This expression now has four holes for the four arguments to `def:mk-tuple`. The
+first two are the previously-implicit type parameters of the tuple, while the
+last two are the actual values we'd like to fill our tuple with. Thankfully,
+Agda can [`Solve`](AgdaCmd) the first two holes for us:
 
 ```agda
   _ : Bool × Bool
   _ = mk-tuple Bool Bool {! !} {! !}
 ```
 
-and we are free to fill in the latter two to our heart's content. Perhaps more
-interestingly, we can see what happens if we fill in one of these types
-*incorrectly*---that is to say, with a type which *isn't* `type:Bool`. Thankfully,
-it's easy to spin up new types at will:
+and we are free to fill in the latter two to our heart's content.
+
+What's more interesting is if we fill in one of these types incorrectly; that is
+to say, with a type that isn't `type:Bool`. This is not an onerous task, as it's
+very easy to spin up new types at will:
 
 ```agda
   data PrimaryColor : Set where
     red green blue : PrimaryColor
 ```
 
-and we can try again:
+We can now see what happens when we fill in one of those `type:Bool`s with
+`type:PrimaryColor` instead:
 
 
 ```illegal
@@ -2103,11 +2141,17 @@ when checking that the expression mk-tuple PrimaryColor Bool ? ?
 has type Bool × Bool
 ```
 
-Agda is telling us off, for writing down `type:PrimaryColor` when we should have
-written `type:Bool`. The language knows this should be a `type:Bool` since our type claims
-to be a `type:Bool × Bool`. You will notice this is all a bit stupid. If Agda knows
-what exactly what we should write into this hole, and yells at us if we don't do
-it properly, why do we have to do it at all? As it happens, we don't!
+Agda is telling us off for writing `type:PrimaryColor` when we should have
+written `type:Bool`. Amazingly, Agda *knows* that this type must be `type:Bool`,
+and all its doing is checking if we wrote down the correct thing. Which we
+didn't.
+
+How does Agda know this? Because we wrote the type of `def:bad-tuple` as
+`expr:Bool × Bool`. You will notice this situation is all a bit stupid. If Agda
+knows what exactly what we should write into this hole, and yells at us if we
+don't do it properly, why do we have to do it at all?
+
+As it happens, we don't.
 
 Instead, in any expression, we can leave behind an underscore, asking Agda to
 make an informed decision and fill it in for us. Thus, we can write the
@@ -2119,20 +2163,20 @@ following:
 ```
 
 and Agda will (silently, without changing our file) fill in the two underscores
-as `type:PrimaryColor` and `type:Bool`, respectively. Filling in arguments in this way is
-known as *elaboration,* as it offloads the work of figuring out exactly what
-your program should be to the compiler. No human input necessary.
+as `type:PrimaryColor` and `type:Bool`, respectively. Filling in arguments in
+this way is known as *elaboration,* as it offloads the work of figuring out
+exactly what your program should be to the compiler. No human input necessary.
 
 It is exactly this elaboration that is happening behind the scenes of our
-invisible parameters. Whenever you mark a parameter as invisible by ensconcing
-it in curly braces, you're really just asking Agda to elaborate that argument
-for you by means of inserting an underscore.
+invisible parameters. Whenever you mark a parameter invisible by ensconcing it
+in curly braces, you're really just asking Agda to elaborate that argument for
+you by means of inserting an underscore.
 
 We can make the invisible visible again by explicitly filling in implicit
 arguments for ourselves. The syntax for this is to give our implicit arguments
-as regular arguments, but themselves in curly braces. We can also use the
-explicit names to these implicits, so that we need to fill them all in order to
-fill only one:
+as regular arguments, themselves in curly braces. We can also use the explicit
+names to these implicits, so that we need to fill them all in order to fill only
+one:
 
 ```agda
   mk-color-bool-tuple
@@ -2145,7 +2189,8 @@ fill only one:
 Of course, implicit elaboration is not magic. It cannot write your entire
 program for you; it can only elucidate specific details that are already true,
 but which you would prefer not to write out. To illustrate, Agda can't solve the
-following, because it doesn't know whether you want `ctor:false` or `ctor:true`:
+following, because it doesn't know whether you want to use `ctor:false` or
+`ctor:true`---there is no unambiguous answer!
 
 ```agda
   ambiguous : Bool
@@ -2153,9 +2198,8 @@ following, because it doesn't know whether you want `ctor:false` or `ctor:true`:
 ```
 
 You'll notice the syntax highlighting for this implicit has gone yellow; that's
-Agda informing us that it doesn't have enough information to elaborate.
-Agda refers to this as an *unsolved meta.* In addition, you'll also see a warning
-message like this in the info window:
+Agda informing us that it doesn't have enough information to elaborate. In
+addition, you'll also see a warning message like this in the info window:
 
 ```info
 Invisible Goals:
@@ -2173,15 +2217,39 @@ few functions down the line.
 ## Wrapping Up
 
 You have managed to survive an *extremely* whirlwind tour of Agda. While you
-likely are not yet the world's best Agda programmer, the attentive reader has
-been exposed to the majority of this gentle language's most astronautic
-features.
+likely are not yet the world's best Agda programmer, you now know much more than
+the vast majority of programmers. The attentive reader has been exposed to the
+majority of this gentle language's most "astronautic" features.
 
 What we have seen here are Agda's fundamental building blocks. While they are
 interesting in their own right, the fun parts come when we start putting them
 together into funky shapes. Throughout our progression we will learn
 that there was more to learn about these simple pieces all along. Indeed,
 perhaps these primitive elements are much more sophisticated than they look.
+
+As a convention in this book, we will end by making one final module. This
+module exists only to be imported from future chapters. Since we built a lot of
+things by hand, made several examples, and generally went down the garden path,
+we will use this module as the definitive export list. This module is the final
+artifact of our exploration in this chapter.
+
+For the best portability, we will not use our own definitions, but rather those
+from the standard library.
+
+```agda
+module Exports where
+  open import Data.Bool
+    using (Bool; false; true; not; _∨_)
+    public
+  open import Data.Product public
+    using (_×_; _,_; curry; uncurry; proj₁; proj₂)
+    public
+```
+
+Note the `keyword:public` modifier on both of these `keyword:import`s. By
+default, Agda won't export anything you imported, but the `keyword:public`
+keyword changes this behavior, allowing us to re-export definitions that we
+didn't write for ourselves.
 
 We have not even begun to scratch the surface of what interesting things are
 possible in Agda, but we now have enough background that we can earnestly get
