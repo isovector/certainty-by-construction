@@ -402,15 +402,15 @@ to recursive steps as "induction" and non-recursive steps as "base cases."
 
 ## Two Notions of Evenness
 
-We have now defined `def:even?` a function which determines where a given natural
+We have now defined `def:even?` a function which determines whether a given natural
 number is even. A related question is whether we can define a type for *only*
-the even numbers. That is, a type which contains 0, 2, 4, and so on, but not 1
-or 3 or any of the odd numbers.
+the even numbers. That is, we'd like a type which contains 0, 2, 4, and so on,
+but neither 1, nor 3, nor *any* of the odd numbers.
 
-In a monkey-see-monkey-do fashion, we can define a new type called `Evenℕ` with
-a constructor for `ctor:zero`, but unlike `ℕ`, no `ctor:suc`. Instead, we will
-give a constructor called `ctor:suc-suc`, intending to be suggestive of taking
-two successors simultaneously:
+In a monkey-see-monkey-do fashion, we could try to define a new type called
+`type:Evenℕ` with a constructor for `ctor:zero`, but unlike `type:ℕ`, no
+`ctor:suc`. Instead, we will give a constructor called `ctor:suc-suc`, intending
+to be suggestive of taking two successors simultaneously:
 
 ```agda
   data Evenℕ : Set where
@@ -418,49 +418,53 @@ two successors simultaneously:
     suc-suc  : Evenℕ → Evenℕ
 ```
 
-We can transform an `Evenℕ` into a `ℕ` by induction:
+We can transform an `type:Evenℕ` into a `type:ℕ` by induction:
+
+```agda
+  toℕ⅋ : Evenℕ → ℕ
+  toℕ⅋ zero         = zero
+  toℕ⅋ (suc-suc x)  = suc (toℕ⅋ x)
+```
+
+This approach, however, feels slightly underwhelming. The reflective reader will
+recall that in a `keyword:data` type, the *meaning* of the constructors comes
+only from their types and the suggestive names we give them. A slight renaming
+of `ctor:suc-suc` to `ctor:suc` makes the definition of `type:Evenℕ` look very
+similar indeed to that of `def:ℕ`. In fact, the two types are completely
+equivalent, modulo the names we picked.
+
+As such, there is nothing stopping us from writing an incorrect (but not
+*obviously* wrong) version of the `def:toℕ` function. On that note, did you
+notice that the definition given above *was* wrong? Oops! Instead, the correct
+implementation should be this:
 
 ```agda
   toℕ : Evenℕ → ℕ
   toℕ zero         = zero
-  toℕ (suc-suc x)  = suc (toℕ x)
+  toℕ (suc-suc x)  = suc (suc (toℕ x))
 ```
 
-This approach, however, feels slightly underwhelming. The attentive reader will
-recall that in a `keyword:data` type, the *meaning* of the constructors comes
-only from their types and the suggestive names we give them. A slight renaming
-of `ctor:suc-suc` to `ctor:suc` makes the definition of `Evenℕ` look very
-similar indeed to that of `ℕ`. In fact, the two types are completely equivalent,
-modulo the names we picked.
-
-As such, there is nothing stopping us from writing an incorrect (but not
-*obviously* wrong) version of the `def:toℕ` function. In fact, did you notice that
-the definition given above *was* wrong? Oops! Instead, the correct
-implementation should be this:
-
-```agda
-  correct-toℕ : Evenℕ → ℕ
-  correct-toℕ zero         = zero
-  correct-toℕ (suc-suc x)  = suc (suc (correct-toℕ x))
-```
+You might want to double check this new definition, just to make sure I haven't
+pulled another fast one on you. Double checking, however, is tedious and error
+prone, and in an ideal world, we'd prefer to find a way to get the computer to
+double check on our behalf.
 
 Rather than trying to construct a completely new type for the even naturals,
-perhaps we can instead look for a way to filter for only the naturals we'd like
-to include. A mathematician would look at this problem and immediately think to
-build a *subset*---that is, a restricted collection of the objects at study. In
-this particular case, we'd like to build a subset of the natural numbers,
-corresponding to the even numbers.
+perhaps we can instead look for a way to filter for only the naturals we want. A
+mathematician would look at this problem and immediately think to build a
+*subset*---that is, a restricted collection of the objects at study. In this
+particular case, we'd like to build a subset of the natural numbers which
+contains only those that are even.
 
-The high-level construction here is we'd like to build `IsEven : ℕ → Set`,
-which, like you'd think, is a function that takes a natural and returns a type.
-The idea that we can compute types in this way is rare in programming languages,
-even those with strong type systems. The ability to do so is known as *dependent
-typing.*
+The high-level construction here is we'd like to build `type:IsEven` `:` `expr:ℕ
+→ Set`, which, like you'd think, is a function that takes a natural and returns
+a type. The idea that we can *compute* types in this way is rare in programming
+languages, but is very natural in Agda.
 
 In order to use `type:IsEven` as a subset, it must return some sort of "usable"
-type when its argument is even, and an of "unusable" type otherwise. We can take
-this function idea literally if we'd please, given the existence of some usable
-and unusable types:
+type when its argument is even, and an "unusable" type otherwise. We can take
+this function idea literally if we'd please, and postulate two appropriate
+types:
 
 ```agda
   module Sandbox-Usable where
@@ -476,65 +480,70 @@ and unusable types:
 
 You will notice the definition of `type:IsEven` is identical to that of
 `def:even?` except that we replaced `type:Bool` with `type:Set`, `ctor:true`
-with `type:Usuable`, and `ctor:false` with `type:Unusuable`. Which, really, is
-what you would expect; `def:even?` was already a function that computed whether
-a given number is even! While we could flesh this idea out in full by finding
-specific (non-postulated) types to use for `type:Usuable` and `type:Unusuable`,
-constructing subsets in this way isn't often fruitful. Though it occasionally
-comes in handy, and it's nice to know you can compute types directly in this
-way.
+with `type:Usuable`, and `ctor:false` with `type:Unusuable`. This is what you
+should expect, as `def:even?` was already a function that computed whether
+a given number is even!
 
-Let's drop out of the `Sandbox-Usable` module, and try defining `type:IsEven` in
-a different way.
+While we could flesh this idea out in full by finding specific (non-postulated)
+types to use for `postulate:Usuable` and `postulate:Unusuable`, constructing
+subsets in this way isn't often fruitful. Though it occasionally comes in handy,
+and it's nice to know you can compute types directly in this way.
 
-The situation here is analogous to our first venture into typing judgments.
-While we realized we could get away working directly in typing judgments, things
-became much easier when we used a more principled structure---namely, the
+Let's drop out of the `module:Sandbox-Usable` module, and try defining
+`type:IsEven` in a different way.
+
+The situation here is analogous to our first venture into typing judgments in
+@sec:bools. While it's possible to do all of our work directly with postulated
+judgments, Agda doesn't give us any help in doing so. Instead, things
+became much easier when we used a more principled structure---namely, using the
 `keyword:data` type. Amazingly, here too we can use a `keyword:data` type to
-solve our problem. The trick is to add an *index* to our type. Let's begin just
-with the `data` declaration:
+solve our problem. The trick is to add an *index* to our type, which you can
+think of as a "return value" that comes from our choice of constructor.
+
+Don't worry, the idea will become much clearer in a moment after we look at an
+example. Let's begin just with the `data` declaration:
 
 ```agda
   data IsEven : ℕ → Set where  -- ! 1
 ```
 
 Every type we have seen so far has been of the form `data X : Set`, but at
-[1](Ann) we have `type:ℕ → Set` on the right side of the colon. Reading this as
-a type declaration directly, it says that this type `type:IsEven` we're
-currently defining *is exactly* that function we were looking for earlier with
-type `type:ℕ → Set`. We `type:IsEven` an *indexed type*, and the `type:ℕ` to be
-its index.
+[1](Ann) we have `type:ℕ` `→` `type:Set` on the right side of the colon. Reading
+this as a type declaration directly, it says that this type `type:IsEven` we're
+currently defining *is exactly* the function we were looking for earlier---the
+one with type `type:ℕ → Set`. Because of this parameter, we say that
+`type:IsEven` is an *indexed type*, and that the `type:ℕ` in question is its
+index.
 
-Every constructor of an indexed type must fully fill in every index. But to a
-first approximation, constructors of an indexed type are *statements* about the
-index. For example, it is an axiom that `ctor:zero` is an even number, which we
-can reflect directly as a constructor:
+Every constructor of an indexed type must fill-in each index. To a first
+approximation, constructors of an indexed type are *assertions* about the index.
+For example, it is an axiom that `ctor:zero` is an even number, which we can
+reflect directly as a constructor:
 
 ```agda
     zero-even : IsEven zero
 ```
 
-Notice that this constructor is equivalent to the base case `even? zero = true`.
-We would like to exclude odd numbers from `type:IsEven`, so we can ignore the
-`ctor:suc zero` case. Which brings us to the inductive case, where in
-`def:even?` we peeled off two `ctor:suc`s and then recursed. In a very real way
-that we will make precise later, constructing this subset is the "opposite" of
-implementing the decision function. Thus, where we used to pull off two
-`ctor:suc`s and recurse, we'd now like to first recurse, and then *add* two
-`ctor:suc`s!
+Notice that this constructor is equivalent to the base case `def:even?`
+`ctor:zero` `=` `ctor:true`. We would like to exclude odd numbers from
+`type:IsEven`, so we can ignore the `ctor:suc zero` case for the moment. In the
+inductive case, we'd like to say that if `n` is even, then so too is
+`ctor:suc``(``ctor:suc` `n``))`:
 
 ```agda
     suc-suc-even : {n : ℕ} → IsEven n → IsEven (suc (suc n))
 ```
 
-Here we're saying, `ctor:suc-suc-even` takes a proof that `n : ℕ` is even, and
-transforms it into a proof that `suc (suc n))` is even. The result is an
-inductive way to show that a given number is even!
+In a very real sense, our indexed type `type:IsEven` is the "opposite" of our
+original decision function `def:even?`. Where before we removed two calls to
+`ctor:suc` before recursing, we now recurse first, and then *add* two calls to
+`ctor:suc`. This is not a coincidence, but is in fact a deep principle of
+computation itself, that we will return to in @sec:todo.
 
-This is a concept that is so fundamentally different from mainstream programming
-languages that it is prudent to spend some time here and work through several
-examples of what-the-hell-is-happening-here together. Let's begin by showing
-that `four` is even. Begin with the type and a hole:
+The concept of indexed types is so foreign to mainstream programming that it is
+prudent to spend some time here and work through several examples of
+what-the-hell-is-happening. Let's begin by showing that `def:four` is even.
+Begin with the type and a hole:
 
 ```agda
   four-is-even⅋₀ : IsEven four
@@ -551,9 +560,9 @@ is:
   four-is-even⅋₁ = suc-suc-even {! !}
 ```
 
-Even more impressive is that the new goal has type `IsEven two`---which is to
-say, we need to show that `two` is even in order to show that `four` is even.
-Thankfully we can ask Agda to do some more heavy lifting for us, and again
+Even more impressive is that the new goal has type `expr:IsEven two`---which is
+to say, we need to show that `def:two` is even in order to show that `def:four`
+is even. Thankfully we can ask Agda to do the heavy lifting for us, and again
 request a [Refine](AgdaCmd):
 
 ```agda
@@ -561,34 +570,34 @@ request a [Refine](AgdaCmd):
   four-is-even⅋₂ = suc-suc-even (suc-suc-even {! !})
 ```
 
-Our new hole has type `IsEven zero`, which again Agda will refine for us:
+Our new hole has type `expr:IsEven zero`, which again Agda can refine for us:
 
 ```agda
   four-is-even : IsEven four
   four-is-even = suc-suc-even (suc-suc-even zero-even)
 ```
 
-We have successfully proven that `def:four` is in fact even. Let's see what happens
-when we go down a less happy case. Can we also prove that `def:three` is even?
+With all the holes filled, we have now successfully proven that `def:four` is in
+fact even. But can we trust that this works as intended? Let's see what happens
+when we go down a less-happy path. Can we also prove `expr:IsEven three`?
 
 ```agda
   three-is-even⅋₀ : IsEven three
   three-is-even⅋₀ = ?
 ```
 
-Let's play the same refinement game, which results in:
+Let's play the same refinement game. Invoking [Refine](AgdaCmd) results in:
 
 ```agda
   three-is-even : IsEven three
   three-is-even = suc-suc-even {! !}
 ```
 
-The new goal is `IsEven one`. If we try to refine again, Agda gives us an error:
-
--- TODO(sandy): CLEAN THIS UP
+Our new goal is `expr:IsEven one`. But if we try to refine again, Agda gives us
+an error:
 
 ```info
-Object (fromList [("kind",String "IntroNotFound")])
+No introduction forms found.
 ```
 
 What's (correctly) going wrong here is that Agda is trying to find a constructor
