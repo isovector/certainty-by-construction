@@ -341,12 +341,18 @@ Solution
 
 Unlike functions out of the booleans, where we only had two possibilities to
 worry about, functions out of the naturals have (in principle) an infinite
-number of possibilities. This is why we must always have a `... (suc x)` case
-somewhere, which says "and do this for every *other* number."
+number of possibilities. But our program can only ever be a finite number of
+lines, which leads to a discrepancy. How can we possibly reconcile an infinite
+number of possibilities with a finite number of cases?
 
-That restriction, however, doesn't mean we are forced to give *the same* answer
-for every number above a certain threshold. It's easy enough to compute whether
-a number is even---we need only make the (mathematical) argument that "a number
+Our only option is to give a finite number of interesting cases, and then a
+default case which describes what to do for everything else. Of course, nothing
+states that this default case must be constant, or even simple. That is to say,
+we are not required to give the *same* answer for every number above a certain
+threshold.
+
+To illustrate this, we can write a function which determines whether its
+argument is even. We need only make the (mathematical) argument that "a number
 $n + 2$ is even if and only if the number $n$ is." This is expressed naturally
 by recursion:
 
@@ -357,19 +363,26 @@ by recursion:
   even? (suc (suc x))  = even? x
 ```
 
-This general technique of giving some explicit answers for specific inputs, and
-recursing after refining inputs to simpler values is known as
-*induction.* **Induction is the fundamental mathematical technique.** Induction
-is the workhorse of all mathematics. Which makes sense. If you need to make some
-argument about an infinite number of things, you can neither physically nor
-theoretically analyze each and every possible case. You instead must give a few
-(usually very simple) answers, and otherwise show how to reduce a complicated
-problem into a simpler one. This moves the burden of effort from the theorem
-prover (you) to whomever wants an answer, since they are the ones who become
-responsible for carrying out the repetitive task of reduction to simpler forms.
-However, this is not so bad, since the end-user is the one who wants the answer,
-and they necessarily have a particular, finite problem that they'd like to
-solve.
+Here, we've said that `ctor:zero` is even, `def:one` is not, and for every other
+number, you should subtract two (indicated by having removed two `ctor:suc`
+constructors from `x`) and then try again.
+
+This general technique---giving some explicit answers for specific inputs, and
+recursing after refining---is known as *induction.*
+
+It is impossible to overstate how important induction is. Induction is the
+fundamental mathematical technique. It is the primary workhorse of all
+mathematics.
+
+Which makes sense; if you need to make some argument about an infinite number of
+things, you can neither physically nor theoretically analyze each and every
+possible case. You instead must give a few (usually very simple) answers, and
+otherwise show how to reduce a complicated problem into a simpler one. This
+moves the burden of effort from the theorem prover (you) to whomever wants an
+answer, since they are the ones who become responsible for carrying out the
+repetitive task of reduction to simpler forms. However, this is not so bad,
+since the end-user is the one who wants the answer, and they necessarily have a
+particular, finite problem that they'd like to solve.
 
 Not being very creative, mathematicians often *define* the principle of
 induction as being a property of the natural numbers. They say all of
@@ -382,9 +395,9 @@ mathematics comes from:
 However, the exact same technique can be used for any sort of
 recursively-defined type, such as lists, trees, graphs, matrices, etc. While
 perhaps you could shoe-horn these to fit into the natural numbers, it would be
-wasted effort in order to satisfy nothing but a silly definition.
-Notwithstanding, the terminology is good, and so we will sometimes refer to
-recursive steps as "induction" and non-recursive steps as "base cases."
+wasted effort in order to satisfy nothing but a silly definition. That
+notwithstanding, the terminology itself is good, and so we will sometimes refer
+to recursive steps as "induction" and non-recursive steps as "base cases."
 
 
 ## Two Notions of Evenness
