@@ -1863,23 +1863,12 @@ it? We're not sure, all we know is that it's a function which takes a tuple of
 `expr:A × B`, and produces a `C`.
 
 Thought about in this fashion, it's not too hard to see how to go about
-implementing `def:curry`.
-
-Written like this, we see that `def:curry` is a function which itself takes a
-*function* as an *argument,* and also produces a function as its *return type.*
-Alternatively, we can drop the last two pairs of parentheses, and think about
-`def:curry` like this:
-
-```type
-  curry : ((A × B) → C) → A → B → C
-```
-
-That is, `def:curry` is a function that takes *three* inputs, one is a function, and
-the other two are an `A` and a `B` respectively, at the end of the day returning
-a `C`. Written in this form, it's a little easier to see how you would go about
-implementing such a thing, while the previous form gives a better sense of what
-exactly you're trying to accomplish.
-
+implementing `def:curry`. Because `C` could be any type at all, we can't just
+build one for ourselves. Our only means of getting a `C` is to call our function
+which produces one, and in order to do that, we must construct a pair of `expr:A
+× B`. Since we have both an `A` and a `B` as arguments, this is not an onerous
+requirement. Thus, all we need to do is to call the given function after tupling
+our arguments:
 
 Hidden
 
@@ -1890,83 +1879,48 @@ module Sandbox-Tuples₂ where
   open _×_
       ```
 
-
-Exercise
-
-:   Implement the `def:curry` function for yourself. If you get stuck, don't forget
-    you can always ask Agda for help by using [`TypeContext`](AgdaCmd) to inspect
-    what you have lying around in scope, [`MakeCase`](AgdaCmd) to bind arguments
-    and [`Refine`](AgdaCmd) to construct values for you.
-
-
-Solution
-
-:   ```agda
+```agda
   curry : {A B C : Set} → (A × B → C) → (A → B → C)
   curry f a b = f (a , b)
-    ```
+```
 
+For all its complicated type signature, `def:curry` turns out to be a remarkably
+simple function. And this makes a great deal of sense when you recall *why* we
+wanted to write `def:curry` in the first place. Remember that we would like to
+show the equivalence of function calls that receive their arguments all at once,
+vs those which receive them one at a time. But at the end of the day, it's the
+same function!
 
-Going the other direction and implementing `def:uncurry` is slightly harder, since
-it requires you to remember how to project fields out of record types. The type
-you want is:
+Now for an exercise to the reader. Our function `def:curry` forms one side of
+the isomorphism between the two ways of calling functions. Your task is to
+implement the other half of this isomorphism, using all of the tools you've now
+learned. The type you're looking for is:
 
 ```agda
   uncurry : {A B C : Set} → (A → B → C) → (A × B → C)
 ```
 
+
 Exercise
 
-:   Implement `def:uncurry`. Remember that you can use `field:proj₁` and `field:proj₂` to get
-    the fields out of a tuple.
+:   Implement `def:uncurry`.
 
 
 Solution
 
 :    ```agda
-  uncurry f ab = f (proj₁ ab) (proj₂ ab)
+  uncurry f (a , b) = f a b
      ```
 
-
-It's slightly annoying needing to project both fields out of `ab` in the
-implementation of `def:uncurry`. This leads us to one last trick. Start again,
-having just bound your arguments:
-
-```agda
-  uncurry⅋ : {A B C : Set} → (A → B → C) → (A × B → C)
-  uncurry⅋ f ab = {! !}
-```
-
-From here, we can ask Agda to pattern match on `ab` directly by invoking
-[`MakeCase:ab`](AgdaCmd), which results in:
-
-```agda
-  uncurry⅋⅋ : {A B C : Set} → (A → B → C) → (A × B → C)
-  uncurry⅋⅋ f (proj₃ , proj₄) = {! !}
-```
-
-Agda has replaced `ab` with the `ctor:_,_` constructor that is used to build the
-tuple type `type:_×_`, and then bound the two projections that result from tearing
-apart `ctor:_,_`. It's debatable whether or not the names it chose (`field:proj₁` and
-`field:proj₂`) are good or bad---on one hand, those are the names we said the fields
-have, on the other, they shadow the projections that are already in scope and
-have different types. I prefer to rename them:
-
-```agda
-  uncurry⅋⅋⅋ : {A B C : Set} → (A → B → C) → (A × B → C)
-  uncurry⅋⅋⅋ f (a , b) = {! !}
-```
-
-and from here, Agda will happily write the remainder of the function via
-[`Auto`](AgdaCmd).
 
 Because we were able to implement `def:curry` and `def:uncurry`, we have shown that
 curried functions (used in Agda) are equivalent in power to uncurried functions
 (used in most programming languages.) But the oddity of our choice leads to our
 ability to "cancel" arguments that are duplicated on either side of a function
-definition, and this happens to be extremely useful for massaging general
-functions into the right shape so that they can be used in place of
-more-specific functions.
+definition, and this happens to be extremely useful for "massaging" functions.
+Often, we have a very general function that we will need to specialize to solve
+a particular task, and we can do exactly that by partially filling in its
+arguments.
 
 
 ## Implicit Arguments {#sec:implicits}
