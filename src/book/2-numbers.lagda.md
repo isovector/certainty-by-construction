@@ -1,94 +1,119 @@
 # An Exploration of Numbers
 
-In this chapter, we will get our hands dirty, implementing some basic number
-systems in Agda. The goal is threefold: to get some experience thinking about
-how to model problems in Agda, to get some experience seeing familiar objects
-with fresh eyes, and to get familiar with many of the mathematical objects
-we'll need for the remainder of the book. As always, we start with a new module
-for the chapter:
-
 Hidden
 
 :   ```agda
 {-# OPTIONS --allow-unsolved-metas #-}
     ```
 
+In this chapter, we will get our hands dirty, implementing several different
+number systems in Agda. The goal is threefold: to get some experience thinking
+about how to model problems in Agda, to practice seeing familiar objects with
+fresh eyes, and to get familiar with many of the mathematical objects we'll need
+for the remainder of the book.
+
+Before we start, note that this chapter has prerequisite knowledge from
+@sec:chapter1. And, as always, every new chapter must start a new module:
+
 ```agda
+import 1-agda
+
 module 2-numbers where
 ```
 
-Agda already has support for numbers as you might expect, and they are not
-things we necessarily need to build for ourselves. That being said, it's
+As you might expect, Agda already has support for numbers, and thus everything
+we do here is purely to enhance our understanding. That being said, it's
 important to get an intuition for how we can use Agda to solve problems. Numbers
 are simultaneously a domain you already understand, and, in most programming
-languages, they usually come as pre-built, magical primitives. This is not true
-in Agda: numbers are defined in the standard library. Our approach will be to
-build the same number system exported by the standard library so we can peek at
-how it's done. However, this is just an exercise; after this chapter, we will
-just use the standard library's implementation, since it will be more complete,
-and allow us better interopability when doing real work.
+languages, they usually come as pre-built, magical primitives.
+
+This is not true in Agda: numbers are *defined* in library code. Our approach
+will be to build the same number system exported by the standard library so we
+can peek at how it's done. Again, this is just an exercise; after this chapter,
+we will just use the standard library's implementation, since it will be more
+complete, and allow us better interopability when doing real work.
 
 
 ## Natural Numbers
 
-It is one thing to say we will "construct the numbers," but it is a very
-different thing to actually do so. The first question we must ask ourselves is:
-"which numbers?" All of them, of course---although that gives rise to what
-exactly we mean by "all." There are many different sets of numbers: the numbers
-we use to count in the real world (which start at 1), the numbers we use to
-index in computer science (which begin at 0), the integers (which contain
-negatives), the rationals (which contain fractions and all numbers you have ever
-encountered in real life), the reals (which are somehow bigger still), the
-complex numbers (which have an "imaginary" part, whatever that means), the
-quanternions (which have three different sorts of imaginary parts), or the
-octonions (which have *seven*!).
+It is one thing to say we will "construct the numbers," but doing so is much
+more involved. The first question to ask is *which numbers?* As it happens, we
+will build all of them.
 
-In order to construct "the numbers," we must choose between these distinct sets
-of numbers. And those are just some of the number systems mathematicians talk
-about. But worse, there are the number systems that computer scientists use,
-like the *bits*, the *bytes*, the *words*, and by far the worst of all, the IEEE
-754 "floating point" numbers known to software practitioners as *floats* and
-*doubles*. You, gentle reader, are probably a programmer, and it is probably in
-number systems such as these that you feel more at home. We will not, however,
-be working with number systems of the computer science variety, as these are
+But that is just passing the buck. What do we mean by "all" the numbers? There
+are many different sets of numbers. For example, there are the numbers we use to
+count in the real world (which start at 1.) There are also the numbers we use to
+index in computer science (which begin at 0.) There are the *integers*, which
+contain negatives. And then there are the *rationals* which contain fractions,
+and happen to be all the numbers you have ever encountered in real life.
+
+But somehow, not even that is all the numbers. Beyond the rationals are the
+*reals*, which are somehow bigger than all the numbers you have actually
+experienced, and in fact are so big that the crushing majority of them are
+completely inaccessible to us.
+
+The party doesn't stop there. After the reals come the *complex numbers* which
+have an "imaginary" part---whatever that means. Beyond those are the
+*quaternions*, which come with three different varieties of imaginary parts, and
+beyond those, the *octonions* (which have *seven* different imaginaries!)
+
+In order to construct "the numbers," we must choose between these (and many
+other) distinct sets. And those are just some of the number systems
+mathematicians talk about. But worse, there are the number systems that computer
+scientists use, like the *bits*, the *bytes*, the *words*, and by far the worst
+of all, the IEEE 754 "floating point" numbers known as *floats* and *doubles*.
+
+You, gentle reader, are probably a programmer, and it is probably in number
+systems such as these that you feel more at home. We will not, however, be
+working with number systems of the computer science variety, as these are
 extremely non-standard systems of numbers, with all sorts of technical
-difficulties that you have likely been burned by so badly that you have lost
+difficulties that you have likely been burned so badly by that you have lost
 your pain receptors.
 
-Who among us hasn't been burned by an integer overflow, where adding two
-positive numbers somehow results in a negative one? Or the fact that, when
-working with floats, we get different answers when multiplying together three
-numbers depending on which pair we choose to do first. One might make a
-successful argument that these are a necessarily limitations of our computing
-hardware. As a retort, I will only point to the co-Blub paradox (@sec:coblub),
-and remind you that our goal here is to learn *how things can be,* rather than
-limit our minds to the way we perceive things must be. After all, we cannot hope
-to reach paradise if we do not know what would improve the status-quo.
+Who among us hasn't been bitten by an integer overflow, where adding two
+positive numbers somehow results in a negative one? Or by the fact that, when
+working with floats, we get different answers depending on which two of three
+numbers we multiply together first.
 
-And so we return to the question of which number system we'd like to build
-first. As a natural starting point, we will pick the simplest system that it
-seems fair to call "numbers": the *natural numbers.* These are the numbers you
-learn as a child, in a simpler time, before you needed to worry about things
-like negative numbers, decimal points, or fractions. The natural numbers start
-at 0, and proceed upwards exactly one at a time, to 1, then 2, then 3, and so on
-and so forth. Importantly to the computer scientist, there are *infinitely many*
-natural numbers, and we intend to somehow construct *every single one of them.*
-We will not placate ourselves with arbitrary upper limits, or with arguments of
-the form "X ought to be enough for anyone."
+One might make a successful argument that these are a necessarily limitations of
+our computing hardware. As a retort, I will only point to the co-Blub paradox
+(@sec:coblub), and remind you that our goal here is to learn *how things can
+be,* rather than limit our minds to the way we perceive things must be. After
+all, we cannot hope to reach paradise if we cannot imagine it.
+
+And so we return to our original question of which number system we'd like to
+build. As a natural starting point, we will pick the simplest system that it
+seems fair to call "numbers": the *naturals.* These are the numbers you learn as
+a child, in a simpler time, before you needed to worry about things like
+negative numbers, decimal points, or fractions.
+
+The natural numbers start at 0, and proceed upwards exactly one at a time, to 1,
+then 2, then 3, and so on and so forth. Importantly to the computer scientist,
+there are *infinitely many* natural numbers, and we intend to somehow construct
+*every single one of them.* We will not placate ourselves with arbitrary upper
+limits, or with arguments of the form "X ought to be enough for anyone."
+
+
+Hidden
+
+:   ```agda
+module ScopingTheExpr where
+  open import Data.Nat
+    ```
 
 How can we hope to generate an infinite set of numbers? The trick isn't very
 impressive---in fact, I've already pointed it out. You start at zero, and then
 you go up one at a time, forever. In Agda, we can encode this by saying
 `ctor:zero` is a natural number, and that, given some number `n`, we can
-construct the next number up---its *successor*---as `suc n`. Such an encoding
-gives rise to a rather elegant (if *inefficient*, but, remember, we don't care)
-specification of the natural numbers. Under such a scheme, we would write the
-number 7 as `ctor:suc (suc (suc (suc (suc (suc (suc zero))))))`.
+construct the next number up---its *successor*---via `ctor:suc` `n`. Such an
+encoding gives rise to a rather elegant (if *inefficient*, but, remember, we
+don't care) specification of the natural numbers. Under such a scheme, we would
+write the number 3 as `expr:suc (suc (suc zero))`.
 
 It is important to stress that this is a *unary* encoding, rather than the
 traditional *binary* encoding familiar to computer scientists. There is nothing
 intrinsically special about binary; it just happens to be an easy thing to build
-machines that can distinguish between two states, whether they be magnetic
+machines that can distinguish between two states: whether they be magnetic
 forces, electric potentials, or the presence or absence of a bead on the wire of
 an abacus. Do not be distraught; working in unary *dramatically* simplifies
 math, and if you are not yet sold on the approach, you will be before the end of
@@ -99,50 +124,72 @@ mathematical literature, the naturals are denoted by the *blackboard bold*
 symbol `ℕ`---a convention we too will adopt. You can input this symbol via
 [`bN`](AgdaMode).
 
+
+Hidden
+
+:   ```agda
+-- fix indentation
+    ```
+
+
 ```agda
 module Naturals where
-
   data ℕ : Set where
     zero : ℕ
     suc  : ℕ → ℕ  -- ! 1
 ```
 
+Hidden
+
+:   ```agda
+  -- fix indentation
+    ```
+
 Here we use the `keyword:data` keyword to construct a type consisting of several
 different constructors. In this case, a natural is either a `ctor:zero` or it is
 a `ctor:suc` of some other natural number. You will notice that we must give
-explicit types to constructors of a `data` type, and at [1](Ann) we give the
-type of `ctor:suc` as `ℕ → ℕ`. This is the precise meaning that a `ctor:suc` is
-"of some other natural number." You can think of `ctor:suc` as the mathematical
-function:
+explicit types to constructors of a `keyword:data` type, and at [1](Ann) we give
+the type of `ctor:suc` as `expr:ℕ → ℕ`. This is the precise meaning that a
+`ctor:suc` is "of some other natural number." You can think of `ctor:suc` as the
+mathematical function:
 
 $$
 x \mapsto x + 1
 $$
 
-although this is just a mental shortcut, since we can define the 1 in this
-function *only* via `ctor:suc`, and we do not yet have a definition of addition.
+although this is just a mental shortcut, since we do not yet have formal
+definitions for addition or the number 1.
 
 
-## A Note on Algebraic Data Types
+## Brief Notes on Data and Record Types
 
-We will play around with our new numeric toys in a moment after two asides to
-pique your interest. We also saw the `data` keyword when we defined the
-booleans, and indeed, we will need it whenever we'd like to build a type whose
-values are *apart*---that is, new symbols whose meaning is in their
+Before we play around with our new numeric toys, I'd like to take a moment to
+discuss some of the subtler points around modeling data in Agda.
+
+The `keyword:data` keyword also came up when we defined the booleans in
+@sec:booleans, as well as for other toy examples in @sec:chapter1.
+
+Indeed, `keyword:data` will arise whenever we'd like to build a type whose
+values are *apart*---that is, new symbols whose purpose is in their
 distinctiveness from one another. The boolean values `ctor:false` and
-`ctor:true` are *just symbols,* which, by convention, we assign meaning to. And
-this meaning is justified exactly because `ctor:false` and `ctor:true` are
-*different symbols.*
+`ctor:true` are just arbitrary symbols, which we assign meaning to only by
+convention. This meaning is justified exactly because `ctor:false` and
+`ctor:true` are *distinct symbols.*
 
-Such is true also of numbers; the reason we care about numbers is exactly
-because they are a collection of symbols, all distinct from one another.
+This distinctness is also of the utmost importance when it comes to numbers. The
+numbers are interesting to us only because we can differentiate one from two,
+and two from three. Numbers are a collection of symbols, all distinct from one
+another, and it is from their apartness that we derive importance.
 
-Contrast this to the tuple type (a type defined via `keyword:record` instead of
-`keyword:data`) we defined earlier, which in some sense, exists only for
-bookkeeping. The tuple type doesn't build new things, it just lets you
-simultaneously move around two things that already exist. Another way to think
-about this is that `record` are made up of things that already exist, while
-`data` types create new things *ex nihilo.*
+As a counterexample, imagine a number system in which there is only one number.
+Not very useful, is it?
+
+Contrast this apartness to the tuple type, which you'll recall was a type
+defined via `keyword:record` instead of `keyword:data`. In some sense, tuples
+exist only for bookkeeping. The tuple type doesn't build new things, it just
+lets you simultaneously move around two things that already exist. Another way
+to think about this is that `keyword:record`s are made up of things that already
+exist, while `keyword:data` types create new things *ex nihilo.*
 
 Most programming languages have a concept of `keyword:record` types (whether
 they be called *structures*, *tuples*, or *classes*), but very few support
@@ -150,7 +197,20 @@ they be called *structures*, *tuples*, or *classes*), but very few support
 `keyword:data` types, and the lack of support for them is exactly why these two
 types are usually baked-in to a language.
 
--- TODO(sandy): a point about enums?
+It can be tempting to think of types defined by `keyword:data` as enums, but
+this is a subtly misleading. While enums are indeed apart from one another, this
+comes from the fact that enums are just special names given to particular values
+of ints. This is an amazingly restricting limitation.
+
+Note that in Agda, `keyword:data` types are strictly more powerful than enums,
+because they don't come with this implicit conversion to ints. As a quick
+demonstration, note that `ctor:suc` is apart from `ctor:zero`, but `cotr:suc`
+can accept any `type:ℕ` as an *argument!* While there are only $2^64$ ints,
+there are *infinitely many* `type:ℕ`s, and thus types defined by `keyword:data`
+in Agda must be more powerful than those defined as enums in other languages.
+
+More generally, constructors in `keyword:data` types can take *arbitrary*
+arguments, and we will often use this capability moving forwards.
 
 
 ## Playing with Naturals
@@ -174,7 +234,7 @@ which are built like this:
 ```
 
 Of course, these names are just for syntactic convenience; we could have instead
-defined `four` thusly:
+defined `def:four` thusly:
 
 ```agda
   four⅋ : ℕ

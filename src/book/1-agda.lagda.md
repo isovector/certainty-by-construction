@@ -1,4 +1,4 @@
-# A Gentle Introduction to Agda
+# A Gentle Introduction to Agda {#sec:chapter1}
 
 This book is no ordinary prose. It is not just a book, but it is also a piece of
 software. Literate programming is a technique for interspersing text and

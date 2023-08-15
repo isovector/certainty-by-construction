@@ -1,4 +1,4 @@
- The Co-blub Paradox
+ The Co-blub Paradox {#sec:coblub}
 
 It is widely acknowledged that the languages you speak shape the thoughts you
 can think; while this is true for natural language, it is doubly so in the case
