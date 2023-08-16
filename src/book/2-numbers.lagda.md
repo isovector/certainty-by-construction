@@ -139,12 +139,6 @@ module Naturals where
     suc   : ℕ → ℕ  -- ! 1
 ```
 
-Hidden
-
-:   ```agda
-  -- fix indentation
-    ```
-
 Here we use the `keyword:data` keyword to construct a type consisting of several
 different constructors. In this case, a natural is either a `ctor:zero` or it is
 a `ctor:suc` of some other natural number. You will notice that we must give
@@ -528,7 +522,7 @@ Notice that this constructor is equivalent to the base case `def:even?`
 `ctor:zero` `=` `ctor:true`. We would like to exclude odd numbers from
 `type:IsEven`, so we can ignore the `ctor:suc zero` case for the moment. In the
 inductive case, we'd like to say that if `n` is even, then so too is
-`ctor:suc``(``ctor:suc` `n``))`:
+`ctor:suc``(``ctor:suc` `n)`:
 
 ```agda
     suc-suc-even : {n : ℕ} → IsEven n → IsEven (suc (suc n))
@@ -601,18 +595,19 @@ No introduction forms found.
 ```
 
 What's (correctly) going wrong here is that Agda is trying to find a constructor
-for `IsEven (suc zero)`, but no such thing exists. We have `ctor:zero-even` for
-`IsEven zero`, and we have `ctor:suc-suc-even` for `IsEven (suc (suc n))`. But there
-is no such constructor when we have only one `ctor:suc`! Thus neither `ctor:zero-even` nor
-`ctor:suc-suc-even` will typecheck in our hole. Since these are the *only*
-constructors, and neither fits, it's fair to say that *nothing can fill this
-hole!* That is, `def:three-is-even` is *unimplementable,* which means it's
-impossible to construct an `IsEven n` whenever `n` isn't even!
+for `expr:IsEven (suc zero)`, but no such thing exists. We have `ctor:zero-even`
+for `expr:IsEven zero`, and we have `ctor:suc-suc-even` for `type:IsEven`
+`(``ctor:suc` `(``ctor:suc` `n))`. But there is no such constructor when we have
+only one `ctor:suc`! Thus neither `ctor:zero-even` nor `ctor:suc-suc-even` will
+typecheck in our hole. Since these are the *only* constructors, and neither
+fits, it's fair to say that *nothing can possibly fill this hole.* There is
+simply no way to give an implementation for `def:three-is-even`---it's
+impossible to construct an `ctor:IsEven n` whenever `n` is odd.
 
-This is truly a miraculous result, and perhaps might give you a glimpse at why
-we can prove things about mathematics in Agda. The idea is to carefully
-construct types for which we can give values only when the desired property *is
-actually true.* But we will have much more to say about that later.
+This is truly a miraculous result, and might give you a glimpse at why we do
+mathematics in Agda. The idea is to carefully construct types whose values are
+possible only when our desired property is *actually true.* We will explore this
+topic more deeply in @sec:proofs.
 
 
 Exercise
@@ -628,12 +623,26 @@ Solution
     suc-suc-odd  : {n : ℕ} → IsOdd n → IsOdd (suc (suc n))
     ```
 
+:   or, alternatively,
+
+:   ```agda
+  data IsOdd' : ℕ → Set where
+    is-odd : {n : ℕ} → IsEven n → IsOdd' (suc n)
+    ```
+
+
+Hidden
+
+:   ```agda
+  -- TODO(sandy): I SHOULD NOT BE VISIBLE
+  -- fix indentation
+    ```
+
 
 Exercise
 
-:   Write an inductive function `evenOdd : {n : ℕ} → IsEven n → IsOdd (suc n)`
-    which witnesses the fact that every even number is followed by an odd
-    number.
+:   Write an inductive function `def:evenOdd` `:` `expr:{n : ℕ} → IsEven n → IsOdd (suc n)`
+    which witnesses the fact that every even number is followed by an odd number.
 
 
 Solution
@@ -644,19 +653,27 @@ Solution
   evenOdd (suc-suc-even x)  = suc-suc-odd (evenOdd x)
     ```
 
+:  or, alternatively,
+
+:   ```agda
+  evenOdd' : {n : ℕ} → IsEven n → IsOdd' (suc n)
+  evenOdd' = is-odd
+    ```
+
 
 ## Constructing Evidence
 
 When we originally implemented `def:even?`, I mentioned that functions which
-return booleans are generally a bad habit in Agda. The reason is that you have
-done a bunch of computation in order to computer an answer, and then you end up
-throwing all that work away to say merely "yes" or "no." Instead of returning a
-`type:Bool`, we could instead return an `type:IsEven`, proving the number is
-indeed even!
+return booleans are generally a bad habit in Agda. You've done a lot of
+computation in order to get the answer, and then throw away all of that work
+just to say merely "yes" or "no." Instead of returning a `type:Bool`, we could
+instead have `def:even?` return an `type:IsEven`, proving the number really is
+even!
 
-However, not all numbers are even, so we will first need some notion of failure.
-Enter the `type:Maybe` type, which is a container that contains exactly zero or
-one element of some type `A`.
+However, not *all* numbers are even, so we will first need some notion of
+failure. This is an excellent use for the `type:Maybe` type, which is a
+container that contains exactly zero or one element of some type `A`. We can
+define it as:
 
 ```agda
   data Maybe (A : Set) : Set where
@@ -670,7 +687,7 @@ for representing *partial functions*---those which don't always give back a
 result. Our desired improvement to `def:even?` is one such function, since there
 are naturals in the input which do not have a corresponding value in the output.
 
-Our new function is called `evenEv`, to be suggestive of the fact that it
+Our new function is called `def:evenEv`, to be suggestive of the fact that it
 returns *evidence* of the number's evenness. The first thing to study here is
 the type:
 
@@ -679,9 +696,9 @@ the type:
   evenEv⅋₀ = ?
 ```
 
-The type here says "for some `n : ℕ`, I can maybe provide a proof that it is an
-even number." The implementation will look very reminiscent of `def:even?`.
-First, we can do [MakeCase](AgdaCmd) a few times:
+The type signature of `def:evenEv` says "for some `n :` `type:ℕ`, I can maybe
+provide a proof that it is an even number." The implementation will look very
+reminiscent of `def:even?`. First, we can do [MakeCase](AgdaCmd) a few times:
 
 ```agda
   evenEv⅋₁ : (n : ℕ) → Maybe (IsEven n)
@@ -690,8 +707,8 @@ First, we can do [MakeCase](AgdaCmd) a few times:
   evenEv⅋₁ (suc (suc n))  = {! !}
 ```
 
-Then, everywhere we know there is definitely not an answer, we can fill in the
-hole with `ctor:nothing`:
+Then, in the `ctor:suc zero` case where we know there is not an answer, we can
+give back `ctor:nothing`:
 
 ```agda
   evenEv⅋₂ : (n : ℕ) → Maybe (IsEven n)
@@ -700,8 +717,8 @@ hole with `ctor:nothing`:
   evenEv⅋₂ (suc (suc n))  = {! !}
 ```
 
-In the zero case, where we know there is an answer, we refine our hole with
-`ctor:just`:
+In the case of `ctor:zero`, there definitely *is* an answer, so we refine our
+hole with `ctor:just`:
 
 ```agda
   evenEv⅋₃ : (n : ℕ) → Maybe (IsEven n)
@@ -710,8 +727,9 @@ In the zero case, where we know there is an answer, we refine our hole with
   evenEv⅋₃ (suc (suc n))  = {! !}
 ```
 
-but `ctor:just` what? The type `IsEven zero` of the goal tells us, but we can also
-elicit an answer from Agda via [Refine:](AgdaCmd):
+...but a `ctor:just` of what? The type `expr:IsEven zero` of the goal tells us,
+but we can also elicit an answer from Agda by invoking [Refine](AgdaCmd) on our
+hole:
 
 ```agda
   evenEv⅋₄ : (n : ℕ) → Maybe (IsEven n)
@@ -722,11 +740,12 @@ elicit an answer from Agda via [Refine:](AgdaCmd):
 
 At this step in `def:even?` we just recursed and we were done. However, that
 can't quite work here. The problem is that if we were to recurse, we'd get a
-result of type `Maybe (IsEven n)`, but we need a result of type `Maybe (IsEven
-(suc (suc n)))`. What needs to happen then is for us to recurse, *inspect the
-answer,* and then, if it's `ctor:just`, insert a `suc-suc-even` on the inside.
-It seems a little convoluted, but the types are always there to guide you if you
-ever lose the forest for the trees.
+result of type `type:Maybe` `(``type:IsEven` `n)`, but we need a result of type
+`type:Maybe` `(``type:IsEven` `(``ctor:suc` `(``ctor:suc` `n)))`. What needs to
+happen then is for us to recurse, *inspect the answer,* and then, if it's
+`ctor:just`, insert a `suc-suc-even` on the inside. It all seems a little
+convoluted, but the types are always there to guide you should you ever lose the
+forest for the trees.
 
 Agda does allow us to pattern match on the result of a recursive call. This is
 known as a `with` abstraction, and the syntax is as follows:
@@ -741,12 +760,13 @@ known as a `with` abstraction, and the syntax is as follows:
 
 At [1](Ann), which you will note is on the *left* side of the equals sign, we
 add the word `with` and the expression we'd like to pattern match on. Here, it's
-`evenEv n`, which is the recursive call we'd like to make. At [2](Ann), we put
-three dots, a vertical bar, and a name for the resulting value of the call we
-made, and then the equals sign. The important thing to note here is that
-`result` is a binding that corresponds to the result of having called `evenEv
-n`. This seems like quite a lot of ceremony, but what's cool is that we can now
-run [MakeCase:result](AgdaCmd) in the hole to pattern match on `result`:
+`def:evenEv` `n`, which is the recursive call we'd like to make. At [2](Ann), we
+put three dots, a vertical bar, and a name for the resulting value of the call
+we made, and then the equals sign. The important thing to note here is that
+`result` is a binding that corresponds to the result of having called
+`def:evenEv` `n`. This seems like quite a lot of ceremony, but what's cool is
+that we can now run [MakeCase:result](AgdaCmd) in the hole to pattern match on
+`result`:
 
 ```agda
   evenEv⅋₆ : (n : ℕ) → Maybe (IsEven n)
@@ -757,7 +777,7 @@ run [MakeCase:result](AgdaCmd) in the hole to pattern match on `result`:
   ... | nothing  = {! !}
 ```
 
-In the case that `result` is nothing, we know that our recursive call failed,
+In the case that `result` is `ctor:nothing`, we know that our recursive call failed,
 and thus that $n - 2$ is not even. Therefore, we too should return `ctor:nothing`.
 Similarly for the `ctor:just` case:
 
@@ -770,9 +790,9 @@ Similarly for the `ctor:just` case:
   ... | nothing  = nothing
 ```
 
-We're close to the end. Now we know that `x : IsEven n` and our hole requires an
-`IsEven (suc (suc n))`. We can fill in the rest by hand, or invoke
-[Auto](AgdaCmd) to do it on our behalf.
+We're close to the end. Now we know that `x :` `type:IsEven` `n` and that our
+hole requires an `type:IsEven` `(``ctor:suc` `(``ctor:suc` `n))`. We can fill in
+the rest by hand, or invoke [Auto](AgdaCmd) to do it on our behalf.
 
 ```agda
   evenEv : (n : ℕ) → Maybe (IsEven n)

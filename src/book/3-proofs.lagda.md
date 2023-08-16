@@ -1,4 +1,4 @@
-# Proof Objects
+# Proof Objects {#sec:proofs}
 
 Hidden
 
