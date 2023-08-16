@@ -743,7 +743,7 @@ can't quite work here. The problem is that if we were to recurse, we'd get a
 result of type `type:Maybe` `(``type:IsEven` `n)`, but we need a result of type
 `type:Maybe` `(``type:IsEven` `(``ctor:suc` `(``ctor:suc` `n)))`. What needs to
 happen then is for us to recurse, *inspect the answer,* and then, if it's
-`ctor:just`, insert a `suc-suc-even` on the inside. It all seems a little
+`ctor:just`, insert a `ctor:suc-suc-even` on the inside. It all seems a little
 convoluted, but the types are always there to guide you should you ever lose the
 forest for the trees.
 
@@ -847,14 +847,14 @@ it. In fact, that's the *definition* of zero. Thus, we have:
 
 The second case here clearly requires recursion, but it might not immediately be
 clear what that recursion should be. The answer is to squint and reinterpret
-`suc x` as $1 + x$, which allows us to write our left hand side as
+`ctor:suc` `x` as $1 + x$, which allows us to write our left hand side as
 
 $$
 (1 + x) + y
 $$
 
-If we were to reshuffle the parentheses here, we get an $x + y$ term on its own,
-which is exactly what we need in order to do recursion. In symbols, this
+If we were to reshuffle the parentheses here, we'd get an $x + y$ term on its
+own, which is exactly what we need in order to do recursion. In symbols, this
 inductive case is thus written as:
 
 $$
@@ -871,21 +871,24 @@ which translates back to Agda as our final definition of addition:
 ```
 
 With a little thought, it's clear that this function really does implement
-addition. By induction, the first argument is either of the form `ctor:zero`, in
-which case it adds nothing to the result, or it is of the form `suc x`, in which
-case we assume `x + y` to properly implement addition, and we observe the fact
-that $(m + n) + p = m + (n + p)$. This is our first mathematical proof, although
-it is a rather "loose" one: argued out in words, rather than being *checked* by
-the computer. Nevertheless, it is a great achievement on our path towards
-mathematical fluency and finesse.
+addition. By induction, the first argument might be of the form `ctor:zero`, in
+which case it adds nothing to the result.
+
+Otherwise, the first argument must be of the form `ctor:suc` `x`, in which case
+we assume `x` `def:+` `y` properly implements addition. Then, we observe the
+fact that $(m + n) + p = m + (n + p)$. This is our first mathematical proof,
+although it is a rather "loose" one: argued out in words, rather than being
+*checked* by the computer. Nevertheless, it is a great achievement on our path
+towards mathematical fluency and finesse.
 
 To wrap things up, we will add a fixity declaration for `def:_+_` so that it
 behaves nicely as an infix operator. We must choose a direction for repeated
 additions to associate. In fact, it doesn't matter one way or another, and we
 used that fact in the inductive case of `def:_+_`. But, looking forwards, we
 realize that subtraction *must* be left-associative in order to get the right
-answer, and therefore it makes sense that addition have the same associativity.
-And, as a matter of convention, we will pick precedence 6 for this operator.
+answer, and therefore it makes sense that addition should also be
+left-associative. And, as a matter of convention, we will pick precedence 6 for
+this operator.
 
 ```agda
   infixl 6 _+_
