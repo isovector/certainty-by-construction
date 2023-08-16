@@ -139,6 +139,12 @@ module Naturals where
     suc   : ℕ → ℕ  -- ! 1
 ```
 
+Hidden
+
+:   ```agda
+  -- fix indentation
+    ```
+
 Here we use the `keyword:data` keyword to construct a type consisting of several
 different constructors. In this case, a natural is either a `ctor:zero` or it is
 a `ctor:suc` of some other natural number. You will notice that we must give
@@ -887,7 +893,7 @@ additions to associate. In fact, it doesn't matter one way or another, and we
 used that fact in the inductive case of `def:_+_`. But, looking forwards, we
 realize that subtraction *must* be left-associative in order to get the right
 answer, and therefore it makes sense that addition should also be
-left-associative. And, as a matter of convention, we will pick precedence 6 for
+reft-associative. And, as a matter of convention, we will pick precedence 6 for
 this operator.
 
 ```agda
