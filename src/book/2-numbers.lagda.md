@@ -752,7 +752,7 @@ types are always there to guide you should you ever lose the forest for the
 trees.
 
 Agda does allow us to pattern match on the result of a recursive call. This is
-known as a `with` abstraction, and the syntax is as follows:
+known as a `keyword:with` abstraction, and the syntax is as follows:
 
 ```agda
   evenEv⅋₅ : (n : ℕ) → Maybe (IsEven n)
@@ -763,11 +763,11 @@ known as a `with` abstraction, and the syntax is as follows:
 ```
 
 At [1](Ann), which you will note is on the *left* side of the equals sign, we
-add the word `with` and the expression we'd like to pattern match on. Here, it's
-`def:evenEv` `n`, which is the recursive call we'd like to make. At [2](Ann), we
-put three dots, a vertical bar, and a name for the resulting value of the call
-we made, and then the equals sign. The important thing to note here is that
-`result` is a binding that corresponds to the result of having called
+add the word `keyword:with` and the expression we'd like to pattern match on.
+Here, it's `def:evenEv` `n`, which is the recursive call we'd like to make. At
+[2](Ann), we put three dots, a vertical bar, and a name for the resulting value
+of the call we made, and then the equals sign. The important thing to note here
+is that `result` is a binding that corresponds to the result of having called
 `def:evenEv` `n`. This seems like quite a lot of ceremony, but what's cool is
 that we can now run [MakeCase:result](AgdaCmd) in the hole to pattern match on
 `result`:
@@ -879,20 +879,20 @@ addition. By induction, the first argument might be of the form `ctor:zero`, in
 which case it adds nothing to the result.
 
 Otherwise, the first argument must be of the form `ctor:suc` `x`, in which case
-we assume `x` `def:+` `y` properly implements addition. Then, we observe the
-fact that $(m + n) + p = m + (n + p)$. This is our first mathematical proof,
+we assume `bind:x y:x + y` properly implements addition. Then, we observe the
+fact that $(1 + x) + y = 1 + (x + y)$. This is our first mathematical proof,
 although it is a rather "loose" one: argued out in words, rather than being
 *checked* by the computer. Nevertheless, it is a great achievement on our path
 towards mathematical fluency and finesse.
 
 To wrap things up, we will add a fixity declaration for `def:_+_` so that it
 behaves nicely as an infix operator. We must choose a direction for repeated
-additions to associate. In fact, it doesn't matter one way or another, and we
-used that fact in the inductive case of `def:_+_`. But, looking forwards, we
-realize that subtraction *must* be left-associative in order to get the right
-answer, and therefore it makes sense that addition should also be
-reft-associative. And, as a matter of convention, we will pick precedence 6 for
-this operator.
+additions to associate. In fact, it doesn't matter one way or another (and we
+used the fact that it doesn't matter in the inductive case of `def:_+_`.) But,
+looking forwards, we realize that subtraction *must* be left-associative in
+order to get the right answer, and therefore it makes sense that addition should
+also be left-associative. As a matter of convention, we will pick precedence 6
+for this operator.
 
 ```agda
   infixl 6 _+_
@@ -902,10 +902,11 @@ this operator.
 ## Termination Checking
 
 There is a subtle point to be made about our implementation of `def:_+_`, namely
-that the parentheses are extremely important. Our last line is written as `suc x
-+ y = suc (x + y)`, but if you were to omit the parentheses, the last line
-becomes `suc x + y = suc x + y`. Such a statement is unequivocally *true*, but
-it *extraordinarily unhelpful.* Since both sides of the equals sign are
+that the parentheses are extremely important. Our last line is written as
+`ctor:suc` `x` `def:+` `y` `=` `ctor:suc` `(x` `def:+` `y)`, but if you were to
+omit the parentheses, the last line becomes `ctor:suc` `x` `def:+` `y` `=`
+`ctor:suc` `x` `ctor:+` `y`. Such a statement is unequivocally *true*, but is
+also computationally *unhelpful.* Since both sides of the equation are
 syntactically identical, Agda has no ability to make computational progress by
 rewriting one side as the other. In fact, if such a thing were allowed, it would
 let you prove anything at all! The only caveat would be that if you tried to
@@ -913,61 +914,121 @@ inspect the proof, your computer would fall into an infinite loop, rewriting the
 left side of the equation into the right, forever.
 
 Fortunately, Agda is smart enough to identify this case, and will holler,
-complaining about "termination checking," if you attempt to do it:
+complaining about "termination checking" if you attempt to do it:
 
-```error
-Termination checking failed for the following functions:
-  Sandbox-Naturals._+_
-Problematic calls:
-  suc x + y
+```illegal
+  _+⅋₀_ : ℕ → ℕ → ℕ
+  zero   +⅋₀ y = y
+  suc x  +⅋₀ y = suc x +⅋₀ y
 ```
 
-By putting in the parentheses, `suc (x + y)` is now recursive, and, importantly,
-it is recursive on *structurally smaller* inputs than it was given. Since the
-recursive call must be smaller (in the sense of there is one fewer `ctor:suc` to
-worry about,) eventually this recursion must terminate, and thus Agda is happy.
+```info
+Termination checking failed for the following functions:
+  Sandbox-Naturals._+⅋₀_
+Problematic calls:
+  suc x +⅋₀ y
+```
+
+By putting in the parentheses, `bind:x y:suc (x + y)` is now recursive, and,
+importantly, it is recursive on *structurally smaller* inputs than it was given.
+Since the recursive call must be smaller (in the sense of there is one fewer
+`ctor:suc` constructor to worry about,) eventually this recursion must
+terminate, and thus Agda is happy.
+
+Agda's termination checker can help keep you out of trouble, but it's not the
+smartest computer program around. The termination checker will only let you
+recurse on bindings that came from a pattern match, and, importantly, you're not
+allowed to fiddle with them first. As a quick, silly, illustration, we could
+imagine an alternative `type:ℕ'`, which comes with an additional `ctor:2suc`
+constructor corresponding to `ctor:suc`ing twice:
+
+```agda
+  module Example-Silly where
+    open 1-agda.Exports
+      using (not)
+
+    data ℕ' : Set where
+      zero  : ℕ'
+      suc   : ℕ' → ℕ'
+      2suc  : ℕ' → ℕ'
+```
+
+We can now write `def:even?'`, whose `ctor:2suc` case is `def:not` of
+`def:even?'` (`ctor:suc` n):
+
+```illegal
+    even?'⅋ : ℕ' → Bool
+    even?'⅋ zero      = true
+    even?'⅋ (suc n)   = not (even?'⅋ n)
+    even?'⅋ (2suc n)  = not (even?'⅋ (suc n))
+```
+
+Tracing the logic here, it's clear to us as programmers that this function will
+indeed terminate. Unfortunately, Agda is not as smart as we are, and rejects the
+program:
+
+```info
+Termination checking failed for the following functions:
+  Naturals.Example-Silly.even?'
+Problematic calls:
+  even?' (suc n)
+```
+
+The solution to termination problems like these is just to unwrap another layer
+of constructors:
+
+```agda
+    even?' : ℕ' → Bool
+    even?' zero             = true
+    even?' (suc n)          = not (even?' n)
+    even?' (2suc zero)      = true
+    even?' (2suc (suc n))   = not (even?' n)
+    even?' (2suc (2suc n))  = even?' n
+```
+
+It's not the nicest solution, but it gets the job done.
 
 
 ## Multiplication and Exponentiation
 
 With addition happily under our belt, we will try our hand at multiplication.
-The approach is the same as with addition: write down the type, bind the
-variables, do induction, and use algebraic identities to help us figure out what
-the cases should work out to. The whole thing is really quite underwhelming once
-you get the hang of out!
+The approach is the same as with addition: write down the type of the operation,
+bind the variables, do induction, and use algebraic identities we remember from
+school to help figure out the actual logic. The whole procedure is really quite
+underwhelming once you get the hang of out!
 
 After writing down the type and binding some variables, we're left with the
 following:
 
 ```agda
   _*⅋₁_ : ℕ → ℕ → ℕ
-  x *⅋₁ y = {! !}
+  a *⅋₁ b = {! !}
 ```
 
 We need to do induction on one of these bindings; because we have no reason to
-pick one or the other, we default to `x`:
+pick one or the other, we default to `a`:
 
 ```agda
   _*⅋₂_ : ℕ → ℕ → ℕ
-  zero   *⅋₂ y = {! !}
-  suc x  *⅋₂ y = {! !}
+  zero   *⅋₂ b = {! !}
+  suc a  *⅋₂ b = {! !}
 ```
 
-From school, recall that zero times anything is zero:
+The first case is immediately obvious; zero times anything is zero:
 
 ```agda
   _*⅋₃_ : ℕ → ℕ → ℕ
-  zero   *⅋₃ y = zero
-  suc x  *⅋₃ y = {! !}
+  zero   *⅋₃ b = zero
+  suc a  *⅋₃ b = {! !}
 ```
 
-What's left is where we can dig into our mental cache of algebra facts. Recall
-that `suc x` is how we write $1 + x$ in Agda, thus:
+In order to solve what's left, we can dig into our mental cache of algebra
+facts. Recall that `bind:a:suc a` is how we write $1 + a$ in Agda, thus:
 
 $$
 \begin{aligned}
-(1 + x) \times y &= 1 \times y + x \times y \\
-&= y + x \times y
+(1 + a) \times b &= 1 \times b + a \times b \\
+&= b + a \times b
 \end{aligned}
 $$
 
@@ -975,44 +1036,43 @@ Therefore, our final implementation of multiplication is just:
 
 ```agda
   _*_ : ℕ → ℕ → ℕ
-  zero   * y = zero
-  suc x  * y = y + x * y
+  zero   * b = zero
+  suc a  * b = b + a * b
 ```
 
-of course, we need to add a fixity definition for everything to work out
-properly. Since `def:_*_` is just repeated addition (as you can see from our
-implementation,) it makes sense to give it the same associativity as addition
-(left.) However, we'd like the expression `y + x * y` to parse as `y + (x * y)`,
-and so we need to give `def:_*_` a *higher* precedence, to make it bind more
-tightly. Thus we settle on
+of course, we need to add a fixity definition for multiplication to play nicely
+with the addition operator. Since `def:_*_` is just a series of additions (as
+you can see from our implementation,) it makes sense to make multiplication also
+associate left. However, we'd like the expression `bind:x y:y + x * y` to parse
+as `y + (x * y)`, and so we must give `def:_*_` a higher precedence. Thus we
+settle on
 
 ```agda
   infixl 7 _*_
 ```
 
 Multiplication is just repeated addition, and addition is just repeated
-counting---as made abundantly clear when working in our unary representation.
-We can repeat this pattern, moving upwards and building something that is "just
-repeated multiplication." That thing is, unsurprisingly, exponentiation.
+counting---as is made *abundantly* clear when working in our unary
+representation. We can repeat this pattern, moving upwards and building
+something that is "just repeated multiplication"---*exponentiation*:
 
 Begin as always, with the type and the bound variables:
 
 ```agda
   _^⅋₁_ : ℕ → ℕ → ℕ
-  x ^⅋₁ y = {! !}
+  a ^⅋₁ b = {! !}
 ```
 
-We'd again like to do induction, but unlike all of our previous examples, we now
-have a good reason to pick one of these variables over the other. We must be
-careful here, because unlike addition and multiplication, exponentiation is not
-*commutative.*  Symbolically, it is not the case that:
+We'd again like to do induction, but we must be careful here. Unlike addition
+and multiplication, exponentiation is not *commutative.*  Symbolically, it is
+not the case that:
 
 $$
 x^y \neq y^x
 $$
 
 It's always a good habit to test claims like these. Because we're computer
-scientists we can pick $x = 2$, and because we're humans, $y = 10$. Doing some
+scientists we can pick $a = 2$, and because we're humans, $b = 10$. Doing some
 quick math, we see that this is indeed an inequality:
 
 $$
@@ -1020,33 +1080,39 @@ $$
 $$
 
 Due to this lack of commutativity, we must be careful when doing induction on
-`def:_^_`. The standard definition of exponentiation, known to you---not
-necessarily consciously---requires that we pattern match on `y`.
+`def:_^_`. Unlike in all of our examples so far, getting the right answer in
+exponentiation strongly depends on picking the right variable to do induction
+on. Think of what would happen if we were to do induction on `a`---we would
+somehow need to multiply smaller numbers together, each to the power of `b`.
+
+Alternatively, doing induction on `b` means we get to multiply the same number
+together, each to a smaller power. That sounds much more correct, so let's
+pattern match on `b`:
 
 ```agda
   _^⅋₂_ : ℕ → ℕ → ℕ
-  x ^⅋₂ zero   = {! !}
-  x ^⅋₂ suc y  = {! !}
+  a ^⅋₂ zero   = {! !}
+  a ^⅋₂ suc b  = {! !}
 ```
 
 The first case is a usual identity, namely that
 
-$$
-x^0 = 1
+$
+a^0 = 1
 $$
 
 while the second case requires an application of the exponent law:
 
 $$
-x^{a + b} = x^a \times x^b
+a^{b + c} = a^b \times a^c
 $$
 
 Instantiating this gives us:
 
 $$
 \begin{aligned}
-x^{1 + y} &= x^1 \times x^y \\
-&= x \times x^y
+a^{1 + b} &= a^1 \times a^b \\
+&= a \times a^b
 \end{aligned}
 $$
 
@@ -1054,9 +1120,14 @@ and thus:
 
 ```agda
   _^_ : ℕ → ℕ → ℕ
-  x ^ zero   = one
-  x ^ suc y  = x * x ^ y
+  a ^ zero   = one
+  a ^ suc b  = a * a ^ b
 ```
+
+As you can see, a judicious application of grade-school facts goes a long way
+when reasoning through these implementations. It makes sense why; algebraic
+identities are all about when are two expressions equal---and our Agda programs
+really and truly are defined in terms of *equations.*
 
 
 
