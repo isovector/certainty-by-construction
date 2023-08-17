@@ -527,8 +527,7 @@ reflect directly as a constructor:
 Notice that this constructor is equivalent to the base case `def:even?`
 `ctor:zero` `=` `ctor:true`. We would like to exclude odd numbers from
 `type:IsEven`, so we can ignore the `ctor:suc zero` case for the moment. In the
-inductive case, we'd like to say that if `n` is even, then so too is
-`ctor:suc``(``ctor:suc` `n)`:
+inductive case, we'd like to say that if $n$ is even, then so too is $n + 2$:
 
 ```agda
     suc-suc-even : {n : ℕ} → IsEven n → IsEven (suc (suc n))
@@ -602,13 +601,13 @@ No introduction forms found.
 
 What's (correctly) going wrong here is that Agda is trying to find a constructor
 for `expr:IsEven (suc zero)`, but no such thing exists. We have `ctor:zero-even`
-for `expr:IsEven zero`, and we have `ctor:suc-suc-even` for `type:IsEven`
-`(``ctor:suc` `(``ctor:suc` `n))`. But there is no such constructor when we have
-only one `ctor:suc`! Thus neither `ctor:zero-even` nor `ctor:suc-suc-even` will
-typecheck in our hole. Since these are the *only* constructors, and neither
-fits, it's fair to say that *nothing can possibly fill this hole.* There is
-simply no way to give an implementation for `def:three-is-even`---it's
-impossible to construct an `ctor:IsEven n` whenever `n` is odd.
+for `expr:IsEven zero`, and we have `ctor:suc-suc-even` for `bind:n:IsEven (suc
+(suc n))`. But there is no such constructor when we have only one `ctor:suc`!
+Thus neither `ctor:zero-even` nor `ctor:suc-suc-even` will typecheck in our
+hole. Since these are the *only* constructors, and neither fits, it's fair to
+say that *nothing can possibly fill this hole.* There is simply no way to give
+an implementation for `def:three-is-even`---it's impossible to construct an
+`ctor:IsEven n` whenever `n` is odd.
 
 This is truly a miraculous result, and might give you a glimpse at why we do
 mathematics in Agda. The idea is to carefully construct types whose values are
@@ -640,7 +639,6 @@ Solution
 Hidden
 
 :   ```agda
-  -- TODO(sandy): I SHOULD NOT BE VISIBLE
   -- fix indentation
     ```
 
@@ -746,12 +744,12 @@ hole:
 
 At this step in `def:even?` we just recursed and we were done. However, that
 can't quite work here. The problem is that if we were to recurse, we'd get a
-result of type `type:Maybe` `(``type:IsEven` `n)`, but we need a result of type
-`type:Maybe` `(``type:IsEven` `(``ctor:suc` `(``ctor:suc` `n)))`. What needs to
-happen then is for us to recurse, *inspect the answer,* and then, if it's
-`ctor:just`, insert a `ctor:suc-suc-even` on the inside. It all seems a little
-convoluted, but the types are always there to guide you should you ever lose the
-forest for the trees.
+result of type `bind:n:Maybe (IsEven n)`, but we need a result of type
+`bind:n:Maybe (IsEven (suc (suc n)))`. What needs to happen then is for us to
+recurse, *inspect the answer,* and then, if it's `ctor:just`, insert a
+`ctor:suc-suc-even` on the inside. It all seems a little convoluted, but the
+types are always there to guide you should you ever lose the forest for the
+trees.
 
 Agda does allow us to pattern match on the result of a recursive call. This is
 known as a `with` abstraction, and the syntax is as follows:
@@ -797,8 +795,8 @@ Similarly for the `ctor:just` case:
 ```
 
 We're close to the end. Now we know that `x :` `type:IsEven` `n` and that our
-hole requires an `type:IsEven` `(``ctor:suc` `(``ctor:suc` `n))`. We can fill in
-the rest by hand, or invoke [Auto](AgdaCmd) to do it on our behalf.
+hole requires an `bind:n:IsEven (suc (suc n))`. We can fill in the rest by hand,
+or invoke [Auto](AgdaCmd) to do it on our behalf.
 
 ```agda
   evenEv : (n : ℕ) → Maybe (IsEven n)
