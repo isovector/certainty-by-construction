@@ -1135,15 +1135,19 @@ really and truly are defined in terms of *equations.*
 ## Semi-subtraction
 
 The natural numbers don't support subtraction, because we might try to take too
-much away and be forced to go negative, but there are no negative natural
-numbers. However, we have a closely related operation, subtraction with
-*truncation* at zero---that is, if the result should be negative, it is instead
-zero. We call this operation "monus", and use the symbol `def:_∸_`.
+much away, being forced to subtract what we don't have. Recall that there is no
+way to construct any negative naturals, and so this is not an operation we can
+implement in general.
+
+However, we have an operation closely related to subtraction, which instead
+*truncates* at zero. That is, if the result would have gone negative, we
+just return zero instead. This operation is called "monus", and given the symbol
+`def:_∸_`, input as [`.-`](AgdaMode).
 
 
 Exercise
 
-: Define `_∸_ : ℕ → ℕ → ℕ`
+: Define `def:_∸_` : `expr:ℕ → ℕ → ℕ`
 
 
 Solution
@@ -1155,14 +1159,10 @@ Solution
   suc x  ∸ suc y = x ∸ y
     ```
 
-The last operation we will implement for natural numbers is multiplication,
-which sounds like it might be hard until you remember that multiplication is
-just repeated addition, which we define as follows:
-
 Just to convince ourselves everything works, let's write a few unit tests:
 
 ```agda
-  module Tests where
+  module Natural-Tests where
     open import Relation.Binary.PropositionalEquality
 
     _ : one + two ≡ three
@@ -1178,14 +1178,17 @@ Just to convince ourselves everything works, let's write a few unit tests:
     _ = refl
 ```
 
+Looks good to me!
+
 You can find all of these goodies, and significantly more, in the standard
-library's `Data.Nat` module. Additionally, you also get support for natural
-literals, that is, you get digital representations for every number. No more
-`four : ℕ`; just use `4 : ℕ`!
+library's `module:Data.Nat` module. Additionally, you also get support for
+natural literals. No more `def:four` `:` `type:ℕ`; just use `4 :` `type:ℕ`
+instead!
 
 By this point, you should be starting to get a good handle on the basics of
 Agda---both syntactically, as well as how we think about modeling and solving
-problems. In the next section we will tackle the integers, which have much more
+problems.
+In the next section we will tackle the integers, which have much more
 interesting mathematical structure, and subsequently, present many more
 challenges.
 
