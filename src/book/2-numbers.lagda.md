@@ -1191,7 +1191,7 @@ problems. Let's therefore ramp up the difficulty and put that understanding to
 the test.
 
 
-## Integers
+## Inconvenient Integers
 
 In this section we will tackle the integers, which have much more
 interesting mathematical structure than the naturals, and subsequently, present
@@ -1281,6 +1281,9 @@ The problem seems to be that we can't be sure that the `ctor:suc`s and
 `ctor:pred`s are beside one another in order to cancel out. Perhaps we can try a
 different type to model integers which doesn't have this limitation.
 
+
+## Difference Integers
+
 Instead, this time let's see what happens if we model integers as a pair of two
 natural numbers---one for the positive count, and another for the negative
 count. The actual integer in question in thus the difference between these two
@@ -1290,7 +1293,11 @@ naturals.
 ```agda
 module Misstep-Integers₂ where
   open import Data.Nat
-    using (ℕ; zero; suc; _+_; _*_)
+    using (ℕ; zero; suc)
+    renaming
+      ( _+_ to _ℕ+_
+      ; _*_ to _ℕ*_
+      )
 
   record ℤ : Set where
     constructor mkℤ
@@ -1324,6 +1331,72 @@ write `def:normalize` and be confident that it works as expected:
   normalize (mkℤ zero neg)             = mkℤ zero neg
   normalize (mkℤ (suc pos) zero)       = mkℤ (suc pos) zero
   normalize (mkℤ (suc pos) (suc neg))  = normalize (mkℤ pos neg)
+```
+
+Given `def:normalize`, we can give an easy definition for `def:_+_` over our
+"difference integers," based on the fact that addition distributes over
+subtraction:
+
+$$
+(p_1 - n_1) + (p_2 - n_2) = (p_1 + p_2) - (n_1 + n_2)
+$$
+
+In Agda, this fact looks equivalent, after replacing $a - b$ with
+`bind:a b:mkℤ a b`:
+
+```agda
+  _+_ : ℤ → ℤ → ℤ
+  mkℤ p₁ n₁ + mkℤ p₂ n₂
+    = normalize (mkℤ (p₁ ℕ+ p₂) (n₁ ℕ+ n₂))
+
+  infixl 5 _+_
+```
+
+Subtraction is similar, but is based instead on the fact that subtraction
+distributes over addition---that is, that:
+
+$$
+\begin{aligned}
+(p_1 - n_1) - (p_2 - n_2) &= (p_1 - n_1) + (- p_2 + n_2) \\
+&= (p_1 - n_1) + (n_2 - p_2) \\
+&= (p_1 + n_2) - (n_1 + p_2)
+\end{aligned}
+$$
+
+```agda
+  _-_ : ℤ → ℤ → ℤ
+  mkℤ p₁ n₁ - mkℤ p₂ n₂
+    = normalize (mkℤ (p₁ ℕ+ n₂) (n₁ ℕ+ p₂))
+
+  infixl 5 _-_
+```
+
+$$
+\begin{aligned}
+(p_1 - n_1) \times (p_2 - n_2) &= p_1 p_2 - p_1 n_2 - n_1 p_2 + n_1 n_2  \\
+&= p_1 p_2 + n_1 n_2 - p_1 n_2 - n_1 p_2 \\
+&= (p_1 p_2 + n_1 n_2) - (p_1 n_2 + n_1 p_2)
+\end{aligned}
+$$
+
+
+
+```agda
+  _*_ : ℤ → ℤ → ℤ
+  mkℤ p₁ n₁ * mkℤ p₂ n₂
+    = normalize
+        (mkℤ (p₁ ℕ* p₂ ℕ+ n₁ ℕ* n₂)
+             (p₁ ℕ* n₂ ℕ+ p₂ ℕ* n₁))
+
+  infixl 6 _*_
+```
+
+```agda
+  open import Relation.Binary.PropositionalEquality
+
+  _ : mkℤ 6 1 * mkℤ 2 5 ≡ mkℤ 0 15
+  _ = refl
+
 ```
 
 
