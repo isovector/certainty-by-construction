@@ -1521,8 +1521,8 @@ Hidden
 You'll notice this definition of `type:ℤ` is identical to the one from
 `module:Naive-Integers₂`; the only difference being that we've renamed `ctor:-_`
 to `ctor:-[1+_]`. This new name suggests that `bind:n:-[1+ n ]` corresponds to
-the number $-(1+n) = -n - 1$. By adding this -1 to all negative numbers, we
-have removed the possibility of a negative zero.
+the number $-(1+n) = -n - 1$. By subtracting this 1 from all negative numbers,
+we have removed the possibility of a negative zero.
 
 Given this machinery, we can now name three particularly interesting integers:
 
@@ -1590,8 +1590,9 @@ x)`. Nevertheless, our definition of `def:-⅋_` above *does* include a `bind:x:
 (ℕ.suc x)` case, so this pattern does seem like it might be useful.
 
 We can define a pattern synonym with the `keyword:pattern` keyword. Patterns
-look exactly like function definitions, except that they build (red) constructors
-rather than (blue) definitions.
+look exactly like function definitions, except that they build constructors
+(highlighted red, and can be used in pattern matches) rather than (blue)
+function definitions.
 
 ```agda
   pattern +[1+_] n  = + (ℕ.suc n)
