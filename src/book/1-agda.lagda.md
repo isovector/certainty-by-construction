@@ -1740,7 +1740,7 @@ arises simply from the fact that we write our functions' types as a big series
 of arrows, one for each argument.
 
 
-## The Curry/Uncurry Isomorphism
+## The Curry/Uncurry Isomorphism {#sec:currying}
 
 Of course, nothing stops us from encoding our functions in the more standard
 form, where we are required to give all arguments at once. The transformation is
