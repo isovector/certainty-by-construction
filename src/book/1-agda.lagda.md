@@ -564,9 +564,9 @@ x : Bool
 
 We can see now that the hole itself (called `Goal` in the info window) is a
 missing expression whose type should be `type:Bool`. But, more interestingly,
-Agda is also telling us that we now have a variable `bind:x` in scope, whose type
+Agda is also telling us that we now have a variable `x` in scope, whose type
 is `type:Bool`. In order to pull the `Bool →` off of the type signature, we were
-forced to introduce a binding `bind:x` of type `type:Bool`, which corresponds
+forced to introduce a binding `x` of type `type:Bool`, which corresponds
 exactly to `def:not`'s function argument.
 
 There is an important lesson to be learned here, more than just about how Agda's
@@ -578,7 +578,7 @@ hole.
 
 We can ask Agda for more help to continue. This time, if we put our cursor in
 the hole and invoke [`MakeCase:x`](AgdaCmd), Agda will enumerate every possible
-constructor for `bind:x`, asking us to fill in the result of the function for
+constructor for `x`, asking us to fill in the result of the function for
 each case. Here, that looks like:
 
 ```agda
@@ -588,7 +588,7 @@ each case. Here, that looks like:
 ```
 
 You'll notice where once there was one hole there are now two, one for every
-possible value that `bind:x` could have been. Since `bind:x` is a `type:Bool`,
+possible value that `x` could have been. Since `x` is a `type:Bool`,
 and we know there are exactly two booleans, Agda gives us two cases---one for
 `ctor:false` and another for `ctor:true`.
 

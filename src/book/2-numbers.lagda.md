@@ -1292,6 +1292,7 @@ naturals.
 
 ```agda
 module Misstep-Integers₂ where
+  -- TODO(sandy): describe syntax here
   open import Data.Nat
     using (ℕ; zero; suc)
     renaming
@@ -1338,7 +1339,7 @@ Given `def:normalize`, we can give an easy definition for `def:_+_` over our
 subtraction:
 
 $$
-(p_1 - n_1) + (p_2 - n_2) = (p_1 + p_2) - (n_1 + n_2)
+(p_1 - n_1) + (p_2 - n_2) = (p_1 + p_2) - (n_1 + n_2).
 $$
 
 In Agda, this fact looks equivalent, after replacing $a - b$ with
@@ -1353,15 +1354,17 @@ In Agda, this fact looks equivalent, after replacing $a - b$ with
 ```
 
 Subtraction is similar, but is based instead on the fact that subtraction
-distributes over addition---that is, that:
+distributes over addition---that is:
 
 $$
 \begin{aligned}
-(p_1 - n_1) - (p_2 - n_2) &= (p_1 - n_1) + (- p_2 + n_2) \\
-&= (p_1 - n_1) + (n_2 - p_2) \\
-&= (p_1 + n_2) - (n_1 + p_2)
+(p_1 - n_1) - (p_2 - n_2) &= p_1 - n_1 - p_2 + n_2 \\
+&= p_1 + n_2 - n_1 - p_2 \\
+&= (p_1 + n_2) - (n_1 + p_2).
 \end{aligned}
 $$
+
+This identity is exactly what's necessary to implement subtraction in Agda:
 
 ```agda
   _-_ : ℤ → ℤ → ℤ
@@ -1371,15 +1374,20 @@ $$
   infixl 5 _-_
 ```
 
+Finally we come to multiplication, which continues to be implemented by way of
+straightforward algebraic manipulation. This time we need to multiply two
+binomials, which we can do by distributing our multiplication across addition
+twice. In symbols, the relevant equation is:
+
 $$
 \begin{aligned}
 (p_1 - n_1) \times (p_2 - n_2) &= p_1 p_2 - p_1 n_2 - n_1 p_2 + n_1 n_2  \\
 &= p_1 p_2 + n_1 n_2 - p_1 n_2 - n_1 p_2 \\
-&= (p_1 p_2 + n_1 n_2) - (p_1 n_2 + n_1 p_2)
+&= (p_1 p_2 + n_1 n_2) - (p_1 n_2 + n_1 p_2).
 \end{aligned}
 $$
 
-
+Again, in Agda:
 
 ```agda
   _*_ : ℤ → ℤ → ℤ
@@ -1391,28 +1399,53 @@ $$
   infixl 6 _*_
 ```
 
+While each and every one of our operations here do in fact work, there is
+nevertheless something dissatisfying about them---namely, our requirement that
+each of `def:_+_`, `def:_-_`, and `def:_*_` end in a call to `def:normalize`.
+This is by no means the end of the world, but it is *inelegant.* Ideally, we
+would like each of these elementary operations to just get the right answer,
+without needing to run a final pass over each result.
+
+In many ways, what we have built with our difference integers comes from having
+"computer science brain" as opposed to "math brain." We built something that
+gets the right answer, but does it by way of an intermediary computation which
+doesn't correspond to anything in the problem domain. There are all these calls
+to `def:normalize`, but it's unclear what exactly `def:normalize` *actually
+means*--as opposed to what it *computes.*
+
+Where this problem will really bite us is when we'd like to start doing proofs.
+What we'd really like to be able to say is that "these two numbers are the
+same," but, given our implementation, all we can say is "these two numbers are
+the same *after a call to* `def:normalize`." It is possible to work around this
+problem, as we will see in @sec:setoids, but the solution is messier than the
+problem, and is best avoided whenever we are able.
+
+The crux of the matter is that we know what sorts of rules addition, subtraction
+and multiplication ought to abide by, but it's much less clear what we should
+expect of `def:normalize`. This function is a computational crutch---nothing
+more, and nothing less. If we rewind to the point at which we introduced
+`def:normalize`, we realize that this crutch was designed to work around the
+problem that there are non-unique representations for each number. If we could
+fix that problem directly, we could avoid `def:normalize` and all the issues
+that arise because of it.
+
+
+## Unique Integer Representations
+
+The important takeaway from our last two wrong turns is that we should strive
+for unique representations of our data whenever possible.
+
+Let's take one last misstep in attempting to model the integers before we get to
+the right tack. Our difference integers went wrong because they were built from
+two different naturals, which we implicitly subtracted. Perhaps we were on the
+right track using naturals, and would be more successful if we had only one at a
+time.
+
+So in this attempt, we will again reuse the natural numbers, but now build
+integers merely by tagging whether that natural is postive or negative:
+
 ```agda
-  open import Relation.Binary.PropositionalEquality
-
-  _ : mkℤ 6 1 * mkℤ 2 5 ≡ mkℤ 0 15
-  _ = refl
-
-```
-
-
-
-
-
-The important takeaway from this wrong turn is to strive for unique
-representations of data whenever possible.
-
-Our first attempt doesn't work. Let's take another misstep to see what else can
-go wrong when trying to build the integers. Maybe this time we can reuse the
-natural numbers, and build integers merely by determining whether the natural is
-postive or negative:
-
-```agda
-module Naive-Integers₂ where
+module Misstep-Integers₃ where
   open import Data.Nat
 
   data ℤ : Set where
@@ -1423,7 +1456,7 @@ module Naive-Integers₂ where
 This approach is much more satisfying than our previous attempt; it allows us to
 reuse the machinery we wrote for natural numbers, and requires us only to wrap
 them with a tag. The syntax is a little weird, but recall that the underscores
-correspond to syntactic "holes," meaning the following are all acceptable
+correspond to syntactic "holes," meaning the following are both acceptable
 integers:
 
 ```agda
@@ -1434,12 +1467,14 @@ integers:
   _ = + 6
 ```
 
-Note that the spaces separating `-` from `2`, and `+` from `6` are *necessary.*
-Agda will complain very loudly, and rather incoherently, if you forget them.
+Note that the spaces separating `ctor:-` from `2`, and `ctor:+` from `6` are
+*necessary.* Agda will complain very loudly---and rather incoherently---if you
+forget them.
 
 While our second approach dramatically improves on the syntax of integers and
-eliminates most problems from `Naive-Integers₁`, there is still one small
-issue---there are now two (and exactly two) representations of zero:
+eliminates most problems from `module:Misstep-Integers₂`, there is still one
+small issue: there is still a non-unique representation for zero, as we can
+encode it as being either positivr or negative:
 
 ```agda
   _ : ℤ
@@ -1457,13 +1492,15 @@ fact that the two zeroes are different encodings of the same thing. Such a thing
 can work, but it's inelegant and pushes our poor decisions down the line to
 every subsequent user of our numbers.
 
-There really is no good solution here, so we must conclude that our second
-attempt at defining the integers is also flawed. However, it points us in the
-right direction. Really, the only problem here is our *interpretation of the
-syntax.* This brings us to our third, and final implementation for the integers:
+There really is no good solution here, so we must conclude that this attempt is
+flawed too. However, it points us in the right direction.  Really, the only
+problem here is our *interpretation of the syntax.* Recall that the symbols
+induced by constructors are *just names,* and so we can rename our constructors
+in order to change their semantics.
+
+This brings us to our and final (and correct) implementation for the integers:
 
 ```agda
--- TODO(sandy): naive impl; indicate that; show the pain
 module Sandbox-Integers where
   import Data.Nat as ℕ
   open ℕ using (ℕ)
@@ -1473,11 +1510,21 @@ module Sandbox-Integers where
     -[1+_] : ℕ → ℤ
 ```
 
+
+Hidden
+
+:   ```agda
+  -- fix indentation
+    ```
+
+
 You'll notice this definition of `type:ℤ` is identical to the one from
-`module:Naive-Integers₂`; the only difference is that we've renamed `ctor:-_` to
-`ctor:-[1+_]`. This new name suggests the numbers are one "more negative" than
-the wrapped natural would otherwise indicate. We can then name three
-particularly interesting integers:
+`module:Naive-Integers₂`; the only difference being that we've renamed `ctor:-_`
+to `ctor:-[1+_]`. This new name suggests that `bind:n:-[1+ n ]` corresponds to
+the number $-(1+n) = -n - 1$. By adding this -1 to all negative numbers, we
+have removed the possibility of a negative zero.
+
+Given this machinery, we can now name three particularly interesting integers:
 
 ```agda
   0ℤ : ℤ
@@ -1490,10 +1537,9 @@ particularly interesting integers:
   -1ℤ = -[1+ 0 ]
 ```
 
-The constructed form of `-1ℤ` is a little wordy, but successfully eliminates the
-"double zero" problem we had before. Of course, we'd still like our `def:suc` and
-`def:pred` functions that we postulated our first time around, and we can now
-articulate these as computations:
+Of course, we'd still like our `def:suc` and `def:pred` functions that we
+postulated our first time around. The constructors are already decided on our
+behalf, so we'll have to settle for functions instead:
 
 ```agda
   suc : ℤ → ℤ
@@ -1513,6 +1559,9 @@ define `def:pred` which makes its argument more negative:
   pred -[1+ x ]     = -[1+ ℕ.suc x ]
 ```
 
+
+## Pattern Synonyms
+
 It might be desirable to negate an integer; turning it negative if it's
 positive, and vice versa. `def:-_` is a natural name for this operation, but its
 implementation is not particularly natural:
@@ -1524,27 +1573,43 @@ implementation is not particularly natural:
   -⅋ -[1+ x ]     = + ℕ.suc x
 ```
 
-When converting back and forth from positive to negative, there's this annoying
-`ctor:ℕ.suc` that we need to be careful to not forget about. This annoyance is an
-artifact of the encoding we chose; which has the benefit of having unique
-representations of all numbers, at the cost of not being *symmetric* in how it
-treats positive and negative numbers. To work around this problem, Agda has
-support for writing custom patterns, that is, other ways of deconstructing data.
+When converting back and forth from positive to negative, there's an annoying
+`ctor:ℕ.suc` that we need to be careful to not forget. This irritant is an
+artifact of our encoding. We now have the benefit of unique representations for
+all numbers, but at the cost of the definition not being *symmetric* between
+positive and negative numbers.
 
-We can define these pattern synonyms via the `keyword:pattern` keyword, and give a
-rewrite rule with the desired name of the pattern on the left, and what it
-should expand to on the right:
+Thankfully, Agda has a feature that can help us work around this problem.
+*Pattern synonyms* allow us to define new constructor syntax for types. While
+`type:ℤ` is and always will be made up of `ctor:+_` and `ctor:-[1+_]`, we can
+use pattern synonyms to induce other ways of thinking about our data.
+
+For example, it would be nice if we could also talk about `ctor:+[1+_]`. This
+doesn't give us any new power, as it's always equivalent to `bind:x:+ (ℕ.suc
+x)`. Nevertheless, our definition of `def:-⅋_` above *does* include a `bind:x:+
+(ℕ.suc x)` case, so this pattern does seem like it might be useful.
+
+We can define a pattern synonym with the `keyword:pattern` keyword. Patterns
+look exactly like function definitions, except that they build (red) constructors
+rather than (blue) definitions.
 
 ```agda
-  pattern +0        = + 0
   pattern +[1+_] n  = + (ℕ.suc n)
 ```
 
-These two patterns give us symmetry when working with integers. While before we
-had to pattern match into two cases, `ctor:+_` and `ctor:-[1+_]`, we can now
-instead choose to match into *three* cases: `ctor:+0`, `ctor:+[1+_]` and
-`ctor:-[1+_]`. We can rewrite the `-_` function with this new capability, which
-provides a significantly more elegant implementation:
+Let's also define a pattern for zero:
+
+```agda
+  pattern +0 = + ℕ.zero
+```
+
+These two patterns give us the option to define functions symmetrically with
+respect to the sign of an integer. Where before in `def:-⅋_` we had to pattern
+match on two cases, `ctor:+_` and `ctor:-[1+_]`, we can now instead choose to
+match into *three* cases: `ctor:+0`, `ctor:+[1+_]` and `ctor:-[1+_]`.
+
+Let's use our new patterns to rewrite `def:-⅋_`, leading to a significantly more
+elegant implementation:
 
 ```agda
   -_ : ℤ → ℤ
@@ -1552,6 +1617,8 @@ provides a significantly more elegant implementation:
   - +[1+ x ]  = -[1+ x ]
   - -[1+ x ]  = +[1+ x ]
 ```
+
+
 
 Finally, the moment we've all been waiting for; it's time to implement addition
 over integers. Doing so is a particularly finicky thing---there are lots of

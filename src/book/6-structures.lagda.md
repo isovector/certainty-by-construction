@@ -987,7 +987,7 @@ Rather than fire off at full speed down that path, let's instead rephrase the
 definition of a monoid so as to not require full funext.
 
 
-## Setoids
+## Setoids {#sec:setoids}
 
 Returning to our definition of `type:Monoid`, it's rather unclear where exactly
 things have gone wrong. Nowhere in the definition do we seem to use
