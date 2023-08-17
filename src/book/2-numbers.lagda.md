@@ -1187,53 +1187,71 @@ instead!
 
 By this point, you should be starting to get a good handle on the basics of
 Agda---both syntactically, as well as how we think about modeling and solving
-problems.
-In the next section we will tackle the integers, which have much more
-interesting mathematical structure, and subsequently, present many more
-challenges.
+problems. Let's therefore ramp up the difficulty and put that understanding to
+the test.
 
 
 ## Integers
 
-The integers extend the natural numbers by reflecting them onto the negative
-side of the axis as well. Our number line now goes off to infinity in two
-directions, towards infinity and towards negative infinity. Some of the integers
-then, are $\dots, -3, -2, -1, 0, 1, \dots$. We use the blackboard bold notation
-`type:ℤ` to represent the set of integers, which might seem like a strange
-choice until you learn the German word for "number" is *Zahl.*
+In this section we will tackle the integers, which have much more
+interesting mathematical structure than the naturals, and subsequently, present
+many more challenges.
 
-Mathematically, we say the integers are an *extension* of the natural numbers.
-That is, every natural number can be thought of as an integer, but there are
-some (infinitely many) integers that do not correspond to any natural. When
-modeling this problem in Agda, it would be nice if we could reuse the machinery
-we just built for natural numbers, rather than needing to build everything again
-from scratch. Before building integers the right way, we will first take an
-intentional wrong turn, to clarify some issues around data modeling in Agda.
+The integers extend the natural numbers by reflecting themselves onto the
+negative side of the axis. The number line now goes off to infinity in two
+directions simultaneously, both towards infinity and towards *negative*
+infinity.
 
-Let's put our misstep in a new module so as to not confuse ourselves when we
-"rollback" the idea. By analogy with `type:ℕ`, which contains `ctor:zero` and
-`ctor:suc`, perhaps `type:ℤ` also has a constructor `pred` which we interpret as
-"subtracting one:"
+Some of the integers, are $\dots, -1000, \dots, -2, -1, 0, 1, \dots, 47, \dots$,
+but of course, there are many, many more. The set of integers is often written
+in blackboard bold, with the symbol `type:ℤ`, input as [`bZ`](AgdaMode).
+`type:ℤ` might seem like a strange choice for the integers, but it makes much
+more sense in German, where the word for "number" is *Zahl.*
+
+Mathematically, the integers are an *extension* of the natural numbers. That is,
+every natural number can be thought of as an integer, but there are some
+(infinitely many) integers that do not correspond to any natural. When modeling
+this problem in Agda, it would be nice if we could reuse the machinery we just
+built for natural numbers, rather than needing to build everything again from
+scratch. But before building integers the right way, we will first take an
+intentional wrong turn, in order to highlight some issues when data modeling in
+Agda.
+
+Rather than pollute our global module with this intentional dead-end, we'll
+start a new module which we can later use to "rollback" the idea. By analogy
+with `type:ℕ`, which contains `ctor:zero` and `ctor:suc`, perhaps `type:ℤ` also
+has a constructor `ctor:pred` which we will interpret as "one less than":
 
 ```agda
-module Naive-Integers₁ where
+module Misstep-Integers₁ where
   data ℤ : Set where
     zero  : ℤ
     suc   : ℤ → ℤ
     pred  : ℤ → ℤ
 ```
 
-The problem with this approach, is that numbers no longer have a unique
-representation. For example, there are now infinitely many ways of representing
-`ctor:zero`, the first three of which are:
 
-* `ctor:zero`
-* `ctor:pred (suc zero)`
-* `ctor:suc (pred zero)`
+Hidden
 
-Recall that constructors are always distinct from one another, and furthermore,
-that they never compute to anything other than themselves. We could plausibly
-try to fix this problem by writing a function `normalize`:
+:   ```agda
+  -- fix expr
+    ```
+
+Perhaps we could make an honest go with this definition for `type:ℤ`, but it has
+a major problem---namely, that numbers no longer have a unique representation.
+For example, there are now infinitely many ways of representing the number zero,
+the first five of which are:
+
+* `expr:zero`
+* `expr:pred (suc zero)`
+* `expr:suc (pred zero)`
+* `expr:pred (suc (pred (suc zero)))`
+
+This is not just a problem for zero; in fact, every number has infinitely many
+encodings in this definition of `type:ℤ`. We could plausibly try to fix this
+problem by writing a function `def:normalize`, whose job is it is to cancel out
+`ctor:suc`s with `ctor:pred`s, and vice versa. An honest attempt at such a
+function might look like this:
 
 ```agda
   normalize : ℤ → ℤ
@@ -1243,15 +1261,77 @@ try to fix this problem by writing a function `normalize`:
   normalize (suc (pred x))   = normalize x
   normalize (pred zero)      = pred zero
   normalize (pred (suc x))   = normalize x
-  normalize (pred (pred x))  = pred (normalize x)
+  normalize (pred (pred x))  = pred (normalize (pred x))
 ```
 
-which attempts to recursively "cancel out" subsequent applications of
-`ctor:pred` and `ctor:suc`. However, it's unclear prima facie whether this
-function correctly normalizes all integers (it doesn't,) and, even if it did,
-the resulting ergonomics would be too atrocious to use in the real world. The
-important takeaway from this wrong turn is to strive for unique representations
-of data whenever possible.
+It's unclear prima facie whether this function correctly normalizes all
+integers. As it happens, it doesn't:
+
+```agda
+  module Counterexample where
+    open import Relation.Binary.PropositionalEquality
+
+    _ : normalize (suc (suc (pred (pred zero)))) ≡ suc (pred zero)
+    _ = refl
+```
+
+I'm sure there is a way to make `def:normalize` work correctly, but I suspect
+that the resulting ergonomics would be too atrocious to use in the real world.
+The problem seems to be that we can't be sure that the `ctor:suc`s and
+`ctor:pred`s are beside one another in order to cancel out. Perhaps we can try a
+different type to model integers which doesn't have this limitation.
+
+Instead, this time let's see what happens if we model integers as a pair of two
+natural numbers---one for the positive count, and another for the negative
+count. The actual integer in question in thus the difference between these two
+naturals.
+
+
+```agda
+module Misstep-Integers₂ where
+  open import Data.Nat
+    using (ℕ; zero; suc; _+_; _*_)
+
+  record ℤ : Set where
+    constructor mkℤ
+    field
+      pos : ℕ
+      neg : ℕ
+```
+
+Hidden
+
+:   ```agda
+  -- fix expr
+    ```
+
+This new definition of `type:ℤ` also has the problem that there are infinitely
+many representations for each number, but we no longer need to worry about the
+interleaving problem. To illustrate this, the first five representations of zero
+are now:
+
+* `expr:mkℤ 0 0`
+* `expr:mkℤ 1 1`
+* `expr:mkℤ 2 2`
+* `expr:mkℤ 3 3`
+* `expr:mkℤ 4 4`
+
+Because the positive and negative sides are tracked independently, we can now
+write `def:normalize` and be confident that it works as expected:
+
+```agda
+  normalize : ℤ → ℤ
+  normalize (mkℤ zero neg)             = mkℤ zero neg
+  normalize (mkℤ (suc pos) zero)       = mkℤ (suc pos) zero
+  normalize (mkℤ (suc pos) (suc neg))  = normalize (mkℤ pos neg)
+```
+
+
+
+
+
+The important takeaway from this wrong turn is to strive for unique
+representations of data whenever possible.
 
 Our first attempt doesn't work. Let's take another misstep to see what else can
 go wrong when trying to build the integers. Maybe this time we can reuse the
