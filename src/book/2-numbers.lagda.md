@@ -133,7 +133,7 @@ Hidden
 
 
 ```agda
-module Naturals where
+module Definition-Naturals where
   data ℕ : Set where
     zero  : ℕ
     suc   : ℕ → ℕ  -- ! 1
@@ -215,7 +215,17 @@ arguments, and we will often use this capability moving forwards.
 
 ## Playing with Naturals
 
-Let's return now to our discussion of the naturals. By repeated application of
+Let's return now to our discussion of the naturals. Since we'd like to reuse the
+things we build in future chapters, let's first import the natural numbers from
+the standard library.
+
+```agda
+module Sandbox-Naturals where
+  open import Data.Nat
+    using (ℕ; zero; suc)
+```
+
+By repeated application of
 `ctor:suc`, we can build an infinite tower of natural numbers, the first four of
 which are built like this:
 
@@ -969,7 +979,7 @@ program:
 
 ```info
 Termination checking failed for the following functions:
-  Naturals.Example-Silly.even?'
+  Sandbox-Naturals.Example-Silly.even?'
 Problematic calls:
   even?' (suc n)
 ```
@@ -1130,9 +1140,7 @@ identities are all about when are two expressions equal---and our Agda programs
 really and truly are defined in terms of *equations.*
 
 
-
-
-## Semi-subtraction
+## Semi-subtraction {#sec:monus}
 
 The natural numbers don't support subtraction, because we might try to take too
 much away, being forced to subtract what we don't have. Recall that there is no
@@ -1619,8 +1627,6 @@ elegant implementation:
   - -[1+ x ]  = +[1+ x ]
 ```
 
-
-
 Finally, the moment we've all been waiting for; it's time to implement addition
 over integers. Doing so is a particularly finicky thing---there are lots of
 ways in which positive and negative integers can interact! Fortunately, a lot of
@@ -1694,15 +1700,27 @@ duplicating all of that same effort in every subsequent proof. A better
 technique is to separate out the logic for subtraction of natural numbers into
 its own function:
 
+SPLICE ME
+
+While we could dive immediately into addition over the integers, let's hold back
+and build up some helper machinery. Recall in @sec:monus when we implemented
+the monus operator, which performed truncated subtraction of natural numbers.
+The only reason it was required to truncate results was that we didn't have a
+satisfactory type in which we could encode the result if it went negative. With
+the introduction of `type:ℤ`, we now have room for all of those negatives. Thus,
+we can implement a version of subtraction whose inputs are the naturals, but
+whose output is an integer. We'll call this operation `def:_⊖_`, input like
+you'd expect as [`o--`](AgdaMode)
+
 ```agda
-  _⊝_ : ℕ.ℕ → ℕ.ℕ → ℤ
-  ℕ.zero   ⊝ ℕ.zero   = +0
-  ℕ.zero   ⊝ ℕ.suc n  = -[1+ n ]
-  ℕ.suc m  ⊝ ℕ.zero   = +[1+ m ]
-  ℕ.suc m  ⊝ ℕ.suc n  = m ⊝ n
+  _⊖_ : ℕ → ℕ → ℤ
+  ℕ.zero   ⊖ ℕ.zero   = +0
+  ℕ.zero   ⊖ ℕ.suc n  = -[1+ n ]
+  ℕ.suc m  ⊖ ℕ.zero   = +[1+ m ]
+  ℕ.suc m  ⊖ ℕ.suc n  = m ⊖ n
 ```
 
-By implementing `def:_+_` in terms of `def:_⊝_`, we can factor out a significant
+By implementing `def:_+_` in terms of `def:_⊖_`, we can factor out a significant
 portion of the logic:
 
 ```agda
@@ -1711,14 +1729,14 @@ portion of the logic:
   -- TODO(sandy): need to rename earlier _+⅋_
   _+_ : ℤ → ℤ → ℤ
   (+ x)     + (+ y)     = + (x ℕ.+ y)
-  (+ x)     + -[1+ y ]  = x ⊝ ℕ.suc y
-  -[1+ x ]  + (+ y)     = y ⊝ ℕ.suc x
+  (+ x)     + -[1+ y ]  = x ⊖ ℕ.suc y
+  -[1+ x ]  + (+ y)     = y ⊖ ℕ.suc x
   -[1+ x ]  + -[1+ y ]  = -[1+ x ℕ.+ ℕ.suc y ]
 ```
 
 This new definition of `def:_+_` is significantly shorter and more regular. As a
 bonus, it shows the addition of positive and negative cases are both calls to
-`def:_⊝_`, albeit with the order of the arguments flipped. This will make our
+`def:_⊖_`, albeit with the order of the arguments flipped. This will make our
 lives significantly easier when we go to prove facts about `def:_+_` in the next
 chapter.
 
@@ -1777,4 +1795,20 @@ many more number systems we could build: the rationals, the reals, the complex
 numbers, to name some famous ones, we will leave it here. Instead, we will turn
 our attention in the next chapter to the notion of proof, and learn how to do
 better than unit tests to show our code works as expected.
+
+```agda
+module Exports where
+  module Naturals where
+    open import Data.Nat
+      using (ℕ; zero; suc; _+_; _*_; _^_; _∸_)
+      public
+    open Sandbox-Naturals
+      using (IsEven; zero-even; suc-suc-even)
+      public
+
+  module Integers where
+    open import Data.Integer
+      using (ℤ; +_; -[1+_]; +[1+_]; +0; -_; _+_; _-_; _*_; _⊖_)
+      public
+```
 
