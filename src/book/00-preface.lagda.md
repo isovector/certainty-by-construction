@@ -1,4 +1,4 @@
-# Preface
+# Preface {.unnumbered}
 
 It was almost ten years ago when I stumbled across the idea that in order to
 truly understand something, one should write themselves a textbook to really

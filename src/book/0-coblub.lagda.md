@@ -1,4 +1,4 @@
- The Co-blub Paradox {#sec:coblub}
+# The Co-blub Paradox {.unnumbered #sec:coblub}
 
 It is widely acknowledged that the languages you speak shape the thoughts you
 can think; while this is true for natural language, it is doubly so in the case
@@ -160,7 +160,7 @@ program is wrong. While it can be tempting to blame the tool, the real fault is
 in the craftsmanship.
 
 
-## A World Without Execution?
+## A World Without Execution? {.unnumbered .unlisted}
 
 It's worth stopping and asking ourselves in what way a non-executable
 programming language might be useful. If the end result of a coding endeavor is
