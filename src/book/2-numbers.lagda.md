@@ -1297,17 +1297,32 @@ natural numbers---one for the positive count, and another for the negative
 count. The actual integer in question in thus the difference between these two
 naturals.
 
+Because we'd like to use the natural numbers, we must import them. But we
+anticipate a problem---addition over both the natural numbers and the integers
+is called `def:_+_`, but in Agda, there can only be one definition in scope with
+a given name. Our solution will be to `keyword:import` `module:Data.Nat`, but
+not to `keyword:open` it:
+
 
 ```agda
 module Misstep-Integers₂ where
-  -- TODO(sandy): describe syntax here
-  open import Data.Nat
-    using (ℕ; zero; suc)
-    renaming
-      ( _+_ to _ℕ+_
-      ; _*_ to _ℕ*_
-      )
+  import Data.Nat as ℕ
+```
 
+This syntax gives us access to all of `module:Data.Nat`, but allows us to
+use `module:ℕ` as the name of the module, rather than typing out
+`module:Data.Nat` every time. However, not every definition in `module:ℕ` will
+conflict with things we'd like to define about the integers, so we can *also*
+`keyword:open` `module:ℕ` in order to bring out the definitions we'd like to use
+unqualified:
+
+```agda
+  open ℕ using (ℕ; zero; suc)
+```
+
+We are now ready to take our second attempt at defining the integers.
+
+```agda
   record ℤ : Set where
     constructor mkℤ
     field
@@ -1356,7 +1371,7 @@ In Agda, this fact looks equivalent, after replacing $a - b$ with
 ```agda
   _+_ : ℤ → ℤ → ℤ
   mkℤ p₁ n₁ + mkℤ p₂ n₂
-    = normalize (mkℤ (p₁ ℕ+ p₂) (n₁ ℕ+ n₂))
+    = normalize (mkℤ (p₁ ℕ.+ p₂) (n₁ ℕ.+ n₂))
 
   infixl 5 _+_
 ```
@@ -1377,7 +1392,7 @@ This identity is exactly what's necessary to implement subtraction in Agda:
 ```agda
   _-_ : ℤ → ℤ → ℤ
   mkℤ p₁ n₁ - mkℤ p₂ n₂
-    = normalize (mkℤ (p₁ ℕ+ n₂) (n₁ ℕ+ p₂))
+    = normalize (mkℤ (p₁ ℕ.+ n₂) (n₁ ℕ.+ p₂))
 
   infixl 5 _-_
 ```
@@ -1401,8 +1416,8 @@ Again, in Agda:
   _*_ : ℤ → ℤ → ℤ
   mkℤ p₁ n₁ * mkℤ p₂ n₂
     = normalize
-        (mkℤ (p₁ ℕ* p₂ ℕ+ n₁ ℕ* n₂)
-             (p₁ ℕ* n₂ ℕ+ p₂ ℕ* n₁))
+        (mkℤ (p₁ ℕ.* p₂ ℕ.+ n₁ ℕ.* n₂)
+             (p₁ ℕ.* n₂ ℕ.+ p₂ ℕ.* n₁))
 
   infixl 6 _*_
 ```
