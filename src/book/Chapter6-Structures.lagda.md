@@ -7,7 +7,7 @@ Hidden
     ```
 
 ```agda
-module Chapter6-structures where
+module Chapter6-Structures where
 
 open import Level
   using (Level)
@@ -525,8 +525,8 @@ Of course, `def:foldableList` is not the only inhabitant of `type:Foldable`.
 `type:BinTree`s, for example, are also foldable:
 
 ```agda
-  import  Chapter4-decidability
-  open Chapter4-decidability.BinaryTrees
+  import  Chapter4-Decidability
+  open Chapter4-Decidability.BinaryTrees
     using (BinTree; leaf; branch; empty)
 
   foldableBinTree : Foldable {lzero} {ℓ₁} lzero BinTree

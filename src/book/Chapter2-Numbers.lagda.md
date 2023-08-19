@@ -16,10 +16,10 @@ Before we start, note that this chapter has prerequisite knowledge from
 @sec:chapter1. And, as always, every new chapter must start a new module:
 
 ```agda
-module Chapter2-numbers where
+module Chapter2-Numbers where
 
 -- Prerequisites for this chapter
-import Chapter1-agda
+import Chapter1-Agda
 ```
 
 As you might expect, Agda already has support for numbers, and thus everything
@@ -269,7 +269,7 @@ We can get access to the booleans by importing them from our exports from
 @sec:chapter1:
 
 ```agda
-  open Chapter1-agda.Exports
+  open Chapter1-Agda.Exports
     using (Bool; true; false)
 ```
 
@@ -955,7 +955,7 @@ constructor corresponding to `ctor:suc`ing twice:
 
 ```agda
   module Example-Silly where
-    open Chapter1-agda.Exports
+    open Chapter1-Agda.Exports
       using (not)
 
     data ℕ' : Set where

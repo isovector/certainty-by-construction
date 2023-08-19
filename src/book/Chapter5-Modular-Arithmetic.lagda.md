@@ -1,7 +1,7 @@
 # Modular Arithmetic
 
 ```agda
-module Chapter5-modarith where
+module Chapter5-Modular-Arithmetic where
 ```
 
 All of the equivalences we have looked at thus far have been combinators on
@@ -230,7 +230,7 @@ via our `module:PreorderReasoning` module from @sec:preorderreasoning.
 
 ```agda
   module ≈-Reasoning where
-    open import Chapter4-relations
+    open import Chapter4-Relations
     open Sandbox-Orderings
 
     ≈-preorder : IsPreorder _≈_

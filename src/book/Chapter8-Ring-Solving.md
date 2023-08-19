@@ -1,7 +1,7 @@
 # Ring Solving
 
 ```agda
-module Chapter7-ring-solving where
+module Chapter8-Ring-Solving where
 
 open import Data.Nat using (ℕ)
 ```
