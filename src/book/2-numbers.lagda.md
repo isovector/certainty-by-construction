@@ -1593,9 +1593,9 @@ Thankfully, Agda has a feature that can help us work around this problem.
 use pattern synonyms to induce other ways of thinking about our data.
 
 For example, it would be nice if we could also talk about `ctor:+[1+_]`. This
-doesn't give us any new power, as it's always equivalent to `bind:x:+ (ℕ.suc
-x)`. Nevertheless, our definition of `def:-⅋_` above *does* include a `bind:x:+
-(ℕ.suc x)` case, so this pattern does seem like it might be useful.
+doesn't give us any new power, as it would always be equivalent to `bind:x:+
+ℕ.suc x`. Nevertheless, our definition of `def:-⅋_` above *does* include a
+`bind:x:+ (ℕ.suc x)` case, so this pattern does seem like it might be useful.
 
 We can define a pattern synonym with the `keyword:pattern` keyword. Patterns
 look exactly like function definitions, except that they build constructors
@@ -1603,7 +1603,7 @@ look exactly like function definitions, except that they build constructors
 function definitions.
 
 ```agda
-  pattern +[1+_] n  = + (ℕ.suc n)
+  pattern +[1+_] n  = + ℕ.suc n
 ```
 
 Let's also define a pattern for zero:
@@ -1627,90 +1627,92 @@ elegant implementation:
   - -[1+ x ]  = +[1+ x ]
 ```
 
-Finally, the moment we've all been waiting for; it's time to implement addition
-over integers. Doing so is a particularly finicky thing---there are lots of
-ways in which positive and negative integers can interact! Fortunately, a lot of
-the work is duplicated by virtue of addition being commutative, that is, the
-answer is the same regardless of whether we write $a + b$ or $b + a$. Therefore,
-we present addition of integers in pairs that are easy to check the equivalence
-of.
+What exactly is going on with these pattern synonyms? We haven't actually
+changed the constructors of `type:ℤ`; merely, we've extended our type with
+different ways of thinking about its construction. Behind the scenes, whats
+really happening when we write `bind:n:+[1+ n ]` is that Agda simply rewrites it
+by the pattern equation---in this case, resulting in `bind:n:+ (ℕ.suc n)`.
+It's nothing magic, but it does a lot in terms of ergonomics.
 
-First, adding zero to anything doesn't change the result:
+When should we use a `keyword:pattern` instead of a function definition? On the
+surface, they might seem quite similar. You could imagine we might define
+`ctor:+[1+_]` not as a pattern, but as a function:
 
-```agda
-  infixl 5 _+⅋_
-  _+⅋_ : ℤ → ℤ → ℤ
-  +0        +⅋ y   = y
-  x         +⅋ +0  = x
+```illegal
+  +[1+_]⅋ : ℕ → ℤ
+  +[1+_]⅋ n = + ℕ.suc n
 ```
 
-Continuing on, we come across the case in which we're adding negative one to
-positive one:
+The problem is such a definition creates `def:+[1+_]` as a function definition,
+and note its blue color. In Agda, we're allowed to do pattern matching only on
+red values, which correspond to constructors and pattern synonyms. On the left
+side of the equality, Agda changes its namespace, and will only recognize known
+red identifiers. Anything it doesn't recognize in this namespace becomes a black
+binding, rather than a reference to a blue function. This is a reasonable
+limitation. In general, function definitions can do arbitrary computation, which
+would obscure---if not render uncomputable---Agda's ability to pattern match on
+the left side of an equality. Thus, blue bindings are strictly disallowed on the
+pattern matching side.
+
+This is the reason behind the existence of pattern synonyms. Pattern definitions
+are required to be made up of only red constructors and black bindings on both
+sides. In doing so, we limit their expressiveness, but *because* of that
+limitation, we have restricted them in such a way as to be usable in a pattern
+context.
+
+As a rule of thumb, you should define a pattern synonym whenever you notice
+yourself frequently using the same series of constructors together.  Pattern
+synonyms are valuable in providing a different lens into how you put your data
+together.
+
+
+## Integer Addition
+
+With a satisfactory definition for the integers, and having completed our
+discussion of pattern synonyms, it is now time to implement addition over
+`type:ℤ`. As usual, we will intentionally go down the wrong (but obvious) path
+in order to help you develop antibodies to antipatterns.
+
+Our particular misstep this time around will be to "bash" our way through the
+definition of addition---that is, match on all three of `ctor:+0`, `ctor:+[1+_]`
+and `ctor:-[1+_]` for both arguments of `def:_+_`. There are a few easy cases,
+like when one side is zero, or when the signs line up on both sides. After
+filling in the obvious details, we are left with:
 
 ```agda
-  +[1+ ℕ.zero ]  +⅋ -[1+ ℕ.zero ] = +0
-  -[1+ ℕ.zero ]  +⅋ +[1+ ℕ.zero ] = +0
+  module Naive-Addition where
+    _+_ : ℤ → ℤ → ℤ
+    +0        + y         = y
+    +[1+ x ]  + +0        = +[1+ x ]
+    +[1+ x ]  + +[1+ y ]  = +[1+ 1 ℕ.+ x ℕ.+ y ]
+    +[1+ x ]  + -[1+ y ]  = {! !}
+    -[1+ x ]  + +0        = -[1+ x ]
+    -[1+ x ]  + +[1+ y ]  = {! !}
+    -[1+ x ]  + -[1+ y ]  = -[1+ 1 ℕ.+ x ℕ.+ y ]
 ```
 
-Otherwise, both arguments are positive or both negative, in which case we just
-add their underlying naturals (being careful to `ctor:ℕ.suc` the result, since we
-have two `1+`s on the left side!)
+It's not clear exactly how to fill in the remaining holes, however. We must
+commit to a constructor of `type:ℤ`, which mathematically means committing to
+the sign of the result---but in both cases, the sign depends on whether `x` or
+`y` is bigger.
 
-```agda
-  +[1+ x ]  +⅋ +[1+ y ]  = +[1+ ℕ.suc (x ℕ.+ y) ]
-  -[1+ x ]  +⅋ -[1+ y ]  = -[1+ ℕ.suc (x ℕ.+ y) ]
-```
+Of course, we could now do a pattern match on each of `x` and `y`, and implement
+integer addition inductively on the size of these natural numbers. That feels
+unsatisfactory for two reasons---the first is that this function is already
+doing a lot, and induction on the naturals feels like a different sort of thing
+than the function is already doing. Our second dissatisfaction here is that the
+two remaining holes are symmetric to one another; since we know that $x + y = y
++ x$, we know that the two holes must be filled in with equivalent
+implementations. Both of these reasons point to the fact that we need a helper
+function.
 
-The next pair of cases is what happens if we are adding a negative one, in which
-case it must cancel out a positive `ctor:ℕ.suc`:
-
-```agda
-  +[1+ ℕ.suc x  ]  +⅋ -[1+ ℕ.zero   ]  = +[1+ x ]
-  -[1+ ℕ.zero   ]  +⅋ +[1+ ℕ.suc y  ]  = +[1+ y ]
-```
-
-Analogously, if we're adding a positive one:
-
-```agda
-  +[1+ ℕ.zero   ]  +⅋ -[1+ ℕ.suc y  ]  = -[1+ y ]
-  -[1+ ℕ.suc x  ]  +⅋ +[1+ ℕ.zero   ]  = -[1+ x ]
-```
-
-The final case, is if we are adding a positive `ctor:ℕ.suc` to a negative
-`ctor:ℕ.suc`, in which case the two cancel each other out and we add the
-remaining terms:
-
-```agda
-  +[1+ ℕ.suc x ]  +⅋ -[1+ ℕ.suc y ]  = +[1+ x ]  +⅋ -[1+ y ]
-  -[1+ ℕ.suc x ]  +⅋ +[1+ ℕ.suc y ]  = -[1+ x ]  +⅋ +[1+ y ]
-```
-
-What a headache! Who knew addition could be this hard? The good news is that I
-didn't have to figure this all out on my own; Agda was extremely helpful. I
-simply wrote the first line, and then thought to myself whether I could solve
-the problem from there. If I could, great! If I couldn't, I asked Agda to split
-one of the variables for me, which generated some new, more specific cases.
-Rinse and repeat until all the holes are filled and everyone is happy.
-
-While this is the most straightforward way to write `def:_+_` it falls somewhat
-flat. The problem is that `def:_+_`, as written, needs to perform significant
-inspection of its arguments in order to compute the result. As a general
-principle, significant inspection is an antipattern, as it will require
-duplicating all of that same effort in every subsequent proof. A better
-technique is to separate out the logic for subtraction of natural numbers into
-its own function:
-
-SPLICE ME
-
-While we could dive immediately into addition over the integers, let's hold back
-and build up some helper machinery. Recall in @sec:monus when we implemented
-the monus operator, which performed truncated subtraction of natural numbers.
-The only reason it was required to truncate results was that we didn't have a
-satisfactory type in which we could encode the result if it went negative. With
-the introduction of `type:ℤ`, we now have room for all of those negatives. Thus,
-we can implement a version of subtraction whose inputs are the naturals, but
-whose output is an integer. We'll call this operation `def:_⊖_`, input like
-you'd expect as [`o--`](AgdaMode)
+Recall in @sec:monus when we implemented the monus operator, which performed
+truncated subtraction of natural numbers. The only reason it was required to
+truncate results was that we didn't have a satisfactory type in which we could
+encode the result if it went negative. With the introduction of `type:ℤ`, we now
+have room for all of those negatives. Thus, we can implement a version of
+subtraction whose inputs are the naturals, but whose output is an integer. We'll
+call this operation `def:_⊖_`, input like you'd expect as [`o--`](AgdaMode)
 
 ```agda
   _⊖_ : ℕ → ℕ → ℤ
@@ -1721,24 +1723,29 @@ you'd expect as [`o--`](AgdaMode)
 ```
 
 By implementing `def:_+_` in terms of `def:_⊖_`, we can factor out a significant
-portion of the logic:
+portion of the logic. Note that all we care about is whether the signs of the
+arguments are the same or different, meaning we can avoid the pattern matches on
+`ctor:+0` and `ctor:+[1+_]`, instead matching only on `ctor:+_`:
 
 ```agda
   infixl 5 _+_
 
-  -- TODO(sandy): need to rename earlier _+⅋_
   _+_ : ℤ → ℤ → ℤ
-  (+ x)     + (+ y)     = + (x ℕ.+ y)
-  (+ x)     + -[1+ y ]  = x ⊖ ℕ.suc y
-  -[1+ x ]  + (+ y)     = y ⊖ ℕ.suc x
+  + x       + + y       = + (x ℕ.+ y)
+  + x       + -[1+ y ]  = x ⊖ ℕ.suc y
+  -[1+ x ]  + + y       = y ⊖ ℕ.suc x
   -[1+ x ]  + -[1+ y ]  = -[1+ x ℕ.+ ℕ.suc y ]
 ```
 
-This new definition of `def:_+_` is significantly shorter and more regular. As a
-bonus, it shows the addition of positive and negative cases are both calls to
-`def:_⊖_`, albeit with the order of the arguments flipped. This will make our
-lives significantly easier when we go to prove facts about `def:_+_` in the next
-chapter.
+This new definition of `def:_+_` shows off the flexibility of Agda's parser.
+Notice how we're working with `ctor:+_` and `def:_+_` simultaneously, and that
+Agda isn't getting confused between the two. In fact, Agda is less confused here
+than we are, as the syntax highlighting on the first line of the definition
+gives us enough to mentally parse what's going on. The blue identifier on the
+left of the equals sign is always the thing being defined, and its arguments
+must always be red constructors or black bindings. Practice your mental parsing
+of these definitions, as they will only get harder as we move deeper into
+abstract mathematics.
 
 Having implemented addition is the hard part. We can implement subtraction
 trivially, via addition of the negative:
@@ -1758,17 +1765,18 @@ zero is zero:
 ```agda
   infixl 6 _*_
   _*_ : ℤ → ℤ → ℤ
-  x * +0             = +0
+  x * +0 = +0
 ```
 
-Multiplication by positive or negative one transfers the sign:
+Multiplication by either 1 or $-1$ merely transfers the sign:
 
 ```agda
-  x * +[1+ ℕ.zero  ]  = x
-  x * -[1+ ℕ.zero  ]  = - x
+  x * +[1+  ℕ.zero ]  = x
+  x * -[1+  ℕ.zero ]  = - x
 ```
 
-and finally, we can perform repeated addition or subtraction:
+and otherwise, multiplication is just can perform repeated addition or
+subtraction on one argument, moving towards zero:
 
 ```agda
   x * +[1+ ℕ.suc y ]  = (+[1+ y ] * x) + x
@@ -1789,12 +1797,23 @@ right answers:
     _ = refl
 ```
 
-This is quite a marvelous achievement. In this chapter we've defined three
-number systems, in order of increasing complexity and challenge. While there are
-many more number systems we could build: the rationals, the reals, the complex
-numbers, to name some famous ones, we will leave it here. Instead, we will turn
-our attention in the next chapter to the notion of proof, and learn how to do
-better than unit tests to show our code works as expected.
+
+## Wrapping Up
+
+Our achievements in this chapter are quite marvelous. Not only have we defined
+the natural numbers and the integers, but we've given their everyday operations,
+and learned a great deal about Agda in the process. Rather famously, in the
+Principia Mathematica, Whitehead and Russell took a whopping 379 pages to prove
+that $1 + 1 = 2$. While we haven't yet *proven* this fact, we are well on our
+way, and will do so in the next chapter when we reflect on the deep nature of
+proof.
+
+In closing, we will provide an `module:Exports` module, which we can use in
+subsequent chapters to get access to parts of Agda's standard library that we
+have defined in these last pages. Because the names of the standard mathematical
+operations shadow one another, we will make two submodules---one for the
+naturals, and another for the integers---allowing our future selves more control
+about what we choose to bring in.
 
 ```agda
 module Exports where
