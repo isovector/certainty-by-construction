@@ -2,8 +2,8 @@
 
 ```agda
 module Example-BinaryTrees where
-  import 4-decidability
-  open 4-decidability.BinaryTrees
+  import Chapter4-decidability
+  open Chapter4-decidability.BinaryTrees
 ```
 
 We now need a fingerprinting function to quotient our trees by. Recall that we'd

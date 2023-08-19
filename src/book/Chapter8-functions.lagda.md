@@ -1,7 +1,7 @@
 # Functions, Big and Small
 
 ```agda
-module 8-functions where
+module Chapter8-functions where
 
 open import Level
   using (Level)
@@ -573,7 +573,7 @@ correspond to functions, exactly which functions are we talking about? The
 indices give us a clue---the input must be parameterized by exactly one of
 `m`, `n`, and the output must be the other. In every day tasks, matrices are
 usually multiplied against column vectors. For example, if we think about a
-2-dimensional space with XY coordinates, the corresponds to a 90 degree
+Chapter2-dimensional space with XY coordinates, the corresponds to a 90 degree
 rotation clockwise:
 
 $$

@@ -1,7 +1,7 @@
 # Introduction to Agda
 
 ```agda
-module 1-agda where
+module Chapter1-agda where
 ```
 
 ```agda
@@ -72,7 +72,7 @@ identifier. In our earlier example, we saw `+-identityʳ` and `+-mono-≤` both
 used as identifiers, but the rabbit hole goes much deeper on what you can get
 away with. Agda's standard library makes heavy use of Unicode characters you
 didn't even know existed, let alone know the names of. Some of the wackier
-identifiers used in the standard library include `0-coprimeTo-m⇒m≡1`, `_⊎-⟶_`
+identifiers used in the standard library include `Chapter0-coprimeTo-m⇒m≡1`, `_⊎-⟶_`
 and `xs↭ys`. The general rule is that any series of characters that are not
 separated by white-space make up a single identifier.
 
@@ -84,7 +84,7 @@ that reverses a linked list. Because we will refine this definition several
 times to showcase Agda's features, we will write each definition in its own
 module. Agda's module system allows us to introduce new lexical scopes on a
 whim. Furthermore, modules can contain other modules. We are still in the
-file-level module `1-agda`, and can begin a new module with the `module`
+file-level module `Chapter1-agda`, and can begin a new module with the `module`
 keyword:
 
 \begin{AgdaAlign}
@@ -477,7 +477,7 @@ Attempting to reload the file will result in an angry response from Agda,
 telling us that `0 ∷→ []` is *not,* in fact, equal to `[]`:
 
 ```error
-1-agda.lagda.md:553,7-11
+Chapter1-agda.lagda.md:553,7-11
 0 ∷→ [] != [] of type List ℕ false
 when checking that the expression refl has type 0 ∷→ [] ≡ []
 ```

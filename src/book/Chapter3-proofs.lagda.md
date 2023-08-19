@@ -7,10 +7,10 @@ Hidden
     ```
 
 ```agda
-module 3-proofs where
+module Chapter3-proofs where
 
 -- Prerequisites for this chapter
-import 2-numbers
+import Chapter2-numbers
 ```
 
 In this chapter we will take our first looks at what constitutes a mathematical
@@ -144,13 +144,13 @@ For further illustration, with a more complicated example, let's bring back our
 `type:IsEven` type from @sec:numbers. First we can import the chapter module:
 
 ```agda
--- open import 2-numbers
+-- open import Chapter2-numbers
 ```
 
 then bring the types from the sandboxed module into scope:
 
 ```agda
-open 2-numbers.Exports.Naturals using (ℕ; IsEven)
+open Chapter2-numbers.Exports.Naturals using (ℕ; IsEven)
 ```
 
 and finally, bring the constructors of those types into scope:
@@ -301,7 +301,7 @@ do, without any further machinery.
 
 ```agda
 module Sandbox-Playground where
-  open 2-numbers.Exports.Naturals
+  open Chapter2-numbers.Exports.Naturals
     using (one; two; three; four; _+_; _*_; _^_)
 ```
 
@@ -695,8 +695,8 @@ invocations. In other words, it's a self-canceling operation. For another
 example we've already run into, `not : Bool → Bool` is also involutive:
 
 ```agda
-  import 1-agda
-  open 1-agda.Booleans
+  import Chapter1-agda
+  open Chapter1-agda.Booleans
 
   not-involutive : (x : Bool) → not (not x) ≡ x
   not-involutive false  = refl

@@ -3,7 +3,7 @@
 ```agda
 {-# OPTIONS --allow-unsolved-metas #-}
 
-module 8-iso where
+module Chapter8-iso where
 
 open import Relation.Binary using (Setoid; _Preserves_⟶_)
 

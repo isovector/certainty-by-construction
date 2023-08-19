@@ -1,7 +1,7 @@
 # Common Properties
 
 ```agda
-module 5-properties where
+module Chapter5-properties where
 
 open import Agda.Primitive
 
@@ -372,7 +372,7 @@ Pulling in a bit of machinery from other chapters, we can construct some
 compelling syntax for showing chains of dominoes. After a bit of ceremony,
 
 ```agda
-  open import 8-iso
+  open import Chapter8-iso
 
   instance
     face-equiv : Equivalent lzero Marking

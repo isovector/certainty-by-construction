@@ -1,5 +1,5 @@
-import 6-structures
-open 6-structures.Sandbox-Monoids
+import Chapter6-structures
+open Chapter6-structures.Sandbox-Monoids
   using (≗-setoid)
 
 _¹ : (s : Setoid c₁ ℓ₁) → s ↔ ≗-setoid ⊤ s

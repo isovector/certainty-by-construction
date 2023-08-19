@@ -2,7 +2,7 @@
 # Setoids
 
 ```agda
-module 6-setoids where
+module Chapter6-setoids where
 
 open import Level using (Level)
   renaming (suc to lsuc; _⊔_ to _⊔l_)

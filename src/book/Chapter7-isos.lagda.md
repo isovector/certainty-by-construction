@@ -2,7 +2,7 @@
 
 ```agda
 {-# OPTIONS --allow-unsolved-metas #-}
-module 7-isos where
+module Chapter7-isos where
 ```
 
 In this chapter we will discuss when are two *types* the same, in essence,

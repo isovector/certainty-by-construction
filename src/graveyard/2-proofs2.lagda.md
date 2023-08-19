@@ -2,7 +2,7 @@
 -- this is in a new module to help agda go fast
 -- undo this before we publish
 {-# OPTIONS --allow-unsolved-metas #-}
-module 2-proofs2 where
+module Chapter2-proofs2 where
 
 open import Relation.Binary.PropositionalEquality
 ```
@@ -11,9 +11,9 @@ open import Relation.Binary.PropositionalEquality
 module Integer-Properties where
   import Data.Nat as ℕ
   import Data.Nat.Properties as ℕ
-  import 2-numbers
-  open 2-numbers.Sandbox-Integers
-  open import 2-proofs
+  import Chapter2-numbers
+  open Chapter2-numbers.Sandbox-Integers
+  open import Chapter2-proofs
   open import case-bash
 
   -‿involutive : (x : ℤ) → - (- x) ≡ x

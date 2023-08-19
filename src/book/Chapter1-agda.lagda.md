@@ -40,7 +40,7 @@ When code is presented in this book, it will be shown with a thick left rule, as
 below:
 
 ```agda
-module 1-agda where
+module Chapter1-agda where
 ```
 
 This one-line example is not merely an illustration to the reader. By virtue of
@@ -55,8 +55,8 @@ The module is Agda's simplest unit of compilation.
 > TODO(sandy): change me when publishing
 
 Every Agda source file must begin with a module declaration which matches the
-name of the file. Since this module is called `module:1-agda`, if you'd like to
-follow along at home, you must save your file as `1-agda.agda`. Failure to do so
+name of the file. Since this module is called `module:Chapter1-agda`, if you'd like to
+follow along at home, you must save your file as `Chapter1-agda.agda`. Failure to do so
 will result in a helpful error message:
 
 ```info
@@ -75,7 +75,7 @@ module example where
   -- This is a comment
 ```
 
-This introduces a new module `module:example` inside of `module:1-agda`. You
+This introduces a new module `module:example` inside of `module:Chapter1-agda`. You
 will notice a lack of curly braces here. Unlike many programming languages, Agda
 doesn't use delimiters to indicate blocks; instead, it uses *significant
 whitespace.* That is, in order for the comment to be inside the module
@@ -168,11 +168,11 @@ inherit the names of all of their parent modules as well. For example, in the
 code block above, we have defined five sub-modules, which have the
 fully-qualified names:
 
-- `module:1-agda.foo`
-- `module:1-agda.foo.bar`
-- `module:1-agda.foo.bar.qux`
-- `module:1-agda.foo.bar.zaz`
-- `module:1-agda.foo.ram`
+- `module:Chapter1-agda.foo`
+- `module:Chapter1-agda.foo.bar`
+- `module:Chapter1-agda.foo.bar.qux`
+- `module:Chapter1-agda.foo.bar.zaz`
+- `module:Chapter1-agda.foo.ram`
 
 The module structure of an Agda program always forms a tree.
 
@@ -221,7 +221,7 @@ module Example-Imports where
 ```
 
 Inside this module we are free to import and define anything we like, without
-fear that it will leak into `module:1-agda` where we will do the majority of our
+fear that it will leak into `module:Chapter1-agda` where we will do the majority of our
 work.
 
 We can import the booleans from the `module:Data.Bool` module as follows:

@@ -2,7 +2,7 @@
 
 ```agda
 {-# OPTIONS --allow-unsolved-metas #-}
-module 9-posets where
+module Chapter9-posets where
 
 open import Agda.Primitive
 ```
@@ -245,8 +245,8 @@ Once again we can show that 0 is a bottom element, but observe that since there
 is no biggest natural number, there is therefore no top element.
 
 ```agda
-  0-bottom : Bottom _≤ℕ_ 0
-  0-bottom a = z≤n
+  Chapter0-bottom : Bottom _≤ℕ_ 0
+  Chapter0-bottom a = z≤n
 ```
 
 Showing that `_≤ℕ_` forms a poset is only slightly more involved than `_≤B_`;

@@ -3,7 +3,7 @@
 ```agda
 module new-monoid-theorems where
 
-open import 8-structures
+open import Chapter8-structures
 ```
 
 It's time to get a feel for proving things about abstract algebraic structures.
@@ -155,7 +155,7 @@ module _ {c l : Level} {X : Set} {s : Setoid c l} (m : Monoid s) where
     fold f a  ≡⟨ PropEq.cong (fold f) x ⟩
     fold f b  ∎
 
-  open import 8-iso
+  open import Chapter8-iso
   open _↔_
 
   instance

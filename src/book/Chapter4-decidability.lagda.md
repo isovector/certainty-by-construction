@@ -7,7 +7,7 @@ Hidden
     ```
 
 ```agda
-module 4-decidability where
+module Chapter4-decidability where
 ```
 
 In the last chapter, we thoroughly investigated the notion of doing proof in

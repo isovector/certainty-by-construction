@@ -3,7 +3,7 @@
 ```agda
 {-# OPTIONS --allow-unsolved-metas #-}
 
-module 9-countability where
+module Chapter9-countability where
 
 open import Data.Nat hiding (_⊔_)
 ```
@@ -70,7 +70,7 @@ discussion of countability.
 
 ```agda
 open import Level using (Level; _⊔_) renaming (suc to lsuc; zero to lzero)
-open import 8-iso
+open import Chapter8-iso
 
 open import Data.Bool
 open import Data.Sum renaming (map to ⊎-map)

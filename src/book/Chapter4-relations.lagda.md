@@ -7,7 +7,7 @@ Hidden
     ```
 
 ```agda
-module 4-relations where
+module Chapter4-relations where
 ```
 
 -- TODO(sandy): this intro doesn't make much sense anymore

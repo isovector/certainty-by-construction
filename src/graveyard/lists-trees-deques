@@ -1,7 +1,7 @@
 # Data and Types
 
 ```agda
-module 3-types where
+module Chapter3-types where
 ```
 
 ## Data Structures

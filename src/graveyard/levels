@@ -3,7 +3,7 @@
 from https://nextjournal.com/zampino/russell-paradox
 
 ```agda
-module 3-levels where
+module Chapter3-levels where
 
 open import Level
 postulate
