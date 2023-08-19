@@ -16,9 +16,10 @@ Before we start, note that this chapter has prerequisite knowledge from
 @sec:chapter1. And, as always, every new chapter must start a new module:
 
 ```agda
-import 1-agda
-
 module 2-numbers where
+
+-- Prerequisites for this chapter
+import 1-agda
 ```
 
 As you might expect, Agda already has support for numbers, and thus everything
@@ -1836,8 +1837,9 @@ module Exports where
     open import Data.Nat
       using (ℕ; zero; suc; _+_; _*_; _^_; _∸_)
       public
+
     open Sandbox-Naturals
-      using (IsEven; zero-even; suc-suc-even)
+      using (IsEven; zero-even; suc-suc-even; one; two; three; four)
       public
 
   module Integers where

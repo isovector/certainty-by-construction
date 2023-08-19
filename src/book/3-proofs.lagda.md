@@ -8,6 +8,9 @@ Hidden
 
 ```agda
 module 3-proofs where
+
+-- Prerequisites for this chapter
+import 2-numbers
 ```
 
 In this chapter we will take our first looks at what constitutes a mathematical
@@ -141,13 +144,13 @@ For further illustration, with a more complicated example, let's bring back our
 `type:IsEven` type from @sec:numbers. First we can import the chapter module:
 
 ```agda
-open import 2-numbers
+-- open import 2-numbers
 ```
 
 then bring the types from the sandboxed module into scope:
 
 ```agda
-open Naturals using (ℕ; IsEven)
+open 2-numbers.Exports.Naturals using (ℕ; IsEven)
 ```
 
 and finally, bring the constructors of those types into scope:
@@ -298,7 +301,7 @@ do, without any further machinery.
 
 ```agda
 module Sandbox-Playground where
-  open Naturals
+  open 2-numbers.Exports.Naturals
     using (one; two; three; four; _+_; _*_; _^_)
 ```
 
