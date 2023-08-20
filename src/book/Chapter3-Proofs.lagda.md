@@ -515,8 +515,9 @@ zero`, which is trivially solved by `ctor:refl`:
 
 This second goal here is harder, however. Its type `bind:x:suc (x + zero) ≡ suc
 x` has arisen from instantiating the original parameter at `bind:x:suc x`. Thus
-we are trying to show `bind:x:suc x + zero ≡ suc x`, which Agda has reduced by
-noticing the leftmost argument to `def:_+_` is a `ctor:suc` constructor.
+we are trying to show `bind:x:suc x + zero ≡ suc x`, which Agda has reduced to
+`bind:x:suc (x + zero) ≡ suc x` by noticing the leftmost argument to `def:_+_`
+is a `ctor:suc` constructor.
 
 Looking closely, this goal is almost exactly the type of `def:x+0≡x` itself,
 albeit with a `ctor:suc` tacked onto either side. If we were to recurse, we
@@ -537,10 +538,26 @@ At first blush, we are trying to solve the following problem:
       → suc (x + zero) ≡ suc x
 ```
 
-which we read as "for any number `x : ℕ`, we can transform a proof of `x + zero
-≡ x` into a proof of `suc (x + zero) ≡ suc x`." While such a thing is perfectly
-reasonable, it seems to be setting the bar too low. Surely it's the case that we
-could show the more general solution:
+
+Hidden
+
+:   ```agda
+  -- fix indentation for expr
+    ```
+
+
+which we read as "for any number `x :` `type:ℕ`, we can transform a proof of
+`bind:x:x + zero ≡ x` into a proof of `bind:x:suc (x + zero) ≡ suc x`." While
+such a thing is perfectly reasonable, it feels like setting the bar too low.
+Surely we should be able to show the more general solution that:
+
+
+Hidden
+
+:   ```agda
+    -- fix indentation
+    ```
+
 
 ```agda
   postulate
@@ -550,68 +567,94 @@ could show the more general solution:
 ```
 
 
-which we informally ready as "if `x` and `y` are equal, then so too are `suc x`
-and `suc y`." Notice that while `x` was an *explicit* parameter to the previous
-formulation of this idea, we here have made it *implicit.* Since there is no
-arithmetic required, Agda is therefore able to unambiguously determine which two
-things we're trying to show are equal.
+Hidden
 
-Phrased this way, perhaps again our aims are too narrow. Recall that
+:   ```agda
+  -- fix indentation for expr
+    ```
+
+
+read informally as "if `x` and `y` are equal, then so too are `bind:x:suc x` and
+`bind:y:suc y`." Notice that while `x` was an *explicit* parameter to the
+previous formulation of this idea, we here have made it *implicit.* Since there
+is no arithmetic required, Agda is therefore able to unambiguously determine
+which two things we're trying to show are equal. And why do something explicitly
+if the computer can figure it out on our behalf?
+
+Phrased this way, perhaps our goals are still too narrow. Recall that
 propositional equality means "these two values evaluate to identical forms,"
-which is to say that, at the end of the day, they are indistinguishable. And if
-two things are indistinguishable, then there must not be any way that we can
-distinguish between them, including making a function call. Therefore, we can
-make the much stronger claim that "if `x` and `y` are equal, then so too are `f
-x` and `f y` *for any function* `f`!"
+which is to say that, at the end of the day, they are indistinguishable.
 
-This is a property known as *congruence*, which we again shorten to `def:cong` due
-to the frequency with which we will use this technique in the field. The type of
-`def:cong` is rather involved, but most of the work involved is binding the
-relevant variables.
+If two things are indistinguishable, then there must not be any way that we can
+distinguish between them, including looking at the result of function call.
+Therefore, we can make the much stronger claim that "if `x` and `y` are equal,
+then so too are `f x` and `f y` for *any function* `f`!"
+
+Now we really cooking with gas.
+
+This property is known as *congruence*, which again gets shortened to `def:cong`
+due its frequency. The type of `def:cong` is rather involved, but most of the
+work involved is binding the relevant variables.
+
+Hidden
+
+:   ```agda
+    -- fix indentation
+    ```
 
 ```agda
   cong⅋₀
-      : {A B : Set}
-      → {x y : A}
-      → (f : A → B)
-      →    x ≡ y
-      → f  x ≡ f y
+      : {A B : Set}  -- ! 1
+      → {x y : A}    -- ! 2
+      → (f : A → B)  -- ! 3
+      → x ≡ y        -- ! 4
+      → f x ≡ f y    -- ! 5
   cong⅋₀ f x≡y = ?
 ```
 
-Proving `def:cong` is straightforward. We already have a proof that `x ≡ y`. If we
-pattern match on this value, Agda is smart enough to rewrite every `y` in the
-type as `x`. Thus, after a [MakeCase:x≡y](AgdaCmd):
+The proper way to read this type is, from top to bottom:
+
+1. For any types `A` and `B`,
+2. and for any values `x` and `y`, both of type `A` , then
+3. for any function `f : A → B`,
+4. given a proof that `bind:x y:x ≡ y`,
+5. it is the case that `bind:f x y:f x ≡ f y`.
+
+Actually proving `def:cong` is surprisingly straightforward. We already have a
+proof that `bind:x y:x ≡ y`. When we pattern match on this value, Agda is smart enough to
+replace every `y` in scope with `x`, since we have already learned that `x` and
+`y` are exactly the same thing. Thus, after a [MakeCase:x≡y](AgdaCmd):
 
 ```agda
   cong⅋₁
       : {A B : Set}
       → {x y : A}
       → (f : A → B)
-      →    x ≡ y
-      → f  x ≡ f y
+      → x ≡ y
+      → f x ≡ f y
   cong⅋₁ f refl = {! !}
 ```
 
-our new goal has type `f x ≡ f y`, which is trivially a call to `ctor:refl`.
+our new goal has type `bind:f x:f x ≡ f x`, which is filled trivially by a call
+to `ctor:refl`.
 
 ```agda
   cong
       : {A B : Set}
       → {x y : A}
       → (f : A → B)
-      →    x ≡ y
-      → f  x ≡ f y
+      → x ≡ y
+      → f x ≡ f y
   cong f refl = refl
 ```
 
-You'll notice something cool has happened here. When we pattern match on a
-proof, Agda uses the result as evidence, which can help it get unstuck and make
+You'll notice something cool has happened here. When we pattern matched on a
+proof, Agda used the result as evidence, which helped it get unstuck and make
 computational progress. This is an idea we will explore further in
 @sec:dot-patterns.
 
-For now, recall that we were looking for a means of completing the following
-proof:
+Popping the stack, recall that we were looking for a means of completing the
+following proof:
 
 ```agda
   x+0≡x⅋₂ : (x : ℕ) → x + zero ≡ x
@@ -619,15 +662,30 @@ proof:
   x+0≡x⅋₂ (suc x)  = {! !}
 ```
 
-Our new `def:cong` function fits nicely into this hole:
+The hole here has type `bind:x:suc (x + zero) ≡ suc x`, which we can use
+`def:cong` to help with. Congruence requires a function `f` that is on both
+sides of the equality, which in this case means we must use `ctor:suc`.
+Therefore, we can fill our hole with:
 
 ```agda
   x+0≡x⅋₃ : (x : ℕ) → x + zero ≡ x
   x+0≡x⅋₃ zero     = refl
-  x+0≡x⅋₃ (suc x)  = cong suc {! !}
+  x+0≡x⅋₃ (suc x)  = {! cong suc !}
 ```
 
-which [Auto](AgdaCmd) will now happily fill for us using recursion:
+and ask Agda to [Refine](AgdaCmd), which will result in:
+
+```agda
+  x+0≡x⅋₄ : (x : ℕ) → x + zero ≡ x
+  x+0≡x⅋₄ zero     = refl
+  x+0≡x⅋₄ (suc x)  = cong suc {! !}
+```
+
+Notice how Agda has taken our suggestion for the hole, applied it, and left a
+new hole for the remaining argument to `def:cong`. This new hole has type
+`bind:x:x + zero ≡ x`, which is exactly the type of `def:x+0≡x` itself. We can
+ask Agda to fill in the rest of the definition for us by invoking
+[Auto](AgdaCmd):
 
 ```agda
   x+0≡x : (x : ℕ) → x + zero ≡ x
@@ -637,7 +695,8 @@ which [Auto](AgdaCmd) will now happily fill for us using recursion:
 
 Congruence is an excellent tool for doing induction in proofs. You can do
 induction as normal, but the resulting proof from the recursive step is usually
-not quite be what you need. Luckily, the solution is often just a `def:cong` away.
+not quite be what you need. Luckily, the solution is often just a `def:cong`
+away.
 
 
 ## Identities
