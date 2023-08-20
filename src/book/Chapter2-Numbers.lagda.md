@@ -17,10 +17,14 @@ Before we start, note that this chapter has prerequisite knowledge from
 
 ```agda
 module Chapter2-Numbers where
-
--- Prerequisites for this chapter
-import Chapter1-Agda
 ```
+
+Prerequisites
+
+:   ```agda
+import Chapter1-Agda
+    ```
+
 
 As you might expect, Agda already has support for numbers, and thus everything
 we do here is purely to enhance our understanding. That being said, it's

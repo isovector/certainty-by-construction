@@ -8,10 +8,15 @@ Hidden
 
 ```agda
 module Chapter3-Proofs where
-
--- Prerequisites for this chapter
-import Chapter2-Numbers
 ```
+
+
+Prerequisites
+
+:   ```agda
+import Chapter2-Numbers
+    ```
+
 
 In this chapter we will take our first looks at what constitutes a mathematical
 proof, as well as how to articulate proofs in Agda. In the process, we will need
