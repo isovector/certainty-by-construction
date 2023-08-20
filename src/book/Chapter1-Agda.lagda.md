@@ -52,12 +52,10 @@ any code until we've done the `keyword:module` ritual.
 
 The module is Agda's simplest unit of compilation.
 
-> TODO(sandy): change me when publishing
-
 Every Agda source file must begin with a module declaration which matches the
-name of the file. Since this module is called `module:Chapter1-Agda`, if you'd like to
-follow along at home, you must save your file as `Chapter1-Agda.agda`. Failure to do so
-will result in a helpful error message:
+name of the file. Since this module is called `module:Chapter1-Agda`, if you'd
+like to follow along at home, you must save your file as `Chapter1-Agda.agda`.
+Failure to do so will result in a helpful error message:
 
 ```info
 The name of the top level module does not match the file name.
