@@ -1186,7 +1186,7 @@ progress towards evaluating this value. There's simply no way to make any
 reductions until we know what the second argument is!
 
 
-## Stuckness
+## Stuckness {#sec:stuckness}
 
 Terms which are unable to reduce further are called *stuck*, and can make no
 progress in evaluation until something unsticks them. The usual reason something

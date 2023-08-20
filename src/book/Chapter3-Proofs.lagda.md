@@ -247,17 +247,18 @@ second.
 
 You've probably seen the classic "proof" that $1 = 2$. It goes like this:
 
+Let $a = b$, then
+
 $$
-\text{Let }a = b\\
 \begin{aligned}
-a^2 &= ab \\
-a^2 - b^2 &= ab - b² \\
-(a + b)(a - b) &= ab - b² \\
-(a + b)(a - b) &= b(a - b) \\
-a + b &= b \\
-b + b &= b \\
-2b &= b \\
-2 &= 1
+& ab &= a^2 \\
+\therefore \quad &  ab - b^2 &= a^2 - b^2 \\
+& &= (a + b)(a - b) \\
+\therefore \quad & b(a - b) &= (a + b)(a - b) \\
+\therefore \quad & b &= a + b \\
+& &= b + b \\
+& &= 2b \\
+\therefore \quad & 1 &= 2
 \end{aligned}
 $$
 
@@ -281,7 +282,7 @@ $$
 
 Whoops! As you can see, as soon as we manage to prove something false, all bets
 are off. In English, this property is known as the *principle of explosion* in
-English. Although you can also call it *ex falso quodlibet* if you're feeling
+English, but you can also call it *ex falso quodlibet* if you're feeling
 particularly regal. All this means is that, given a proof of false, you can
 subsequently provide a proof of anything. Therefore, contradictions are *really,
 really* bad, and a huge chunk of logical development (including computation
@@ -312,141 +313,173 @@ is better than "perfect."
 
 ## The Equality Type {#sec:propeq}
 
-All of this is fine and dandy, but how do we go about actually building types
-corresponding to mathematical propositions? Usually the technique is to use an
-indexed type, like we did with `type:IsEven`.
+All of this discussion about encoding statements as types is fine and dandy, but
+how do we go about actually *building* these types? Usually the technique is to
+construct an indexed type whose indices constrain what we can do, much like we
+did with `type:IsEven`.
 
-One of the most common mathematical propositions---indeed, often synonymous with
-math in school---is the *equation.* Equality is the proposition that two
-different objects are in fact just one object. There is a wide and raging debate
+One of the most common mathematical statements---indeed, often synonymous with
+math in school---is the *equation.* Equality is the statement that two different
+objects are, and always were, just one object. There is a wide and raging debate
 about exactly what equality *means,* but for the time being we will limit
 ourselves to the case that the two expressions will eventually *evaluate to the
-exact same series of constructors.* This particular notion of equality is known
-as *propositional equality* and is the basic notion of equality in Agda.
+exact same tree of constructors.* This particular notion of equality is known as
+*propositional equality* and is the basic notion of equality in Agda.
+
+As I said, the word "proposition" is extremely overloaded with meanings, and
+this usage has absolutely nothing to do with the idea of *propositions as types*
+discussed earlier. Instead, here and everywhere in the context of Agda,
+*proposition* means "inhabited by at most one value." That is, `type:Bool` is
+not a proposition, because it can be constructed by either of the two booleans.
+On the other hand, `expr:IsEven zero` is a proposition, because its *only* proof
+is `ctor:zero-even`.
 
 We can define propositional equality by making a type for it. The type should
-relate two objects, stating that they are equal, and thus it must be *indexed by
-two values.* These indices correspond to the values being related. In order for
-two things to evaluate to the same constructors, they must have the same type.
-And because we'd like to define propositional equality once and for all, we can
-parameterize the whole thing by the type of things it relates. Solving all these
-constraints simultaneously gives us the following `data` definition.
+relate two objects stating that they are equal. Thus it must be *indexed by
+two values.* These indices correspond to the two values being related. In order
+for two things to evaluate to the same constructors, they must have the same
+type. And because we'd like to define propositional equality once and for all,
+we will parameterize this equality type by the type of things it relates. Solving
+all these constraints simultaneously gives us the following `keyword:data` type:
 
 ```agda
-data _≡_ {A : Set} : A → A → Set where
+module Definition where
+  data _≡_ {A : Set} : A → A → Set where
+    refl : {x : A}
+        → x ≡ x
 ```
 
-The `type:≡` symbol is input via [`==`](AgdaMode).
 
-Remember that the type corresponds to the proposition, while the constructors
-are the primitive ways by which we can prove the proposition. In this case,
-there is only one basic way to show an equality, which is to say, two things are
-equal only if they are the same thing in the first place!
+Hidden
+
+:   ```agda
+  -- fix indentation for expr
+    ```
+
+Recall that the `≡` symbol is input as [`==`](AgdaMode).
+
+The type of `ctor:refl` here, `bind:A:{x : A} → x ≡ x`, says that for any value
+`x` we'd like, we know only that `x` is equal to itself. The name `ctor:refl` is
+short for *reflexivity,* which is technical jargon for the property that *all
+things are equal to themselves.* We shorten reflexivity to `ctor:refl` because
+we end up writing this constructor *a lot.*
+
+That's the type of `ctor:refl`, which happens to be the only constructor of
+this data type. But consider the type `bind:x y:x ≡ y`---it's a statement that
+`x` and `y` in fact evaluate to the same tree of constructors. Whether or not
+this is actually true depends on whether the type is actually inhabited, which
+it is only when `x` and `y` both compute to the same thing. It is only in this
+case that we can convince Agda that `ctor:refl` is an inhabitant, because
+`ctor:refl` *requires* that both of the type indices be `x`.
+
+We'll play with this type momentarily to get a feeling for it. But first we have
+a little more bookkeeping to do. In order to play nicely with standard
+mathematical notation, we'd like `type:_≡_` to bind very loosely, that is to
+say, to have a low precedence. Furthermore, we do not want `type:_≡_` to
+associate at all, so we can use `keyword:infix` without a left or right suffix
+to ensure the syntax behaves as desired.
 
 ```agda
-  refl : {x : A} → x ≡ x
+  infix 4 _≡_
 ```
 
-The type here, `type:{x : A} → x ≡ x` says that for any value `x` we'd like, we know
-that `x` is equal to itself. The constructor is called `ctor:refl`, which is short
-for *reflexivity,* which is the technical jargon for the property that all
-things are equal to themselves. We shorten "reflexivity" because we end up
-writing this constructor *a lot.*
+We have already encountered `type:_≡_` and `ctor:refl` in @sec:chapter1 where we
+called them "unit tests." This was a little white-lie. In fact, what we were
+doing before with our "unit tests" was proposing the equality of two terms, and
+giving a proof of `ctor:refl` to show they were in fact equal.
 
-In order to play nicely with standard mathematical notation, we'd like `type:_≡_` to
-bind very loosely, that is to say, to have a low precedence. Furthermore, we do
-not want `type:_≡_` to associate at all, so we can use `infix` without a left or
-right suffix to prevent this behavior:
-
-```agda
-infix 4 _≡_
-```
-
-We have already encountered `type:_≡_` and `ctor:refl` in @sec:chapter1 where we called
-them "unit tests." This was a little white-lie, about which I am now coming
-clean. In fact, what we were doing before with our "unit tests" was proposing
-the equality of two terms, and giving a proof saying that were already the same
-thing. Because Agda will automatically do as much computation and simplification
-as it can, for any two concrete expressions that are in fact eventually equal,
-Agda will convince itself of this fact. As a practical technique, we often can,
-and do, write little unit tests of this form. But, as we will see in a moment,
-we can use propositional equality to assert much stronger claims than unit tests
+Because Agda will automatically do as much computation and simplification as it
+can, for any two concrete expressions that result in equal constructors, Agda
+will convince itself of this fact. As a practical technique, we often can (and
+do) write little unit tests of this form. But, as we will see in a moment, we
+can use propositional equality to assert much stronger claims than unit tests
 are capable of determining.
 
-Let's play around with our equality type to get a feel for how much work it can
-do, without any further machinery.
+Let's play around with our equality type to get a feel for what it can do.
 
 ```agda
-module Sandbox-Playground where
+module Playground where
+  open import Relation.Binary.PropositionalEquality
+    using (_≡_; refl)
+
   open Chapter2-Numbers.Exports.Naturals
 ```
 
-It's no surprise that Agda can determine the equality of two syntactically
-identical terms:
+We should not be surprised that Agda can determine that two
+syntactically-identical terms are equal:
 
 ```agda
-  3≡3 : suc (suc (suc zero)) ≡ suc (suc (suc zero))
-  3≡3 = refl
+  _ : suc (suc (suc zero)) ≡ suc (suc (suc zero))
+  _ = refl
 ```
 
-Agda will also expand definitions:
+As we saw before, Agda will also expand definitions, meaning we can trivially
+show that:
 
 ```agda
-  three≡3 : three ≡ suc (suc (suc zero))
-  three≡3 = refl
+  _ : three ≡ suc (suc (suc zero))
+  _ = refl
 ```
 
-including if those definitions require computation:
+Agda can also do this if the definitions require computation, as is the case
+for `def:_+_`:
 
 ```agda
-  three≡one+two : three ≡ one + two
-  three≡one+two = refl
+  _ : three ≡ one + two
+  _ = refl
 ```
 
-Each of these examples is of the "unit test" variety. Perhaps you'll be
+Each of these examples is of the "unit test" variety. But perhaps you'll be
 delighted to learn that we can also use propositional equality to automatically
-show some algebraic identities. For example, we'd like to show the following
-fact:
+show some algebraic identities---that is, two mathematical expressions with
+variables that are always equal.
+
+For starters, we'd like to prove the following simple identity:
 
 $$
 0 + x = x
 $$
 
-We can write this proposition as a type rather directly:
+Our familiarity with math notation in situations like these can actually be a
+burden to understanding. While we will readily admit the truth of this
+statement, it's less clear what exactly it's saying, as what variables *are* is
+often fuzzy. I like this example, because working it through helped
+conceptualize things I'd been confused about for decades.
+
+What $0 + x = x$ is really saying is that *for any $x$, it is the case that
+$0 + x = x$.* Mathematicians are infuriatingly implicit about what and when they
+are quantifying over, and a big chunk of internalizing math is just getting a
+feel for how the quantification works.
+
+Phrased in this way, we can think of the identity $0 + x = x$ instead as a
+*function* which takes a parameter `x` and returns a proof that, for that exact
+argument, `bind:x:0 + x ≡ x`. Thus:
 
 ```agda
-  0+x≡x : (x : ℕ) → zero + x ≡ x
+  0+x≡x⅋ : (x : ℕ) → zero + x ≡ x
+  0+x≡x⅋ = ?
 ```
 
 In order to give a proof of this fact, we must bind the parameter on the left
-side of the equals (in fact, we don't even need to give it a name), but `ctor:refl`
-is sufficient on the right side:
+side of the equals (in fact, we don't even need to give it a name), and can
+simply give `ctor:refl` on the right side:
 
 ```agda
+  0+x≡x : (x : ℕ) → zero + x ≡ x
   0+x≡x _ = refl
 ```
 
-There are two equally valid interpretations of `def:0+x≡x`. The first is exactly the
-equation we wrote earlier, namely:
-
-$$
-0 + x = x
-$$
-
-However, you can also train your keen computer-science eye at this and take the
-type of `def:0+x≡x` more literally---that is, as a function. Namely: a function
-which takes some `x` and gives you back a proof that *for that particular `x`*,
-it is the case that $0 + x = x$.
-
-Our examples thus far seem to indicate that `type:_≡_` can automatically show all of
-the equalities we'd like. But this has been a careful ruse on my part.
-Try as we might, however, Agda will refuse to type check the analogous equality
-`def:x+0≡x`:
+Our examples thus far seem to indicate that `type:_≡_` can automatically show
+all of the equalities we'd like. But this is due only to careful planning on my
+part. Try as we might, however, Agda will simply *refuse* to typecheck the
+analogous identity $x + 0 = x$:
 
 ```illegal
   x+0≡x⅋ : (x : ℕ) → x + zero ≡ x
   x+0≡x⅋ _ = refl
 ```
+
+complaining that:
 
 ```info
 x + zero != x of type ℕ
@@ -454,12 +487,16 @@ when checking that the expression refl has type x + zero ≡ x
 ```
 
 Inspecting the error message here is quite informative; Agda tells us that `x +
-zero` is not the same thing as `x`. This should be quite reminiscent of our
-investigations into stuck values in @sec:stuck, which it is. The problem in this
-case is that `x` is stuck and `def:_+_` is defined by induction on its first
-argument. Therefore, `def:_+_` is also stuck, and we are unable to make any progress
-on this equality until we can unstick `x`. Like always, the solution to
-stuckness is pattern matching:
+zero` is not the same thing as `x`. What exactly does it mean by that? In
+@sec:stuckness we discussed what happens when an expression gets stuck. Recall
+that Agda computes by way of matching expressions on which constructors they
+evaluate to. But we defined `def:_+_` by induction on its first argument, and in
+this case, the first argument is simply `x`. Thus the expression `bind:x:x +
+zero` is stuck, which is why Agda can't work whether `ctor:refl` is an
+acceptable constructor to use here.
+
+We can solve this, like most other problems of stuckness, simply by pattern
+matching on the stuck variable:
 
 ```agda
   x+0≡x⅋₀ : (x : ℕ) → x + zero ≡ x
@@ -467,8 +504,8 @@ stuckness is pattern matching:
   x+0≡x⅋₀ (suc x)  = {! !}
 ```
 
-Immediately, Agda gets unstuck, and tells us now the type of the first hole is
-`zero ≡ zero`; which is an easy thing to prove:
+Immediately, Agda gets unstuck. Our first hole here now has type `expr:zero ≡
+zero`, which is trivially solved by `ctor:refl`:
 
 ```agda
   x+0≡x⅋₁ : (x : ℕ) → x + zero ≡ x
@@ -476,16 +513,17 @@ Immediately, Agda gets unstuck, and tells us now the type of the first hole is
   x+0≡x⅋₁ (suc x)  = {! !}
 ```
 
-This second goal here is `suc (x + zero) ≡ suc x`, which has arisen from
-instantiating the original type at `suc x`. Thus we are trying to show `suc x +
-zero ≡ suc x`, which Agda has reduced by noticing the leftmost argument to `def:_+_`
-is a `ctor:suc` constructor.
+This second goal here is harder, however. Its type `bind:x:suc (x + zero) ≡ suc
+x` has arisen from instantiating the original parameter at `bind:x:suc x`. Thus
+we are trying to show `bind:x:suc x + zero ≡ suc x`, which Agda has reduced by
+noticing the leftmost argument to `def:_+_` is a `ctor:suc` constructor.
 
-Looking closely, this goal is almost exactly the type of `x+0≡x` itself, albeit
-with a `ctor:suc` tacked onto either side. If we were to recurse, we could get a
-proof of `x + zero ≡ x`, which then seems plausible that we could massage into
-the right shape. Let's backtrack on our definition of `x+0≡x` for a moment in
-order to work out this problem of fitting a `ctor:suc` into a proof-shaped hole.
+Looking closely, this goal is almost exactly the type of `def:x+0≡x` itself,
+albeit with a `ctor:suc` tacked onto either side. If we were to recurse, we
+could get a proof of `bind:x:x + zero ≡ x`, which then seems plausible that we
+could massage into the right shape. Let's pause on our definition of `def:x+0≡x`
+for a moment, in order to work out this problem of fitting a `ctor:suc` into a
+proof-shaped hole.
 
 
 ## Congruence
