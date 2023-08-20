@@ -699,7 +699,7 @@ not quite be what you need. Luckily, the solution is often just a `def:cong`
 away.
 
 
-## Identities
+## Identity Elements
 
 A common idiom in Agda's standard library are the `-identityˡ` and `-identityʳ`
 functions, which are properties stating a binary operation has left- and right-
