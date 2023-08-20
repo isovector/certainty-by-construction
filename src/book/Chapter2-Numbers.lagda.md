@@ -1,4 +1,4 @@
-# An Exploration of Numbers
+# An Exploration of Numbers {#sec:chapter2}
 
 Hidden
 
@@ -415,7 +415,7 @@ notwithstanding, the terminology itself is good, and so we will sometimes refer
 to recursive steps as "induction" and non-recursive steps as "base cases."
 
 
-## Two Notions of Evenness
+## Two Notions of Evenness {#sec:even}
 
 We have now defined `def:even?` a function which determines whether a given natural
 number is even. A related question is whether we can define a type for *only*

@@ -18,53 +18,58 @@ import Chapter2-Numbers
     ```
 
 
-In this chapter we will take our first looks at what constitutes a mathematical
-proof, as well as how to articulate proofs in Agda. In the process, we will need
-to learn a little more about Agda's execution model and begin exploring the
-exciting world of dependent types.
+My first encounter with mathematical proofs was in a first-year university
+algebra course, where I immediately realized I had no idea what was going on.
+The reasoning that seemed perfectly convincing to me was much less so to
+whomever was in charge of assigning my grade. I didn't do well in that course,
+or any subsequent ones.
 
-My first encounter with proofs was in a first-year university algebra course,
-where I quickly learned I had no idea what a proof was (and had the marks to
-prove it!) A proof is supposed to be a mathematical argument that other
-mathematicians find convincing; my problem was, things that seemed convincing to
-me were inevitably unconvincing to the professor. Perhaps you have encountered
-this same problem. If so, there is good news for you in this chapter---working
-in Agda makes it exceptionally clear what constitutes a proof; either Agda is
-happy with what you've written, or it isn't. In either case, the feedback cycle
-is extremely quick, and it's easy to iterate until you're done.
+The problem was that I didn't know what steps needed to be justified, and which
+could be taken for granted. Thankfully, doing proofs in Agda makes this
+exceptionally clear---either your proof typechecks, or it doesn't. In either
+case, the feedback cycle is extremely quick, and it's easy to iterate until
+you're done.
+
+In this chapter we will take our first looks at what constitutes a proof and see
+how we can articulate them in Agda. In the process, we will need to learn a
+little more about Agda's execution model and begin exploring the exciting world
+of dependent types.
 
 
 ## Constructivism
 
-It is worth noting that the mathematics we will be doing in this book are not
-the "whole story" of mathematics. You see, there are two big camps in the
-mathematics worlds: the *classicists* and the *constructivists.* Much like
-many religious sects, these two groups have much more in common than they have
-distinct. In fact, the only distinction between these two groups of
-truth-seekers is their opinion on the nature of falsities.
+It is worth noting that the mathematics in this book are not the "whole story"
+of the field. You see, there are two camps in the world of math: the
+*classicists* and the *constructivists.* Much like many religious sects, these
+two groups have much more in common than they have distinct. In fact, the only
+distinction between these two groups of truth-seekers is their opinion on the
+nature of falsities.
 
-The classicists believe all mathematical statements are divided into the ones
-which are *true* and the ones which are *false.* There is no middle ground, and
-thus the ones which are not true must certainly be false, and vice versa. It is
-very probable that you, gentle reader, fall into this camp, likely without
-knowing it. Most of the world does.
+The classicists---the vast majority---believe all mathematical statements are
+partitioned those which are *true* those which are *false.* There is simply no
+middle ground. This opinion certainly doesn't sound controversial, but it does
+admit odd tactics for proving things. One common proof technique in the
+classical camp is to show that something *can't not* exist, and therefore
+deducing that it does.
 
-Contrasting with the classicists are the constructivists, who trust their nose
-more than they trust logical arguments. Constructivists aren't happy knowing
-something merely *doesn't not exist;* they'd like to see that thing with their
-own eyes.
+Contrast the classicists with the constructivists, who trust their eyes more
+than they trust logical arguments. Constructivists aren't happy knowing
+something merely doesn't not exist; they'd like to see the thing for themselves.
+Thus, the constructivists insist that a proof actually build the object in
+question, rather than just show it must be there with no clues towards actually
+finding the thing.
 
 In general, there are two ways to mathematically show something exists. The
 first way is to just build the thing, in sense "proof by doing." The other is to
 show that a world without the thing would be meaningless, and thus show its
-existence --- in some sense --- by sheer force of will, because we really
-*don't* want to believe our world is meaningless.
+existence---in some sense---by sheer force of will, because we really *don't*
+want to believe our world is meaningless.
 
 To illustrate this difference, suppose we'd like to prove that there exists a
 prime number greater than 10. Under a classical worldview, a perfectly
 acceptable proof would go something like this:
 
-1. Suppose there does not exist a prime number greater than 10.
+1. Suppose there does not exist any prime number greater than 10.
 2. Therefore, the prime factorization of every number must consist only of 2, 3,
    5, and 7.
 3. If a number $n$ has a prime factor $d$, then $n + 1$ does not have have $d$ as
@@ -84,121 +89,135 @@ Contrast this against a constructive proof of the same proposition:
 4. Therefore, there exists a prime number greater than 10. ∎
 
 Classical arguments are allowed to assume the negation, show that it leads to
-absurdity, and therefore refute the negation. But constructive arguments are
-*required* to build the object in question, and furthermore to take on the
-burden to show that it satisfies the necessary properties.
+absurdity, and therefore refute the original negation. But constructive
+arguments are *required* to build the object in question, and furthermore to
+take on the burden to show that it satisfies the necessary properties. The
+classicists will accept a constructive argument, while the constructivists
+*insist* on one.
 
 Under a computational setting, constructive arguments are much more compelling
 than classical ones. This is because constructive arguments correspond to
 objects we can hold in our hands (or, at least, in memory), while classical
-arguments come from counterfactual observations pointing out that something must
-exist without telling you how to get your hands on such a thing. To put it
-another way, constructive arguments correspond to *algorithms.*
+arguments can come from counterfactual observations. To put it another way,
+constructive arguments correspond directly to *algorithms.*
 
 
-## Propositions as Types
+## Statements are Types; Programs are Proofs
 
-Now that we are familiar with our programming language, let's turn our focus
-towards more mathematical ideas. When most humans think of mathematics, their
-immediate thought is that of numbers. But of course, mathematics is a field
-significantly larger than numbers, and we will not deal with numbers in this
-section.
+Having studied our programming language in @sec:chapter1 and looked at some
+simple mathematical objects in @sec:chapter2, let's now turn our focus towards
+more fundamental mathematical ideas. When most people think of math, their minds
+go immediately to numbers. But of course, mathematics is a field significantly
+larger than numbers, and we will touch upon them only briefly in the remainder
+of this chapter.
 
-But what is mathematics, if not about numbers? I would say it is the process of
-clear, logical deduction around precise ideas. Numbers are one such precise
-idea, but they are not the only one. In fact, mathematics can be split into two
-magisteria: propositions, and proofs of those propositions. Propositions are the
-statements you're claiming to be true, while proofs are the evidence you have
-that the statements *are* true. In mathematics, unlike science, evidence isn't
-just *convincing*---it's necessarily so. A proof of a proposition has no
-wiggle room or space for error; either it is an all-encompassing, argument that
-necessitates belief in the premise, or it is not. There are no half measures in
-belief in mathematics.
+But if numbers are not the focus of mathematics, then what *is*? In the opinion
+of this author, it's the process of clear, logical deduction around precise
+ideas. Numbers are one such precise idea, but they are by no means the only.
+Some common other examples are the booleans, graphs, and geometry. Some less
+examples less often considered math are digital circuits, and computer programs.
+Anything you can define precisely and manipulate symbolically can fall under the
+purview of mathematics when done right.
 
-A corollary of this idea is that two mathematicians can have differing opinions
-on whether a proposition is true, but once they have a proof, they both must
-believe the proposition to be true. Any other result is to not have a proof in
-the first place.
+In math, it's common to differentiate between *statements* and *theorems.*
+Statements are claims you can make, while theorems are claims you can prove. For
+example, it's a perfectly valid statement that $2 = 3$, but such a claim isn't a
+theorem under any any usual definitions for 2, 3, or equality. Occasionally,
+you'll also hear statements called *propositions,* but this word is amazingly
+overloaded, and we will not adopt such usage.
 
-There is an analogy to software here---quite an apt one---that it's easy to
-disbelieve a problem can be solved. That is, of course, until someone hands you
-the algorithm that solves it. The algorithm itself is a proof artifact that
-shows the problem can be solved.
+Of particular interest to us are theorems, which by necessity are made of two
+parts: a statement and a *proof* of that statement. While two mathematicians
+might disagree on whether they think a statement is true, they must both agree a
+theorem be true. That is the nature of a theorem, that it comes with a proof,
+and a proof must be convincing in order to warrant such a name.
+
+There is a very apt analogy to software here. It's very easy to believe a
+problem can't be solved. That is, of course, until someone hands you the
+algorithm that does it. The algorithm itself is a proof artifact that shows the
+problem can be done, and it would be insanity to disagree in the presence of
+such evidence.
 
 It is exactly this analogy that we will exploit for the remainder of this book
-in order to show the relationship between mathematics and programming, and
-furthermore, to help programmers use the tools they already have to start being
-productive in mathematics. But let's make the connection more formal.
+in order to show the relationship between mathematics and programming. In doing
+so, we will help programmers use the tools they already have, in order to to
+start being productive in mathematics. But let's make the connection more
+formal.
 
--- TODO(sandy): what is a proposition
+To be very explicit, our analogy equates *mathematical states* and
+*types.* That is to say, any mathematical statement can be encoding as a type,
+and every type can be interpreted as a mathematical statement. Furthermore,
+every theorem of a statement corresponds to a *program with that type,* and
+every program is a proof of the statement. As an extremely simple example, we
+can say that the type `type:Bool` corresponds to the proposition "there exists a
+boolean." This is not a particularly strong claim.
 
-To be very explicit, our analogy equates *mathematical propositions* and
-*types.* That is to say, any mathematical proposition has an encoding as a type,
-and vice versa. Furthermore, every *proof of a proposition* corresponds to a
-*program with that type*. For example, we can say that the following type:
+Under a constructive lens, we can prove the proposition merely by proving a
+boolean, thus proving at least one exists. Therefore, the term `ctor:true` is a
+proof of `type:Bool`.
 
-```type
-Bool
-```
-
-corresponds to the proposition "there exists a boolean." This is not a
-particularly strong claim. Under a constructive lens, we can prove the
-proposition merely by proving a boolean, thus proving at least one exists.
-
-For further illustration, with a more complicated example, let's bring back our
-`type:IsEven` type from @sec:numbers. First we can import the chapter module:
-
-```agda
--- open import Chapter2-Numbers
-```
-
-then bring the types from the sandboxed module into scope:
+Such a simple example doesn't provide much illumination. Let's try something
+more complicated. Recall our `type:IsEven` type from @sec:even, which we can
+bring back into scope:
 
 ```agda
-open Chapter2-Numbers.Exports.Naturals using (ℕ; IsEven)
+module Example-ProofsAsPrograms where
+  open Chapter2-Numbers.Exports.Naturals
+    using (ℕ; IsEven)
 ```
 
-and finally, bring the constructors of those types into scope:
+Every type forms a module containing its constructors and fields, so we can open
+both of `module:ℕ` and `module:IsEven` to get the relevant constructors out:
 
 ```agda
-open ℕ
-open IsEven
+  open ℕ
+  open IsEven
 ```
 
-We can then ask the question whether zero is an even number by formulating a
-type to that effect:
+We can then form a statement asking whether zero is even by constructing the
+type:
 
 ```agda
-zero-is-even : IsEven zero
+  zero-is-even : IsEven zero
 ```
 
 Of course, zero *is* even, the proof of which we have seen before:
 
 ```agda
-zero-is-even = zero-even
+  zero-is-even = zero-even
 ```
 
-We can also ask whether one is an even number by writing down the type:
+Because we have successfully implemented `def:zero-is-even`, we say that
+`def:zero-is-even` is a theorem, and that it a proof of `expr:IsEven zero`.
+
+To drive the point home, we can also try asking one is an even number:
 
 ```agda
-one-is-even : IsEven (suc zero)
-one-is-even = ?
+  one-is-even : IsEven (suc zero)
+  one-is-even = ?
 ```
 
-One however is not an even number, and thus there is no way to fill this hole.
+However, as we saw in @sec:evens, there is no way to fill this hole. Therefore,
+`def:one-is-even` cannot be implemented, and therefore it is not a
+theorem---even though `expr:IsEven (suc zero)` is a perfect acceptable
+statement.
 
-These two examples illustrate the point. While we can always write down the type
+In the context of values (programs) and types, we will adopt some extra
+terminology. We say that a type is *inhabited* if there exists at least one
+value of that type. Therefore, `type:Bool` and `expr:IsEven zero` are both
+inhabited, while `expr:IsEven (suc zero)` is not.
+
+These examples all illustrate the point: while we can always write down the type
 of something we'd like to prove, we cannot always find a value with that type.
-Therefore, we say that types correspond to propositions, while values are proofs
-of those propositions. In the literature, this concept is known by the name
-*types as propositions,* and, alternatively as the *Curry--Howard
-correspondence.*
+Therefore, we say that types correspond to statements, while values are proofs
+of those statements. In the literature, this concept is known by the name *types
+as propositions,* and as the *Curry--Howard correspondence.*
 
 The Curry--Howard correspondence thus gives us a guiding principle for doing
-constructive mathematics in a programming language. We encode down the problem
-statement as a type, and then we construct a value of that type in order to show
-the truth of the problem statement. Keeping this perspective in mind is the
-secret to success.
+constructive mathematics in a programming language. We "simply" write down the
+problem, encoding the statement as a type, and then we work hard to construct a
+value of that type. In doing so, we show the truth of the original problem
+statement. Keeping this perspective in mind is the secret to success.
 
 
 ## Hard to Prove or Simply False?
@@ -307,7 +326,6 @@ do, without any further machinery.
 ```agda
 module Sandbox-Playground where
   open Chapter2-Numbers.Exports.Naturals
-    using (one; two; three; four; _+_; _*_; _^_)
 ```
 
 It's no surprise that Agda can determine the equality of two syntactically
