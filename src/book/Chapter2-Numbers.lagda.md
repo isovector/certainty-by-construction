@@ -210,7 +210,7 @@ of ints. This is an amazingly restricting limitation.
 Note that in Agda, `keyword:data` types are strictly more powerful than enums,
 because they don't come with this implicit conversion to ints. As a quick
 demonstration, note that `ctor:suc` is apart from `ctor:zero`, but `cotr:suc`
-can accept any `type:ℕ` as an *argument!* While there are only $2^64$ ints,
+can accept any `type:ℕ` as an *argument!* While there are only $2^{64}$ ints,
 there are *infinitely many* `type:ℕ`s, and thus types defined by `keyword:data`
 in Agda must be more powerful than those defined as enums in other languages.
 
@@ -522,13 +522,13 @@ example. Let's begin just with the `data` declaration:
   data IsEven : ℕ → Set where  -- ! 1
 ```
 
-Every type we have seen so far has been of the form `data X : Set`, but at
-[1](Ann) we have `type:ℕ` `→` `type:Set` on the right side of the colon. Reading
-this as a type declaration directly, it says that this type `type:IsEven` we're
-currently defining *is exactly* the function we were looking for earlier---the
-one with type `type:ℕ → Set`. Because of this parameter, we say that
-`type:IsEven` is an *indexed type*, and that the `type:ℕ` in question is its
-index.
+Every type we have seen so far has been of the form `keyword:data` `X :`
+`type:Set`, but at [1](Ann) we have `type:ℕ` `→` `type:Set` on the right side of
+the colon. Reading this as a type declaration directly, it says that this type
+`type:IsEven` we're currently defining *is exactly* the function we were looking
+for earlier---the one with type `type:ℕ → Set`. Because of this parameter, we
+say that `type:IsEven` is an *indexed type*, and that the `type:ℕ` in question
+is its index.
 
 Every constructor of an indexed type must fill-in each index. To a first
 approximation, constructors of an indexed type are *assertions* about the index.
@@ -920,7 +920,7 @@ There is a subtle point to be made about our implementation of `def:_+_`, namely
 that the parentheses are extremely important. Our last line is written as
 `ctor:suc` `x` `def:+` `y` `=` `ctor:suc` `(x` `def:+` `y)`, but if you were to
 omit the parentheses, the last line becomes `ctor:suc` `x` `def:+` `y` `=`
-`ctor:suc` `x` `ctor:+` `y`. Such a statement is unequivocally *true*, but is
+`ctor:suc` `x` `def:+` `y`. Such a statement is unequivocally *true*, but is
 also computationally *unhelpful.* Since both sides of the equation are
 syntactically identical, Agda has no ability to make computational progress by
 rewriting one side as the other. In fact, if such a thing were allowed, it would
@@ -1059,8 +1059,8 @@ of course, we need to add a fixity definition for multiplication to play nicely
 with the addition operator. Since `def:_*_` is just a series of additions (as
 you can see from our implementation,) it makes sense to make multiplication also
 associate left. However, we'd like the expression `bind:x y:y + x * y` to parse
-as `y + (x * y)`, and so we must give `def:_*_` a higher precedence. Thus we
-settle on
+as `bind:x y:y + (x * y)`, and so we must give `def:_*_` a higher precedence.
+Thus we settle on
 
 ```agda
   infixl 7 _*_

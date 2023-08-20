@@ -253,9 +253,9 @@ current environment. Thus, we can rewrite the previous two code blocks as:
   _ = false
 ```
 
-Of course, it's rather annoying to need to `keyword:import` and open a
-`keyword:module` every time we'd like to use it. Thankfully, Agda provides us
-some syntactic sugar here, via `keyword: open import`. Rewriting the code again,
+Of course, it's rather annoying to need to `keyword:import` and `keyword:open` a
+module every time we'd like to use it. Thankfully, Agda provides us some
+syntactic sugar here, via `keyword: open import`. Rewriting the code again,
 we get:
 
 ```agda
@@ -467,11 +467,12 @@ module Booleans where
     true   : Bool
 ```
 
-which simultaneously asserts the three typing judgments `Bool : Set`, `false :
-Bool`, `true : Bool`, and further, states that this is an *exhaustive* list of
-all the booleans. There are, and can be, no others. When written like this, we
-often call `ctor:false` and `ctor:true` the *data constructors* or the
-*introductory forms* of `type:Bool`.
+which simultaneously asserts the three typing judgments `type:Bool` `:`
+`type:Set`, `ctor:false` `:` `type:Bool`, `ctor:true` `:` `type:Bool`, and
+further, states that this is an *exhaustive* list of all the booleans. There
+are, and can be, no others. When written like this, we often call `ctor:false`
+and `ctor:true` the *data constructors* or the *introductory forms* of
+`type:Bool`.
 
 
 ## Your First Function
@@ -522,10 +523,10 @@ replace our definition with:
 ```
 
 You will notice two things have now happened; Agda wrote `x` on the left side of
-the equals sign, and it replaced our `?` with `{! !}`. This latter change is a
-no-op; `?` and `{! !}` are different syntax for the same thing---a hole. As a
-reader playing at home, you will also have noticed Agda's info panel has
-changed, updating our "visible" goal from
+the equals sign, and it replaced our `hole:?` with `hole:{! !}`. This latter
+change is a no-op; `hole:?` and `hole:{! !}` are different syntax for the same
+thing---a hole. As a reader playing at home, you will also have noticed Agda's
+info panel has changed, updating our "visible" goal from
 
 ```info
 ?1 : Bool → Bool
@@ -539,16 +540,16 @@ to
 
 Believe it or not, these changes engendered by invoking [`MakeCase`](AgdaCmd)
 have a lot to teach us about how Agda works. Our first hole, way back at
-[1](Ann) had type `Bool → Bool`, because we had written `not = ?`. But we
+[1](Ann) had type `expr:Bool → Bool`, because we had written `def:not` `=` `hole:?`. But we
 already knew what type `def:not` had, because of the type signature we gave it
-on the line immediately above (`type:Bool → Bool`).
+on the line immediately above (`expr:Bool → Bool`).
 
-After running [`MakeCase`](AgdaCmd) however, our code is now `not x = {! !}`,
-and our hole has changed types, now bearing only `type:Bool`. Somehow we lost
-the `Bool →` part of the type---but where did it go? As it happens, this first
-`Bool →` in the type corresponded to the function's *parameter*. Saying `not :
-Bool → Bool` is the same as saying "`not` is a function that takes a `type:Bool`
-and returns a `type:Bool`."
+After running [`MakeCase`](AgdaCmd) however, our code is now `def:not` `x =`
+`hole:{! !}`, and our hole has changed types, now bearing only `type:Bool`.
+Somehow we lost the `type:Bool` `→` part of the type---but where did it go? As it
+happens, this first `type:Bool` `→` in the type corresponded to the function's
+*parameter*. Saying `def:not` `:` `expr:Bool → Bool` is the same as saying
+"`def:not` is a function that takes a `type:Bool` and returns a `type:Bool`."
 
 We can verify this interpretation by asking Agda another question. By moving
 your cursor over the `hole:{! !}` and running [`TypeContext`](AgdaCmd), Agda
@@ -563,8 +564,8 @@ x : Bool
 We can see now that the hole itself (called `Goal` in the info window) is a
 missing expression whose type should be `type:Bool`. But, more interestingly,
 Agda is also telling us that we now have a variable `x` in scope, whose type
-is `type:Bool`. In order to pull the `Bool →` off of the type signature, we were
-forced to introduce a binding `x` of type `type:Bool`, which corresponds
+is `type:Bool`. In order to pull the `type:Bool` `→` off of the type signature,
+we were forced to introduce a binding `x` of type `type:Bool`, which corresponds
 exactly to `def:not`'s function argument.
 
 There is an important lesson to be learned here, more than just about how Agda's
@@ -615,8 +616,8 @@ The other important point to reflect upon is the *declarative* style that an
 Agda program takes on. Rather than attempting to give an algorithm that
 transforms some bit pattern corresponding to `def:false` into one corresponding
 to `ctor:true`, we simply give a list of definitions and trust the compiler to
-work out the details. It doesn't matter *how* Agda decides to map `not false`
-into `ctor:true`, so long as it manages to!
+work out the details. It doesn't matter *how* Agda decides to map `expr:not
+false` into `ctor:true`, so long as it manages to!
 
 
 ## Normalization
@@ -1394,7 +1395,7 @@ fields out of records. The first is a regular old pattern match:
   first record { proj₁ = proj₁ ; proj₂ = proj₂ } = proj₁
 ```
 
-The syntax here brings pleasure to no one's heart, but it does work. There are
+The syntax here brings pleasure to no ones heart, but it does work. There are
 some things to note. First, I didn't write this definition out by hand. I
 instead wrote down the type, stuck in a hole, and then invoked
 [`MakeCase`](AgdaCmd) twice. Nobody has type to write out this ugly syntax; just
@@ -1482,8 +1483,8 @@ Much nicer, isn't it?
 
 We now have nice syntax for projecting out of records. But can we do anything to
 improve the syntax involved in building them? It would be really nice to be able
-to avoid the `record { proj₁ = ... }` boilerplate every time we wanted to make a
-tuple.
+to avoid the `keyword:record` `{` `field:proj₁` `= ... }` boilerplate every time
+we wanted to make a tuple.
 
 If we don't mind giving a name to our tuple, we can use *copattern* syntax to
 build one. The idea is rather than define the record itself, we need only give
@@ -1526,8 +1527,8 @@ helper function that will clean up the syntax for us.
   _,⅋_  = ?
 ```
 
-The type of `def:_,_` should really be `A → B → A × B`. However, recall that `A`
-and `B` are variables standing in for *whatever type the user wants.*
+The type of `def:_,_` should really be `bind:A B:A → B → A ×⅋ B`. However, recall
+that `A` and `B` are variables standing in for *whatever type the user wants.*
 Unfortunately for us, we don't know what those types are yet, but we need them
 in order to give a proper type to `def:_⅋_`. Since those variables are not in
 scope, we must bind them ourselves.
@@ -1620,10 +1621,11 @@ conventions for the more usual mathematic operators like addition and
 subtraction.
 
 The *associativity* of an operator describes how to insert parentheses into
-repeated applications of the operator. That is, should we parse `x , y , z` as
-`(x , y) , z` or as `x , (y , z)`? The former here is said to be
-*left-associative*, while the latter is, appropriately, *right-associative.* For
-reasons that will make sense later, we'd like `ctor:_,_` to be right-associative.
+repeated applications of the operator. That is, should we parse `x` `ctor:,` `y` `ctor:,` `z` as
+`(x` `ctor:,` `y)` `ctor:,` `z` or as `x` `ctor:,` `(y` `ctor:,` `z)`? The
+former here is said to be *left-associative*, while the latter is,
+appropriately, *right-associative.* For reasons that will make sense later, we'd
+like `ctor:_,_` to be right-associative.
 
 We can tell Agda's parser about our preferences, that `ctor:_,_` be
 right-associative with precedence 4 via the following declaration:
@@ -1644,8 +1646,9 @@ While `ctor:_,_` is the operator for building *values* of tuple types,
 `type:_×_` is the operator for building the tuple type itself. The values and
 their types should be in a one-to-one correspondence. That is to say, if we have
 `a : A`, `b : B` and `c : C`, we'd like that `a` `ctor:,` `b` `ctor:,` `c` have
-type `type:A × B × C`. By this reasoning, must also choose right-associativity
-for `type:_×_`. Traditionally, `type:_×_` is given a precedence of 2.
+type `A` `type:×` `B` `type:×` `C`. By this reasoning, must also choose
+right-associativity for `type:_×_`. Traditionally, `type:_×_` is given a
+precedence of 2.
 
 ```agda
   infixr 2 _×_
@@ -1671,11 +1674,11 @@ and we don't need to worry ourselves about where exactly the parentheses should
 go.
 
 The associativity for `type:_→_`, on the other hand, is to the right. That
-means, given the type `type:A → B → C`, we must read it as `type:A → (B → C)`. A
-literal interpretation of such a thing is a function that takes an `A` argument
-and *returns a function.* That returned function itself takes a `B` argument and
-then returns a `C`. At the end of the day, by the time we get a `C`, the
-function did indeed take two arguments: both an `A` and a `B`.
+means, given the type `bind:A B C:A → B → C`, we must read it as `bind:A B C:A →
+(B → C)`. A literal interpretation of such a thing is a function that takes an
+`A` argument and *returns a function.* That returned function itself takes a `B`
+argument and then returns a `C`. At the end of the day, by the time we get a
+`C`, the function did indeed take two arguments: both an `A` and a `B`.
 
 What's nice about this encoding is that, unlike in most programming languages,
 we are not required to give every argument at once.  In fact, we can
