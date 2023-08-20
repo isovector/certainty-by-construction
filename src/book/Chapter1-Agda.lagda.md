@@ -427,7 +427,7 @@ for the sake of our respective sanities when the types inevitably get hairy.
 
 It's important to note that while types may have many values, every value has
 exactly one type. Since we know that `bar : Foo`, we know for a fact that `bar`
-is NOT of type `Qux` (unless `Foo` and `Qux` happen to be the same type.)
+is *not* of type `Qux` (unless `Foo` and `Qux` happen to be the same type.)
 
 Postulating types and values like we have been is a helpful piece of pedagogy,
 but it's not how things usually get done. Just as Dijkstra popularized the role
@@ -685,7 +685,7 @@ a strange type and a stranger definition. We will work through all the details
 later in @sec:propeq.
 
 The important bits here are only the two expressions on either side of
-`type:_≡_`, namely `not (not false)` and `ctor:false`, which we'd like to show
+`type:_≡_`, namely `expr:not (not false)` and `ctor:false`, which we'd like to show
 normalize to the same form.
 
 Attempting to [`Load`](AgdaCmd) the file at this point will be rather
