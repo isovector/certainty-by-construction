@@ -207,6 +207,10 @@ terminology. We say that a type is *inhabited* if there exists at least one
 value of that type. Therefore, `type:Bool` and `expr:IsEven zero` are both
 inhabited, while `expr:IsEven (suc zero)` is not.
 
+Under a constructive lens, it is exactly those statements for which we have a
+proof that can be said to be true. In other words, truth is synonymous with
+being inhabited.
+
 These examples all illustrate the point: while we can always write down the type
 of something we'd like to prove, we cannot always find a value with that type.
 Therefore, we say that types correspond to statements, while values are proofs
@@ -222,39 +226,88 @@ statement. Keeping this perspective in mind is the secret to success.
 
 ## Hard to Prove or Simply False?
 
+Of course, this abstract discussion around the Curry--Howard isomorphism makes
+the whole business seem much less messy than it is in practice. It's one thing
+to discuss whether a type is inhabited, and a very different thing to actually
+produce a value for a given type. Every example we've seen so far has made the
+job seem trivial, but attempting to produce an inhabitant has driven many to the
+brink of madness.
+
+What's so hard here, you might wonder. The problem is, when you're not making
+much process, it's hard to tell whether you're merely taking the wrong approach,
+or whether the task at hand is *literally impossible.*
+
 Of the absolute utmost importance in mathematics is the *principle of
-consistency.* This is a fancy way of saying "there should be no proof for false
-things." We use math as a tool for exploring truths about platonic abstractions,
-and being able to prove a falsity would be devastating to the entire
-formalization. The problem is that falsities beget falsities; if you find one,
-you can use it to produce another. Mathematicians call this the *principle of
-explosion* in English, or say *ex falso quodlibet* if they're feeling
+consistency.* This is a fancy way of saying "there should be no proof of false
+things." Math is a tool for exploring truths about platonic abstractions, and
+being able to derive a proof of false would be devastating to the entire
+endeavor. The reason we care so much about this is that falsities beget
+falsities. If you ever get your hands on one, you can use it to produce a
+second.
+
+You've probably seen the classic "proof" that $1 = 2$. It goes like this:
+
+$$
+\text{Let }a = b\\
+\begin{aligned}
+a^2 &= ab \\
+a^2 - b^2 &= ab - b² \\
+(a + b)(a - b) &= ab - b² \\
+(a + b)(a - b) &= b(a - b) \\
+a + b &= b \\
+b + b &= b \\
+2b &= b \\
+2 &= 1
+\end{aligned}
+$$
+
+The actual flaw in reasoning here is on line 5, when we cancel $a - b$ from both
+sides of the equation. Recall that $a = b$, so $a - b = 0$, and thus this is an
+implicit division by zero.
+
+To see how we can use one false proof to get another, consider now Pythagoras'
+famous theorem about the side lengths of triangles:
+
+$$
+a^2 + b^2 = c^2
+$$
+
+But since we have already "proven" that $1 = 2$, we can therefore "derive" the
+fact that:
+
+$$
+a + b = c
+$$
+
+Whoops! As you can see, as soon as we manage to prove something false, all bets
+are off. In English, this property is known as the *principle of explosion* in
+English. Although you can also call it *ex falso quodlibet* if you're feeling
 particularly regal. All this means is that, given a proof of false, you can
 subsequently provide a proof of anything. Therefore, contradictions are *really,
 really* bad, and a huge chunk of logical development (including computation
-itself) has arisen from people discovering contradictions arising from less
-rigorous mathematics than we use today.
+itself) has arisen from scholars discovering contradictions in less rigorous
+mathematics than what we use today.
 
 All of this is to say: it's desirable that it be very difficult to prove
 something that is false. From afar, this sounds like a very good and righteous
 desideratum. But when you're deep in the proof mines, having difficulties
 eliciting the sought-after proof, it's often unclear whether you haven't tried
-hard enough or whether the problem is impossible outright. I have spent weeks of
-my life trying to prove false statements without realizing it, and I suspect
-this is a necessary rite of passage.
+hard enough or whether the problem is impossible outright. I myself have spent
+*weeks* of my life trying to prove a false statement without realizing it. I
+suspect this is a necessary rite of passage.
 
 Nevertheless, I hope you spare you from some of the toil spent wasted on a false
 proposition. If you're ever finding a proof to be exceptionally hard, it's
 worth taking some time out to prove the proposition for extremely simple,
-concrete values. If you're working with numbers, see if it holds when everything
-is zero or one. Working through the easiest cases by hand will usually point out
-a fundamental problem if there is one, or might alert you to the fact that you
-haven't yet built enough machinery (that is, library code around your particular
-problem) to make proving things easy.
+concrete values. For example, when you're working with numbers, see if it holds
+when everything is zero or one. Working through the easiest cases by hand will
+usually point out a fundamental problem if there is one, or might alert you to
+the fact that you haven't yet built enough machinery (that is, library code
+around your particular problem) to make proving things easy.
 
 Remember, you can always prove something the stupid way first, and come back
-with a better proof later on if you deem necessary. In proofs as in life, done
-is better than perfect.
+with a better proof later on if you deem necessary. In proofs as in life, "done"
+is better than "perfect."
 
 
 ## The Equality Type {#sec:propeq}
