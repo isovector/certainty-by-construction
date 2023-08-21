@@ -701,12 +701,27 @@ away.
 
 ## Identity Elements
 
-A common idiom in Agda's standard library are the `-identityˡ` and `-identityʳ`
-functions, which are properties stating a binary operation has left- and right-
-identities, respectively. An *identity* is any value which doesn't change the
-result. As we have just now shown, 0 is both a right and left identity for
-addition, because $x + 0 = x$ and $0 + x = x$. In order to get start getting
-familiar with these idioms, we can give new our existing proofs:
+A common algebraic structure is the idea of an *identity element*---annoyingly,
+"identity" in a difference sense than in algebraic identity." An identity
+element is a value which doesn't change the answer when applied as a function
+argument. That's a very abstract sentence, so let's dive into it in more detail.
+
+Consider addition. As we saw in the previous section, whenever you add zero, you
+don't change the result. That is to say that zero is an identity element for the
+addition function. Since $x + 0 = x$, zero is a *right identity* for addition,
+and because $0 + x = x$, zero is a *left identity* too.
+
+Identity values are tied to specific functions. Notice that *multiplication* by
+zero definitely changes the result, and so zero is not an identity for
+multiplication. We do, however, have an identity for multiplication: it's just
+the one instead. Identities are extremely important in algebra, because spotting
+one means we can simplify an expression.
+
+In Agda, proofs about identities are often given standard names, with the
+`-identityˡ` and `-identityʳ` suffixes (input as [`^l`](AgdaMode) and
+[`^r`](AgdaMode) respectively.) We prepend the function name to these, so, the
+proof that 0 is a left identity for `def:_+_` should be named `def:+-identityˡ`.
+Therefore, let's give better names to our functions from earlier:
 
 ```agda
   +-identityˡ : (x : ℕ) → zero + x ≡ x
@@ -716,27 +731,42 @@ familiar with these idioms, we can give new our existing proofs:
   +-identityʳ = x+0≡x
 ```
 
-The superscript `l` and `r` here are input as [`^l`](AgdaMode) and [`^r`](AgdaMode),
-respectively. The attentive reader might question why exactly we need
-`def:+-identityˡ`, since it's fully-normalized definition is just `ctor:refl`, which is
-to say that it's something Agda can work out for itself without explicitly using
-`def:+-identityˡ`. While that is true, it is an *implementation detail.* If we were
-to not expose `def:+-identityˡ`, the user of our proof library would be required to
-understand for themselves exactly how addition is computed, which can be an
-onerous mental burden. Instead, we content ourselves with exposing "trivial"
-proofs like `def:+-identityˡ` with the understanding that it is the *name* of this
-proof that is important, more so than its contents. Throughout your exposure to
-the Agda standard library, you will find many such-named functions, and the
-convention can help you find the lemmas you need without needing to dig deeply
-into the implementation of the mathematical object at study.
+The attentive reader might question why exactly we need `def:+-identityˡ`, since
+it's fully-normalized definition is just `ctor:refl`, which is to say that it's
+something Agda can work out for itself without explicitly using `def:+-identityˡ`.
+
+While that is true, it is an implementation detail. If we were to not expose
+`def:+-identityˡ`, the user of our proof library would be required to understand
+for themselves exactly how addition is implemented. It doesn't seem too onerous,
+but in the wild, we're dealing with much more complicated objects.
+
+Instead, we content ourselves in exposing "trivial" proofs like
+`def:+-identityˡ` with the understanding that it is the *name* of this proof
+that is important. Throughout your exposure to the Agda standard library, you
+will find many such-named functions, and the conventions will help you find the
+theorems you need without needing to dig deeply into the each implementation.
 
 In addition to addition, multiplication also enjoys both left and right
-identities. A good exercise is to find and prove both.
+identities as we have seen. A good exercise is to prove both.
 
 
 Exercise
 
-:   Find and prove a right identity for `def:_*_`:
+:   Prove that $1 \times x = x$
+
+
+Solution
+
+:     ```agda
+  *-identityˡ : (x : ℕ) → one * x ≡ x
+  *-identityˡ zero     = refl
+  *-identityˡ (suc x)  = cong suc (+-identityʳ x)
+    ```
+
+
+Exercise
+
+:   Prove that $x \times 1 = x$
 
 
 Solution
@@ -747,19 +777,16 @@ Solution
   *-identityʳ (suc x)  = cong suc (*-identityʳ x)
     ```
 
+Addition and multiplication aren't the only operations we've seen that have
+identities. Both monus and exponentiation also have identities, but they are not
+two-sided. For example, zero is a *right* identity for monus, but not a left
+identity. In fact, there is no left identity for monus.
 
-Exercise
+```agda
+  ∸-identityʳ : (x : ℕ) → x ∸ 0 ≡ x
+  ∸-identityʳ _ = refl
+```
 
-:   Find and prove a left identity for `def:_*_`:
-
-
-Solution
-
-:     ```agda
-  *-identityˡ : (x : ℕ) → one * x ≡ x
-  *-identityˡ zero     = refl
-  *-identityˡ (suc x)  = cong suc (+-identityʳ x)
-    ```
 
 Exercise
 
