@@ -1,7 +1,7 @@
 # Modular Arithmetic
 
 ```agda
-module Chapter5-Modular-Arithmetic where
+module Chapter6-Modular-Arithmetic where
 ```
 
 All of the equivalences we have looked at thus far have been combinators on

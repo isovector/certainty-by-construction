@@ -2,7 +2,7 @@
 
 ```agda
 {-# OPTIONS --allow-unsolved-metas #-}
-module Chapter7-Isomorphisms where
+module Chapter8-Isomorphisms where
 ```
 
 In this chapter we will discuss when are two *types* the same, in essence,

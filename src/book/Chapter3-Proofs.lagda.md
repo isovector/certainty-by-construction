@@ -780,7 +780,8 @@ Solution
 Addition and multiplication aren't the only operations we've seen that have
 identities. Both monus and exponentiation also have identities, but they are not
 two-sided. For example, zero is a *right* identity for monus, but not a left
-identity. In fact, there is no left identity for monus.
+identity. As it happens, monus does not have a left identity---a fact we will
+prove in @sec:monus-no-left-id.
 
 ```agda
   ∸-identityʳ : (x : ℕ) → x ∸ 0 ≡ x

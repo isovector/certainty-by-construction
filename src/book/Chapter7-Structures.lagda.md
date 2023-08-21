@@ -7,7 +7,7 @@ Hidden
     ```
 
 ```agda
-module Chapter6-Structures where
+module Chapter7-Structures where
 
 open import Level
   using (Level)

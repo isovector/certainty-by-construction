@@ -1,5 +1,16 @@
 # Decidability {#sec:decidability}
 
+
+```agda
+  -- TODO(sandy): fit me in! @sec:monus-no-left-id
+  -- open import Relation.Nullary
+  -- open import Data.Product
+
+  -- ¬∸-identityˡ : ¬ (Σ ℕ λ e → (x : ℕ) → e ∸ x ≡ x)
+  -- ¬∸-identityˡ (e , e-id) with e-id 0 | e-id 1
+  -- ... | refl | ()
+```
+
 Hidden
 
 :   ```agda
