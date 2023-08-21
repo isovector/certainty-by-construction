@@ -14,6 +14,7 @@ module Chapter3-Proofs where
 Prerequisites
 
 :   ```agda
+import Chapter1-Agda
 import Chapter2-Numbers
     ```
 
@@ -620,10 +621,14 @@ The proper way to read this type is, from top to bottom:
 4. given a proof that `bind:x y:x ≡ y`,
 5. it is the case that `bind:f x y:f x ≡ f y`.
 
+Another way of reading the type of congruence is that it allows us to
+"transport" a proof from the input-side of a function over to the output-side.
+
 Actually proving `def:cong` is surprisingly straightforward. We already have a
-proof that `bind:x y:x ≡ y`. When we pattern match on this value, Agda is smart enough to
-replace every `y` in scope with `x`, since we have already learned that `x` and
-`y` are exactly the same thing. Thus, after a [MakeCase:x≡y](AgdaCmd):
+proof that `bind:x y:x ≡ y`. When we pattern match on this value, Agda is smart
+enough to replace every `y` in scope with `x`, since we have already learned
+that `x` and `y` are exactly the same thing. Thus, after a
+[MakeCase:x≡y](AgdaCmd):
 
 ```agda
   cong⅋₁
@@ -647,11 +652,6 @@ to `ctor:refl`.
       → f x ≡ f y
   cong f refl = refl
 ```
-
-You'll notice something cool has happened here. When we pattern matched on a
-proof, Agda used the result as evidence, which helped it get unstuck and make
-computational progress. This is an idea we will explore further in
-@sec:dot-patterns.
 
 Popping the stack, recall that we were looking for a means of completing the
 following proof:
@@ -752,7 +752,7 @@ identities as we have seen. A good exercise is to prove both.
 
 Exercise
 
-:   Prove that $1 \times x = x$
+:   Prove that $1 \times a = a$
 
 
 Solution
@@ -766,7 +766,7 @@ Solution
 
 Exercise
 
-:   Prove that $x \times 1 = x$
+:   Prove that $a \times 1 = a$
 
 
 Solution
@@ -779,21 +779,20 @@ Solution
 
 Addition and multiplication aren't the only operations we've seen that have
 identities. Both monus and exponentiation also have identities, but they are not
-two-sided. For example, zero is a *right* identity for monus, but not a left
-identity. As it happens, monus does not have a left identity---a fact we will
-prove in @sec:monus-no-left-id.
+two-sided. For example, zero is a right identity for monus:
 
 ```agda
   ∸-identityʳ : (x : ℕ) → x ∸ 0 ≡ x
   ∸-identityʳ _ = refl
 ```
 
+but it is not a left identity. As it happens, the monus operation does not have
+a left identity---a fact we will prove in @sec:monus-no-left-id.
+
 
 Exercise
 
-:   Exponentiation doesn't have notions of both left and right identities, but
-    has instead only one of the two. Determine which, and prove it is an
-    identity element.
+:   Find and prove an identity element for exponentiation.
 
 
 Solution
@@ -805,11 +804,35 @@ Solution
     ```
 
 
+Identities are not limited to numeric operations. For example, `ctor:false` is
+both a left and right identity for `def:_∨_`, as we can show:
+
+```agda
+  open Chapter1-Agda.Exports
+    using (Bool; true; false; _∨_)
+
+  ∨-identityˡ : (x : Bool) → false ∨ x ≡ x
+  ∨-identityˡ _ = refl
+
+  ∨-identityʳ : (x : Bool) → x ∨ false ≡ x
+  ∨-identityʳ false  = refl
+  ∨-identityʳ true   = refl
+```
+
+While identity values might seem unexciting and pointless right now, but they
+are an integral part for a rich computational structure that we will study in
+@sec:monoids. For the time being, we will remark only that the discovery of the
+number zero was a marvelous technological achievement in its day.
+
+
 ## Symmetry and Involutivity
 
-Given that we have just proven `one * x ≡ x`, how hard do you think it will be
-to prove `x ≡ one * x`? The obvious idea is to try simply to reuse our
-`*-identityˡ` proof, as in:
+In the previous section, we proved the elementary fact `def:*-identityˡ`,
+stating that $1 \times a = a$. Given that we now have that proof under our
+belts, how challenging do you expect it to be in order to prove $a = 1 \times
+a$?
+
+The obvious idea is to try simply to reuse our `def:*-identityˡ` proof, as in:
 
 ```illegal
   *-identityˡ′⅋ : (x : ℕ) → x ≡ one * x
@@ -819,20 +842,90 @@ to prove `x ≡ one * x`? The obvious idea is to try simply to reuse our
 Unfortunately, Agda is unhappy with this definition, and it complains:
 
 ```info
-x + zero * x != x of type ℕ
+x + 0 * x != x of type ℕ
+when checking that the expression *-identityˡ has type
+(x : ℕ) → x ≡ one * x
 ```
 
-This approach clearly isn't going to work. Instead, we might consider just
-writing the proof again, pattern-match and all. But we notice upon trying that
-the proof delegates out to `def:+-identityʳ`, which puts us in a recursive
-bind---surely we shouldn't have to rewrite the entire proof hierarchy just to
-switch what's on the left of the equals sign!
+Something has gone wrong here, but the error message isn't particularly
+elucidating. Behind the scenes, Agda is trying to massage the type of
+`def:*-identityˡ` into the type of `def:*-identityˡ′`. Let's work it through for
+ourselves to see where exactly the problem arises.
 
-But a propositional equality shows that the two things on either side of an
-equals sign are identical. That is, once we've pattern matched on `refl : x ≡
-x`, there is no longer a distinction between the left and right sides of the
-equals sign. We can exploit this fact to reverse every propositional equality
-proof via `def:sym`:
+Remember that we defined `type:_≡_` for ourselves, and therefore that it *can't*
+have any special support from the compiler. As far as Agda is concerned
+`type:_≡_` is *just some type,* and has nothing to do with equality. Anything
+we'd expect to hold true of equality is therefore something we have to prove
+for ourselves, rather than expect Agda to do on our behalf.
+
+So to see the problem, we begin with the type `bind:x:one * x ≡ x` from
+`def:*-identityˡ`. Then, we try to assign a value with this type to the
+definition of `def:*-identityˡ′`, which we've said has type `bind:x:x ≡ one *
+x`. Agda notices that *these are not the same type*, and kicks off its
+*unification* algorithm in an attempt to line up the types.
+
+During unification, Agda is attempting to combine these two types:
+
+* `bind:x:one * x ≡ x` , and
+* `bind:x:x ≡ one * x`
+
+which it does by attempting to show that both left-hand sides of `type:_≡_`
+compute to the same thing, and similarly for both right-hand sides. More
+generally, if Agda is trying to unify `bind:a b:a ≡ b` and `bind:c d:c ≡ d`, it
+will try to show that `a ~ c` and `b ~ d`, where `~` means "simplifies down to
+identical syntactic forms."
+
+Perhaps you already see where things are going wrong. Agda attempts to unify our
+two propositional equality types, and in doing so, reduces down to two
+unification problems. From the left-hand sides, it gets `bind:x:one * x` `~`
+`bind:x:x`, and from the right-hand sides, `bind:x:x` `~` `bind:x:one * x`. Of
+course, these unification problems are *not* syntactically identical, which is
+exactly why we wanted to prove their equality in the first place.
+
+Unfortunately, there is no way we can add `def:*-identityˡ` to some sort of
+"global proof bank" and have Agda automatically solve the equality on our
+behalf. Instead, we resign ourselves to the fact that we will need a different
+approach to implement `def:*-identityˡ′`.
+
+The next obvious solution is to just write out our proof of $a = 1 \times a$
+again, pattern match and all. The original implementation of `def:*-identityʳ`
+was, if you will recall:
+
+```agda
+  *-identityˡ⅋ : (x : ℕ) → one * x ≡ x
+  *-identityˡ⅋ zero     = refl
+  *-identityˡ⅋ (suc x)  = cong suc (+-identityʳ x)
+```
+
+If we wanted just to rewrite this proof with the propositional equality flipped
+around, we notice something goes wrong:
+
+```illegal
+  *-identityˡ′⅋₀ : (x : ℕ) → x ≡ one * x
+  *-identityˡ′⅋₀ zero     = refl
+  *-identityˡ′⅋₀ (suc x)  = cong suc (+-identityʳ x)
+```
+
+```info
+x + zero != x of type ℕ
+when checking that the expression +-identityʳ x has type
+x ≡ x + 0 * suc x
+```
+
+It's the same problem we had before, except now the error comes from our use of
+`def:+-identityʳ`! This puts us in an annoyingly recursive bind; in order to
+flip the arguments on either side of `def:_≡_` must we *really* reimplement
+`def:*-identityˡ`, `def:+-identityʳ`, and *every proof in their transitive call
+graph?*
+
+By Newton's good grace, thankfully the answer is a resounding *no!* What we are
+missing here is a conceptual piece of the puzzle. Recall that propositional
+equality itself proves that the two things on either side of `def:_≡_ are in
+fact just one thing. That is, once we've pattern matched on `ctor:refl` `:
+`bind:x y:x ≡ y`, there is no longer a distinction between `x` and `y`!
+
+We can exploit this fact to flip any propositional equality proof, via a new
+combinator `def:sym`:
 
 ```agda
   sym : {A : Set} → {x y : A} → x ≡ y → y ≡ x
@@ -841,32 +934,40 @@ proof via `def:sym`:
 
 Rather underwhelming once you see it, isn't it? After we pattern match on
 `ctor:refl`, we learn that `x` and `y` are the same thing, so our goal becomes `x ≡
-x`, which we can solve with `ctor:refl`. And from there, Agda is happy to rewrite the
+x`, which we can solve with `ctor:refl`. From there, Agda is happy to rewrite the
 left side as `y`, since it knows that's just a different name for `x` anyway.
 
-What's with the name `def:sym` anyway? It's short for *symmetry,* which is the idea
-that a relation doesn't distinguish between its left and right arguments. We
-shorten it to `def:sym` as always because of the sheer ubiquity with which this
-proof combinator gets used.
+Thank goodness.
 
-With `def:sym`, we now have a satisfying, general-purpose tool for implementing
-`*-identityˡ′`:
+Wondering what strange word `def:sym` is short for? *Symmetry* is the idea that
+a relation doesn't distinguish between its left and right arguments. We'll
+discuss relations in more generality in @sec:relations, but all you need to
+know for now is that equality is a relation.
+
+As usual, we shorten "symmetry" to `def:sym` due to its overwhelming ubiquity in
+proofs.
+
+Returning to the problem of `def:identityˡ′`, `def:sym` now gives us a
+satisfying, general-purpose tool for its implementation:
 
 ```agda
   *-identityˡ′ : (x : ℕ) → x ≡ one * x
   *-identityˡ′ x = sym (*-identityˡ x)
 ```
 
-Because `def:sym` swaps which of its arguments is on the left and which is on the
-right, we should expect that applying `def:sym` twice should get us back to where we
-started. Is this so? We could try to ponder the question deeply, but instead we
-remember that we're now capable of doing computer-aided mathematics, and the
-more interesting question is whether we can prove it. And in fact we can! The
-hardest part is laying down the type, which we'd like to work for any proof,
-regardless of the types involved. Thus we must bind `A : Set` to quantify over
-the type of the proof, and then we must bind `x : A` and `y : A` for the
-particular arguments on either side of the equals sign. Then we're ready to get
-started on the question proper, namely:
+Because `def:sym` swaps which of its arguments is on the left and which is on
+the right, we should expect that applying `def:sym` twice should get us back to
+where we started. Is this so?
+
+We could try to ponder the question deeply, but instead we remember that we're
+now capable of doing computer-aided mathematics, and the more interesting
+question is whether we can prove it.
+
+In fact we can! The hardest part is laying down the type, which we'd like to
+work for any propositional equality term, regardless of the specific types
+involved. Thus we must bind `A :` `type:Set` to quantify over the type of the
+proof, and then we must bind `x : A` and `y : A` for the particular arguments on
+either side of the equals sign:
 
 ```agda
   sym-involutive
@@ -891,13 +992,13 @@ Solution
     ```
 
 
-An involution is any operation that gets you back to where you started after two
-invocations. In other words, it's a self-canceling operation. For another
-example we've already run into, `not : Bool → Bool` is also involutive:
+An *involution* is any operation that gets you back to where you started after
+two invocations. In other words, it's a self-canceling operation. Another
+involution we've already run into is `def:not`:
 
 ```agda
-  import Chapter1-Agda
-  open Chapter1-Agda.Booleans
+  open Chapter1-Agda.Exports
+    using (not)
 
   not-involutive : (x : Bool) → not (not x) ≡ x
   not-involutive false  = refl
@@ -905,15 +1006,17 @@ example we've already run into, `not : Bool → Bool` is also involutive:
 ```
 
 Throughout this book, we will encounter more and more algebraic properties like
-involutivity, symmetry and identities. In fact, I would **strongly recommend**
-jotting them down somewhere to keep as a handy cheatsheet. The road to success
-as a fledgling mathematician is to remember what all of these things mean, and
-to look for examples of each whenever you are in a new domain. Discovering them
-allow you to reuse your entire existing vocabulary and understanding,
-transplanting those ideas into the new area, which means you can hit the ground
-running. Indeed, much to the surprise of traditionally-educated people,
-mathematics is much more about these sorts of properties than it ever was about
-numbers.
+involutivity, symmetry, and identities elements. In fact, I would **strongly
+recommend** jotting them down somewhere to keep as a handy cheat-sheet. The road
+to success as a new mathematician is to simply to not get crushed under all of
+the jargon. The ideas are often easy enough, but there are an awful lot of
+things you need to simultaneously keep in your head.
+
+Discovering new abstractions like these allow you to reuse your entire existing
+vocabulary and understanding, transplanting those ideas into the new area, which
+means you can hit the ground running. Indeed, much to the surprise of
+traditionally-educated people, mathematics is much more about things like
+identity elements and involutivity than it ever was about numbers.
 
 
 ## Transitivity

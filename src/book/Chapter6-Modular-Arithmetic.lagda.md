@@ -230,7 +230,7 @@ via our `module:PreorderReasoning` module from @sec:preorderreasoning.
 
 ```agda
   module ≈-Reasoning where
-    open import Chapter4-Relations
+    open import Chapter5-Relations
     open Sandbox-Orderings
 
     ≈-preorder : IsPreorder _≈_
