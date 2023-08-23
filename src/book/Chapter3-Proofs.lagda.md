@@ -1480,8 +1480,8 @@ and `⦂` ([`z:`](AgdaMode)):
   _ = not true ‽ 4 ⦂ 1
 ```
 
-Alternatively, since Agda doesn't come with an `if..else..` construct either, we
-can also trivially define that:
+In addition, since Agda doesn't come with any `if..else..` construct, we can
+also trivially define such a thing:
 
 ```agda
   if_then_else_ : {A : Set} → Bool → A → A → A
@@ -1522,8 +1522,8 @@ This definition takes advantage of Agda's pattern-matching lambda, as in:
 ```agda
   _ : ℕ
   _ = case not true of λ
-        { false  → one
-        ; true   → four
+        { false  → 1
+        ; true   → 4
         }
 ```
 
@@ -1553,43 +1553,52 @@ proofs. That is, we'd like to write something in Agda equivalent to:
 
 $$
 \begin{aligned}
-(a + b) \times c &= a \times c + b \times c \\
-&= a \times c + c \times b \\
-&= c \times b + a \times c
+(a + b) \times c &= ac + bc \\
+&= ac + cb \\
+&= cb + ac
 \end{aligned}
 $$
 
-The bits written in this syntax are equivalent to the `x` and `y` in the type `x
-≡ y`. They tell us *what* is equal, but not *why.* In other words, proofs
-written in the above style are missing *justification* as to *why exactly* we're
-allowed to say each step of the proof follows. In order to make room, we will
-use *Bird notation,* attaching justification to the equals sign:
+Each side of an equals sign in this notation is equivalent to either `x` or `y`
+in a type `bind:x y:x ≡ y`. In the pen and paper proof, we see *what* is equal,
+but not *why.* Recall that in Agda, each sub-proof has its own name that we must
+explicitly `def:trans` together, and these are the sorts of "why"s we want to
+track.
+
+In other words, proofs written in the above style are missing *justification* as
+to *why exactly* we're claiming each step of the proof follows. In order to make
+room for these justifications, we will use *Bird notation,* which attaches them
+to the equals sign:
 
 $$
 \begin{aligned}
 & (a + b) \times c \\
 & \quad = (\text{distributivity}) \\
-& a \times c + b \times c \\
+& ac + bc \\
 & \quad = (\text{commutativity of $\times$}) \\
-& a \times c + c \times b \\
+& ac + cb \\
 & \quad = (\text{commutativity of $+$}) \\
-& c \times b + a \times c
+& cb + ac
 \end{aligned}
 $$
 
-The construction of our domain specific language is a little finicky and deserve
-some thought. Let's go slowly, but start with a new module:
+This is the syntax we will emulate in Agda. Doing so is a little finicky and
+deserves some thought. Begin with a new module.
 
 ```agda
   module ≡-Reasoning where
 ```
 
 The idea here is that we will make a series of right-associative syntax
-operators, in the style of our tick marks in the previous section. We will
-terminate the syntax using `ctor:refl`, that is, showing that we've already proven
-what we set out to. You'll often see a formal proof ended with a black square,
-called a *tombstone* marker. Since proofs already end with this piece of syntax,
-it's a great choice to terminate our right-associative chain of equalities.
+operators, in the style of our tick marks in the previous section. This syntax
+must eventually be terminated, analogously to how `def:∣_` had to be terminated
+by `def:□`. In this case, we will terminate our syntax using `ctor:refl`, that
+is, showing we've proven what we set out to.
+
+You'll often see a formal proof ended with a black square (`∎`, input as
+[qed](AgdaMode)), called a *tombstone* marker. Since proofs already end with
+this piece of syntax, it's a great choice to terminate our right-associative
+chain of equalities.
 
 ```agda
     _∎ : {A : Set} → (x : A) → x ≡ x
@@ -1598,15 +1607,21 @@ it's a great choice to terminate our right-associative chain of equalities.
     infix 3 _∎
 ```
 
-The tombstone marker is input in Agda via [`qed`](AgdaMode). Note that the `x`
-parameter here is unused in the definition, and exists only to point out exactly
-which on object we'd like to show reflexivity. This gives us a convenient ending
-piece, so let's now work backwards. The simplest piece of reasoning we can do is
-an equality that requires no justification. If we already have the proof we'd
-like, we can simply return it:
+Note that the `x` parameter here is unused in the definition, and exists only to
+point out exactly for which object we'd like to show reflexivity. Having sorted
+out the "end" of our syntax, let's now work backwards.
+
+The simplest piece of reasoning we can do is an equality that requires no
+justification---think different expressions which automatically compute to the
+same value, like `ctor:suc zero` and `def:one`. Again `x` exists only to give a
+type to our proof, so we ignore it, choosing to return the proof we've already
+got:
 
 ```agda
-    _≡⟨⟩_ : {A : Set} → (x : A) → {y : A} → x ≡ y → x ≡ y
+    _≡⟨⟩_ : {A : Set} {y : A}
+          → (x : A)
+          → x ≡ y
+          → x ≡ y
     x ≡⟨⟩ p = p
 
     infixr 2 _≡⟨⟩_
