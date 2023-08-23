@@ -980,7 +980,7 @@ in this way. Much of the work is in figuring out which two complicated
 expressions we need to find.
 
 
-## Operators
+## Operators {#sec:operators}
 
 Armed with a better understanding of how Agda works, we can return to writing
 actual code. One simple operation over booleans is logical OR; that is, the

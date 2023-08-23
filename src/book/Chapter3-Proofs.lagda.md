@@ -1235,10 +1235,11 @@ Hidden
 
 
 We are left with a goal whose type is `bind:a b:a + zero ≡ a + b * zero`. While
-we know that `bind:b:*-zeroʳ b` could show $b \times 0 = 0$ for us, and thus
-that `bind:b:sym (*-zeroʳ b)` will give us $0 = b \times 0$ , we are left with
-the problem of getting this evidence into the right place. Whenever you have a
-proof for a subexpression, you should think `def:cong`:
+we know that `bind:b:*-zeroʳ b` shows $b \times 0 = 0$, and thus that
+`bind:b:sym (*-zeroʳ b)` gives $0 = b \times 0$ , we are left with the problem
+of getting this evidence into the right place. Whenever you have a proof for a
+subexpression, you should think `def:cong`---dropping it in place with a hole
+for its first argument and your subexpression proof as its second:
 
 ```agda
   a^1≡a+b*0⅋₃ : (a b : ℕ) → a ^ 1 ≡ a + (b * 0)
@@ -1249,11 +1250,25 @@ proof for a subexpression, you should think `def:cong`:
     )
 ```
 
-This final hole, recall, moves the given proof to the desired place in the
-expression. Here we have `a + zero` and would like to replace it with `a + b *
-zero`, meaning we need to target the `ctor:zero` in our original expression.
-Therefore, we must give a function that *targets* the `ctor:zero`, leaving the
-remainder of the expression alone. We can introduce a function via a lambda:
+
+Hidden
+
+:     ```agda
+  -- fix indentation
+      ```
+
+Congruence is highly-parameterized, and therefore often introduces unconstrained
+metas while working interactively. As before, it's nothing to worry about.
+
+Our final hole in this implementation is a function responsible for "targeting"
+a particular subexpression in the bigger hole. Recall that here we have
+`bind:a:a + zero`, and we would like to rewrite `ctor:zero` as `bind:b:b *
+zero`. Thus, our function should target the `ctor:zero` in the expression
+`bind:a:a + zero`.
+
+In order to do so, we must give a function that *changes* the `ctor:zero`,
+leaving the remainder of our expression alone. We can introduce a function via a
+lambda:
 
 ```agda
   a^1≡a+b*0⅋₄ : (a b : ℕ) → a ^ 1 ≡ a + (b * 0)
@@ -1264,14 +1279,14 @@ remainder of the expression alone. We can introduce a function via a lambda:
     )
 ```
 
-The lambda (λ) here is input as [`Gl`](AgdaMode), while the phi (φ) is
+The lambda (`λ`) here is input as [`Gl`](AgdaMode), while the phi (`φ`) is
 [`Gf`](AgdaMode). We are required to use the lambda symbol, as it's Agda syntax,
 but we chose phi only out of convention---feel free to pick any identifier here
 that you'd instead prefer.
 
-A useful trick for filling in the body of `def:cong`'s
-targeting function is to copy the expression you had before, and replace the bit
-you'd like to change with the function's input. Thus:
+A useful trick for filling in the body of `def:cong`'s targeting function is to
+copy the expression you had before, and replace the bit you'd like to change
+with the function's input---`φ` in our case. Thus:
 
 ```agda
   a^1≡a+b*0 : (a b : ℕ) → a ^ 1 ≡ a + (b * 0)
@@ -1282,65 +1297,98 @@ you'd like to change with the function's input. Thus:
     )
 ```
 
-Of course, we can rewrite `λ φ → a + φ` by "canceling" the `φ` on both sides,
-which gives us the slightly terser form `a +_`. This gives rise to an
-alternative implementation:
+
+Hidden
+
+:     ```agda
+  -- fix indentation
+      ```
+
+Like always, we can rewrite our lambda `bind:a:λ φ → a + φ` by "canceling" the
+`φ` on both sides. By writing this as a section, we get the slightly terser form
+`bind:a:a +_`, giving rise to a shorter implementation:
 
 ```agda
   a^1≡a+b*0′ : (a b : ℕ) → a ^ 1 ≡ a + (b * 0)
   a^1≡a+b*0′ a b
-
     = trans (^-identityʳ a)
     ( trans (sym (+-identityʳ a))
             (cong (a +_) (sym (*-zeroʳ b)))
     )
 ```
 
-Throughout this book, we will use the second notation whenever the subexpression
-we'd like to target is easy to get to. If it is very nested, we will opt to use
-the explicit lambda instead. Using an explicit lambda always works, while we
-can't always get away using short form. Both forms are equivalent, and you may
-choose whichever you prefer in your own code. However, by virtue of this
-presentation being a book, we are limited by physical page widths, and thus will
-opt for the terser form whenever it will simplify the presentation.
+Throughout this book, we will use this second notation whenever the subexpression
+is easy to target, choosing an explicit lambda if the subexpress is particularly
+nested. Using an explicit lambda always works, but we can't always get away
+using the shorter form.
 
-Composing proofs directly via `def:trans` does indeed work, but it leaves a lot to
-be desired. Namely, the proof we wrote out "by hand" looks nothing like the pile
-of `def:trans` calls we ended up using to implement `a^1≡a+b*0`. Thankfully, Agda's
-syntax is sufficiently versatile that we can build a miniature *domain specific
-language* in order to get more natural looking proofs. We will explore this idea
-in the next section.
+That being said, both forms are equivalent, and you may choose whichever you
+prefer in your own code. However, by virtue of this presentation being a book,
+we are limited by physical page widths, and thus will opt for the terser form
+whenever it will simplify the presentation.
+
+Composing proofs directly via `def:trans` does indeed work, but it leaves a lot
+to be desired. Namely, the proof we wrote out "by hand" looks nothing like the
+pile of `def:trans` calls we ended up using to implement `def:a^1≡a+b*0`.
+Thankfully, Agda's syntax is sufficiently versatile that we can build a
+miniature *domain specific language* in order to get more natural looking
+proofs. We will explore this idea in the next section.
 
 
 ## Mixfix Parsing
 
-As we saw in @sec:chapter1, we can define binary operators in Agda by sticking
-underscores on either side, like in `def:_+_`. You might be surprised to learn that
-these underscores are a much more general feature. The underscore corresponds to
-a syntactic hole, hinting to Agda's parser that the underscore is a reasonable
-place to allow an expression.
+As we saw when defining binary operators like `def:_∨_` in @sec:operators, and
+again when representing negative integers via `ctor:-[1+_]` in @sec:integers, we
+can define interesting syntax in Agda by leaving underscores around the place.
+These underscores are a very general feature for interacting with Agda's
+parser---an underscore corresponds to a syntactic hole that Agda intereprets as
+a good reasonable place for an expression.
 
 To illustrate this idea we can make a *postfix* operator by prefixing our
 operator with an underscore, as in the factorial function:
 
 ```agda
   _! : ℕ → ℕ
-  zero   ! = one
-  suc n  ! = suc n * n !  -- ! 1
+  zero   ! = 1
+  suc n  ! = suc n * n !
 ```
 
--- TODO(sandy): is this claim true?
+which works as we'd expect:
 
-One important thing to note is that function application binds most tightly of
-all, thus the `suc n !` at [1](Ann) is parsed `(suc n) !`, rather than the
-more obvious seeming `suc (n !)`. Recall that by default, operators get
-precedence 20, which is what `def:_!` gets in this case. And since we defined `def:_*_`
-with precedence 7, [1](Ann) correctly parses as `suc n * (n !)`.
+```
+  _ : 5 ! ≡ 120
+  _ = refl
+```
+
+Figuring out exactly how Agda's parser manages to make `def:_!` takes some
+thought. The first thing to note is that function application binds more tightly
+than *anything else* in the language; thus, our definition of `def:_!` is
+implicitly parsed as:
+
+```agda
+  _!⅋₀ : ℕ → ℕ
+  zero     !⅋₀ = 1
+  (suc n)  !⅋₀ = (suc n) * n !⅋₀
+```
+
+From here, `def:_!` behaves normally with respect to the rules of operator
+precedence. By default, if you haven't given an operator an explicit fixity
+declaration (see @sec:fixity for a reminder), Agda will assign it a precedence
+of 20.
+
+But `def:_*_` has a precedence of 7, which means that `def:_!` binds more
+tightly than `def:_*_` does, giving us our final parse as:
+
+```agda
+  _!⅋₁ : ℕ → ℕ
+  zero     !⅋₁ = 1
+  (suc n)  !⅋₁ = (suc n) * (n !⅋₁)
+```
 
 Sometimes it's desirable to make *prefix* operators, where the symbol comes
 before the argument. While Agda parses regular functions as prefix operators,
-writing an explicit underscore on the end of an identifier means we can play
-with associativity. For example, while it's tedious to write `five` out of
+writing an explicit underscore on the end of an identifier means we can fiddle
+with its associativity. For example, while it's tedious to write `def:five` out of
 `ctor:suc`s:
 
 ```agda
@@ -1348,7 +1396,7 @@ with associativity. For example, while it's tedious to write `five` out of
   five⅋₀ = suc (suc (suc (suc (suc zero))))
 ```
 
-where each of these sets of parentheses is mandatory, we can instead embrace the
+where each of these sets of parentheses is mandatory. We can instead embrace the
 nature of counting in unary and define a right-associative prefix "tick mark"
 (input as [`|`](AgdaMode)):
 
@@ -1365,8 +1413,10 @@ nature of counting in unary and define a right-associative prefix "tick mark"
 The presence of `ctor:zero` here is unfortunate, but necessary. When nesting
 operators like this, we always need some sort of *terminal* in
 order to tell Agda we're done this expression. Therefore, we will never be able
-to write "true" tick marks which are merely to be counted. However, we can
-lessen the ugliness by introducing some different syntax for `ctor:zero`, as in:
+to write "true" tick marks which are merely to be counted.
+
+However, we can assuage the ugliness by introducing some new syntax for
+`ctor:zero`, as in:
 
 ```agda
   □ : ℕ
@@ -1376,15 +1426,15 @@ lessen the ugliness by introducing some different syntax for `ctor:zero`, as in:
   five⅋₁ = ∣ ∣ ∣ ∣ ∣ □
 ```
 
-The square `def:□` can be input as [`sq`](AgdaMode). Whether or not this syntax is
-better than our previous attempt is in the eye of the beholder. Suffice it to
+The square `def:□` can be input as [`sq`](AgdaMode). Whether or not this syntax
+is better than our previous attempt is in the eye of the beholder. Suffice it to
 say that we will always need some sort of terminal value when doing this style
 of associativity to build values.
 
 Mixfix parsing gets even more interesting, however. We can make *delimited
-operators* by enclosing an underscore with syntax on either side. For example,
-the mathematical notation for the floor function (integer part) is
-$\lfloor{x}\rfloor$, which we can replicate in Agda:
+operators* like in @sec:integers by enclosing an underscore with syntax on
+either side. For example, the mathematical notation for the floor function
+(integer part) is $\lfloor{x}\rfloor$, which we can replicate in Agda:
 
 ```agda
   postulate
@@ -1396,20 +1446,28 @@ $\lfloor{x}\rfloor$, which we can replicate in Agda:
   three′ = ⌊ π ⌋
 ```
 
-The floor bars are input via [``clL``](AgdaMode) and [clR](AgdaMode), while `type:ℝ`
-is written as [`bR`](AgdaMode) and `def:π` is [`Gp`](AgdaMode). We don't dare define
-the real numbers here, as they are a tricky construction and would distract from
-the point.
+The floor bars are input via [``clL``](AgdaMode) and [clR](AgdaMode), while
+`type:ℝ` is written as [`bR`](AgdaMode) and `def:π` is [`Gp`](AgdaMode). We
+don't dare define the real numbers here, as they are a tricky construction and
+would distract from the point.
 
 Agda's profoundly flexible syntax means we are capable of defining many built-in
-language features for ourselves. For example, many ALGOL-style languages come
-with the so-called "ternary operator" which does `if..else` in an expression
-context. Of course, the word "ternary" means only "three-ary", and has nothing
-to do with conditional evaluation. Mixfix parsing means we can define true
-ternary operators, with whatever semantics we'd like. However, just to
-demonstrate the approach, we can define it here. Because both `?` and `:`
-(the traditional syntax of the "ternary operator") have special meaning in Agda,
-we will instead use `‽` ([`?!`](AgdaMode)) and `⦂` ([`z:`](AgdaMode)):
+language features for ourselves. To illustrate, many ALGOL-style languages come
+with the so-called "ternary operator[^ternary]" which does `if..else` in an
+expression context.
+
+Mixfix parsing means we can define true ternary operators, with whatever
+semantics we'd like. But let's humor ourselves and define the conditional
+ternary operator for ourselves. Since both `?` and `:` (the traditional syntax
+of the "ternary operator") have special meaning in Agda, we must get a little
+creative with our syntax.
+
+Thankfully, we've got all of Unicode at our fingertips, and it's not hard to
+track down some alternative glyphs. Instead, we will use `‽` ([`?!`](AgdaMode))
+and `⦂` ([`z:`](AgdaMode)):
+
+[^ternary]: Of course, the word "ternary" means only "three-ary", and has
+  nothing to do with conditional evaluation.
 
 ```agda
   _‽_⦂_ : {A : Set} → Bool → A → A → A
@@ -1419,7 +1477,7 @@ we will instead use `‽` ([`?!`](AgdaMode)) and `⦂` ([`z:`](AgdaMode)):
   infixr 20 _‽_⦂_
 
   _ : ℕ
-  _ = not true ‽ four ⦂ one
+  _ = not true ‽ 4 ⦂ 1
 ```
 
 Alternatively, since Agda doesn't come with an `if..else..` construct either, we
@@ -1436,16 +1494,17 @@ which we can immediately use:
 
 ```agda
   _ : ℕ
-  _ = if not true then four else one
+  _ = if not true then 4 else 1
 ```
 
-or nest with itself:
+Due to our use of `keyword:infixr`, we can also nest `def:if_then_else_` with
+itself:
 
 ```agda
   _ : ℕ
-  _ = if not true then four
-      else if true then one
-      else zero
+  _ = if not true then 4
+      else if true then 1
+      else 0
 ```
 
 As another example, languages from the ML family come with a `case..of`
@@ -1470,8 +1529,8 @@ This definition takes advantage of Agda's pattern-matching lambda, as in:
 
 There is one small problem when doing mixfix parsing; unfortunately, we cannot
 put two non-underscore tokens beside one another. For example, it might be nice
-to make a boolean operator `_is equal to_`. A simple fix is to intersperse our
-tokens with hyphens, as in:
+to make a boolean operator `def:_is equal to_`, but this is illegal in Agda. A
+simple fix is to intersperse our tokens with hyphens, as in:
 
 ```agda
   _is-equal-to_ : {A : Set} → A → A → Set
@@ -2037,4 +2096,35 @@ Solution
     y * z + x * (y * z)  ≡⟨⟩
     suc x * (y * z)      ∎
     where open ≡-Reasoning
+```
+
+
+```agda
+module Exports where
+  open import Relation.Binary.PropositionalEquality
+    using (_≡_; refl; cong; sym; trans; module ≡-Reasoning)
+    public
+
+  open import Data.Bool
+    using (if_then_else_)
+    public
+
+  open import Function
+    using (case_of_)
+    public
+
+  open import Data.Bool.Properties
+    using (  ∨-identityˡ  ; ∨-identityʳ
+          ;  ∨-zeroˡ      ; ∨-zeroʳ
+          ;  not-involutive
+          )
+    public
+
+  open import Data.Nat.Properties
+    using (  +-identityˡ  ; +-identityʳ
+          ;  *-identityˡ  ; *-identityʳ
+          ;  *-zeroˡ      ; *-zeroʳ
+          ;  ^-identityʳ
+          )
+    public
 ```

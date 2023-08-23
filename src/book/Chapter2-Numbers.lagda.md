@@ -1458,7 +1458,7 @@ fix that problem directly, we could avoid `def:normalize` and all the issues
 that arise because of it.
 
 
-## Unique Integer Representations
+## Unique Integer Representations {#sec:integers}
 
 The important takeaway from our last two wrong turns is that we should strive
 for unique representations of our data whenever possible.
