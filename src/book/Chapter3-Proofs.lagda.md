@@ -699,7 +699,7 @@ not quite be what you need. Luckily, the solution is often just a `def:cong`
 away.
 
 
-## Identity Elements
+## Identity and Zero Elements
 
 A common algebraic structure is the idea of an *identity element*---annoyingly,
 "identity" in a difference sense than in algebraic identity." An identity
@@ -819,10 +819,54 @@ both a left and right identity for `def:_∨_`, as we can show:
   ∨-identityʳ true   = refl
 ```
 
-While identity values might seem unexciting and pointless right now, but they
+While identity elements might seem unexciting and pointless right now, but they
 are an integral part for a rich computational structure that we will study in
 @sec:monoids. For the time being, we will remark only that the discovery of the
 number zero was a marvelous technological achievement in its day.
+
+Beyond identities, some operations also have the notion of a *zero element*, or
+*annihilator.* An annihilator is an element which dominates the computation,
+forcing the return value to also be the annihilator. The most familiar example
+of a zero element is literally `ctor:zero` for multiplication---whenever you
+multiply by zero you get back zero! Like identities, zero elements can have a
+chirality and apply to one or both sides of a binary operator. Multiplication by
+zero is both a left and right zero:
+
+```agda
+  *-zeroˡ : (x : ℕ) → zero * x ≡ zero
+  *-zeroˡ _ = refl
+
+  *-zeroʳ : (x : ℕ) → x * zero ≡ zero
+  *-zeroʳ zero = refl
+  *-zeroʳ (suc x) = *-zeroʳ x
+```
+
+The name "zero element" can be misleading. Zero elements can exist for
+non-numeric functions, but the potential confusion doesn't end there. Many
+less type-safe languages have a notion of falsey values---that is, values which
+can be implicitly converted to a boolean, and elicit false when doing so. The
+number 0 a prototypical example of a falsey value, which unfortunately causes
+people to equivocate between zero and false.
+
+At risk of stating the obvious, falsey values do not exist in Agda, and more
+generally should be considered a poison for the mind.
+
+I bring up falsey values only to disassociate zero from false in your mind. In
+the context of the `def:_∨_` function, it is `def:true` that is the zero
+element:
+
+```agda
+  ∨-zeroˡ : (x : Bool) → true ∨ x ≡ true
+  ∨-zeroˡ _ = refl
+
+  ∨-zeroʳ : (x : Bool) → x ∨ true ≡ true
+  ∨-zeroʳ false = refl
+  ∨-zeroʳ true = refl
+```
+
+Annihilators can dramatically simplify a proof. If you can spot one lurking, you
+know its existence must immediately trivialize a subexpression, reducing it to a
+zero. Often recursively.
 
 
 ## Symmetry and Involutivity
@@ -1021,70 +1065,83 @@ identity elements and involutivity than it ever was about numbers.
 
 ## Transitivity
 
-Let's stop for a moment and take stock of what we've managed to accomplish thus
-far in our exploration of equality proofs. We began with reflexivity, which is
-being able to state equalities of the form:
+Proofs, much like computer programs, are usually too big to build all in one go.
+Just like in software, it's preferable to build small, reusable pieces, which we
+can later combine together into the desired product.
 
-$$
-x = x
-$$
+Blatant in its absence, therefore, is a means of actually composing these proofs
+together. Much like how there are many ways of combining software, we also have
+many ways of gluing together proofs. The most salient however is analogous to
+the implicit semicolon in many procedural languages, allowing us to tack one
+proof immediately onto the tail of another.
 
-While such a thing is of paramount important, it's fundamentally the least
-interesting thing we could possibly do with equality. In the previous section,
-we discussed symmetry, which allows us to transform a statement like:
-
-$$
-x = y
-$$
-
-into one "the other way around:"
-
-$$
-y = x
-$$
-
-Perhaps this is slightly more intriguing than reflexivity, but only by the
-slightest of margins. Blatant in its absence, however, is the ability to
-*combine* proofs. This is something you know, even if you don't know that you
-know it. For example, consider the following symbolic proof:
+This is something you already know, even if you don't know that you know it. For
+example, consider the following symbolic proof:
 
 $$
 \begin{aligned}
-(a + b) \times c &= a \times c + b \times c \\
-&= a \times c + c \times b \\
-&= c \times b + a \times c
+(a + b) \times c &= ac + bc \\
+ac + bc &= ac + cb \\
+ac + cb &= cb + ac
 \end{aligned}
 $$
 
-The omission of the left-hand sides of the equalities on subsequent lines is a
-notional convenience, but we can explicitly elaborate it out:
+This series of equations has the property that the right hand of each equation
+is the same as the left hand of the subsequent line. As a notational
+convenience, we therefore usually omit all but the first left hand side, as in:
 
 $$
 \begin{aligned}
-(a + b) \times c &= a \times c + b \times c \\
-a \times c + b \times c &= a \times c + c \times b \\
-a \times c + c \times b &= c \times b + a \times c
+(a + b) \times c &= ac + bc \\
+&= ac + cb \\
+&= cb + ac
 \end{aligned}
 $$
 
-Note that the right side of each equality is identical to the left side of the
-equality on the next line. This is the sort of composition of proofs we'd like
-to be able to perform; namely, to glue several proofs "end to end," much like a
-chain of dominoes. This notion is called *transitivity,* and we can state it
-thus:
+Finally, it's implied that only the first and last expressions in this equality
+chain are relevant, with everything in between being "accounting" of a sort.
+Therefore, having done the work, we can omit all of the intermediary
+computation, and simply write:
+
+$$
+(a + b) \times c = cb + ac
+$$
+
+Notice how we have now constructed an equality of two rather disparate
+expressions, simply by chaining together smaller equalities end on end, like
+dominoes. This property of equality---that we're allowed to such a thing in the
+first place---is called *transitivity,* and we can be stated as:
 
 ```agda
-  trans
+  trans&
     : {A : Set} {x y z : A}
     → x ≡ y
     → y ≡ z
     → x ≡ z
 ```
 
-In other words, `def:trans` takes a proof that `x ≡ y` and a proof that `y ≡ z`, and
-gives us back a proof that `x ≡ z`. To prove such a thing, we take a page out of
-the `def:sym` book, and pattern match on both proofs, allowing Agda to unify `z` and
-`y`, before subsequently unifying `y` and `x`:
+
+Hidden
+
+:   ```agda
+  trans& = ?
+    ```
+
+
+
+In other words, `def:trans` takes a proof that `bind:x y:x ≡ y` and a proof that
+`bind:y z:y ≡ z`, and gives us back a proof that `bind:x z:x ≡ z`. In order to
+prove such a thing, we take a page out of the `def:sym` book, and pattern match
+on both proofs, allowing Agda to unify `z` and `y`, before subsequently unifying
+`y` and `x`:
+
+
+Hidden
+
+:     ```agda
+  trans : {A : Set} {x y z : A} → x ≡ y → y ≡ z → x ≡ z
+      ```
+
 
 ```agda
   trans refl refl = refl
@@ -1103,16 +1160,6 @@ a^1 &= a \\
 $$
 
 
-```agda
-  -- TODO(sandy): put these zeroes in the section on identities
-  *-zeroˡ : (x : ℕ) → zero * x ≡ zero
-  *-zeroˡ _ = refl
-
-  *-zeroʳ : (x : ℕ) → x * zero ≡ zero
-  *-zeroʳ zero = refl
-  *-zeroʳ (suc x) = *-zeroʳ x
-```
-
 Let's write this as a proposition:
 
 
@@ -1122,38 +1169,56 @@ Let's write this as a proposition:
 ```
 
 Of course, we can always prove something by doing the manual work of pattern
-matching on our inputs, but that approach is best avoided if at possible, as it
-usually leaves you deep in the weeds. Proof by pattern matching is much akin to
-programming in assembly---you can get the job done, but it requires paying
-attention to much more detail than we'd like. Instead, we can prove the above
-proposition out of reusable pieces that we've already developed. Because we'd
-like to glue together some existing proofs, we begin with a call to `def:trans`:
+matching on our inputs. But we'd prefer not to whenever possible, as pattern
+matching leaves you deep in the weeds of implementation details. Proof by
+pattern matching is much akin to programming in assembly---you can get the job
+done, but it requires paying attention to much more detail than we'd like.
+
+Instead, we'd like to prove the above proposition out of reusable pieces. In
+fact, we've already proven each of the individual steps---`def:^-identityʳ`,
+`def:+-identityʳ`, and `def:*-zeroʳ` correspond to the salient steps on each
+line of the proof. So let's do it.
+
+Because we'd like to glue together some existing proofs, we begin with a call to
+`def:trans`:
 
 ```agda
-  a^1≡a+b*0⅋₀ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
+  a^1≡a+b*0⅋₀ : (a b : ℕ) → a ^ 1 ≡ a + (b * 0)
   a^1≡a+b*0⅋₀ a b
     = trans ? ?
 ```
 
-This call to `def:trans` shows up with a yellow background because we haven't yet
-given Agda enough information to infer all the necessary types. This is nothing
-to worry about, as our next step will sort everything out. We will follow our
-"pen and paper" proof above, where our first step was that $a^1 = a$, which we
-called `^-identityʳ a`:
+This call to `def:trans` shows up in a deep saffron background. Despite being
+new, this is nothing to worry about; it's just Agda's way of telling us it
+doesn't yet have enough information to infer all of the invisible
+arguments---but our next move will sort everything out.
+
+We will follow our "pen and paper" proof above, where our first step was that
+$a^1 = a$, which we called `^-identityʳ a`:
 
 ```agda
-  a^1≡a+b*0⅋₁ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
+  a^1≡a+b*0⅋₁ : (a b : ℕ) → a ^ 1 ≡ a + (b * 0)
   a^1≡a+b*0⅋₁ a b
     = trans (^-identityʳ a) ?
 ```
 
-Our goal now has the type `a ≡ a + b * zero`, which we'd like to simplify and
-implement in two steps. Thus, we use another call to `def:trans`, this time to
-assert the fact that $a = a + 0$. We don't have a proof of this directly, but we
-do have the opposite direction via `+-identityʳ a`. Symmetry can help us out:
+
+Hidden
+
+:     ```agda
+  -- fix indentation
+      ```
+
+
+Our goal now has the type `bind:a b:a ≡ a + b * zero`, which we'd like to
+simplify and implement in two steps. Thus, we use another call to
+`def:trans`---this time to assert the fact that $a = a + 0$. We don't have a
+proof of this directly, but we do have the opposite direction via
+`bind:a:+-identityʳ a`. Symmetry will help us massage our sub-proof into the
+right shape:
 
 ```agda
-  a^1≡a+b*0⅋₂ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
+  a^1≡a+b*0⅋₂ : (a b : ℕ) → a ^ 1 ≡ a + (b * 0)
   a^1≡a+b*0⅋₂ a b
     = trans (^-identityʳ a)
     ( trans (sym (+-identityʳ a))
@@ -1161,18 +1226,22 @@ do have the opposite direction via `+-identityʳ a`. Symmetry can help us out:
     )
 ```
 
-We are left with a goal with the type `a + zero ≡ a + b * zero`. While we know
-that `*-zeroʳ b` could show $b \times 0 = 0$ for us, and thus that `sym (*-zeroʳ
-b)` will give us $0 = b \times 0$ , we are left with the problem of getting this
-evidence into the right place. Whenever you have a proof for a subexpression,
-you should think `def:cong`:
+
+Hidden
+
+:     ```agda
+  -- fix indentation
+      ```
+
+
+We are left with a goal whose type is `bind:a b:a + zero ≡ a + b * zero`. While
+we know that `bind:b:*-zeroʳ b` could show $b \times 0 = 0$ for us, and thus
+that `bind:b:sym (*-zeroʳ b)` will give us $0 = b \times 0$ , we are left with
+the problem of getting this evidence into the right place. Whenever you have a
+proof for a subexpression, you should think `def:cong`:
 
 ```agda
-  -- TODO(sandy): rewrite me with the targeting idea first, so we can avoid
-  -- the unsolved metas here
-  --
-  -- also put in a note about picking the spot first, for exactly this reason
-  a^1≡a+b*0⅋₃ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
+  a^1≡a+b*0⅋₃ : (a b : ℕ) → a ^ 1 ≡ a + (b * 0)
   a^1≡a+b*0⅋₃ a b
     = trans (^-identityʳ a)
     ( trans (sym (+-identityʳ a))
@@ -1187,7 +1256,7 @@ Therefore, we must give a function that *targets* the `ctor:zero`, leaving the
 remainder of the expression alone. We can introduce a function via a lambda:
 
 ```agda
-  a^1≡a+b*0⅋₄ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
+  a^1≡a+b*0⅋₄ : (a b : ℕ) → a ^ 1 ≡ a + (b * 0)
   a^1≡a+b*0⅋₄ a b
     = trans (^-identityʳ a)
     ( trans (sym (+-identityʳ a))
@@ -1195,13 +1264,17 @@ remainder of the expression alone. We can introduce a function via a lambda:
     )
 ```
 
-The lambda here is input as [`Gl`](AgdaMode), while the phi is [`Gf`](AgdaMode).
-A useful trick for filling in the body of `def:cong`'s targeting function is to copy
-the expression you had before, and replace the bit you'd like to change with the
-function's input. Thus:
+The lambda (λ) here is input as [`Gl`](AgdaMode), while the phi (φ) is
+[`Gf`](AgdaMode). We are required to use the lambda symbol, as it's Agda syntax,
+but we chose phi only out of convention---feel free to pick any identifier here
+that you'd instead prefer.
+
+A useful trick for filling in the body of `def:cong`'s
+targeting function is to copy the expression you had before, and replace the bit
+you'd like to change with the function's input. Thus:
 
 ```agda
-  a^1≡a+b*0 : (a b : ℕ) → a ^ one ≡ a + (b * zero)
+  a^1≡a+b*0 : (a b : ℕ) → a ^ 1 ≡ a + (b * 0)
   a^1≡a+b*0 a b
     = trans (^-identityʳ a)
     ( trans (sym (+-identityʳ a))
@@ -1214,8 +1287,9 @@ which gives us the slightly terser form `a +_`. This gives rise to an
 alternative implementation:
 
 ```agda
-  a^1≡a+b*0′ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
+  a^1≡a+b*0′ : (a b : ℕ) → a ^ 1 ≡ a + (b * 0)
   a^1≡a+b*0′ a b
+
     = trans (^-identityʳ a)
     ( trans (sym (+-identityʳ a))
             (cong (a +_) (sym (*-zeroʳ b)))
