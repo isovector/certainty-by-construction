@@ -758,7 +758,7 @@ Exercise
 Solution
 
 :     ```agda
-  *-identityˡ : (x : ℕ) → one * x ≡ x
+  *-identityˡ : (x : ℕ) → 1 * x ≡ x
   *-identityˡ zero     = refl
   *-identityˡ (suc x)  = cong suc (+-identityʳ x)
     ```
@@ -772,7 +772,7 @@ Exercise
 Solution
 
 :     ```agda
-  *-identityʳ : (x : ℕ) → x * one ≡ x
+  *-identityʳ : (x : ℕ) → x * 1 ≡ x
   *-identityʳ zero     = refl
   *-identityʳ (suc x)  = cong suc (*-identityʳ x)
     ```
@@ -798,7 +798,7 @@ Exercise
 Solution
 
 :     ```agda
-  ^-identityʳ : (x : ℕ) → x ^ one ≡ x
+  ^-identityʳ : (x : ℕ) → x ^ 1 ≡ x
   ^-identityʳ zero     = refl
   ^-identityʳ (suc x)  = cong suc (*-identityʳ x)
     ```
@@ -879,7 +879,7 @@ a$?
 The obvious idea is to try simply to reuse our `def:*-identityˡ` proof, as in:
 
 ```illegal
-  *-identityˡ′⅋ : (x : ℕ) → x ≡ one * x
+  *-identityˡ′⅋ : (x : ℕ) → x ≡ 1 * x
   *-identityˡ′⅋ = *-identityˡ
 ```
 
@@ -888,7 +888,7 @@ Unfortunately, Agda is unhappy with this definition, and it complains:
 ```info
 x + 0 * x != x of type ℕ
 when checking that the expression *-identityˡ has type
-(x : ℕ) → x ≡ one * x
+(x : ℕ) → x ≡ 1 * x
 ```
 
 Something has gone wrong here, but the error message isn't particularly
@@ -902,16 +902,16 @@ have any special support from the compiler. As far as Agda is concerned
 we'd expect to hold true of equality is therefore something we have to prove
 for ourselves, rather than expect Agda to do on our behalf.
 
-So to see the problem, we begin with the type `bind:x:one * x ≡ x` from
+So to see the problem, we begin with the type `bind:x:1 * x ≡ x` from
 `def:*-identityˡ`. Then, we try to assign a value with this type to the
-definition of `def:*-identityˡ′`, which we've said has type `bind:x:x ≡ one *
+definition of `def:*-identityˡ′`, which we've said has type `bind:x:x ≡ 1 *
 x`. Agda notices that *these are not the same type*, and kicks off its
 *unification* algorithm in an attempt to line up the types.
 
 During unification, Agda is attempting to combine these two types:
 
-* `bind:x:one * x ≡ x` , and
-* `bind:x:x ≡ one * x`
+* `bind:x:1 * x ≡ x` , and
+* `bind:x:x ≡ 1 * x`
 
 which it does by attempting to show that both left-hand sides of `type:_≡_`
 compute to the same thing, and similarly for both right-hand sides. More
@@ -921,8 +921,8 @@ identical syntactic forms."
 
 Perhaps you already see where things are going wrong. Agda attempts to unify our
 two propositional equality types, and in doing so, reduces down to two
-unification problems. From the left-hand sides, it gets `bind:x:one * x` `~`
-`bind:x:x`, and from the right-hand sides, `bind:x:x` `~` `bind:x:one * x`. Of
+unification problems. From the left-hand sides, it gets `bind:x:1 * x` `~`
+`bind:x:x`, and from the right-hand sides, `bind:x:x` `~` `bind:x:1 * x`. Of
 course, these unification problems are *not* syntactically identical, which is
 exactly why we wanted to prove their equality in the first place.
 
@@ -936,7 +936,7 @@ again, pattern match and all. The original implementation of `def:*-identityʳ`
 was, if you will recall:
 
 ```agda
-  *-identityˡ⅋ : (x : ℕ) → one * x ≡ x
+  *-identityˡ⅋ : (x : ℕ) → 1 * x ≡ x
   *-identityˡ⅋ zero     = refl
   *-identityˡ⅋ (suc x)  = cong suc (+-identityʳ x)
 ```
@@ -945,7 +945,7 @@ If we wanted just to rewrite this proof with the propositional equality flipped
 around, we notice something goes wrong:
 
 ```illegal
-  *-identityˡ′⅋₀ : (x : ℕ) → x ≡ one * x
+  *-identityˡ′⅋₀ : (x : ℕ) → x ≡ 1 * x
   *-identityˡ′⅋₀ zero     = refl
   *-identityˡ′⅋₀ (suc x)  = cong suc (+-identityʳ x)
 ```
@@ -995,7 +995,7 @@ Returning to the problem of `def:identityˡ′`, `def:sym` now gives us a
 satisfying, general-purpose tool for its implementation:
 
 ```agda
-  *-identityˡ′ : (x : ℕ) → x ≡ one * x
+  *-identityˡ′ : (x : ℕ) → x ≡ 1 * x
   *-identityˡ′ x = sym (*-identityˡ x)
 ```
 
@@ -1164,7 +1164,7 @@ Let's write this as a proposition:
 
 
 ```agda
-  a^1≡a+b*0⅋₋₁ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
+  a^1≡a+b*0⅋₋₁ : (a b : ℕ) → a ^ 1 ≡ a + (b * zero)
   a^1≡a+b*0⅋₋₁ a b = ?
 ```
 
@@ -1570,6 +1570,11 @@ to *why exactly* we're claiming each step of the proof follows. In order to make
 room for these justifications, we will use *Bird notation,* which attaches them
 to the equals sign:
 
+> TODO(sandy): Rewrite this and other cases of it, and the Agda example, with
+> our ^-identityʳ one used above so I don't need to introduce the new lemmas
+> before having proven them.
+
+
 $$
 \begin{aligned}
 & (a + b) \times c \\
@@ -1583,7 +1588,31 @@ $$
 $$
 
 This is the syntax we will emulate in Agda. Doing so is a little finicky and
-deserves some thought. Begin with a new module.
+deserves some thought. To wet your whistle, however, after this section is
+complete we will be able to structure the above proof in Agda as:
+
+
+Hidden
+
+:     ```agda
+  module SyntaxExample where
+    open import Relation.Binary.PropositionalEquality hiding (cong)
+    open ≡-Reasoning
+    open import Data.Nat.Properties
+      ```
+
+```illegal
+    ex : ∀ a b c → (a + b) * c ≡ c * b + a * c
+    ex a b c = begin
+      (a + b) * c    ≡⟨ *-distribʳ-+ c a b ⟩
+      a * c + b * c  ≡⟨ cong (a * c +_) (*-comm b c) ⟩
+      a * c + c * b  ≡⟨ +-comm (a * c) (c * b) ⟩
+      c * b + a * c  ∎
+```
+
+
+
+Begin with a new module.
 
 ```agda
   module ≡-Reasoning where
@@ -1627,6 +1656,9 @@ got:
     infixr 2 _≡⟨⟩_
 ```
 
+It's easy to lose the forest for the trees here, so let's work through an
+example
+
 Again, `x` is unused in the definition, and exists only in the type. You might
 think this is a good opportunity for an implicit argument, but we'd actually
 *prefer* it to be visible. Recall that the justifications (that is, the proofs)
@@ -1636,16 +1668,12 @@ a guide for the *human* writing the thing in the first place! These `x`s mark
 the current state of the computation. Let's illustrate the point:
 
 ```agda
-    _ : four ≡ suc (one + two)
+    _ : 4 ≡ suc (one + two)
     _ =
-      four
-        ≡⟨⟩
-      two + two
-        ≡⟨⟩
-      suc one + two
-        ≡⟨⟩
-      suc (one + two)
-        ∎
+      4                ≡⟨⟩
+      two + two        ≡⟨⟩
+      suc one + two    ≡⟨⟩
+      suc (one + two)  ∎
 ```
 
 In this case, since everything is fully concrete, Agda can just work out the
@@ -1656,39 +1684,39 @@ It can be helpful to insert explicit parentheses here to help us parse exactly
 what's going on:
 
 ```agda
-    _ : four ≡ suc (one + two)
+    _ : 4 ≡ suc (one + two)
     _ =
-      four ≡⟨⟩
-        ( two + two ≡⟨⟩
-          ( suc one + two ≡⟨⟩
-            ( suc (one + two) ∎ )))
+      4                  ≡⟨⟩
+      ( two + two        ≡⟨⟩
+      ( suc one + two    ≡⟨⟩
+      ( suc (one + two)  ∎ )))
 ```
 
 Replacing `def:_∎` with its definition, we get:
 
 ```agda
-    _ : four ≡ suc (one + two)
+    _ : 4 ≡ suc (one + two)
     _ =
-      four ≡⟨⟩
-        ( two + two ≡⟨⟩
-          ( suc one + two ≡⟨⟩ refl ))
+      4                ≡⟨⟩
+      ( two + two      ≡⟨⟩
+      ( suc one + two  ≡⟨⟩ refl ))
 ```
 
 We can then replace the innermost `def:_≡⟨⟩_` with *its* definition, which you will
 remember is to just return its second argument:
 
 ```agda
-    _ : four ≡ suc (one + two)
+    _ : 4 ≡ suc (one + two)
     _ =
-      four ≡⟨⟩
-        ( two + two ≡⟨⟩ refl )
+      4            ≡⟨⟩
+      ( two + two  ≡⟨⟩ refl )
 ```
 
 This process continues on and one until all of the syntax is eliminated, and we
 are left with just:
 
 ```agda
-    _ : four ≡ suc (one + two)
+    _ : 4 ≡ suc (one + two)
     _ = refl
 ```
 
@@ -1699,14 +1727,11 @@ That is, if we make an invalid step, Agda will tell us. For example, perhaps we
 make an error in our proof, as in:
 
 ```illegal
-    _ : four ≡ suc (one + two)
+    _ : 4 ≡ suc (one + two)
     _ =
-      four
-        ≡⟨⟩
-      one + two  -- ! 1
-        ≡⟨⟩
-      suc one + two
-        ∎
+      4              ≡⟨⟩
+      one + two      ≡⟨⟩ -- ! 1
+      suc one + two  ∎
 ```
 
 At [1](Ann) we accidentally dropped a `ctor:suc`. But, Agda is smart enough to catch
@@ -1717,7 +1742,7 @@ zero != suc zero of type ℕ
 when checking that the inferred type of an application
   one + two ≡ _y_379
 matches the expected type
-  four ≡ suc (one + two)
+  4 ≡ suc (one + two)
 ```
 
 While all of this syntax construction itself is rather clever, there is nothing
@@ -1765,7 +1790,7 @@ Let's now put all of our hard work to good use. Recall the proof that originally
 set us off on a hunt for better syntax:
 
 ```agda
-  a^1≡a+b*0′⅋₁ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
+  a^1≡a+b*0′⅋₁ : (a b : ℕ) → a ^ 1 ≡ a + (b * zero)
   a^1≡a+b*0′⅋₁ a b
     = trans (^-identityʳ a)
     ( trans (sym (+-identityʳ a))
@@ -1776,10 +1801,10 @@ set us off on a hunt for better syntax:
 We can now rewrite this proof in the equational reasoning style:
 
 ```agda
-  a^1≡a+b*0′⅋₂ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
+  a^1≡a+b*0′⅋₂ : (a b : ℕ) → a ^ 1 ≡ a + (b * zero)
   a^1≡a+b*0′⅋₂ a b =
     begin
-      a ^ one
+      a ^ 1
     ≡⟨ ^-identityʳ a ⟩
       a
     ≡⟨ sym (+-identityʳ a) ⟩
@@ -1794,9 +1819,9 @@ which, for the purposes of aesthetics, we will format in this book as the
 following whenever we have available line-width:
 
 ```agda
-  a^1≡a+b*0′⅋₃ : (a b : ℕ) → a ^ one ≡ a + (b * zero)
+  a^1≡a+b*0′⅋₃ : (a b : ℕ) → a ^ 1 ≡ a + (b * zero)
   a^1≡a+b*0′⅋₃ a b = begin
-    a ^ one       ≡⟨ ^-identityʳ a ⟩
+    a ^ 1       ≡⟨ ^-identityʳ a ⟩
     a             ≡⟨ sym (+-identityʳ a) ⟩
     a + zero      ≡⟨ cong (a +_) (sym (*-zeroʳ b)) ⟩
     a + b * zero  ∎
