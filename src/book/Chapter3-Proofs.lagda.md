@@ -1883,17 +1883,17 @@ it will save you an innumerable amount of time to write it down once and have
 your text editor do it evermore. The two snippets you'll need are:
 
 ```snippet
-  ≡⟨ ? ⟩
-    ?
+    ≡⟨ ? ⟩
+  ?
 ```
 
 and
 
 ```snippet
   begin
-    ?
-  ≡⟨ ? ⟩
-    ?
+  ?
+    ≡⟨ ? ⟩
+  ?
   ∎
   where open ≡-Reasoning
 ```
@@ -2130,7 +2130,20 @@ term-level hole, again via [Solve/Normalise](AgdaCmd):
     where open ≡-Reasoning
 ```
 
-which makes the solution obvious:
+Since the outermost function call (`ctor:suc`) is the same on both lines, we can
+invoke `def:cong`:
+
+```agda
+  +-comm⅋₅ : (x y : ℕ) → x + y ≡ y + x
+  +-comm⅋₅ zero     y = sym (+-identityʳ y)
+  +-comm⅋₅ (suc x)  y = begin
+    suc (x + y)  ≡⟨ cong suc ? ⟩
+    suc (y + x)  ≡⟨ sym (+-suc y x) ⟩
+    y + suc x    ∎
+    where open ≡-Reasoning
+```
+
+and the finish the proof noticing that recursion will happily fill this hole.
 
 ```agda
   +-comm : (x y : ℕ) → x + y ≡ y + x
@@ -2142,16 +2155,48 @@ which makes the solution obvious:
     where open ≡-Reasoning
 ```
 
+As you can see, equational reasoning makes proofs much more legible, and using
+Agda interactively assuages most of the pain of writing equational reasoning
+proofs.
 
 
-## Facts About Natural Numbers
+## Exercises in Proof
+
+That covers everything we'd like to say about proof objects in this chapter.
+However, there are a few more properties about the natural numbers we need to
+prove for future chapters, and this is the most obvious place to do it. These
+proofs are too hard to do simply by stacking calls to `def:trans`, and therefore
+gain a lot of tractability when done with equational reasoning.
+
+The diligent reader is encouraged to spend some time proving the results in this
+section for themselves; doing so will be an excellent opportunity to practice
+working with Agda and to brandish new tools.
 
 Often, a huge amount of the work to prove something is simply in manipulating
 the expression to be of the right form so that you can apply the relevant lemma.
 This is the case in `def:*-suc`, which allows us to expand a `ctor:suc` on the
-right side of a multiplication term:
+right side of a multiplication term.
 
 ```agda
+  *-suc⅋ : (x y : ℕ) → x * suc y ≡ x + x * y
+  *-suc⅋ = ?
+```
+
+
+Exercise
+
+: Prove `def:*-suc`. Note that this is a difficult proof.
+
+
+Hint
+
+: Proving `def:*-suc` requires two applications of `def:+-assoc`, as well as one
+  of `def:+-comm`.
+
+
+Solution
+
+:       ```agda
   *-suc : (x y : ℕ) → x * suc y ≡ x + x * y
   *-suc zero     y = refl
   *-suc (suc x)  y = begin
@@ -2173,14 +2218,26 @@ right side of a multiplication term:
       ≡⟨⟩
     suc x + (suc x * y) ∎
     where open ≡-Reasoning
-```
+        ```
 
-We are now ready to prove `def:*-comm`, one of our major results in this chapter.
 
+You will not be surprised to learn that multiplication is also commutative, that
+is, that:
+
+$$
+a \times b = b \times a
+$$
+
+
+Hidden
+
+:     ```agda
+  -- fix expr
+      ```
 
 Exercise
 
-:   Prove the commutativity of multiplication of the natural numbers.
+:   Prove `def:*-comm` `:` `expr:(x y : ℕ) → x * y ≡ y * x`.
 
 
 Solution
@@ -2196,7 +2253,20 @@ Solution
     where open ≡-Reasoning
       ```
 
-```agda
+Hidden
+
+:     ```agda
+  -- fix expr
+      ```
+
+Exercise
+
+:   Prove `def:*-distribʳ-+` `:` `expr:(x y z : ℕ) → (y + z) * x ≡ y * x + z * x`.
+
+
+Solution
+
+:     ```agda
   *-distribʳ-+ : (x y z : ℕ) → (y + z) * x ≡ y * x + z * x
   *-distribʳ-+ x zero     z = refl
   *-distribʳ-+ x (suc y)  z = begin
@@ -2206,18 +2276,63 @@ Solution
     (x + y * x) + z * x  ≡⟨⟩
     suc y * x + z * x    ∎
     where open ≡-Reasoning
+      ```
 
+
+Hidden
+
+:     ```agda
+  -- fix expr
+      ```
+
+
+Exercise
+
+:   Prove `def:*-distribˡ-+` `:` `expr:(x y z : ℕ) → x * (y + z) ≡ x * y + x * z`.
+
+
+Solution
+
+:     ```agda
+  *-distribˡ-+ : (x y z : ℕ) → x * (y + z) ≡ x * y + x * z
+  *-distribˡ-+ x y z = begin
+    x * (y + z)    ≡⟨ *-comm x _ ⟩
+    (y + z) * x    ≡⟨ *-distribʳ-+ x y z ⟩
+    y * x + z * x  ≡⟨ cong (_+ z * x) (*-comm y x) ⟩
+    x * y + z * x  ≡⟨ cong (x * y +_) (*-comm z x) ⟩
+    x * y + x * z  ∎
+    where open ≡-Reasoning
+      ```
+
+
+Hidden
+
+:     ```agda
+  -- fix expr
+      ```
+
+
+Exercise
+
+: Prove `def:*-assoc` `:` `expr:(x y z : ℕ) → (x * y) * z ≡ x * (y * z)`.
+
+
+Solution
+
+:     ```agda
   *-assoc : (x y z : ℕ) → (x * y) * z ≡ x * (y * z)
   *-assoc zero     y z = refl
   *-assoc (suc x)  y z = begin
     suc x * y * z        ≡⟨⟩
     (y + x * y) * z      ≡⟨ *-distribʳ-+ z y (x * y) ⟩
-    y * z + (x * y) * z  ≡⟨ cong (λ φ → y * z + φ) (*-assoc x y z) ⟩
+    y * z + (x * y) * z  ≡⟨ cong (y * z +_) (*-assoc x y z) ⟩
     y * z + x * (y * z)  ≡⟨⟩
     suc x * (y * z)      ∎
     where open ≡-Reasoning
-```
+      ```
 
+
+## Wrapping Up
 
 ```agda
 module Exports where
