@@ -2148,24 +2148,30 @@ which makes the solution obvious:
 
 Often, a huge amount of the work to prove something is simply in manipulating
 the expression to be of the right form so that you can apply the relevant lemma.
-This is the case in `def:*-suc`, which allows us to expand a `ctor:suc` on the right side
-of a multiplication term:
+This is the case in `def:*-suc`, which allows us to expand a `ctor:suc` on the
+right side of a multiplication term:
 
 ```agda
   *-suc : (x y : ℕ) → x * suc y ≡ x + x * y
   *-suc zero     y = refl
   *-suc (suc x)  y = begin
-    suc x * suc y          ≡⟨⟩
-    suc y + x * suc y      ≡⟨ cong (λ φ → suc y + φ) (*-suc x y) ⟩
-    suc y + (x + x * y)    ≡⟨⟩
+    suc x * suc y
+      ≡⟨⟩
+    suc y + x * suc y
+      ≡⟨ cong (λ φ → suc y + φ) (*-suc x y) ⟩
+    suc y + (x + x * y)
+      ≡⟨⟩
     suc (y + (x + x * y))
-                          ≡⟨ cong suc (sym (+-assoc y x (x * y))) ⟩
+      ≡⟨ cong suc (sym (+-assoc y x (x * y))) ⟩
     suc ((y + x) + x * y)
-                ≡⟨ cong (λ φ → suc (φ + x * y)) (+-comm y x) ⟩
-    suc ((x + y) + x * y)  ≡⟨ cong suc (+-assoc x y (x * y)) ⟩
-    suc (x + (y + x * y))  ≡⟨⟩
-    suc x + (y + x * y)    ≡⟨⟩
-    suc x + (suc x * y)    ∎
+      ≡⟨ cong (λ φ → suc (φ + x * y)) (+-comm y x) ⟩
+    suc ((x + y) + x * y)
+      ≡⟨ cong suc (+-assoc x y (x * y)) ⟩
+    suc (x + (y + x * y))
+      ≡⟨⟩
+    suc x + (y + x * y)
+      ≡⟨⟩
+    suc x + (suc x * y) ∎
     where open ≡-Reasoning
 ```
 
