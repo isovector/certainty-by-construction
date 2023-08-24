@@ -1183,7 +1183,7 @@ Because we'd like to glue together some existing proofs, we begin with a call to
 `def:trans`:
 
 ```agda
-  a^1≡a+b*0⅋₀ : (a b : ℕ) → a ^ 1 ≡ a + (b * 0)
+  a^1≡a+b*0⅋₀ : (a b : ℕ) → a ^ 1 ≡ a + b * 0
   a^1≡a+b*0⅋₀ a b
     = trans ? ?
 ```
@@ -1197,7 +1197,7 @@ We will follow our "pen and paper" proof above, where our first step was that
 $a^1 = a$, which we called `^-identityʳ a`:
 
 ```agda
-  a^1≡a+b*0⅋₁ : (a b : ℕ) → a ^ 1 ≡ a + (b * 0)
+  a^1≡a+b*0⅋₁ : (a b : ℕ) → a ^ 1 ≡ a + b * 0
   a^1≡a+b*0⅋₁ a b
     = trans (^-identityʳ a) ?
 ```
@@ -1218,7 +1218,7 @@ proof of this directly, but we do have the opposite direction via
 right shape:
 
 ```agda
-  a^1≡a+b*0⅋₂ : (a b : ℕ) → a ^ 1 ≡ a + (b * 0)
+  a^1≡a+b*0⅋₂ : (a b : ℕ) → a ^ 1 ≡ a + b * 0
   a^1≡a+b*0⅋₂ a b
     = trans (^-identityʳ a)
     ( trans (sym (+-identityʳ a))
@@ -1242,7 +1242,7 @@ subexpression, you should think `def:cong`---dropping it in place with a hole
 for its first argument and your subexpression proof as its second:
 
 ```agda
-  a^1≡a+b*0⅋₃ : (a b : ℕ) → a ^ 1 ≡ a + (b * 0)
+  a^1≡a+b*0⅋₃ : (a b : ℕ) → a ^ 1 ≡ a + b * 0
   a^1≡a+b*0⅋₃ a b
     = trans (^-identityʳ a)
     ( trans (sym (+-identityʳ a))
@@ -1271,7 +1271,7 @@ leaving the remainder of our expression alone. We can introduce a function via a
 lambda:
 
 ```agda
-  a^1≡a+b*0⅋₄ : (a b : ℕ) → a ^ 1 ≡ a + (b * 0)
+  a^1≡a+b*0⅋₄ : (a b : ℕ) → a ^ 1 ≡ a + b * 0
   a^1≡a+b*0⅋₄ a b
     = trans (^-identityʳ a)
     ( trans (sym (+-identityʳ a))
@@ -1289,7 +1289,7 @@ copy the expression you had before, and replace the bit you'd like to change
 with the function's input---`φ` in our case. Thus:
 
 ```agda
-  a^1≡a+b*0 : (a b : ℕ) → a ^ 1 ≡ a + (b * 0)
+  a^1≡a+b*0 : (a b : ℕ) → a ^ 1 ≡ a + b * 0
   a^1≡a+b*0 a b
     = trans (^-identityʳ a)
     ( trans (sym (+-identityʳ a))
@@ -1309,7 +1309,7 @@ Like always, we can rewrite our lambda `bind:a:λ φ → a + φ` by "canceling" 
 `bind:a:a +_`, giving rise to a shorter implementation:
 
 ```agda
-  a^1≡a+b*0′ : (a b : ℕ) → a ^ 1 ≡ a + (b * 0)
+  a^1≡a+b*0′ : (a b : ℕ) → a ^ 1 ≡ a + b * 0
   a^1≡a+b*0′ a b
     = trans (^-identityʳ a)
     ( trans (sym (+-identityʳ a))
@@ -1810,7 +1810,7 @@ Let's now put all of our hard work to good use. Recall the proof that originally
 set us off on a hunt for better syntax:
 
 ```agda
-    a^1≡a+b*0′⅋₁ : (a b : ℕ) → a ^ 1 ≡ a + (b * 0)
+    a^1≡a+b*0′⅋₁ : (a b : ℕ) → a ^ 1 ≡ a + b * 0
     a^1≡a+b*0′⅋₁ a b
       = trans (^-identityʳ a)
       ( trans (sym (+-identityʳ a))
@@ -1820,32 +1820,41 @@ set us off on a hunt for better syntax:
 
 The equational reasoning syntax we've built gives us a much nicer story for
 implementing this. Rather than work with the big explicit pile of calls to
-`def:trans`, we can just open a new reasoning block:
+`def:trans`, after popping out of the `module:≡-Reasoning` module, we can just
+open a new reasoning block:
 
 ```agda
-    a^1≡a+b*0′⅋₂ : (a b : ℕ) → a ^ 1 ≡ a + (b * 0)
-    a^1≡a+b*0′⅋₂ a b =
-      begin
-        a ^ 1
-      ≡⟨ ^-identityʳ a ⟩
-        a
-      ≡⟨ sym (+-identityʳ a) ⟩
-        a + 0
-      ≡⟨ cong (a +_) (sym (*-zeroʳ b)) ⟩
-        a + b * 0
-      ∎
+  a^1≡a+b*0′⅋₂ : (a b : ℕ) → a ^ 1 ≡ a + b * 0
+  a^1≡a+b*0′⅋₂ a b =
+    begin
+      a ^ 1
+    ≡⟨ ^-identityʳ a ⟩
+      a
+    ≡⟨ sym (+-identityʳ a) ⟩
+      a + 0
+    ≡⟨ cong (a +_) (sym (*-zeroʳ b)) ⟩
+      a + b * 0
+    ∎
+    where open ≡-Reasoning  -- ! 1
 ```
+
+Note that at [1](Ann) we `keyword:open` the `module:≡-Reasoning` module. This is
+a local binding, which brings our machinery into scope only for the current
+definition. While it is possible to `keyword:open` `module:≡-Reasoning` at the
+top level, this is generally frowned upon, as there will eventually be many
+other sorts of reasoning we might want to perform.
 
 For the purposes of this book's aesthetics, whenever we have the available
 line-width, we will choose to format equational reasoning blocks as:
 
 ```agda
-    a^1≡a+b*0′⅋₃ : (a b : ℕ) → a ^ 1 ≡ a + (b * 0)
-    a^1≡a+b*0′⅋₃ a b = begin
-      a ^ 1      ≡⟨ ^-identityʳ a ⟩
-      a          ≡⟨ sym (+-identityʳ a) ⟩
-      a + 0      ≡⟨ cong (a +_) (sym (*-zeroʳ b)) ⟩
-      a + b * 0  ∎
+  a^1≡a+b*0′⅋₃ : (a b : ℕ) → a ^ 1 ≡ a + b * 0
+  a^1≡a+b*0′⅋₃ a b = begin
+    a ^ 1      ≡⟨ ^-identityʳ a ⟩
+    a          ≡⟨ sym (+-identityʳ a) ⟩
+    a + 0      ≡⟨ cong (a +_) (sym (*-zeroʳ b)) ⟩
+    a + b * 0  ∎
+    where open ≡-Reasoning
 ```
 
 You are welcome to pick whichever style you prefer; the former is easier to type
@@ -1862,10 +1871,11 @@ as we have done here. This is an important lesson, inside Agda and out.
 ## Ergonomics, Associativity and Commutativity
 
 If you tried writing out the new definition of `def:a^1≡a+b*0′⅋₃` by hand, you
-likely didn't have fun. It's a huge amount of keystrokes in order to produce the
-above code artifact. Thankfully, Agda's interactive support can help us write
-out the mechanical parts of the above proof, allowing us to focus more on the
-navigation than the driving.
+likely didn't have fun. It's a huge amount of keystrokes in order to produce all
+of the necessary Unicode, let alone what the expression looks like between each
+proof rewrite. Thankfully, Agda's interactive support can help us write out the
+mechanical parts of the above proof, allowing us to focus more on the navigation
+than the driving.
 
 The first thing you'll want to do is to write a macro or snippet for your editor
 of choice. We're going to be typing out a lot of the following two things, and
@@ -1888,7 +1898,9 @@ and
   where open ≡-Reasoning
 ```
 
-I have bound the first to [`step`](AgdaMode), and the latter to [`begin`](AgdaMode).
+I have bound the first to [`step`](AgdaMode), and the latter to
+[`begin`](AgdaMode).
+
 Let's put these to work writing something more useful. We'd like to prove that
 addition is *associative,* which is to say, that it satisfies the following law:
 
@@ -1901,23 +1913,25 @@ We can write this in Agda with the type:
 
 ```agda
   +-assoc⅋₀ : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
+  +-assoc⅋₀ = ?
 ```
 
 A quick binding of variables, induction on `x`, and obvious use of `ctor:refl` gets
 us to this step:
 
 ```agda
-  +-assoc⅋₀ zero     y z = refl
-  +-assoc⅋₀ (suc x)  y z = ?
+  +-assoc⅋₁ : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
+  +-assoc⅋₁ zero     y z = refl
+  +-assoc⅋₁ (suc x)  y z = ?
 ```
 
 We're ready to start a reasoning block, and thus we can use our
 [`begin`](AgdaMode) snippet:
 
 ```agda
-  +-assoc⅋₁ : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
-  +-assoc⅋₁ zero     y z = refl
-  +-assoc⅋₁ (suc x)  y z = begin
+  +-assoc⅋₂ : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
+  +-assoc⅋₂ zero     y z = refl
+  +-assoc⅋₂ (suc x)  y z = begin
     ?  ≡⟨ ? ⟩
     ?  ∎
     where open ≡-Reasoning
@@ -1935,20 +1949,21 @@ from Agda. Using [Solve](AgdaCmd) at the first and last holes will get Agda to
 fill in the terms---the two things that eventually need to be equal:
 
 ```agda
-  +-assoc⅋₂ : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
-  +-assoc⅋₂ zero     y z = refl
-  +-assoc⅋₂ (suc x)  y z = begin
+  +-assoc⅋₃ : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
+  +-assoc⅋₃ zero     y z = refl
+  +-assoc⅋₃ (suc x)  y z = begin
     suc x + y + z    ≡⟨ ? ⟩
     suc x + (y + z)  ∎
     where open ≡-Reasoning
 ```
 
-I always like to subsequently extend the top and bottom sides like this:
+I always like to subsequently extend the top and bottom of the equality with
+`def:_⟨⟩_`, like this:
 
 ```agda
-  +-assoc⅋₃ : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
-  +-assoc⅋₃ zero     y z = refl
-  +-assoc⅋₃ (suc x)  y z = begin
+  +-assoc⅋₄ : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
+  +-assoc⅋₄ zero     y z = refl
+  +-assoc⅋₄ (suc x)  y z = begin
     suc x + y + z    ≡⟨⟩
     ?                ≡⟨ ? ⟩
     ?                ≡⟨⟩
@@ -1958,15 +1973,15 @@ I always like to subsequently extend the top and bottom sides like this:
 
 which recall says that the newly added lines are already equal to the other side
 of the `def:_≡⟨⟩_` operator. We can fill in these holes with
-[Solve/Normalise](AgdaCmd), which asks Agda to fully-evaluate both holes. This
-will expand as many definitions as it can while still making progress. Sometimes
+[Solve/Normalise](AgdaCmd), which asks Agda to fully-evaluate both holes,
+expanding as many definitions as it can while still making progress. Sometimes
 it goes too far, but for our simple examples here, this will always be helpful.
 The result looks like this:
 
 ```agda
-  +-assoc⅋₄ : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
-  +-assoc⅋₄ zero     y z = refl
-  +-assoc⅋₄ (suc x)  y z = begin
+  +-assoc⅋₅ : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
+  +-assoc⅋₅ zero     y z = refl
+  +-assoc⅋₅ (suc x)  y z = begin
     suc x + y + z      ≡⟨⟩
     suc (x + y + z)    ≡⟨ ? ⟩
     suc (x + (y + z))  ≡⟨⟩
@@ -1974,8 +1989,20 @@ The result looks like this:
     where open ≡-Reasoning
 ```
 
-This new hole is clearly a `cong suc`, which we can partially fill in, and then
-invoke [Auto](AgdaCmd) to search for the remainder of the proof:
+This new hole is clearly a `cong suc`, which we can partially fill in:
+
+```agda
+  +-assoc⅋₆ : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
+  +-assoc⅋₆ zero     y z = refl
+  +-assoc⅋₆ (suc x)  y z = begin
+    suc x + y + z      ≡⟨⟩
+    suc (x + y + z)    ≡⟨ cong suc ? ⟩
+    suc (x + (y + z))  ≡⟨⟩
+    suc x + (y + z)    ∎
+    where open ≡-Reasoning
+```
+
+and then invoke [Auto](AgdaCmd) to search for the remainder of the proof:
 
 ```agda
   +-assoc : (x y z : ℕ) → (x + y) + z ≡ x + (y + z)
@@ -1988,22 +2015,45 @@ invoke [Auto](AgdaCmd) to search for the remainder of the proof:
     where open ≡-Reasoning
 ```
 
-I quite like this approach for tackling proofs. I introduce a [`begin`](AgdaMode)
-snippet, use [Solve](AgdaCmd) to fill in the top and bottom, insert new calls to
-`def:_≡⟨⟩_` the top and bottom, fill them via [Solve/Normalise](AgdaCmd), and then
-use [`step`](AgdaMode) to help fill in the middle.
+I quite like this workflow when tackling proofs. I introduce a [`begin`](AgdaMode)
+snippet, use [Solve](AgdaCmd) to fill in either side. Then, I add new calls to
+`def:_≡⟨⟩_` on both the top and bottom and fill those in via
+[Solve/Normalise](AgdaCmd). Finally, I like to add [`step`](AgdaMode) in the
+middle, and look for obvious techniques to help fill in the rest.
 
-Let's do another proof together, this time a less-trivial one. First, we will
-dash out a quick lemma:
+Let's do another proof together, this time one less trivial. First, we will
+dash out a quick lemma[^lemma]:
 
-```agda
+[^lemma]: A lemma is a "boring" theorem: one that we prove only because it's on
+  the path to something we care more about proving. There is no technical
+  distinction between lemmas and theorems, the difference is only in the mind of
+  the original mathematician.
+
+
+Hidden
+
+:     ```agda
+  -- fix expr
+      ```
+
+
+Exercise
+
+:   Implement  `def:+-suc` `:` `expr:(x y : ℕ) → x + suc y ≡ suc (x + y)`
+
+
+Solution
+
+:   ```agda
   +-suc : (x y : ℕ) → x + suc y ≡ suc (x + y)
   +-suc zero     y = refl
   +-suc (suc x)  y = cong suc (+-suc x y)
-```
+    ```
 
-and now would like to show the *commutativity* of addition, which is,
-symbolically, the following law:
+
+Given `def:+-suc`, we would now like to show the *commutativity* of addition,
+which is the idea that the idea of the arguments don't matter. Symbolically, the
+commutativity property of addition is written as:
 
 $$
 a + b = b + a
@@ -2016,7 +2066,7 @@ case.
 Exercise
 
 :   State the type of, perform induction on the first argument, and solve the
-    zero case for `def:+-comm`.
+    `ctor:zero` case for `def:+-comm`.
 
 
 Solution
@@ -2040,8 +2090,9 @@ bottom holes via [Solve/Normalise](AgdaCmd) directly:
 ```
 
 Here we have our choice of working top-down, or bottom up. Let's work bottom-up,
-for fun. Add a [`step`](AgdaMode), which will make things temporarily go all
-yellow as Agda now has too many degrees of freedom to work out what you mean:
+for fun. Add a [`step`](AgdaMode), which will make things go saffron
+temporarily, since Agda now has too many degrees of freedom to work out what you
+mean:
 
 ```agda
   +-comm⅋₂ : (x y : ℕ) → x + y ≡ y + x
