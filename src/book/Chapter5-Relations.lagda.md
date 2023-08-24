@@ -854,7 +854,7 @@ in the original domain, if anything. This is a problem we will return to when we
 discuss *free constructions* in @sec:free.
 
 
-## Preorder Reasoning
+## Preorder Reasoning {#sec:preorder-reasoning}
 
 Recall that in this chapter, we have looked at equivalence relations as a
 special case of equality, and further noted that preorders are equivalence

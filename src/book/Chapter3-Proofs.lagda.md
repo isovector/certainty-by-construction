@@ -1753,13 +1753,17 @@ can it do such a thing? Let's look at the definition of `def:_≡⟨⟩_` again:
 ```
 
 Despite that fact that `x` is completely ignored in the *implementation* of this
-function, it does happen to be used in the *type!*
+function, it does happen to be used in the *type!* The reason our last example
+failed to compile is because when we fill in `x`, we're changing the type of the
+proof required in the second argument. But the second argument is already
+`ctor:refl`. Thus, we're asking Agda to assign a type of `expr:3 ≡ 4` to
+`ctor:refl`, which it just can't do. That's where the error comes from, and
+that's why `def:_≡⟨⟩_` is less trivial than it seems.
 
 While all of this syntax construction itself is rather clever, there is nothing
 magical going on here. It's all just smoke and mirrors abusing Agda's mixfix
-parsing and typechecker in order to get nice notation for what we want.
-
-Of course, `def:_≡⟨⟩_` is no good for providing justifications. Instead, we will
+parsing and typechecker in order to get nice notation for what we want. Of
+course, `def:_≡⟨⟩_` is no good for providing justifications. Instead, we will
 use the same idea, but this time leave a hole for the justification.
 
 ```agda
@@ -1770,19 +1774,23 @@ use the same idea, but this time leave a hole for the justification.
         → x ≡ y
         → y ≡ z
         → x ≡ z
-    _≡⟨_⟩_ x = trans
+    x ≡⟨ j ⟩ p = trans j p
 
     infixr 2 _≡⟨_⟩_
 ```
 
-`def:_≡⟨_⟩_` works exactly in the same way as `def:_≡⟨⟩_`, except that it takes a
-proof justification as its middle argument, and glues it together with its last
-argument as per `def:trans`. We have one piece of syntax left to introduce, and will
-then play with this machinery in full.
+Our new function `def:_≡⟨_⟩_` works exactly in the same way as `def:_≡⟨⟩_`,
+except that it takes a proof justification `j` as its middle argument, and glues
+it together with its last argument `p` as per `def:trans`. We'll look at an
+example momentarily.
 
-Finally, by way of symmetry and to top things off, we will add a starting
-keyword. This is not strictly necessary, but makes for nice introductory syntax
-to let the reader know that an equational reasoning proof is coming up:
+We have one piece of syntax left to introduce, and will then play with this
+machinery in full.
+
+By way of poetic symmetry (rather than by way of `def:sym`) and to top things
+off, we will add a piece of syntax to indicate the beginning of a proof block.
+This is not strictly necessary, but makes for nice introductory syntax to let
+the reader know that an equational reasoning proof is coming up:
 
 ```agda
     begin_ : {A : Set} → {x y : A} → x ≡ y → x ≡ y
@@ -1791,52 +1799,57 @@ to let the reader know that an equational reasoning proof is coming up:
     infix 1 begin_
 ```
 
-The `def:begin_` function does nothing, it merely returns the proof given. And since
-its precedence is lower than any of our other `module:≡-Reasoning` pieces, it binds
-after any of our other syntax, ensuring the proof is already complete by the
-time we get here. The purpose really is just for decoration.
+The `def:begin_` function does nothing, it merely returns the proof given. And
+since its precedence is lower than any of our other `module:≡-Reasoning` pieces,
+it binds after any of our other syntax, ensuring the proof is already complete
+by the time we get here. The purpose really is just for decoration, but does
+serve a purpose when we define analogous machinery in the context of preorders
+(@sec:preorder-reasoning.)
 
 Let's now put all of our hard work to good use. Recall the proof that originally
 set us off on a hunt for better syntax:
 
 ```agda
-  a^1≡a+b*0′⅋₁ : (a b : ℕ) → a ^ 1 ≡ a + (b * zero)
-  a^1≡a+b*0′⅋₁ a b
-    = trans (^-identityʳ a)
-    ( trans (sym (+-identityʳ a))
-            (cong (a +_) (sym (*-zeroʳ b)))
-    )
+    a^1≡a+b*0′⅋₁ : (a b : ℕ) → a ^ 1 ≡ a + (b * 0)
+    a^1≡a+b*0′⅋₁ a b
+      = trans (^-identityʳ a)
+      ( trans (sym (+-identityʳ a))
+              (cong (a +_) (sym (*-zeroʳ b)))
+      )
 ```
 
-We can now rewrite this proof in the equational reasoning style:
+The equational reasoning syntax we've built gives us a much nicer story for
+implementing this. Rather than work with the big explicit pile of calls to
+`def:trans`, we can just open a new reasoning block:
 
 ```agda
-  a^1≡a+b*0′⅋₂ : (a b : ℕ) → a ^ 1 ≡ a + (b * zero)
-  a^1≡a+b*0′⅋₂ a b =
-    begin
-      a ^ 1
-    ≡⟨ ^-identityʳ a ⟩
-      a
-    ≡⟨ sym (+-identityʳ a) ⟩
-      a + zero
-    ≡⟨ cong (a +_) (sym (*-zeroʳ b)) ⟩
-      a + b * zero
-    ∎
-    where open ≡-Reasoning
+    a^1≡a+b*0′⅋₂ : (a b : ℕ) → a ^ 1 ≡ a + (b * 0)
+    a^1≡a+b*0′⅋₂ a b =
+      begin
+        a ^ 1
+      ≡⟨ ^-identityʳ a ⟩
+        a
+      ≡⟨ sym (+-identityʳ a) ⟩
+        a + 0
+      ≡⟨ cong (a +_) (sym (*-zeroʳ b)) ⟩
+        a + b * 0
+      ∎
 ```
 
-which, for the purposes of aesthetics, we will format in this book as the
-following whenever we have available line-width:
+For the purposes of this book's aesthetics, whenever we have the available
+line-width, we will choose to format equational reasoning blocks as:
 
 ```agda
-  a^1≡a+b*0′⅋₃ : (a b : ℕ) → a ^ 1 ≡ a + (b * zero)
-  a^1≡a+b*0′⅋₃ a b = begin
-    a ^ 1       ≡⟨ ^-identityʳ a ⟩
-    a             ≡⟨ sym (+-identityʳ a) ⟩
-    a + zero      ≡⟨ cong (a +_) (sym (*-zeroʳ b)) ⟩
-    a + b * zero  ∎
-    where open ≡-Reasoning
+    a^1≡a+b*0′⅋₃ : (a b : ℕ) → a ^ 1 ≡ a + (b * 0)
+    a^1≡a+b*0′⅋₃ a b = begin
+      a ^ 1      ≡⟨ ^-identityʳ a ⟩
+      a          ≡⟨ sym (+-identityʳ a) ⟩
+      a + 0      ≡⟨ cong (a +_) (sym (*-zeroʳ b)) ⟩
+      a + b * 0  ∎
 ```
+
+You are welcome to pick whichever style you prefer; the former is easier to type
+out and work with, but the latter looks prettier once the proof is all sorted.
 
 As you can see, this is a marked improvement over our original definition. The
 original implementation emphasized the proof justification---which are important
@@ -1848,7 +1861,7 @@ as we have done here. This is an important lesson, inside Agda and out.
 
 ## Ergonomics, Associativity and Commutativity
 
-If you tried writing out the new definition of `a^1≡a+b*0′⅋₃` by hand, you
+If you tried writing out the new definition of `def:a^1≡a+b*0′⅋₃` by hand, you
 likely didn't have fun. It's a huge amount of keystrokes in order to produce the
 above code artifact. Thankfully, Agda's interactive support can help us write
 out the mechanical parts of the above proof, allowing us to focus more on the
