@@ -1656,16 +1656,12 @@ got:
     infixr 2 _≡⟨⟩_
 ```
 
-It's easy to lose the forest for the trees here, so let's work through an
-example
+These long brackets are input as [`<`](AgdaMode) and [`>`](AgdaMode),
+respectively.
 
-Again, `x` is unused in the definition, and exists only in the type. You might
-think this is a good opportunity for an implicit argument, but we'd actually
-*prefer* it to be visible. Recall that the justifications (that is, the proofs)
-fully specify which two things we are stating are equal. The `x` arguments we've
-written in `def:_≡⟨⟩_` and `def:_∎` are unnecessary for the implementations, but act as
-a guide for the *human* writing the thing in the first place! These `x`s mark
-the current state of the computation. Let's illustrate the point:
+It's easy to lose the forest for the trees here, so let's work through an
+example. We can write a trivial little proof, showing the equality of several
+different ways of writing the number 4:
 
 ```agda
     _ : 4 ≡ suc (one + two)
@@ -1679,52 +1675,51 @@ the current state of the computation. Let's illustrate the point:
 In this case, since everything is fully concrete, Agda can just work out the
 fact that each of these expressions is propositionally equal to one another,
 which is why we need no justifications. But you'll notice where once we had `x`
-parameters, we now have a human-legible argument about which things are equal!
-It can be helpful to insert explicit parentheses here to help us parse exactly
-what's going on:
+and `y`s in our types, now have a human-legible argument about *which* things
+are equal!
+
+Agda successfully parses the above, but it can be helpful for own sanity to
+make the parse tree explicit. Rather than use infix notation, we'll use the full
+unsectioned names for both `def:_≡⟨⟩_` and `def:_∎`, and then insert all of the
+parentheses:
 
 ```agda
     _ : 4 ≡ suc (one + two)
-    _ =
-      4                  ≡⟨⟩
-      ( two + two        ≡⟨⟩
-      ( suc one + two    ≡⟨⟩
-      ( suc (one + two)  ∎ )))
+    _ = _≡⟨⟩_  4
+      ( _≡⟨⟩_  (two + two)
+      ( _≡⟨⟩_  (suc one + two)
+      ( _∎     (suc (one + two)))))
 ```
 
-Replacing `def:_∎` with its definition, we get:
+Recall that the implementation of `def:_≡⟨⟩` merely returns its second argument,
+so we can simplify the above to:
 
 ```agda
     _ : 4 ≡ suc (one + two)
-    _ =
-      4                ≡⟨⟩
-      ( two + two      ≡⟨⟩
-      ( suc one + two  ≡⟨⟩ refl ))
+    _ = _≡⟨⟩_  (two + two)
+      ( _≡⟨⟩_  (suc one + two)
+      ( _∎     (suc (one + two))))
 ```
 
-We can then replace the innermost `def:_≡⟨⟩_` with *its* definition, which you will
-remember is to just return its second argument:
+Our resulting expression begins with another call to `def:_≡⟨⟩_`, so we can make
+the same move again. And a third time, resulting in:
 
 ```agda
     _ : 4 ≡ suc (one + two)
-    _ =
-      4            ≡⟨⟩
-      ( two + two  ≡⟨⟩ refl )
+    _ =  _∎ (suc (one + two))
 ```
 
-This process continues on and one until all of the syntax is eliminated, and we
-are left with just:
+Replacing `def:_∎` now with *its* definition, we finally eliminate all of our
+function calls, and are left with the rather underwhelming proof:
 
 ```agda
     _ : 4 ≡ suc (one + two)
     _ = refl
 ```
 
-While it seems like our notation merely ignores the equal terms, this isn't
-actually true. Recall that the elided `x`s actually do appear in the type
-signatures, which means these values *are* used to typecheck the whole thing.
-That is, if we make an invalid step, Agda will tell us. For example, perhaps we
-make an error in our proof, as in:
+Have I pulled a fast one on you? Did we do all of this syntactic manipulation
+merely as a jape? While it seems like we've done nothing of value here, notice
+what happens if we try writing down an *invalid* proof---as in:
 
 ```illegal
     _ : 4 ≡ suc (one + two)
@@ -1734,8 +1729,8 @@ make an error in our proof, as in:
       suc one + two  ∎
 ```
 
-At [1](Ann) we accidentally dropped a `ctor:suc`. But, Agda is smart enough to catch
-the mistake:
+At [1](Ann) we accidentally wrote `def:one` instead of `expr:suc one`. But, Agda
+is smart enough to catch the mistake, warning us:
 
 ```info
 zero != suc zero of type ℕ
@@ -1745,12 +1740,27 @@ matches the expected type
   4 ≡ suc (one + two)
 ```
 
+So whatever it is that we've built, it's doing *something* interesting. Despite
+ignoring every argument, somehow Agda is still noticing flaws in our proof. How
+can it do such a thing? Let's look at the definition of `def:_≡⟨⟩_` again:
+
+```agda
+    _≡⟨⟩⅋₀_ : {A : Set} {y : A}
+          → (x : A)
+          → x ≡ y
+          → x ≡ y
+    x ≡⟨⟩⅋₀ p = p
+```
+
+Despite that fact that `x` is completely ignored in the *implementation* of this
+function, it does happen to be used in the *type!*
+
 While all of this syntax construction itself is rather clever, there is nothing
 magical going on here. It's all just smoke and mirrors abusing Agda's mixfix
 parsing and typechecker in order to get nice notation for what we want.
 
-Of course, `def:_≡⟨⟩_` is no good for providing justifications. Instead, we will use
-the same idea, but this time leave a hole for the justification.
+Of course, `def:_≡⟨⟩_` is no good for providing justifications. Instead, we will
+use the same idea, but this time leave a hole for the justification.
 
 ```agda
     _≡⟨_⟩_
