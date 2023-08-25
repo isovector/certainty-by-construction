@@ -16,6 +16,7 @@ Hidden
 
 :   ```agda
 {-# OPTIONS --allow-unsolved-metas #-}
+open import Data.Integer using (ℤ)
     ```
 
 
@@ -128,17 +129,118 @@ working on indexed types, where we've seen values used as indices on types. But
 as we become more sophisticated Agda programmers (*eg.* later in this chapter,)
 we will start going the other direction: using types as values.
 
+When we write a proof about values, such a thing lives in `type:Set`. But proofs
+above *types* must necessarily exist in a higher universe so as to not taunt the
+barber and his dreadful paradox. Of course, proofs about *those* proofs must
+again live in a higher universe.
 
+You can imagine we might want to duplicate some proofs in different universes.
+For example, we might want to say the tuple `expr:1 , (2 , 3)` is "pretty much
+the same thing[^same-thing]" as `expr:(1 , 2) , 3`. But then we might want to
+say that a type-level tuple of `expr:ℕ , (Bool , ℤ)`---*not* `expr:ℕ × (Bool ×
+ℤ)`, mind you--- is *also* "pretty much the same thing" as `expr:(ℕ , Bool) ,
+ℤ`.
 
+[^same-thing]: For some definition of "pretty much the same thing" that we will
+  make precise in @sec:setoids.
 
-. The everyday sets we talk about are
-`Set₀`. `Set₀` itself is contained by `Set₁`, which is contained by `Set₂`, and
-so on and so forth. Mathematicians have built an infinite hierarchy of
-ever-larger sets, in essence, putting a type-system on top of sets to ensure no
-set is able to quantify over itself. Of course, sometimes it is nice to be able
-to quantify over sets, and thus the hierarchy allows us to quantify over sets of
-a given size by stepping up one tier in the
-hierarchy.
+Thankfully, Agda allows us to write this sort of proof once and for all, by
+abstracting over universe levels in the form of *universe polymorphism.* The
+necessary type is `type:Level` from `module:Agda.Primitive`:
+
+```agda
+open import Agda.Primitive
+  using (Level)
+```
+
+Before we play with our new `type:Level`s, let's force Agda to give us an error.
+Recall our old definition of `type:Maybe` from @sec:maybe:
+
+```agda
+module Playground-Level where
+  data Maybe₀ (A : Set) : Set where
+    just₀     : A → Maybe₀ A
+    nothing₀  : Maybe₀ A
+```
+
+We might try to generate a term of type `type:Maybe Set`, as in:
+
+```illegal
+  _ = just₀ ℕ
+```
+
+which Agda doesn't like, and isn't shy about telling us:
+
+```info
+Set₁ != Set
+when checking that the solution Set of metavariable _A_8 has the
+expected type Set
+```
+
+The problem, of course, is that we said `A` was of type `type:Set`, but then
+tried to instantiate this with `A =` `type:Set`. But since `type:Set` `:`
+`type:Set₁`, this is a universe error, and the thing fails to typecheck.
+
+Instead, we can use universe polymorphism in the definition of `type:Maybe`, by
+binding a `type:Level` named `ℓ` ([ell](AgdaMode)), and parameterizing both the
+set `A` and `type:Maybe` by this `type:Level`:
+
+```agda
+  data Maybe₁ {ℓ : Level} (A : Set ℓ) : Set ℓ where
+    just₁     : A → Maybe₁ A
+    nothing₁  : Maybe₁ A
+```
+
+Agda is now happy to accept our previous definition:
+
+```agda
+  _ = just₁ ℕ
+```
+
+In the real world, it happens to be quite a lot of work to bind every level
+every time, so we often use a `keyword:variable` block to define levels:
+
+```agda
+  private variable
+    ℓ : Level
+
+  data Maybe₂ (A : Set ℓ) : Set ℓ where
+    just₂     : A → Maybe₂ A
+    nothing₂  : Maybe₂ A
+```
+
+Variable blocks are a lovely feature in Agda; whenever you reference a binding
+defined in a `keyword:variable`, Agda will automatically insert an implicit
+variable for you. Thus, behind the scenes, Agda is just turning our definition
+for `type:Maybe₂` into exactly the same thing as we wrote by hand for
+`type:Maybe₁`.
+
+Although we didn't define `type:Maybe` this way when we built it in @sec:maybe,
+we don't need to make any changes. This is because
+`module:Chapter2-Numbers.Exports` *re-exports* `type:Maybe` from the standard
+library, which as a principle is always as universe-polymorphic as possible.
+
+As a beginner writing Agda, getting all of the universes right can be rather
+daunting. I'd recommend you start by putting everything in `type:Set`, and
+generalizing from there only when the typechecker insists that your levels are
+wrong.
+
+When that happens, simply introduce a new implicit `type:Level` for each
+`type:Set` you're binding, and then follow the type errors until everything
+compiles again. Sometimes the errors might be incomplete, complaining that the
+level you gave it is not the level it should be. Just make the change and try
+again; sometimes Agda will further complain, giving you an even higher bound
+that you must respect in your level algebra. It can be frustrating, but keep
+playing along, and Agda will eventually stop complaining.
+
+As you gain more proficiency in Agda, you'll often find yourself trying to do
+interesting things with `type:Set`s, like putting them inside of data
+structures. If you wrote the data structures naively over `type:Set`, this will
+invoke the ire of the universe checker, and Agda will refuse your program. After
+running into this problem a few times, you will begin making all of your
+programs universe-polymorphic. The result is being able to reuse code you wrote
+to operate over values when you later decide you also need to be able to operate
+over types. A little discipline in advance goes a long way.
 
 
 ## Negation {#sec:negation}
