@@ -1837,17 +1837,17 @@ operator `def:_∸_` is from @sec:monus.
 
 ```agda
 module Exports where
-    open import Data.Nat
-      using (ℕ; zero; suc; _+_; _*_; _^_; _∸_)
-      public
+  open import Data.Nat
+    using (ℕ; zero; suc; _+_; _*_; _^_; _∸_)
+    public
 ```
 
 We also gave definitions for the first four positive naturals:
 
 ```agda
-    open Sandbox-Naturals
-      using (one; two; three; four)
-      public
+  open Sandbox-Naturals
+    using (one; two; three; four)
+    public
 ```
 
 While discussing the natural numbers, we looked at two notions of evenness in
@@ -1857,12 +1857,12 @@ those constructors to `ctor:z-even` and `ctor:ss-even` by way of a
 `keyword:renaming` import modifier:
 
 ```agda
-    open Sandbox-Naturals
-      using (IsEven)
-      renaming ( zero-even     to z-even
-               ; suc-suc-even  to ss-even
-               )
-      public
+  open Sandbox-Naturals
+    using (IsEven)
+    renaming ( zero-even     to z-even
+             ; suc-suc-even  to ss-even
+             )
+    public
 ```
 
 In @sec:maybe, we constructed the `type:Maybe` type, which we used to wrap

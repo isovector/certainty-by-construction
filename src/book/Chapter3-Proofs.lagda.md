@@ -163,7 +163,7 @@ bring back into scope:
 
 ```agda
 module Example-ProofsAsPrograms where
-  open Chapter2-Numbers.Exports.Naturals
+  open Chapter2-Numbers.Exports
     using (ℕ; IsEven)
 ```
 
@@ -403,7 +403,7 @@ module Playground where
   open import Relation.Binary.PropositionalEquality
     using (_≡_; refl)
 
-  open Chapter2-Numbers.Exports.Naturals
+  open Chapter2-Numbers.Exports
 ```
 
 We should not be surprised that Agda can determine that two

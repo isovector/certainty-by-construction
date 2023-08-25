@@ -34,7 +34,7 @@ open Chapter1-Agda.Exports
 
 :   ```agda
 import Chapter2-Numbers
-open Chapter2-Numbers.Exports.Naturals
+open Chapter2-Numbers.Exports
   using (ℕ; zero; suc)
     ```
 
@@ -750,7 +750,7 @@ natural numbers, and does not exist in the standard library.
 
 
 ```agda
-  open Chapter2-Numbers.Exports.Naturals
+  open Chapter2-Numbers.Exports
     using (IsEven; z-even; ss-even)
 
   -- data IsEven : ℕ → Set where
