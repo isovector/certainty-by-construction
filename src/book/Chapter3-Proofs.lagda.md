@@ -2259,6 +2259,9 @@ Hidden
   -- fix expr
       ```
 
+> TODO(sandy): A little prose would go a long way here if I have time!
+
+
 Exercise
 
 :   Prove `def:*-distribʳ-+` `:` `expr:(x y z : ℕ) → (y + z) * x ≡ y * x + z * x`.

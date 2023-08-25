@@ -357,10 +357,10 @@ Of utmost importance in Agda is the notion of a *typing judgment:* the static
 assertion that a particular value has a particular type. A typing judgment is
 the fancy, academic name for a type declaration. For example, let's consider the
 booleans, of which we have two values: `true` and `false`. Because `true` is a
-`type:Bool`, we would write the judgment `true : Bool`, where the colon can be
-read aloud as "has the type," or "is of type." We can't yet write this judgment
-down, since we are in a new module and thus have lost our imports that brought
-`true` and `type:Bool` into scope.
+`type:Bool`, we would write the judgment `true` `:` `type:Bool`, where the colon
+can be read aloud as "has the type," or "is of type." We can't yet write this
+judgment down, since we are in a new module and thus have lost our imports that
+brought `true` and `type:Bool` into scope.
 
 In Agda, we can assert the existence of things without having to give them a
 definition by using the `keyword:postulate` keyword. As we will see later, this
@@ -475,7 +475,7 @@ and `ctor:true` the *data constructors* or the *introductory forms* of
 `type:Bool`.
 
 
-## Your First Function
+## Your First Function {#sec:not}
 
 After all of this preamble, you are probably itching to write a program in Agda.
 As a first step, let's write the `def:not` function, which transforms
@@ -1479,7 +1479,7 @@ two definitions as:
 Much nicer, isn't it?
 
 
-## Copatterns and Constructors
+## Copatterns and Constructors {#sec:tuples}
 
 We now have nice syntax for projecting out of records. But can we do anything to
 improve the syntax involved in building them? It would be really nice to be able
@@ -2237,24 +2237,41 @@ things by hand, made several examples, and generally went down the garden path,
 we will use this module as the definitive export list. This module is the final
 artifact of our exploration in this chapter.
 
-For the best portability, we will not use our own definitions, but rather those
-from the standard library.
-
 ```agda
 module Exports where
+```
+
+For the best portability, we will not use our own definitions, but rather reuse
+those which come from the standard library.
+
+In @sec:bools we built `type:Bool` alongside its constructors `ctor:false` and
+`ctor:true`. In @sec:not we implemented `def:not`, and in @sec:operators we
+defined the boolean OR function `def:_∨_`.
+
+```agda
   open import Data.Bool
     using (Bool; false; true; not; _∨_)
     public
-
-  open import Data.Product public
-    using (_×_; _,_; curry; uncurry; proj₁; proj₂)
-    public
 ```
 
-Note the `keyword:public` modifier on both of these `keyword:import`s. By
-default, Agda won't export anything you imported, but the `keyword:public`
-keyword changes this behavior, allowing us to re-export definitions that we
-didn't write for ourselves.
+Note the `keyword:public` modifier on this`keyword:import`s. By default, Agda
+won't export anything you imported, but the `keyword:public` keyword changes
+this behavior, allowing us to re-export definitions that we didn't write for
+ourselves.
+
+The other things we built in this chapter are around tuples and functions. In
+@sec:tuples we made the `def:_×_` type, its constructor `ctor:_,_`, and its
+projections `field:proj₁` and `field:proj₂`.
+
+The functions `def:curry` and `def:uncurry`---which form an isomorphism between
+curried functions and functions which take all of their arguments at once---were
+defined in @sec:currying.
+
+```agda
+  open import Data.Product public
+    using (_×_; _,_; proj₁; proj₂; curry; uncurry)
+    public
+```
 
 We have not even begun to scratch the surface of what interesting things are
 possible in Agda, but we now have enough background that we can earnestly get

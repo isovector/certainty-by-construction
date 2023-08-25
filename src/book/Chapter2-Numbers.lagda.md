@@ -39,7 +39,7 @@ we will just use the standard library's implementation, since it will be more
 complete, and allow us better interopability when doing real work.
 
 
-## Natural Numbers
+## Natural Numbers {#sec:naturals}
 
 It is one thing to say we will "construct the numbers," but doing so is much
 more involved. The first question to ask is *which numbers?* As it happens, we
@@ -680,7 +680,7 @@ Solution
     ```
 
 
-## Constructing Evidence
+## Constructing Evidence {#sec:maybe}
 
 When we originally implemented `def:even?`, I mentioned that functions which
 return booleans are generally a bad habit in Agda. You've done a lot of
@@ -823,7 +823,7 @@ or invoke [Auto](AgdaCmd) to do it on our behalf.
 ```
 
 
-## Addition
+## Addition {#sec:addition}
 
 With the concept of induction firmly in our collective tool-belt, we are now
 ready to tackle a much more interesting function: addition over the naturals.
@@ -1004,7 +1004,7 @@ of constructors:
 It's not the nicest solution, but it gets the job done.
 
 
-## Multiplication and Exponentiation
+## Multiplication and Exponentiation {#sec:multiplication}
 
 With addition happily under our belt, we will try our hand at multiplication.
 The approach is the same as with addition: write down the type of the operation,
@@ -1828,27 +1828,56 @@ that $1 + 1 = 2$. While we haven't yet *proven* this fact, we are well on our
 way, and will do so in the next chapter when we reflect on the deep nature of
 proof.
 
-In closing, we will provide an `module:Exports` module, which we can use in
-subsequent chapters to get access to parts of Agda's standard library that we
-have defined in these last pages. Because the names of the standard mathematical
-operations shadow one another, we will make two submodules---one for the
-naturals, and another for the integers---allowing our future selves more control
-about what we choose to bring in.
+In closing, we will again provide an `module:Exports` module to export the
+standard library's versions of everything we've built in this chapter. In
+@sec:naturals we constructed the natural numbers `type:ℕ` and their constructors
+`ctor:zero` and `ctor:suc`. Addition comes from @sec:addition, while
+multiplication and exponentiation come from @sec:multiplication. The monus
+operator `def:_∸_` is from @sec:monus.
 
 ```agda
 module Exports where
-  module Naturals where
     open import Data.Nat
       using (ℕ; zero; suc; _+_; _*_; _^_; _∸_)
       public
+```
 
+We also gave definitions for the first four positive naturals:
+
+```agda
     open Sandbox-Naturals
-      using (IsEven; zero-even; suc-suc-even; one; two; three; four)
-      public
-
-  module Integers where
-    open import Data.Integer
-      using (ℤ; +_; -[1+_]; +[1+_]; +0; -_; _+_; _-_; _*_; _⊖_)
+      using (one; two; three; four)
       public
 ```
+
+While discussing the natural numbers, we looked at two notions of evenness in
+@sec:even. We'd like to export `type:IsEven` and its constructors
+`ctor:zero-even` and `ctor:suc-suc-even`. For succinctness, however, we'll rename
+those constructors to `ctor:z-even` and `ctor:ss-even` by way of a
+`keyword:renaming` import modifier:
+
+```agda
+    open Sandbox-Naturals
+      using (IsEven)
+      renaming ( zero-even     to z-even
+               ; suc-suc-even  to ss-even
+               )
+      public
+```
+
+In @sec:maybe, we constructed the `type:Maybe` type, which we used to wrap
+functions' return types in case there is no possible answer. If the function
+can't return anything, we use the constructor `ctor:nothing`, but if it was
+successful, it can use `ctor:just`:
+
+```agda
+  open import Data.Maybe
+    using (Maybe; just; nothing)
+    public
+```
+
+Discussing the integers made for an interesting exercise, but we will not need
+them again in this book, and therefore will not export them. Nevertheless, if
+you'd like to use them in your own code, you can find all of our definitions
+under `module:Data.Int`.
 

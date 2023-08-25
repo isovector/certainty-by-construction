@@ -6,10 +6,11 @@
   -- open import Relation.Nullary
   -- open import Data.Product
 
-  -- ¬∸-identityˡ : ¬ (Σ ℕ λ e → (x : ℕ) → e ∸ x ≡ x)
+  -- ¬∸-identityˡ : ¬ (∃Σ ℕ λ e → (x : ℕ) → e ∸ x ≡ x)
   -- ¬∸-identityˡ (e , e-id) with e-id 0 | e-id 1
   -- ... | refl | ()
 ```
+
 
 Hidden
 
@@ -17,14 +18,37 @@ Hidden
 {-# OPTIONS --allow-unsolved-metas #-}
     ```
 
+
 ```agda
 module Chapter4-Decidability where
 ```
 
-In the last chapter, we thoroughly investigated the notion of doing proof in
-Agda.  We defined what it means for two things to be propositionally equal,
-derived relevant properties of equality, built a domain-specific language for
-doing equational reasoning, and proved many facts about the natural numbers.
+
+Prerequisites
+
+:   ```agda
+import Chapter1-Agda
+open Chapter1-Agda.Exports
+  using (Bool; true; false)
+    ```
+
+:   ```agda
+import Chapter2-Numbers
+open Chapter2-Numbers.Exports.Naturals
+  using (ℕ; zero; suc)
+    ```
+
+:   ```agda
+import Chapter3-Proofs
+open Chapter3-Proofs.Exports
+  using (_≡_; refl; sym; trans; cong; module ≡-Reasoning)
+    ```
+
+
+In the last chapter, we thoroughly investigated the notion of doing proof work
+in Agda. We gave a propositional definition what it means for two things to be
+equal, derived relevant properties of equality, built a domain-specific language
+for doing equational reasoning, and proved many facts about the natural numbers.
 
 Perhaps you are thinking you now know all there is to know about proofs, but
 this is patently false: for example, we haven't yet discussed what it means for
@@ -80,8 +104,8 @@ worry, the interface is identical to the ones we built, so there will be no
 surprises in doing this:
 
 ```agda
-open import Data.Nat
-  using (ℕ; zero; suc)
+-- open Chapter2-Numbers.Exports.Naturals
+--   using (ℕ; zero; suc; _+_)
 ```
 
 We will also need to import propositional equality, which we can also get from
@@ -89,8 +113,8 @@ the standard library. This too has an identical interface, so we're safe to do
 so:
 
 ```agda
-open import Relation.Binary.PropositionalEquality
-  using (_≡_; refl; sym; trans; cong; module ≡-Reasoning)
+-- open Chapter3-Proofs.Exports
+--   using (_≡_; refl; sym; trans; cong; module ≡-Reasoning)
 ```
 
 With these out of the way, we can get started on our new attempt at the
@@ -442,8 +466,7 @@ such a thing like this:
 
 ```agda
 module Sandbox-Decidability where
-
-  open import Data.Maybe
+  open Chapter2-Numbers.Exports
     using (Maybe; just; nothing)
 
   n=5? : (n : ℕ) → Maybe (n ≡ 5)
@@ -474,12 +497,6 @@ example, given two numbers, it's not too hard to determine if the two are equal.
 
 ```agda
 module Nat-Properties where
-  open import Data.Nat
-    using (ℕ; zero; suc)
-
-  open import Data.Bool
-    using (Bool; true; false)
-
   _==_ : ℕ → ℕ → Bool
   zero  == zero  = true
   zero  == suc y = false
@@ -494,8 +511,6 @@ whenever it returns `true` we instead give back a `ctor:yes`, and likewise repla
 little more thought:
 
 ```agda
-  open import Relation.Binary.PropositionalEquality
-
   _≟⅋₀_ : (x y : ℕ) → Dec (x ≡ y)
   zero ≟⅋₀ zero = yes refl
   zero ≟⅋₀ suc y = no ?
@@ -616,9 +631,6 @@ The difference is all in the colors. Literally. The reason is that, as the name
 implies, we can *pattern match* when `ctor:leaf` is defined as pattern:
 
 ```agda
-  open import Data.Bool
-    using (Bool; true; false)
-
   is-singleton : {A : Set} → BinTree A → Bool
   is-singleton (leaf _) = true
   is-singleton _ = false
@@ -738,12 +750,12 @@ natural numbers, and does not exist in the standard library.
 
 
 ```agda
-  open Data.Nat
-    using (_+_)
+  open Chapter2-Numbers.Exports.Naturals
+    using (IsEven; z-even; ss-even)
 
-  data IsEven : ℕ → Set where
-    z-even   : IsEven 0
-    ss-even  : {n : ℕ} → IsEven n → IsEven (2 + n)
+  -- data IsEven : ℕ → Set where
+  --   z-even   : IsEven 0
+  --   ss-even  : {n : ℕ} → IsEven n → IsEven (2 + n)
 ```
 
 It's now possible to show every element in `def:tree` is even. In fact, Agda can
@@ -1466,5 +1478,26 @@ and finally, define insertion by merely plugging in some trivial proofs:
 ```agda
   insert : (a : A) → BST → BST
   insert a t = Impl.insert <∞-cmp [ a ] -∞<[] []<+∞ t
+```
+
+
+```agda
+module Exports where
+  open import Relation.Binary
+    using (Reflexive; Transitive; DecidableEquality; Trichotomous; Tri)
+    public
+  open Tri public
+
+  open import Data.Empty
+    using (⊥)
+    public
+
+  open import Relation.Nullary
+    using (Dec; yes; no; ¬_)
+    public
+
+  open import Relation.Binary.PropositionalEquality
+    using (_≢_; ≢-sym)
+    public
 ```
 
