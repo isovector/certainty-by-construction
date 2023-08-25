@@ -30,7 +30,7 @@ Prerequisites
 :   ```agda
 import Chapter1-Agda
 open Chapter1-Agda.Exports
-  using (Bool; true; false)
+  using (Bool; true; false; _×_; _,_)
     ```
 
 :   ```agda
@@ -249,9 +249,13 @@ Recall that we've now seen how to express that two values are (propositionally)
 equal, via the `type:_≡_` type, proven via `ctor:refl`. We'd now like to work
 out a means of discussing *inequality!*
 
+
+Hidden
+
 :   ```agda
 -- fix bind
     ```
+
 
 Perhaps you might think we can make a slight tweak to the `type:_≡_`
 construction. While `ctor:refl` `:` `bind:x:x ≡ x`, perhaps we could define
