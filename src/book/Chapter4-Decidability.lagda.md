@@ -35,7 +35,7 @@ open Chapter1-Agda.Exports
 :   ```agda
 import Chapter2-Numbers
 open Chapter2-Numbers.Exports
-  using (ℕ; zero; suc)
+  using (ℕ; zero; suc; _+_)
     ```
 
 :   ```agda
@@ -48,31 +48,112 @@ open Chapter3-Proofs.Exports
 In the last chapter, we thoroughly investigated the notion of doing proof work
 in Agda. We gave a propositional definition what it means for two things to be
 equal, derived relevant properties of equality, built a domain-specific language
-for doing equational reasoning, and proved many facts about the natural numbers.
+for doing equational reasoning, and proved many facts about the algebra of the
+natural numbers.
 
-Perhaps you are thinking you now know all there is to know about proofs, but
-this is patently false: for example, we haven't yet discussed what it means for
-a notion to be false! Furthermore, everything we've built so far works only for
+Perhaps now we can smugly think that we know all there is to know about
+proofs---but this is patently false. For example, we haven't the notion of
+falseness itself! Furthermore, everything we've built so far works only for
 *statically-known* values. But is it possible that we can use dependent types in
 contexts where we don't know all the values we need to work with? Maybe the
 values came from the user via an interactive system. Are we forced to throw away
 everything we've done and degrade our guarantees to those of a weaker
 programming language?
 
-Thankfully the answer is "no," and we will explore the ideas no. In addition, we
-will also get our hands dirty modeling and proving facts about objects that feel
-significantly more *computer science-y.* After all, these techniques are
-applicable outside of the ivory tower, too!
+Thankfully the answer to all of these is "no," and we will explore each in this
+chapter. Additionally, we will also get our hands dirty modeling and proving
+facts about more computer-sciencey objects. After all, these proof techniques
+are applicable outside of the ivory tower, too!
 
 
-## Negation
+## Universe Levels {@sec:levels}
+
+Before we discuss falseness, we must turn our attention first to a problem in
+the early foundations of mathematics.
+
+Perhaps you have heard of Bertrand Russell's "barber paradox"---if there is a
+barber who shaves only barbers who do not shave themselves, does he shave
+himself? The paradox is that the barber does shave himself if he doesn't, and
+doesn't if he does. The truth value of this proposition seems to flip-flop back
+and forth, from yes to no and back to yes again, forever, never settling down,
+never converging on an answer.
+
+Of course, Russell wasn't actually wondering about barbers; the question was
+posed to underline a problem with the now-called "naive set theory" that was in
+vogue at the time. We call it naive set theory these days because it allowed for
+paradoxes like the one above, and paradoxes are anathema to mathematics. Once
+you have a contradiction, the entire mathematical system falls apart and it's
+possible to prove anything whatsoever. We will look at how to exactly this in
+@sec:negation.
+
+Modern mathematics' solution to the barber paradox is the realization that not
+all collections are sets---some are simply "too big" to be sets. There is no
+"set of all sets" because such a thing is too big. Therefore, the question of
+the barber who doesn't cut his own hair is swept under the rug, much like the
+hair at actual barbershops.
+
+But this only punts on the problem. What is the corresponding mathematical
+object here. If the set of all sets is not a set, then, what exactly is it? The
+trick is to build a hierarchy of set-like things, no one of which contains
+itself, but each subsequent object contains the previous one.
+
+The usual, everyday sets and types that exist in other programming languages are
+`type:Set₀`. `type:Set₀` can be written in Agda as `type:Set` like we have been
+doing so far. But, what is the type of `type:Set` itself? Why, it's `type:Set₁`!
+
+```agda
+_ : Set₁
+_ = Set
+```
+
+We can play the same game, asking what's the type of `type:Set₁`.
+Unsurprisingly, it's `type:Set₂`:
+
+```agda
+_ : Set₂
+_ = Set₁
+```
+
+This collection of sets is an infinite hierarchy, and we refer to each as a
+*sort* or a *universe.* You're welcome to use an arbitrarily large universe if
+you'd like:
+
+```agda
+_ = Set₉₈₆₀₂₅₀
+```
+
+Why do these universes matter? As we have seen, Agda makes no distinction
+between values and types. So far, we've used this functionality primarily when
+working on indexed types, where we've seen values used as indices on types. But
+as we become more sophisticated Agda programmers (*eg.* later in this chapter,)
+we will start going the other direction: using types as values.
+
+
+
+
+. The everyday sets we talk about are
+`Set₀`. `Set₀` itself is contained by `Set₁`, which is contained by `Set₂`, and
+so on and so forth. Mathematicians have built an infinite hierarchy of
+ever-larger sets, in essence, putting a type-system on top of sets to ensure no
+set is able to quantify over itself. Of course, sometimes it is nice to be able
+to quantify over sets, and thus the hierarchy allows us to quantify over sets of
+a given size by stepping up one tier in the
+hierarchy.
+
+
+## Negation {#sec:negation}
 
 Recall that we've now seen how to express that two values are (propositionally)
-equal, via the `type:_≡_` type, proven via `ctor:refl`. We'd now like to determine a means
-of discussing *inequality!*
+equal, via the `type:_≡_` type, proven via `ctor:refl`. We'd now like to work
+out a means of discussing *inequality!*
 
-Perhaps you might think we can make a slight tweak to the `type:_≡_` construction.
-While `refl : x ≡ x`, perhaps we could try something along the lines of:
+:   ```agda
+-- fix bind
+    ```
+
+Perhaps you might think we can make a slight tweak to the `type:_≡_`
+construction. While `ctor:refl` `:` `bind:x:x ≡ x`, perhaps we could define
+`def:_≢_` (input as [`==n`](AgdaMode)) as something like:
 
 ```agda
 module Sandbox-Inequality where
@@ -80,129 +161,119 @@ module Sandbox-Inequality where
     ineq : {x y : A} → x ≢ y
 ```
 
-Unfortunately, this approach does not---and in fact, cannot---work. While we've
-attempted to assert that `x` and `y` are inequal by virtue of being different
-bindings of `A`, Agda gives us no guarantees that they are *distinct* values of
-`A`! It's like if you write a function:
+Unfortunately, this approach does not---and cannot---work. While we've attempted
+to assert that `x` and `y` are inequal by virtue of being different bindings of
+`A`, Agda gives us no guarantees that they are *distinct* values of `A`! It's
+as if were to write a function:
 
-$$
-(x, y) \mapsto x + y
-$$
+```agda
+  f : ℕ → ℕ → ℕ
+  f x y = x + y
+```
 
-Here, $x$ and $y$ are different *variables,* but that doesn't mean I can't
-*evaluate* this function at $x = y = 2$. Therefore, this approach is a dead-end,
-and we will need to find an alternative means.
+Here, `x` and `y` are different *variables,* but that doesn't mean they must
+have different *values.* We can happily evaluate this at `expr:f 2 2`. Thus,
+just because the variables are distinct doesn't mean the values must be. This
+attempt at modeling `def:_≢_` is therefore fundamentally flawed. Let's try
+something else.
 
 Recall the *principle of explosion,* the property of a contradictory system,
 which states that "from false, anything is possible." This gives us a hint as to
 how we might go about encoding an inequality. Rather than treating it as such,
 we can instead rewrite $x \neq y$ as "$x = y$ is false."
 
-Let's give it a go. First, rather than importing our hand-rolled natural numbers
-from the previous sections, we can import them from the standard library. Don't
-worry, the interface is identical to the ones we built, so there will be no
-surprises in doing this:
-
-```agda
--- open Chapter2-Numbers.Exports.Naturals
---   using (ℕ; zero; suc; _+_)
-```
-
-We will also need to import propositional equality, which we can also get from
-the standard library. This too has an identical interface, so we're safe to do
-so:
-
-```agda
--- open Chapter3-Proofs.Exports
---   using (_≡_; refl; sym; trans; cong; module ≡-Reasoning)
-```
-
-With these out of the way, we can get started on our new attempt at the
-principle of explosion. The idea being, in order to show that some proposition
-`P` is false, we must be able to generate anything we'd like, of any type we'd
-like. We can model this as:
+Let's try our hand at this principle of explosion. The idea being, in order to
+show that some claim `P` is false, we instead encode the problem as "from a
+proof of `P` we can derive anything else."
 
 ```agda
 module Sandbox-Explosion where
-  False : Set → Set₁  -- ! 1
-  False P = P → {A : Set} → A
+  _IsFalse : Set → Set₁  -- ! 1
+  P IsFalse = P → {A : Set} → A
 ```
 
-You'll notice at [1](Ann) that the type of `type:False` is `type:Set → Set₁`, which is a
-feature of Agda's type system we haven't yet covered, but will later this
-chapter. For the time being, pretend this says `type:Set → Set`. We can now try to
-find a proof that 2 is not equal to three, as per:
+You'll notice at [1](Ann) that the type of `type:_IsFalse` is `expr:Set → Set₁`,
+which is a feature of Agda's type system we haven't yet covered, but will later
+in @sec:levels. For the time being, pretend this says `expr:Set → Set`. We can
+now try to find a proof that two is not equal to three, as per:
 
 ```agda
-  2≠3⅋₀ : False (2 ≡ 3)
-  2≠3⅋₀ = ?
+  2≢3⅋₀ : (2 ≡ 3) IsFalse
+  2≢3⅋₀ = ?
 ```
 
-Since `type:False` expands to a function type, we can (rather unintuitively) do a
-[MakeCase:](AgdaCmd) here to get a *parameter* of type `2 ≡ 3`:
+Since `type:_IsFalse` expands to a function type, we can (rather unintuitively)
+do a [MakeCase:](AgdaCmd) here to get a *parameter* of type `expr:2 ≡ 3`:
 
 ```agda
-  2≠3⅋₁ : False (2 ≡ 3)
-  2≠3⅋₁ x = {! !}
+  2≢3⅋₁ : (2 ≡ 3) IsFalse
+  2≢3⅋₁ x = {! !}
 ```
 
-Asking Agda to [MakeCase:x](AgdaCmd) here produces a strange result:
+Of course, you and I know that there is no such proof that `expr:2 ≡ 3`.
+Nevertheless, we can ask Agda to [MakeCase:x](AgdaCmd) here, which will produce
+a strange result:
 
 ```agda
-  2≠3 : False (2 ≡ 3)
-  2≠3 ()
+  2≢3 : (2 ≡ 3) IsFalse
+  2≢3 ()
 ```
 
-What has happened is that Agda noticed that *there are no constructors for `2 ≡
-3`,* and thus that this function cannot actually be called, because there is no
-argument you can give it that would typecheck. Since the whole thing is moot
-anyway, Agda doesn't require us to write an implementation of this function, and
-allows us to get away with an *absurd pattern match,* which is the name for
-those empty parentheses and the lack of an equals sign.
+What happened is that Agda noticed that *there are no constructors* for the type
+`expr:2 ≡ 3`. Therefore, this function `def:2≢3` can never be called, since
+there is argument that will typecheck. Since Agda notices that the whole thing
+is moot anyway, we aren't required to write any implementation, which explains
+the funny `()` notation, also known as an *absurd pattern match.* Absurd pattern
+matches don't require an definition, and we illustrate that by not giving any
+equals sign.
 
-By virtue of having written a definition of `2≠3` that typechecks, we have
+By virtue of having written a definition of `def:2≢3` that typechecks, we have
 successfully proven the fact that two is not equal to three. Mission
-accomplished! Nevertheless, while this is an absolutely valid encoding, it's not
-how we usually write propositional negation in Agda. For that, we need the empty
-type.
+accomplished! Nevertheless, while this is an absolutely valid encoding and
+serves to illustrate the idea, it's not quite how we usually write negation in
+Agda. For that, we need the bottom type.
 
 
-## Bottom
+## Bottom {#sec:bottom}
 
 While it's acceptable to use the principle of explosion directly, there is a
 simpler way of encoding the problem, namely by "factoring out" the pieces.
+
 Rather than showing all contradictions lead to explosion, we can instead say all
 contradictions lead to a specific type, and then show that all values of that
 type lead to explosion. The resulting machinery means you can always use the
-principle of explosion if you'd like, but in practice means your type signatures
-and negative proofs become simpler to work with.
+principle of explosion if you'd like, but in practice allows for simpler-to-use
+types when doing negative proofs.
 
-The "pre-explosive" type we'll work with is called the *bottom* type, written
-`type:⊥` and input as [`bot`](AgdaMode). It's definition is short and sweet:
+This "pre-explosive" type we'll work with is called the *bottom* type, written
+`type:⊥` and input as [`bot`](AgdaMode). Its definition is short and sweet:
 
 ```agda
 data ⊥ : Set where
 ```
 
-That's it. There are no constructors for `type:⊥`. Besides a slightly different type
-signature, we can show `2≠3` with an identical proof, this time using bottom:
+That's it. There are no constructors for `type:⊥`, meaning that *every* pattern
+match on `type:⊥` must be absurd as we saw in the last section. Besides a
+slightly different type signature, we can show `def:2≢3` again---with an
+identical proof, but this time using bottom:
 
 ```agda
-2≠3 : 2 ≡ 3 → ⊥
-2≠3 ()
+2≢3 : 2 ≡ 3 → ⊥
+2≢3 ()
 ```
 
 Why does this work? Recall the definition of a function: for any input in the
-domain, it maps it to an element in the codomain. But there are no elements in
-bottom, so any function whose codomain is bottom cannot possibly be a function
-unless its *domain* also has no elements. Otherwise, the function would have
-elements in the domain with nowhere to map them to in the codomain.
+domain, it must return an element in the codomain. But there are no elements in
+bottom, so any function whose codomain is bottom cannot possibly be a
+function---as it has nowhere to send inputs! The only possible workaround here
+is if the function's domain *also* has no elements.
 
 By this argument, any function we can successfully define which maps into bottom
 necessarily constrains at least one of its parameters to also have no elements.
 
 We still need to show that an element of `type:⊥` leads to the principle of
-explosion, which is another easy proof:
+explosion. This function is called bottom elimination," and is itself another
+easy proof:
 
 ```agda
 ⊥-elim : {A : Set} → ⊥ → A
@@ -210,9 +281,13 @@ explosion, which is another easy proof:
 ```
 
 Mathematically, proofs of this flavor are called *vacuously true.* Which is to
-say, they are true only because they depend on a contradiction in the first
-place. Nevertheless, we can give a vacuous proof that all bottom elements (of
-which there are none in the first place) are equal:
+say, they are true only because they presuppose a contradiction. From another
+perspective, vacuously true proofs have already "baked in" the principle of
+explosion.
+
+Nevertheless, we can give a vacuous proof that all elements of bottom---of which
+there are none---are equal, or, at least, that they would be equal if there were
+any:
 
 ```agda
 ⊥-unique : {x y : ⊥} → x ≡ y
@@ -220,9 +295,9 @@ which there are none in the first place) are equal:
 ```
 
 We have now shown that bottom is a satisfactory definition of false, and that
-functions into bottom are therefore a good definition of the falseness of their
-input type considered as a proposition. Hence, we can define `type:¬_` ([`neg`](AgdaMode)), which
-states that a given proposition is false:
+functions into bottom are therefore proofs that at least one of their parameters
+is a contradiction. Hence, we can define `type:¬_` ([`neg`](AgdaMode)), which
+states that a given mathematical statement is false:
 
 ```agda
 open import Level
@@ -256,7 +331,7 @@ is symmetric:
 
 ```agda
 ≢-sym : {A : Set} {x y : A} → x ≢ y → y ≢ x
-≢-sym x≠y y=x = x≠y (sym y=x)
+≢-sym x≢y y=x = x≢y (sym y=x)
 ```
 
 and it is obviously *not* reflexive. Why obviously? Because reflexivity would
@@ -431,14 +506,14 @@ Transitive : {A : Set} → (A → A → Set) → Set
 Transitive {A} _≈_ = {x y z : A} → x ≈ y → y ≈ z → x ≈ z
 ```
 
-Giving the counterexample is easy, since we already have a proof `def:2≠3`. Given a
-hypothetical `def:≢-trans`, we could combine this with `sym 3≠2`, to get a proof
+Giving the counterexample is easy, since we already have a proof `def:2≢3`. Given a
+hypothetical `def:≢-trans`, we could combine this with `sym 3≢2`, to get a proof
 that `2 ≢ 2`. Such a thing is in direct contradiction with `refl : 2 ≡ 2`, and
 thus we are done:
 
 ```agda
 ¬≢-trans : ¬ ({A : Set} → Transitive {A} _≢_)
-¬≢-trans ≢-trans = ≢-trans {ℕ} 2≠3 (≢-sym 2≠3) refl
+¬≢-trans ≢-trans = ≢-trans {ℕ} 2≢3 (≢-sym 2≢3) refl
 ```
 
 
@@ -517,7 +592,7 @@ little more thought:
   suc x ≟⅋₀ zero = no ?
   suc x ≟⅋₀ suc y with x ≟⅋₀ y
   ... | yes refl = yes refl
-  ... | no x≠y   = no ?
+  ... | no x≢y   = no ?
 ```
 
 The first hole here has type `zero ≡ suc y → ⊥`, which we can [Refine](AgdaCmd)
@@ -530,7 +605,7 @@ to a lambda:
   suc x ≟⅋₁ zero = no ?
   suc x ≟⅋₁ suc y with x ≟⅋₁ y
   ... | yes refl = yes refl
-  ... | no x≠y   = no ?
+  ... | no x≢y   = no ?
 ```
 
 Inside our lambda we have `x : zero ≡ suc y`, which can never happen, since
@@ -544,7 +619,7 @@ the next) hole with absurd pattern matches inside of the lambda:
   suc x ≟⅋₂ zero = no λ ()
   suc x ≟⅋₂ suc y with x ≟⅋₂ y
   ... | yes refl = yes refl
-  ... | no x≠y   = no ?
+  ... | no x≢y   = no ?
 ```
 
 We are left with only one hole, but it is `suc x ≡ suc y → ⊥`, and thus our
@@ -561,7 +636,7 @@ fact that `x ≢ y`, and we have the contradiction we've been looking for:
   suc x ≟ zero = no λ ()
   suc x ≟ suc y with x ≟ y
   ... | yes refl = yes refl
-  ... | no x≠y   = no λ { refl → x≠y refl }
+  ... | no x≢y   = no λ { refl → x≢y refl }
 ```
 
 Take a moment to reflect on this. Where before `def:_==_` simply returned `false`,
