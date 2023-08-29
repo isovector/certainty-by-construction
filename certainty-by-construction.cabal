@@ -1,0 +1,97 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.35.1.
+--
+-- see: https://github.com/sol/hpack
+
+name:           certainty-by-construction
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/isovector/certainty-by-construction#readme>
+homepage:       https://github.com/isovector/certainty-by-construction#readme
+bug-reports:    https://github.com/isovector/certainty-by-construction/issues
+author:         Sandy Maguire
+maintainer:     sandy@sandymaguire.me
+copyright:      2021 Sandy Maguire
+license:        BSD3
+build-type:     Simple
+
+source-repository head
+  type: git
+  location: https://github.com/isovector/certainty-by-construction
+
+library
+  exposed-modules:
+      Dot
+      Languages.And
+      Languages.Huffman
+      Languages.Math
+      Languages.Tree
+      Types
+  other-modules:
+      Paths_certainty_by_construction
+  hs-source-dirs:
+      code/
+  default-extensions:
+      EmptyCase
+      PostfixOperators
+      TupleSections
+      NamedFieldPuns
+      BangPatterns
+      BinaryLiterals
+      HexFloatLiterals
+      NumericUnderscores
+      GADTSyntax
+      RankNTypes
+      TypeApplications
+      PolyKinds
+      ExistentialQuantification
+      TypeOperators
+      ConstraintKinds
+      ExplicitForAll
+      KindSignatures
+      NamedWildCards
+      ScopedTypeVariables
+      FlexibleContexts
+      FlexibleInstances
+      MultiParamTypeClasses
+      ConstrainedClassMethods
+      InstanceSigs
+      TypeSynonymInstances
+      DeriveDataTypeable
+      DeriveFoldable
+      DeriveFunctor
+      DeriveTraversable
+      StandaloneDeriving
+      EmptyDataDeriving
+      DeriveLift
+      GeneralisedNewtypeDeriving
+      DeriveGeneric
+      DerivingStrategies
+      DerivingVia
+      NumDecimals
+      ViewPatterns
+      PatternSynonyms
+      TypeFamilies
+      DeriveAnyClass
+      NoStarIsType
+      DataKinds
+      DefaultSignatures
+      TypeApplications
+      LambdaCase
+      OverloadedLabels
+      InstanceSigs
+      RoleAnnotations
+      NoMonomorphismRestriction
+      OverloadedStrings
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -Wredundant-constraints -fhide-source-paths -Wpartial-fields -Wmissing-deriving-strategies
+  build-depends:
+      base >=4.7 && <5
+    , bytestring
+    , colour
+    , containers
+    , graphviz
+    , hashable
+    , mtl
+    , process
+    , text
+  default-language: Haskell2010

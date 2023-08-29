@@ -948,8 +948,8 @@ usual, the types lead the way:
   zero   ≟ suc y  = no λ ()
   suc x  ≟ zero   = no λ ()
   suc x  ≟ suc y with x ≟ y
-  ... | yes refl  = yes refl
-  ... | no x≢y    = no λ { refl → x≢y refl }
+  ... | yes refl   = yes refl
+  ... | no x≢y     = no λ { refl → x≢y refl }
 ```
 
 Take a moment to reflect on this. Where before `def:_==_` simply returned
@@ -983,40 +983,59 @@ applicable to data structures just as much as they are to numbers and the
 more mathematical purviews.
 
 It is a matter of tradition to begin every exploration of data structures in
-functional programming with lists. The author is personally exhausted of this
-tradition, and suspects the audience is as well. Therefore, we will instead
-touch upon the binary trees: how to construct them, and how to prove things
-about them.
+functional programming with lists. I'm personally exhausted of this tradition,
+and suspect you are too. Therefore, we will instead touch upon the binary trees:
+how to construct them, and how to prove things about them.
 
-A binary tree is either empty, or it is a branching node containing a value and two
-subtrees. We can codify this as follows:
+A binary tree is either `ctor:empty`, or it is a `ctor:branch`ing node
+containing a value and two subtrees. We can codify this as follows:
 
 ```agda
 module BinaryTrees where
-  data BinTree (A : Set) : Set where
+  data BinTree {ℓ : Level} (A : Set ℓ) : Set ℓ where
     empty : BinTree A
     branch : BinTree A → A → BinTree A → BinTree A
 ```
 
+To illustrate how this type works, we can build a binary tree as follows:
+
+```agda
+  tree : BinTree ℕ
+  tree =
+    branch
+      (branch (branch empty 0 empty) 0 empty)
+      4
+      (branch empty 6 empty)
+```
+
+which corresponds to this tree:
+
+```{design=code/Languages/Tree.hs label="\AgdaFunction{tree}"}
+asRose $ "4" [ "0" [ "0" ["", ""], "2" ["", ""]] , "6" ["", ""]]
+```
+
+where the small points correspond with the `ctor:empty` constructor.
+
+
+Hidden
+
+:   ```agda
+  -- fix bind
+    ```
+
+
 For convenience, it's often helpful to be able to talk about a single-element
-tree, which we can encode as a `ctor:branch` with two `ctor:empty` children. Agda lets us
-define pseudo-constructors called *patterns* for cases like these. The following
-defines a new pattern called `leaf : A → BinTree A`:
+tree, which we can encode as a `ctor:branch` with two `ctor:empty` children.
+This is another good use-case for a `keyword:pattern` synonym. The following
+defines a new pattern called `ctor:leaf` `:` `bind:A:A → BinTree A`:
+
 
 ```agda
   pattern leaf a = branch empty a empty
 ```
 
-You might wonder why we use a `keyword:pattern` here rather than just a regular
-old function:
-
-```agda
-  leaf′ : {A : Set} → A → BinTree A
-  leaf′ a = branch empty a empty
-```
-
-The difference is all in the colors. Literally. The reason is that, as the name
-implies, we can *pattern match* when `ctor:leaf` is defined as pattern:
+Having written `ctor:leaf`, we're now able to pattern match on singleton trees,
+as in:
 
 ```agda
   is-singleton : {A : Set} → BinTree A → Bool
@@ -1031,9 +1050,20 @@ In addition, we can use patterns as expressions, as in:
   five-tree = leaf 5
 ```
 
-Patterns don't buy us anything we couldn't do otherwise, but they are often
-convenient when you have interesting special cases that you'd like to sometimes
-highlight, without baking them directly into the definition of the type.
+Using our new pattern, we can write `def:tree` more succinctly:
+
+```agda
+  tree⅋ : BinTree ℕ
+  tree⅋ =
+    branch
+      (branch (leaf 0) 0 empty)
+      4
+      (leaf 6)
+```
+
+
+## Proving Things about Binary Trees
+
 
 The first thing we might want to prove about a tree is whether it contains a
 particular element. As usual, we do so by considering the base case, and the
