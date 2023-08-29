@@ -1003,18 +1003,18 @@ To illustrate how this type works, we can build a binary tree as follows:
   tree : BinTree ℕ
   tree =
     branch
-      (branch (branch empty 0 empty) 0 empty)
-      4
+      (branch (branch empty 0 empty) 0 (branch empty 4 empty))
+      2
       (branch empty 6 empty)
 ```
 
-which corresponds to this tree:
+corresponding to this tree:
 
 ```{design=code/Languages/Tree.hs label="\AgdaFunction{tree}"}
-asRose $ "4" [ "0" [ "0" ["", ""], "2" ["", ""]] , "6" ["", ""]]
+asRose $ "2" [ "0" [ "0" ["", ""], "4" ["", ""]] , "6" ["", ""]]
 ```
 
-where the small points correspond with the `ctor:empty` constructor.
+where the little points are each an instance of the `ctor:empty` constructor.
 
 
 Hidden
@@ -1050,63 +1050,68 @@ In addition, we can use patterns as expressions, as in:
   five-tree = leaf 5
 ```
 
-Using our new pattern, we can write `def:tree` more succinctly:
+It's now possible to write `def:tree` more succinctly:
 
 ```agda
   tree⅋ : BinTree ℕ
   tree⅋ =
     branch
-      (branch (leaf 0) 0 empty)
-      4
+      (branch (leaf 0) 0 (leaf 4))
+      2
       (leaf 6)
 ```
 
 
 ## Proving Things about Binary Trees
 
+With a suitable definition under our belt, it's time to suit up and enter the
+proof mines. The first thing we might want to do with a binary tree is determine
+whether it contains a particular element. Note that our `type:BinTree` type
+doesn't necessarily represent binary *search* trees (BSTs.)
 
-The first thing we might want to prove about a tree is whether it contains a
-particular element. As usual, we do so by considering the base case, and the
-inductive cases. The base case is that the thing you're looking for is at the
-root:
+We can show an element is in a `type:BinTree` inductively by looking at three
+cases:
 
-```agda
-  data _∈⅋_ {A : Set} : A → BinTree A → Set where
-    here : {a : A} {l r : BinTree A} → a ∈⅋ branch l a r
-```
+1. the thing we're looking for is at the root of the tree, or
+2. it's in the left subtree, or
+3. it's in the right subtree.
 
-Otherwise, the element you're looking for might be in the left subtree:
-
-```agda
-    left : {a b : A} {l r : BinTree A} → a ∈⅋ l → a ∈⅋ branch l b r
-```
-
-and of course, it could also be in the right subtree:
+Of course, in cases 2 and 3 we will work inductively, eventually finding a base
+case 1. We can encode these three cases directly in the type `type:_∈_` (input
+as [in](AgdaMode)):
 
 ```agda
-    right : {a b : A} {l r : BinTree A} → a ∈⅋ r → a ∈⅋ branch l b r
+  data _∈⅋_ {ℓ : Level} {A : Set ℓ} : A → BinTree A → Set ℓ where
+    here   : {a : A}    {l r : BinTree A}           → a ∈⅋ branch l a r
+    left   : {a b : A}  {l r : BinTree A} → a ∈⅋ l  → a ∈⅋ branch l b r
+    right  : {a b : A}  {l r : BinTree A} → a ∈⅋ r  → a ∈⅋ branch l b r
 ```
 
-This definition works perfectly well, but it's a bit wordy. Notice that over
-half of it is just bringing implicit bindings into scope. This is a perfect
-use-case for Agda's `keyword:variable` block, which allows us to define implicit
+This definition works perfectly well, but it's rather wordy. Notice that *over
+half* of it is just bringing implicit bindings into scope. There's nothing wrong
+with it, but it does somewhat obscure exactly what's going on.
+
+This is a perfect use-case for Agda's `keyword:variable` block---already seen
+above when we were discussing `type:Level`s---which allows us to define implicit
 bindings that should exist for the remainder of the scope.
 
-Variable blocks are started with the keywords `keyword:private variable`, and then begin
-a new layout. We can create a few variables:
+Variable blocks are started with the keywords `keyword:private variable`, and
+then begin a new layout. We can create a few variables:
 
 ```agda
   private variable
-    A : Set
+    ℓ : Level
+    A : Set ℓ
     a b : A
     l r : BinTree A
 ```
 
-The definitions in a variable block are just type signatures. The semantics here
-are that whenever we use an otherwise-undeclared variable `l` in our code, Agda
-will instead look it up from the variable block, and insert it as an implicit
-argument. With this feature, we can rewrite `type:_∈_` in a much terser, but
-*completely-equivalent* way:
+Variable bindings can depend on one another. Here we've introduced a
+`type:Level` called `ℓ`, a type `A` of that level, two variables `a` and `b` of
+that type, and two binary trees called `l` and `r`.
+
+Having put these variables into scope, we can rewrite `type:_∈_` in a style that
+better highlights the three cases:
 
 ```agda
   data _∈_ : A → BinTree A → Set where
@@ -1115,20 +1120,19 @@ argument. With this feature, we can rewrite `type:_∈_` in a much terser, but
     right  : a ∈ r →  a ∈ branch l b r
 ```
 
-Just to demonstrate that everything works, we can make a little tree:
+Much, much tidier.
 
-```agda
-  tree : BinTree ℕ
-  tree = branch (branch (leaf 0) 0 (leaf 2)) 4 (leaf 6)
-```
-
-and then show that six is somewhere in this `def:tree`, as per the very assertive
-definition:
+As a demonstration of the `type:_∈_` type, we can give a proof that 6 is indeed
+in `def:tree`. Six is the root of the right-subtree, which makes our proof
+delightfully declarative:
 
 ```agda
   6∈tree : 6 ∈ tree
   6∈tree = right here
 ```
+
+As usual, see what happens if you give the wrong proof, or change 6 in the type.
+Agda will correctly yell at you, indicating we've done the right thing here.
 
 It might also be desirable to show that every element in the tree satisfies some
 property. Perhaps we'd like to build a binary tree consisting only of odd
