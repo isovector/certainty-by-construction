@@ -787,7 +787,7 @@ two-sided. For example, zero is a right identity for monus:
 ```
 
 but it is not a left identity. As it happens, the monus operation does not have
-a left identity---a fact we will prove in @sec:monus-no-left-id.
+a left identity---a fact we will prove in @sec:sigma.
 
 
 Exercise
@@ -1063,7 +1063,7 @@ traditionally-educated people, mathematics is much more about things like
 identity elements and involutivity than it ever was about numbers.
 
 
-## Transitivity
+## Transitivity {#sec:transitivity}
 
 Proofs, much like computer programs, are usually too big to build all in one go.
 Just like in software, it's preferable to build small, reusable pieces, which we

@@ -1264,7 +1264,7 @@ not to get into the habit of "bashing" your way through every implementation if
 you can help it.
 
 
-## Records and Tuples
+## Records and Tuples {#sec:tuples}
 
 In @sec:bools, we saw how the `keyword:data` keyword could be used to create
 types with distinct values. Most programming languages do not admit any features

@@ -1,17 +1,6 @@
 # Decidability {#sec:decidability}
 
 
-```agda
-  -- TODO(sandy): fit me in! @sec:monus-no-left-id
-  -- open import Relation.Nullary
-  -- open import Data.Product
-
-  -- ¬∸-identityˡ : ¬ (∃Σ ℕ λ e → (x : ℕ) → e ∸ x ≡ x)
-  -- ¬∸-identityˡ (e , e-id) with e-id 0 | e-id 1
-  -- ... | refl | ()
-```
-
-
 Hidden
 
 :   ```agda
@@ -30,7 +19,7 @@ Prerequisites
 :   ```agda
 import Chapter1-Agda
 open Chapter1-Agda.Exports
-  using (Bool; true; false; _×_; _,_)
+  using (Bool; true; false)
     ```
 
 :   ```agda
@@ -481,7 +470,10 @@ A relation `_≈_ :` `bind:ℓ A:A → A → Set ℓ` is *reflexive* if, for any
 we can construct `x ≈ x`. This definition can be encoded as a type:
 
 ```agda
-Reflexive : {c ℓ : Level} {A : Set c}→ (A → A → Set ℓ) → Set (ℓ ⊔ c)
+Reflexive
+    : {c ℓ : Level} {A : Set c}
+    → (A → A → Set ℓ)
+    → Set (ℓ ⊔ c)
 Reflexive {A = A} _≈_ = {x : A} → x ≈ x -- ! 1
 ```
 
@@ -623,22 +615,30 @@ often precludes it entirely.
 ## Negation Considered as a Callback
 
 There is an apt computational perspective to this problem of negating
-quantifiers, which comes when we expand out all of our types. After fully
-normalizing (expanding out) the types of both `def:¬≢-refl` and `def:¬≢-refl-bad`, we
-are left with this:
+quantifiers, which exposes itself when we expand all the definitions. After
+fully normalizing the types of both `def:¬≢-refl` and `def:¬≢-refl-bad`, we
+are left with these:
 
-```type
-¬≢-refl     : ({A : Set} → {x : A} → x ≡ x → ⊥) → ⊥
-¬≢-refl-bad : {A : Set} → ({x : A} → x ≡ x → ⊥) → ⊥
+```agda
+¬≢-refl⅋⅋      : ({A : Set} → {x : A} → x ≡ x → ⊥) → ⊥
+¬≢-refl-bad⅋⅋  : {A : Set} → ({x : A} → x ≡ x → ⊥) → ⊥
 ```
 
-These types have much more going on, but the important thing to notice is that
-they both take functions as arguments. Whenever you see a function as an
-argument, you should immediately think "callback." Viewed as a callback, the
-question becomes *who is responsible for providing the parameters?* In the first
-case, it is `def:¬≢-refl` which gets to pick `A`, while in the second, it
-is the *caller* of `def:¬≢-refl-bad` who gets to pick `A`. And true to the name,
-this caller might pick an antagonistic `A` in an attempt to thwart us!
+
+Hidden
+
+:   ```agda
+¬≢-refl⅋⅋  = _
+¬≢-refl-bad⅋⅋ = _
+    ```
+
+The salient feature of these two types is that they both take functions as
+arguments. Whenever you see a function as an argument, you can interpret this
+argument as a *callback.* Viewed as such, the question becomes *who is
+responsible for providing what?* In the first case, it is the *implementer* of
+`def:¬≢-refl` who gets to pick `A`, while in the second, the *caller* of
+`def:¬≢-refl-bad` is responsible. And true to the name of this function, the
+caller might very well pick an antagonistic `A` in an attempt to thwart us!
 
 
 ## Intransitivity of Inequality
@@ -655,22 +655,147 @@ $$
 $$
 
 This is known in the business as a "whoopsie daisy." Such a counterexample shows
-inequality cannot be transitive, and we can prove it more formally in Agda by
-giving a definition for transitivity:
+inequality cannot be transitive, because if it were, we could show reflexivity,
+which we already know is false. We can prove the non-transitivity of inequality
+more formally in Agda by giving a definition for transitivity:
 
 ```agda
-Transitive : {A : Set} → (A → A → Set) → Set
-Transitive {A} _≈_ = {x y z : A} → x ≈ y → y ≈ z → x ≈ z
+Transitive
+    : {c ℓ : Level} {A : Set c}
+    → (A → A → Set ℓ)
+    → Set (c ⊔ ℓ)
+Transitive {A = A} _≈_ = {x y z : A} → x ≈ y → y ≈ z → x ≈ z
 ```
 
-Giving the counterexample is easy, since we already have a proof `def:2≢3`. Given a
-hypothetical `def:≢-trans`, we could combine this with `sym 3≢2`, to get a proof
-that `2 ≢ 2`. Such a thing is in direct contradiction with `refl : 2 ≡ 2`, and
-thus we are done:
+Spend a moment to parse and understand this type for yourself. Do you agree that
+this corresponds to the definition of transitivity (@sec:transitivity)?
+
+Showing the counterexample is easy---following our exact pen and paper proof
+above---since we already have a proof `def:2≢3`. Given a hypothetical
+`def:≢-trans`, we could combine this with `expr:sym 2≢3`, to get a proof that
+`expr:2 ≢ 2`. Such a thing is in direct contradiction with `ctor:refl` `:`
+`expr:2 ≡ 2`, which acts as the refutation:
 
 ```agda
-¬≢-trans : ¬ ({A : Set} → Transitive {A} _≢_)
+¬≢-trans : ¬ ({A : Set} → Transitive {A = A} _≢_)
 ¬≢-trans ≢-trans = ≢-trans {ℕ} 2≢3 (≢-sym 2≢3) refl
+```
+
+
+## Dependent Pairs {#sec:sigma}
+
+As we have seen, function arguments act as the *for-all* quantifier when
+encoding mathematical statements as types. For example, we can read the
+definition for `type:Transitive` above as "for all `x y z : A`, and for all
+proofs `x ≈ y` and `y ≈ z`, it is the case that `x ≈ z`." The for-all quantifier
+states that something holds true, regardless of the specific details.
+
+Closely related to this is the *there-exists* quantifier, aptly stating that
+there is at least one object which satisfies a given property. As an
+illustration, there exists a number `n :` `type:ℕ` such that $n + 1 = 5$ ,
+namely $n = 4$. But it is certainly not the case that *for all* `n :` `type:ℕ`
+$n + 1 = 5$!
+
+True existential values like this don't exist in Agda since we are restricted to
+a constructive world, in which we must actually build the thing we are claiming
+to exist. This sometimes gets in the way of encoding non-constructive
+mathematics, but it's not usually a problem.
+
+How do we actually build such a there-exists type in Agda? The construction is
+usually known as a *sigma* type, written `type:Σ` and input as [GS](AgdaMode).
+It's definition is given by:
+
+```agda
+module Definition-DependentPair where
+  record Σ {ℓ₁ ℓ₂ : Level} (A : Set ℓ₁) (B : A → Set ℓ₂)
+      : Set (lsuc (ℓ₁ ⊔ ℓ₂)) where
+    constructor _,_
+    field
+      proj₁ : A
+      proj₂ : B proj₁
+```
+
+This definition should feel reminiscent of the tuple type we built in
+@sec:tuples. Despite the gnarly universe polymorphism---which the typechecker
+can help you write for yourself, even if you don't know what it should be---the
+only difference between `type:Σ` and `type:_×_` from earlier is in the second
+parameter. To jog your memory, we can redefine tuples here:
+
+```agda
+  record _×_ {ℓ₁ ℓ₂ : Level} (A : Set ℓ₁) (B : Set ℓ₂)
+      : Set (lsuc (ℓ₁ ⊔ ℓ₂)) where
+    constructor _,_
+    field
+      proj₁ : A
+      proj₂ : B
+```
+
+Contrasting the two, we see that in `type:Σ`, the `B` parameter is *indexed* by
+`A`, while in `type:_×_`, `B` exists all by itself. This indexing is extremely
+useful, as it allows us to encode a property about the `A` inside of `B`. As an
+example, we can give our earlier example again---typing `∃` as [`ex`](AgdaMode):
+
+```agda
+  ∃n,n+1≡5 : Σ ℕ (λ n → n + 1 ≡ 5)
+  ∃n,n+1≡5 = 4 , refl
+```
+
+In the type of `def:∃,-n+1≡5`, we give two arguments to `type:Σ`, the first
+indicating that there exists a `type:ℕ`, and the second being a function that
+describes which property holds for that particular `type:ℕ`. In the value, we
+need to give both the *actual* `type:ℕ`, and a proof that the property holds for
+it.
+
+To illustrate using a dependent pair in the real world, let's prove a claim made
+back in @sec:identities: that there is no left-identity for the monus operation
+`def:_∸_`. First, let's import it:
+
+```agda
+  open Chapter2-Numbers.Exports using (_∸_)
+```
+
+In order to prove this, let's first think about what we'd like to say, and what
+the actual argument is. We'd like to say: "it is not the case that there exists
+a number `e :` `type:ℕ` such that for any `x :` `ℕ` it is the case that `bind:x
+e:e ∸ x ≡ x`." A bit of a mouthful certainly, but it encodes rather directly.
+Replace "there exists a number `e :` `type:ℕ` such that" with `expr:Σ ℕ (λ e →
+?)`, and the "for any `x :` `type:ℕ`" with `expr:(x : ℕ) → ?`, and then go from
+there:
+
+```agda
+  ¬∸-identityˡ⅋₀ : ¬ Σ ℕ (λ e → (x : ℕ) → e ∸ x ≡ x)
+  ¬∸-identityˡ⅋₀ = ?
+```
+
+Proving this is straightforward; we take the refutation at its word, and
+therefore get a function `e-is-id :` `bind:e:(x : ℕ) → e ∸ x ≡ x`. If we
+instantiate this function at $x = 0$, it evaluates to a proof that `bind:e ≡ 0`.
+Fair enough. But we can now instantiate the same function at $x = 1$, which then
+produces a proof that `bind:e:e ∸ 1 ≡ 1`. However, we already know that $e = 0$,
+so we can replace it, getting `expr:0 ∸ 1 ≡ 1`, which itself simplifies down to
+ `expr:0 ≡ 1`. Such is an obvious contradiction, and therefore there is no such
+identity for monus.
+
+We can write the same argument in Agda by binding and splitting our argument,
+and then using a `keyword:with`-abstraction (@sec:maybe) on `e-is-id` at both 0
+and 1:
+
+```agda
+  ¬∸-identityˡ⅋₁ : ¬ Σ ℕ (λ e → (x : ℕ) → e ∸ x ≡ x)
+  ¬∸-identityˡ⅋₁ (e , e-is-id)
+    with e-is-id 0 | e-is-id 1
+  ... | e≡0 | e-1≡1 = ?
+```
+
+If we now pattern match ([MakeCase](AgdaCmd)) on `e≡0` and `e-1≡1` *in that
+order*, Agda will follow the same line of reasoning as we did, and determine
+that the second pattern match is necessarily absurd:
+
+```agda
+  ¬∸-identityˡ : ¬ Σ ℕ (λ e → (x : ℕ) → e ∸ x ≡ x)
+  ¬∸-identityˡ (e , e-is-id)
+    with e-is-id 0 | e-is-id 1
+  ... | refl | ()
 ```
 
 
