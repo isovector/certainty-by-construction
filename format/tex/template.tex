@@ -368,8 +368,8 @@ $endif$
 font=\sffamily\bfseries,minimum size=2mm,inner sep=0mm,draw,circle,fill=black]
 {\small #1};}}
 
-\newcommand{\ann}[1]{\hspace{1.5mm}\anncirc{#1}\hspace{1.5mm}}
-\newcommand{\annotate}[1]{\Dotfill\quad\anncirc{#1}\qquad}
+\newcommand{\ann}[1]{\anncirc{#1}}
+\newcommand{\annotate}[1]{\Lawfill\quad\anncirc{#1}\qquad}
 
 \makeatletter{}
 \newcommand{\Dotfill}{\leavevmode \cleaders \hb@xt@.85em{\ensuremath{\hss
@@ -519,7 +519,7 @@ Copyright \textcopyright 2023, Sandy Maguire
 
 All rights reserved.
 \spaceMyBox
-Version 0.1.4 / 2023-08-23
+Version 0.1.5 / 2023-08-25
 
 
 \justify

@@ -150,7 +150,7 @@ necessary type is `type:Level` from `module:Agda.Primitive`:
 
 ```agda
 open import Agda.Primitive
-  using (Level)
+  using (Level; _⊔_; lzero; lsuc)
 ```
 
 Before we play with our new `type:Level`s, let's force Agda to give us an error.
@@ -219,6 +219,31 @@ Although we didn't define `type:Maybe` this way when we built it in @sec:maybe,
 we don't need to make any changes. This is because
 `module:Chapter2-Numbers.Exports` *re-exports* `type:Maybe` from the standard
 library, which as a principle is always as universe-polymorphic as possible.
+
+
+Hidden
+
+:   ```agda
+  -- fix bind
+    ```
+
+
+There are three other introduction forms for `type:Level` that bear discussion.
+The first is `def:lzero`, which is the universe level of `type:Set₀`. In other
+words, `type:Set₀` is an alias for `expr:Set lzero`. This brings us to our
+second introduction form, `def:lsuc`, which acts exactly as `ctor:suc` does, but
+over the `type:Level`s. That is, `type:Set₁` is an alias for `expr:Set (lsuc
+lzero)`. As you'd expect, we can generate any `type:Level` by subsequent
+applications of `def:lsuc` to `def:lzero`.
+
+Our third and final introduction form for `type:Level` is `def:_⊔_` (input via
+[lub](AgdaMode)), which takes the maximum of two levels. It's unnecessary to use
+`def:_⊔_` when working with concrete levels, but it comes in handy when
+you have multiple `def:Level` variables in scope. For example, you might have
+two different sets with two different levels, lets say `ℓ₁` and `ℓ₂`. The
+appropriate level for such a thing would be either `bind:ℓ₁ ℓ₂:ℓ₁ ⊔ ℓ₂` or
+`bind:ℓ₁ ℓ₂:lsuc (ℓ₁ ⊔ ℓ₂)`, depending on the exact circumstances. Don't worry;
+it's not as onerous in practice as it might seem.
 
 As a beginner writing Agda, getting all of the universes right can be rather
 daunting. I'd recommend you start by putting everything in `type:Set`, and
@@ -299,9 +324,13 @@ module Sandbox-Explosion where
 ```
 
 You'll notice at [1](Ann) that the type of `type:_IsFalse` is `expr:Set → Set₁`,
-which is a feature of Agda's type system we haven't yet covered, but will later
-in @sec:levels. For the time being, pretend this says `expr:Set → Set`. We can
-now try to find a proof that two is not equal to three, as per:
+which is our first time seeing a `type:Level` in the wild. Such is necessary
+because the definition of `type:_IsFalse` expands out to a
+polymorphically-quantified `A :` `type:Set`. Whenever we have a `type:Set`
+parameter, the defining object itself must live in `type:Set₁`.
+
+From here, We can now try to find a proof that two is not equal to three, as
+per:
 
 ```agda
   2≢3⅋₀ : (2 ≡ 3) IsFalse
@@ -406,23 +435,21 @@ is a contradiction. Hence, we can define `type:¬_` ([`neg`](AgdaMode)), which
 states that a given mathematical statement is false:
 
 ```agda
-open import Level
-  using (Level)
-
 ¬_ : {ℓ : Level} → Set ℓ → Set ℓ
 ¬ P = P → ⊥
 infix 3 ¬_
 ```
 
-Again, ignore this `type:Level` stuff for the time being (although you can input `ℓ`
-via [`ell`](AgdaMode).)
+In this definition of `type:¬_`, we have used universe polymorphism in order to
+give negation for every possible `type:Level`, simultaneously. This is a common
+pattern in Agda---to make each and every `type:Set` you bind
+universe-polymorphic.
 
 
 ## Inequality
 
 With a satisfactory definition for propositional negation, we can
 define inequality (input as [`neq`](AgdaMode)):
-
 
 
 ```agda
@@ -440,82 +467,100 @@ is symmetric:
 ≢-sym x≢y y=x = x≢y (sym y=x)
 ```
 
-and it is obviously *not* reflexive. Why obviously? Because reflexivity would
-require that `x ≢ x` for any `x`, which is exactly the opposite of what we're
-trying to encode here. Interestingly, however, we can prove that `type:_≢_` isn't
-reflexive, but showing that if there were such a `refl : x ≢ x` construction, it
-would lead to contradiction.
+and it is *not* reflexive. Perhaps this is obvious to you, but if not, recall
+that reflexivity would require us to show `bind:x:x ≢ x` for any `x`, which is
+exactly the *opposite* of what we're trying to encode here.
 
-Let's show this in a few steps. First, we will define a type `type:Reflexive` which
-will state the reflexivity property. This isn't strictly necessary, but it
-lessens the cognitive burden later down the line:
+Interestingly however, we *can* prove that `type:_≢_` isn't reflexive by showing
+that if there were construction, it would lead immediately to contradiction.
+Let's show this in a few steps. First, we will define a type `type:Reflexive`
+which will state the reflexivity property. This isn't strictly necessary, but it
+lessens the cognitive burden later down the line.
+
+A relation `_≈_ :` `bind:ℓ A:A → A → Set ℓ` is *reflexive* if, for any `x : A`,
+we can construct `x ≈ x`. This definition can be encoded as a type:
 
 ```agda
-Reflexive : {A : Set} → (A → A → Set) → Set
-Reflexive {A} _≈_ = {x : A} → x ≈ x
+Reflexive : {c ℓ : Level} {A : Set c}→ (A → A → Set ℓ) → Set (ℓ ⊔ c)
+Reflexive {A = A} _≈_ = {x : A} → x ≈ x -- ! 1
 ```
 
-Having a value of `Reflexive _≈_` states that `_≈_` is a reflexive relation.
-Note that `_≈_` is on the left side of the equals sign, and is thus just a
-parameter---allowing us to state *which* relation is reflexive. To illustrate
-exactly what's happening here, we can show that propositional equality is
-reflexive:
+Having a value of `type:Reflexive` `_≈_` states that `_≈_` is just such a
+reflexive relation. Note that, at [1](Ann), `_≈_` is on the left side of the
+equals sign, and is thus just a parameter---allowing us to state *which*
+relation is reflexive.
+
+To illustrate exactly what's happening here, we can show that propositional
+equality is reflexive:
 
 ```agda
-≡-refl : {A : Set} → Reflexive {A} _≡_
+≡-refl : {A : Set} → Reflexive {A = A} _≡_
 ≡-refl = refl
 ```
 
-Notice how the type `Reflexive _≡_` expands to the type of `refl : {x : A} → x ≡
-x`. We are required to bind `A : Set` here, so that we can pass it over to
-`type:Reflexive`, which could in principle infer it from the type of `type:_≡_`, but Agda
-has no way of knowing if you'd like to talk about `type:_≡_` in its fully-general
-polymorphic type, or about `type:_≡_` when specialized to something about the natural
-numbers. The distinction isn't extremely poignant in this example, but there do
-exist monomorphic relations which we might still want to say are reflexive.
-Nevertheless, we have shown that `type:_≡_` is reflexive by giving a proof that
-`ctor:refl` exists.
+Notice how the type `expr:Reflexive _≡_` expands to the type of `ctor:refl`,
+that is, `bind:A:{x : A} → x ≡ x`. We are required to explicitly bind `A :`
+`type:Set` here, so that we can use it to fill in the implicit `A` parameter of
+`type:Reflexive`. In principle, Agda could be inferred from the type of
+`type:_≡_`, but Agda has know way of knowing if we'd like to talk about
+`type:_≡_` in its fully-polymorphic type, or if we'd like it specialized to
+some particular type like `type:ℕ`. The distinction isn't extremely poignant in
+this example, but there do exist monomorphic relations which we might still want
+to say are reflexive.
 
-Contrasting against this is the proof that `type:_≢_` is *not* reflexive. The type of
-such a statement is a very subtle thing:
+Nevertheless, we have shown that `type:_≡_` is reflexive by giving a proof that
+`ctor:refl` always exists.
+
+Contrasting against this example the proof that `type:_≢_` is *not* reflexive.
+The type of such a statement is a very subtle thing:
 
 ```agda
-¬≢-refl⅋₀ : ¬ ({A : Set} → Reflexive {A} _≢_)  -- ! 1
+¬≢-refl⅋₀ : ¬ ({A : Set} → Reflexive {A = A} _≢_)  -- ! 1
 ¬≢-refl⅋₀ = ?
 ```
 
 Compare this type to the more "obvious" type:
 
 ```agda
-¬≢-refl-bad⅋₀ : {A : Set} → ¬ Reflexive {A} _≢_  -- ! 2
+¬≢-refl-bad⅋₀ : {A : Set} → ¬ Reflexive {A = A} _≢_  -- ! 2
 ¬≢-refl-bad⅋₀ = ?
 ```
 
-The difference between [1](Ann) and [2](Ann) is that in the latter, we receive a
+The difference between [1](Ann) and [2](Ann) is in the placement of the binder
+for `A :` `type:Set`. In the latter type, in the latter, we receive a
 specific `A`, and are then required to give back a proof that there is no
-`def:≢-refl` *for that specific type.* In [1](Ann) however, we are required to show
-that there does not exist a `def:≢-refl` that works for *every* type `A`. End users
-of `¬≢-refl` don't care one way or another, but the difference here is
-absolutely crucial for actually *proving* the notion. Let's look at this more
-closely.
+`def:≢-refl` *for that specific type.* Contrast that against [1](Ann), in which
+we are required to show that there does not exist a `def:≢-refl` that works for
+*every* type `A`.
 
-At a high level, the proof here is "`def:≢-refl` must be false because it's the
-negation of `def:≡-refl`, which is easily shown to be true." While the type of the
-argument to `def:¬≢-refl` is `type:Reflexive _≢_`, we can use
+End users of `def:¬≢-refl` don't care one way or another, since they only ever
+need one type at a time (or can use a variable if they'd like to show this for
+many types.) Nevertheless, the difference here is absolutely crucial when we'd
+actually like to *prove* the thing. Let's look at this more closely.
+
+At a very high level, the proof here is "`def:≢-refl` must be false because it's
+the negation of `def:≡-refl`, which is easily shown to be true." While the type
+of the argument to `def:¬≢-refl` is `type:Reflexive _≢_`, we can use
 [TypeContext/Normalise](AgdaCmd) to ask Agda to expand out this definition,
-resulting in `x ≡ x → ⊥`. Under the lens of this expanded type, it seems
-reasonable to call the argument `def:¬≡-refl`, as in the following:
+resulting in:
+
+```info
+x ≡ x → ⊥
+```
+
+Under the lens of this expanded type, it seems reasonable to call the argument
+to our function `¬≡-refl`, as in the following:
 
 ```agda
-¬≢-refl⅋₁ : ¬ ({A : Set} → Reflexive {A} _≢_)
+¬≢-refl⅋₁ : ¬ ({A : Set} → Reflexive {A = A} _≢_)
 ¬≢-refl⅋₁ ¬≡-refl = {! !}
 ```
 
-Of course, we do in fact have a proof of `type:x ≡ x`, namely `ctor:refl`, so we can try
-solving the hole as:
+Of course, we do in fact have a proof of `bind:x:x ≡ x`, namely `ctor:refl`, so
+we can try solving the hole as:
 
 ```agda
-¬≢-refl⅋₂ : ¬ ({A : Set} → Reflexive {A} _≢_)
+¬≢-refl⅋₂ : ¬ ({A : Set} → Reflexive {A = A} _≢_)
 ¬≢-refl⅋₂ ¬≡-refl = ¬≡-refl refl
 ```
 
@@ -525,7 +570,7 @@ arguments. We can help it out by explicitly introducing holes for each implicit
 argument and solving them ourselves:
 
 ```agda
-¬≢-refl⅋₃ : ¬ ({A : Set} → Reflexive {A} _≢_)
+¬≢-refl⅋₃ : ¬ ({A : Set} → Reflexive {A = A} _≢_)
 ¬≢-refl⅋₃ ¬≡-refl = ¬≡-refl {?} {?} refl
 ```
 
@@ -535,38 +580,44 @@ some holes to fill. The first hole has type `type:Set`, while the second has typ
 choose any type we'd like for this first hole, so let's try `type:ℕ`:
 
 ```agda
-¬≢-refl⅋₄ : ¬ ({A : Set} → Reflexive {A} _≢_)
+¬≢-refl⅋₄ : ¬ ({A : Set} → Reflexive {A = A} _≢_)
 ¬≢-refl⅋₄ ¬≡-refl = ¬≡-refl {ℕ} {?} refl
 ```
 
-and now all we need is to pick an arbitrary value of type `type:ℕ`:
+This refines our other hole to have type `type:ℕ`, and now all we need is to
+pick an arbitrary natural:
 
 ```agda
-¬≢-refl : ¬ ({A : Set} → Reflexive {A} _≢_)
+¬≢-refl : ¬ ({A : Set} → Reflexive {A = A} _≢_)
 ¬≢-refl ≢-refl = ≢-refl {ℕ} {0} refl
 ```
 
-What was to be demonstrated has thus been proved. But let's see what goes wrong
-if we try the same approach on `def:¬≢-refl-bad`. Since `A` is now a top-level
-parameter, we can bind it in the function body, meaning we have one fewer
-implicit to fill in:
+What was to be demonstrated has thus been proved. But how? We've shown that
+there can be no proof of `expr:Reflexive _≢_` for *every type* `A`, because if
+there were such a proof, we could instantiate it at the naturals, and use it to
+prove that `expr:0 ≢ 0`. Such is obviously bunk, because we can refute `expr:0 ≢
+0`, and therefore the argument rests on false premises.
+
+Let's see what goes wrong if we try the same approach on `def:¬≢-refl-bad`.
+Since `A` is now a top-level parameter, we can bind it in the function body,
+meaning we have one fewer implicit to fill in:
 
 ```agda
-¬≢-refl-bad : {A : Set} → ¬ Reflexive {A} _≢_
+¬≢-refl-bad : {A : Set} → ¬ Reflexive {A = A} _≢_
 ¬≢-refl-bad {A} ¬≡-refl = ¬≡-refl {?} refl
 ```
 
-This hole unfortunately has type `A`, *for some unknown type `A`!* We can't
-possibly fill this in, because we don't know what type `A` is. In fact, `A`
-could be `type:⊥`, in which case there aren't any values we could put here even in
-principle.
+But we run into problems trying to fill this last hole. It unfortunately has
+type `A`, *for some unknown type `A`!* We can't possibly fill this in, because
+we don't know what type `A` is. In fact, `A` could be `type:⊥`, in which case
+there aren't even any values we *could* put here.
 
-The takeaway from this is that it really matters where you put your quantifiers.
-When the necessary parameters are *inside* the negation, we are able to
-instantiate them at our convenience in order to find a counterexample. But if
-they are outside, we are at the whim of the proof-caller, which might
-dramatically change how we'd go about showing a counterexample, and often
-precludes it entirely.
+The takeaway from this argument is the importance of where you put your
+quantifiers. When the necessary parameters are *inside* the negation, we are
+able to instantiate them at our convenience when looking for a counterexample.
+But if they are outside the negation, we are at the mercy of the proof-caller.
+Such might dramatically change how we'd go about showing a counterexample, and
+often precludes it entirely.
 
 
 ## Negation Considered as a Callback

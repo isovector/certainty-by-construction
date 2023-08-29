@@ -48,6 +48,7 @@ build/tex/book/%.tex : build/tex/agda/latex/%.tex
 build/tex/pdf.tex : $(ALL_TEX) format/tex/template.tex
 	pandoc $(PANDOC_PDF_OPTS) -o $@ $(ALL_TEX)
 	sed -i 's/\AgdaComment{--\\ !\\ \([0-9]\)}/annotate{\1}/g' $@
+	sed -i 's/\AgdaPostulate{Level}/\AgdaFunction{Level}/g' $@
 	sed -i 's/⅋[^ {}()._\\]*//g' $@
 	sed -i 's/VERYILLEGALCODE/code/g' $@
 	sed -i '/{part}/d' $@
