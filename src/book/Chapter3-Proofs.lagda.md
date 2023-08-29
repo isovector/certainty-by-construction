@@ -699,7 +699,7 @@ not quite be what you need. Luckily, the solution is often just a `def:cong`
 away.
 
 
-## Identity and Zero Elements
+## Identity and Zero Elements {#sec:identities}
 
 A common algebraic structure is the idea of an *identity element*---annoyingly,
 "identity" in a difference sense than in algebraic identity." An identity

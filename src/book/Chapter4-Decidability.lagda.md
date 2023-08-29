@@ -6,6 +6,8 @@ Hidden
 :   ```agda
 {-# OPTIONS --allow-unsolved-metas #-}
 open import Data.Integer using (ℤ)
+import Chapter1-Agda
+open Chapter1-Agda.Exports renaming (_,_ to _,⅋_; _×_ to _×⅋_)
     ```
 
 
@@ -124,11 +126,11 @@ barber and his dreadful paradox. Of course, proofs about *those* proofs must
 again live in a higher universe.
 
 You can imagine we might want to duplicate some proofs in different universes.
-For example, we might want to say the tuple `expr:1 , (2 , 3)` is "pretty much
-the same thing[^same-thing]" as `expr:(1 , 2) , 3`. But then we might want to
-say that a type-level tuple of `expr:ℕ , (Bool , ℤ)`---*not* `expr:ℕ × (Bool ×
-ℤ)`, mind you--- is *also* "pretty much the same thing" as `expr:(ℕ , Bool) ,
-ℤ`.
+For example, we might want to say the tuple `expr:1 ,⅋ (2 ,⅋ 3)` is "pretty much
+the same thing[^same-thing]" as `expr:(1 ,⅋ 2) ,⅋ 3`. But then we might want to
+say that a type-level tuple of `expr:ℕ ,⅋ (Bool ,⅋ ℤ)`---*not* `expr:ℕ ×⅋ (Bool
+×⅋ ℤ)`, mind you--- is *also* "pretty much the same thing" as `expr:(ℕ ,⅋ Bool)
+,⅋ ℤ`.
 
 [^same-thing]: For some definition of "pretty much the same thing" that we will
   make precise in @sec:setoids.
@@ -693,8 +695,8 @@ states that something holds true, regardless of the specific details.
 Closely related to this is the *there-exists* quantifier, aptly stating that
 there is at least one object which satisfies a given property. As an
 illustration, there exists a number `n :` `type:ℕ` such that $n + 1 = 5$ ,
-namely $n = 4$. But it is certainly not the case that *for all* `n :` `type:ℕ`
-$n + 1 = 5$!
+namely $n = 4$. But it is certainly not the case *for all* `n :` `type:ℕ`
+that $n + 1 = 5$ holds!
 
 True existential values like this don't exist in Agda since we are restricted to
 a constructive world, in which we must actually build the thing we are claiming
@@ -712,7 +714,7 @@ module Definition-DependentPair where
     constructor _,_
     field
       proj₁ : A
-      proj₂ : B proj₁
+      proj₂ : B proj₁  -- ! 1
 ```
 
 This definition should feel reminiscent of the tuple type we built in
@@ -732,8 +734,13 @@ parameter. To jog your memory, we can redefine tuples here:
 
 Contrasting the two, we see that in `type:Σ`, the `B` parameter is *indexed* by
 `A`, while in `type:_×_`, `B` exists all by itself. This indexing is extremely
-useful, as it allows us to encode a property about the `A` inside of `B`. As an
-example, we can give our earlier example again---typing `∃` as [`ex`](AgdaMode):
+useful, as it allows us to encode a property about the `A` inside of `B`. As you
+can see at [1](Ann), `field:proj₂` has type `B` `field:proj₁`---in other words,
+that the *type* of `field:proj₂` depends on the *value* we put in for
+`field:proj₁`!
+
+As an example, we can give our earlier example again---typing `∃` as
+[`ex`](AgdaMode):
 
 ```agda
   ∃n,n+1≡5 : Σ ℕ (λ n → n + 1 ≡ 5)
@@ -769,7 +776,7 @@ there:
 
 Proving this is straightforward; we take the refutation at its word, and
 therefore get a function `e-is-id :` `bind:e:(x : ℕ) → e ∸ x ≡ x`. If we
-instantiate this function at $x = 0$, it evaluates to a proof that `bind:e ≡ 0`.
+instantiate this function at $x = 0$, it evaluates to a proof that `bind:e:e ≡ 0`.
 Fair enough. But we can now instantiate the same function at $x = 1$, which then
 produces a proof that `bind:e:e ∸ 1 ≡ 1`. However, we already know that $e = 0$,
 so we can replace it, getting `expr:0 ∸ 1 ≡ 1`, which itself simplifies down to
@@ -801,25 +808,27 @@ that the second pattern match is necessarily absurd:
 
 ## Decidability
 
-It is now time to return to the question of how does one combine dependent types
-with the "real world." That is, the proofs we've seen so far work swell when
+It is now time to return to the question of how does one use dependent types in
+the "real world." That is, the proofs we've seen so far work fine and dandy when
 everything is known statically, but things begin to fall apart when you want to
-get input from a user, or read from a file, or something of this nature. What do
-we do when we don't have all of our information known statically?
+get input from a user, read from a file, or do anything of a dynamic nature.
+What can we do when we don't have all of our necessary information known at
+compile time?
 
-The answer is unsurprising: we just compute it.
+The answer is unsurprising: just compute it!
 
 Recall that every concrete proof we've given is represented by a value. That
 means it has a representation in memory, and therefore, that it's the sort of
-thing we can build at runtime. The types shade the techniques that you already
-know how to do from a career of elbow grease computing things.
+thing we can build at runtime. The types obscure the techniques that you already
+know how to do from a career of computing things with elbow grease, but
+everything you know still works.
 
 In a language with a less powerful system, how do you check if the number the
 user input is less than five? You just do a runtime check to see if it's less
-than five before continuing. We can do exactly the same thing in Agda, except
+than five before going on. We can do exactly the same thing in Agda, except
 that we'd like to return a *proof* that our number is equal to five, rather than
-just a boolean. To a first approximation, you can imagine we could implement
-such a thing like this:
+just a boolean. As a first attempt, you can imagine we could implement such a
+thing like this:
 
 ```agda
 module Sandbox-Decidability where
@@ -832,105 +841,127 @@ module Sandbox-Decidability where
 ```
 
 Given `def:n=5?`, we can call this function and branch on its result. If the result
-is a `ctor:just`, we now have a proof that the argument was indeed 5, and can use it
-as we'd please.
+is a `ctor:just`, we now have a proof that `n` was indeed 5, and can use it
+as we'd please. Of course, if the argument *wasn't* five, this definition
+doesn't allow us to learn anything at all---all we get back is `ctor:nothing`!
 
-Of course, if the argument wasn't five, this definition doesn't allow us to
-learn anything at all. When instead, it would be much more useful to learn that
-`¬ (n ≡ 5)`, in case we'd like to do something with that information! From this,
-we conclude that returning `type:Maybe` isn't quite the right choice. Instead, we'd
-like a slightly-more structured type corresponding to *decisions*:
+Instead, it would be much more useful to get back a proof that `bind:n:¬ (n ≡ 5)`,
+in case we'd like to do something with that information. From this little
+argument, we conclude that returning `type:Maybe` isn't quite the right choice.
+More preferable would be a type with slightly more structure, corresponding to a
+*decision* about whether `bind:n:n ≡ 5`:
 
 ```agda
-data Dec (P : Set) : Set where
-  yes : P  → Dec P
-  no : ¬ P → Dec P
+data Dec {ℓ : Level} (P : Set ℓ) : Set ℓ where
+  yes  :    P → Dec P
+  no   : ¬  P → Dec P
 ```
 
-`type:Dec` is a type which states if we know for sure that either `P` holds, or that
-`P` *doesn't* hold. Of course, only one of these can ever be true at once, and
-thus `Dec P` corresponds to an answer that we can definitively compute. For
-example, given two numbers, it's not too hard to determine if the two are equal.
+Hidden
+
+:   ```agda
+-- fix bind
+    ```
+
+The type `bind:P:Dec P` state that either `P` definitely holds, or that it
+definitely *doesn't* hold. Of course, only one of these can ever be true at
+once, and thus `bind:P:Dec P` corresponds to an answer that we know one way or
+the other.
+
+As an anti-example, given two numbers, it's not too hard to determine if the two
+are equal:
 
 ```agda
 module Nat-Properties where
   _==_ : ℕ → ℕ → Bool
-  zero  == zero  = true
-  zero  == suc y = false
-  suc x == zero  = false
-  suc x == suc y = x == y
+  zero   == zero   = true
+  zero   == suc y  = false
+  suc x  == zero   = false
+  suc x  == suc y  = x == y
 ```
 
 While `def:_==_` *is* a decision procedure, it doesn't give us back any
-proof-relevant term. The goal is slightly modify this definition such that
-whenever it returns `true` we instead give back a `ctor:yes`, and likewise replace
-`false` with `ctor:no`. Giving back the `ctor:yes`es is easy enough, but the `ctor:no`s take a
-little more thought:
+proof-relevant term. We'd like instead to get back a proof that the two numbers
+were or were not equal. A better name for such a function is `def:_≟_` (input as
+[`?=`](AgdaMode)).
+
+```agda
+  _≟⅋₋₁_ : (x y : ℕ) → Dec (x ≡ y)
+  _≟⅋₋₁_ = ?
+```
+
+The goal is slightly modify the definition of `def:_≡_` such that whenever it
+returns `ctor:true` we instead get back a `ctor:yes`, and likewise replace
+`ctor:false` with `ctor:no`. Giving back the `ctor:yes`es is easy enough, but
+the `ctor:no`s take a little more thought:
 
 ```agda
   _≟⅋₀_ : (x y : ℕ) → Dec (x ≡ y)
-  zero ≟⅋₀ zero = yes refl
-  zero ≟⅋₀ suc y = no ?
-  suc x ≟⅋₀ zero = no ?
-  suc x ≟⅋₀ suc y with x ≟⅋₀ y
-  ... | yes refl = yes refl
-  ... | no x≢y   = no ?
+  zero   ≟⅋₀ zero   = yes refl
+  zero   ≟⅋₀ suc y  = no ?
+  suc x  ≟⅋₀ zero   = no ?
+  suc x  ≟⅋₀ suc y with x ≟⅋₀ y
+  ... | yes refl  = yes refl
+  ... | no x≢y    = no ?
 ```
 
-The first hole here has type `zero ≡ suc y → ⊥`, which we can [Refine](AgdaCmd)
-to a lambda:
+The first hole here has type `bind:y:zero ≡ suc y → ⊥`, which we can
+[Refine](AgdaCmd) to a lambda:
 
 ```agda
   _≟⅋₁_ : (x y : ℕ) → Dec (x ≡ y)
-  zero ≟⅋₁ zero = yes refl
-  zero ≟⅋₁ suc y = no λ { x → {! !} }
-  suc x ≟⅋₁ zero = no ?
-  suc x ≟⅋₁ suc y with x ≟⅋₁ y
-  ... | yes refl = yes refl
-  ... | no x≢y   = no ?
+  zero   ≟⅋₁ zero   = yes refl
+  zero   ≟⅋₁ suc y  = no λ { x → {! !} }
+  suc x  ≟⅋₁ zero   = no ?
+  suc x  ≟⅋₁ suc y with x ≟⅋₁ y
+  ... | yes refl  = yes refl
+  ... | no x≢y    = no ?
 ```
 
-Inside our lambda we have `x : zero ≡ suc y`, which can never happen, since
-`ctor:zero` and `ctor:suc` are different constructors. Therefore, we can solve this (and
-the next) hole with absurd pattern matches inside of the lambda:
+Inside our lambda we have a term `x` whose type is `bind:y:zero ≡ suc y`. We
+know this can never happen, since `ctor:zero` and `ctor:suc` are different
+constructors. Therefore, we can solve this (and the next) hole with absurd
+pattern matches inside of the lambda:
 
 ```agda
   _≟⅋₂_ : (x y : ℕ) → Dec (x ≡ y)
-  zero ≟⅋₂ zero = yes refl
-  zero ≟⅋₂ suc y = no λ ()
-  suc x ≟⅋₂ zero = no λ ()
-  suc x ≟⅋₂ suc y with x ≟⅋₂ y
-  ... | yes refl = yes refl
-  ... | no x≢y   = no ?
+  zero   ≟⅋₂ zero   = yes refl
+  zero   ≟⅋₂ suc y  = no λ ()
+  suc x  ≟⅋₂ zero   = no λ ()
+  suc x  ≟⅋₂ suc y with x ≟⅋₂ y
+  ... | yes refl  = yes refl
+  ... | no x≢y    = no ?
 ```
 
-We are left with only one hole, but it is `suc x ≡ suc y → ⊥`, and thus our
-absurd pattern trick can't work here. However, we do have a proof that `x ≢ y`,
-from which we must derive a contradiction. The idea is that if refine our hole
-to a lambda, it will have a parameter of type `suc x ≡ suc y`, which if we
-pattern match on, Agda will learn that `x ≡ y`. From there, we can invoke the
-fact that `x ≢ y`, and we have the contradiction we've been looking for:
+We are left with only one hole, but it has type `bind:x y:suc x ≡ suc y → ⊥`,
+and thus our absurd pattern trick can't work here. However, we do have a proof
+that `bind:x y:x ≢ y`, from which we must derive a contradiction. The idea is
+that if refine our hole to a lambda, it will have a parameter of type `bind:x
+y:suc x ≡ suc y`, which if we pattern match on, Agda will learn that `bind:x y:x
+≡ y`. From there, we can invoke the fact that `bind:x y:x ≢ y`, and we have the
+contradiction we've been looking for. It's a bit of a brain buster, but as
+usual, the types lead the way:
 
 ```agda
   _≟_ : (x y : ℕ) → Dec (x ≡ y)
-  zero ≟ zero = yes refl
-  zero ≟ suc y = no λ ()
-  suc x ≟ zero = no λ ()
-  suc x ≟ suc y with x ≟ y
-  ... | yes refl = yes refl
-  ... | no x≢y   = no λ { refl → x≢y refl }
+  zero   ≟ zero   = yes refl
+  zero   ≟ suc y  = no λ ()
+  suc x  ≟ zero   = no λ ()
+  suc x  ≟ suc y with x ≟ y
+  ... | yes refl  = yes refl
+  ... | no x≢y    = no λ { refl → x≢y refl }
 ```
 
-Take a moment to reflect on this. Where before `def:_==_` simply returned `false`,
-we are now responsible for *deriving a contradiction.* Alternatively said, we
-must now *reify* our reasoning, and *prove* that our algorithm does what it
-says. The advantage of returning a proof of the negation is that downstream
-callers can use it to show impossible codepaths of their own.
+Take a moment to reflect on this. Where before `def:_==_` simply returned
+`ctor:false`, we are now responsible for *deriving a contradiction.*
+Alternatively said, we must now *reify* our reasoning, and *prove* that our
+algorithm does what it says. The advantage of returning a proof of the negation
+is that downstream callers can use it to show their own impossible code-paths.
 
 We can package up decidable equality into its own type:
 
 ```agda
-DecidableEquality : (A : Set) → Set
+DecidableEquality : {ℓ : Level} (A : Set ℓ) → Set ℓ
 DecidableEquality A = (x y : A) → Dec (x ≡ y)
 ```
 
