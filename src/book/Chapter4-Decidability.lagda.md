@@ -1147,10 +1147,12 @@ But before writing it, however, the following definitions will be useful to help
 corral the types:
 
 ```agda
-  Decidable : {ℓ : Level} {A : Set ℓ} → (A → Set ℓ) → Set ℓ
+  Decidable  : {c ℓ : Level} {A : Set c}
+             → (A → Set ℓ) → Set (c ⊔ ℓ)
   Decidable {A = A} P = (a : A) → Dec (P a)
 
-  Decidable₂ : {ℓ : Level} {A : Set ℓ} → (A → A → Set ℓ) → Set ℓ
+  Decidable₂  : {c ℓ : Level} {A : Set c}
+              → (A → A → Set ℓ) → Set (c ⊔ ℓ)
   Decidable₂ {A = A} _~_ = (x y : A) → Dec (x ~ y)
 ```
 
