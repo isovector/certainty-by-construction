@@ -58,7 +58,7 @@ facts about more computer-sciencey objects. After all, these proof techniques
 are applicable outside of the ivory tower, too!
 
 
-## Universe Levels {@sec:levels}
+## Universe Levels {#sec:levels}
 
 Before we discuss falseness, we must turn our attention first to a problem in
 the early foundations of mathematics.
@@ -1465,15 +1465,11 @@ relation.
         → IsBST _<_ (branch l a r)
 ```
 
--- TODO(sandy): put this sooner in the book!
--- TODO(sandy): oh god, but where?
-
 Given the standard notion of ordering over the natural numbers:
 
 ```agda
-  data _≤_ : ℕ → ℕ → Set where
-    z≤n : {n : ℕ} → zero ≤ n
-    s≤s : {m n : ℕ} → m ≤ n → suc m ≤ suc n
+  open Chapter3-Proofs.Exports
+    using (_≤_; z≤n; s≤s)
 ```
 
 we can again ask Agda for a proof that `def:tree` is a BST under the `type:_≤_`
