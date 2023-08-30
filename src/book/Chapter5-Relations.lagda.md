@@ -479,7 +479,7 @@ that you are doing meaningful things. We will not investigate those alternative
 ways here, except to point out how to avoid the situation altogether.
 
 
-## Overconstrained by Dot Patterns
+## Overconstrained by Dot Patterns {#sec:dot-patterns}
 
 But first, one last subtle point about unification. Rather surprisingly, we
 successfully implemented `def:suc-mono`, without encountering the dreaded "not sure

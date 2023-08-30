@@ -2494,7 +2494,7 @@ module Exports where
     public
 
   open import Data.Nat
-    using (_≤_; z≤n; s≤s)
+    using (_≤_; z≤n; s≤s; _<_)
     public
 
   open import Data.Nat.Properties

@@ -1469,7 +1469,7 @@ Given the standard notion of ordering over the natural numbers:
 
 ```agda
   open Chapter3-Proofs.Exports
-    using (_≤_; z≤n; s≤s)
+    using (_≤_; z≤n; s≤s; _<_)
 ```
 
 we can again ask Agda for a proof that `def:tree` is a BST under the `type:_≤_`
@@ -1526,7 +1526,7 @@ Unfortunately, there is not. Nothing in the theory precludes us from generating
 them, but at time of writing, there is alas no automatic means of deriving such.
 
 
-## Insertion into BSTs
+## Trichotomy
 
 What we have done thus far is show that there exist things called binary search
 trees, and we have given a definition of what properties we mean when we say
@@ -1551,18 +1551,23 @@ correct subtree.
 
 What we have to work with thus far is only the fact that `type:_<_` is
 decidable. But if we were to work directly with the decidability `type:_<_`, our
-algorithm would need to first check whether `a < x`, and if it isn't, check that
-`x < a`, and if it isn't check that `x ≡ y`, and if *that isn't,* well then we
-definitely have a problem. This doesn't sound like an enjoyable experience
-though; as we have seen above, every invocation of decidability doubles the
-amount of work we need to do, since we need to use the proof or show a
-subsequent contradiction.
+algorithm would need to first check whether `bind:a x:a < x`, and if it isn't,
+check that `bind:a x:x < a`, and if it isn't check that `bind:a x:x ≡ a`, and if
+*that also isn't,* well, then we definitely have a problem.
+
+However, it should be the case that exactly one of `bind:a x:a < x`, `bind:a x:x
+< a`, and `bind:a x:x ≡ a` should be true for any `x` and `a` you could
+possibly desire. We could attempt to prove this directly, but it doesn't sound
+like an enjoyable experience. As we have seen above, every invocation of
+decidability doubles the amount of work we need to do, since we need to use the
+proof or show a subsequent contradiction.
 
 Instead, we can generalize the idea of decidability to a *trichotomy*, which is
 the idea that exactly one of three choices must hold. From this perspective,
-`type:Dec` is merely a type that states exactly one of `P` or `¬ P` holds, and so the
-notion of trichotomy shouldn't be earth-shattering. We can define `type:Tri`
-(analogous to `type:Dec`) as as proof that exactly one of `A`, `B` or `C` holds:
+`type:Dec` is merely a type that states exactly one of `P` or `type:¬` `P`
+holds, and so the notion of trichotomy shouldn't be earth-shattering. We can
+define `type:Tri` (analogous to `type:Dec`) as as proof that exactly one of `A`,
+`B` or `C` holds:
 
 ```agda
   data Tri {a b c : Level} (A : Set a) (B : Set b) (C : Set c)
@@ -1572,8 +1577,10 @@ notion of trichotomy shouldn't be earth-shattering. We can define `type:Tri`
     tri> : ¬  A → ¬  B →    C → Tri A B C
 ```
 
-and we can lift this notion to `type:Trichotomous`, stating that for two relations,
-one equality-like, and one less-than-like, we can always determine which holds:
+Just as we defined `type:Decidable₂`, we will now lift this notion of `def:Tri`
+to an analogous `type:Trichotomous`: stating that for two relations, one
+equality-like, and one less-than-like, we can always determine which of the
+three options holds.
 
 ```agda
   Trichotomous
@@ -1586,9 +1593,54 @@ one equality-like, and one less-than-like, we can always determine which holds:
     (x y : A) → Tri (x < y) (x ≈ y) (y < x)
 ```
 
+As a good exercise, we'd like to show that `type:ℕ` is trichotomous with respect
+to `type:_≡_` and `type:_<_`. Doing so will require a couple of quick lemmas.
+The first, `def:s≤s-injective` states that we can cancel outermost `ctor:suc`
+constructors in equality over the naturals:
+
+```agda
+  s≤s-injective : {x y : ℕ} → suc x ≡ suc y → x ≡ y
+  s≤s-injective refl = refl
+```
+
+And the other is that if we know $x \nless y$ then we also know $x + 1 \nless y
++ 1$:
+
+```agda
+  refute : {x y : ℕ} → ¬ x < y → ¬ suc x < suc y
+  refute x≮y (s≤s x<y) = x≮y x<y
+```
+
+Given these two lemmas, its not too much work to bash out `def:<-cmp`, the
+traditional name for the trichotomy of the natural numbers. The hardest part is
+simply massaging all six of the refutations in the recursive case:
+
+```agda
+  <-cmp : Trichotomous  _≡_ _<_
+  <-cmp zero zero    = tri≈ (λ ())     refl    (λ ())
+  <-cmp zero (suc y) = tri< (s≤s z≤n)  (λ ())  (λ ())
+  <-cmp (suc x) zero = tri> (λ ())     (λ ())  (s≤s z≤n)
+  <-cmp (suc x) (suc y) with <-cmp x y
+  ...  | tri< x<y x≉y x≱y
+       = tri<  (s≤s x<y)
+               (λ { sx≈sy → x≉y (s≤s-injective sx≈sy) })
+               (refute x≱y)
+  ...  | tri≈ x≮y x≈y x≱y
+       = tri≈  (refute x≮y)
+               (cong suc x≈y)
+               (refute x≱y)
+  ...  | tri> x≮y x≉y x>y
+       = tri>  (refute x≮y)
+               (λ { sx≈sy → x≉y (s≤s-injective sx≈sy) })
+               (s≤s x>y)
+```
+
 Working directly with `type:Tri`, rather than several invocations to `Decidable₂
 _<_` will dramatically reduce the proof effort necessary to define `def:insert` and
-show that it preserves `type:IsBST`.
+show that it preserves `type:IsBST`, which we will do in the next section.
+
+
+## Insertion into BSTs
 
 We are going to require a `type:_<_` relation, and a proof that it forms a trichotomy
 with `type:_≡_` in order to work through the implementation details here. Rather than
@@ -1596,19 +1648,23 @@ pollute all of our type signatures with the necessary plumbing, we can instead
 define an anonymous module and add the common parameters to that instead, as in:
 
 ```agda
-  -- TODO(sandy): this requires strict <, unlike the previous
-  -- section; clean up previous
   module _
-    {_<_ : A → A → Set}
-    (<-cmp : Trichotomous _≡_ _<_) where
+      {ℓ : Level}
+      {_<_ : A → A → Set ℓ}
+      (<-cmp : Trichotomous _≡_ _<_) where
 ```
 
-Anything defined in this module will now automatically inherit `{_<_ : A → A →
-Set}` and `Trichotomous _≡_ _<_` arguments, which saves us some effort in
-getting all the necessary arguments from one place to another.
 
-Defining `def:insert` follows exactly the same template as our in-writing algorithm
-above:
+
+Anything defined in this module will now automatically inherit `_<_` and
+`def:Trichotomous` `_≡_ _<_` arguments, meaning we don't need to pass the
+(locally-bound) `<-cmp` function around by hand.
+
+Defining `def:insert` follows exactly the same template as our in-writing
+algorithm above---recall, the plan is to replace `ctor:empty` with `ctor:leaf`,
+and otherwise recurse down the correct subtree in the case of `ctor:branch`.
+After everything we've been doing lately, `def:insert` turns out to be a walk in
+the park:
 
 ```agda
     insert
@@ -1643,15 +1699,16 @@ preserves `type:All`! The type we need to show is that if `P a` and `All P t` ho
 
 ```agda
     all-insert⅋₀
-        : {P : A → Set} → (a : A) → P a → {t : BinTree A}  -- ! 1
-        → All P t → All P (insert a t)
+        : {P : A → Set} → (a : A)
+        → P a
+        → {t : BinTree A}
+        → All P t
+        → All P (insert a t)
     all-insert⅋₀ = ?
 ```
 
-In this type, we have carefully chosen to position the implicit parameter `t` at
-[1](Ann). In placing it directly before the `All P t` parameter, we can
-simultaneously pattern match on both, which gives us easy bindings for the tree
-being manipulated, as you can see here. After binding our variables:
+After binding our variables (including `t`, carefully positioned so that we can
+avoid binding `P`), our function now looks like:
 
 ```agda
     all-insert⅋₁
@@ -1660,7 +1717,7 @@ being manipulated, as you can see here. After binding our variables:
     all-insert⅋₁ a pa {t} all-pt = {! !}
 ```
 
-we can now ask for a [MakeCase:all-pt](AgdaCmd):
+Asking now for a [MakeCase:all-pt](AgdaCmd) results in:
 
 ```agda
     all-insert⅋₂
@@ -1672,33 +1729,23 @@ we can now ask for a [MakeCase:all-pt](AgdaCmd):
 
 Notice that when we pattern matched on `all-pt`, Agda realized that this fully
 determines the results of `t` as well, and it happily expanded them out into
-these funny `ctor:.empty` and `ctor:.(branch...)` patterns. These are called *dot
+these funny `.``ctor:empty` `.``ctor:branch` patterns. These are called *dot
 patterns,* and they correspond to patterns whose form has been fully determined
-by pattern matching on something else. However, whenever there's a dot pattern
-we're allowed to replace it with a regular pattern match, as in:
+by pattern matching on something else. We will discuss dot patterns more
+thoroughly in @sec:dot-patterns, but for the time being, it suffices to know
+that, whenever we have a dot pattern, we can simply replace it with a regular
+pattern match:
 
 ```agda
     all-insert⅋₃
         : {P : A → Set} → (a : A) → P a → {t : BinTree A}
         → All P t → All P (insert a t)
     all-insert⅋₃ a pa {empty} empty = {! !}
-    all-insert⅋₃ a pa {branch _ _ _} (branch l<x xp x<r) = {! !}
+    all-insert⅋₃ a pa {branch l x r} (branch l<x xp x<r) = {! !}
 ```
 
-The point of this is really to get the pieces of the `t : BinTree` into scope,
-so we can replace those underscores with real names, and clean up the
-automatically generated other bindings at the same time:
-
-```agda
-    all-insert⅋₄
-        : {P : A → Set} → (a : A) → P a → {t : BinTree A}
-        → All P t → All P (insert a t)
-    all-insert⅋₄ a pa {empty} empty = {! !}
-    all-insert⅋₄ a pa {branch l x r} (branch l<x px x<r) = {! !}
-```
-
-Finally, there is no reason to pattern match on the `ctor:{empty}`, since it doesn't
-help us bring any new variables into scope.
+Finally, there is no reason to pattern match on the implicit `ctor:empty`, since
+it doesn't bring any new variables into scope.
 
 ```agda
     all-insert⅋₅
@@ -1719,9 +1766,9 @@ which is our `ctor:leaf` constructor:
     all-insert⅋₆ a pa {branch l x r} (branch l<x px x<r) = {! !}
 ```
 
-A funny thing happens here. We know this remaining hole must be a `ctor:branch`, but
-Agda will refuse to [Refine](AgdaCmd) it. If you ask for the type of the goal,
-we see something peculiar:
+Attempting to [Refine](AgdaCmd) this last hole results in a funny thing. We know
+it must be filled with a `ctor:branch`, but Agda will refuses.If you ask for the
+type of the goal, we see something peculiar:
 
 ```info
 Goal: All P (insert <-cmp a (branch l x r) | <-cmp a x)
@@ -1729,8 +1776,9 @@ Goal: All P (insert <-cmp a (branch l x r) | <-cmp a x)
 
 The vertical bar is not anything that you're allowed to write for yourself, but
 the meaning here is that the result of `def:insert` is stuck until Agda knows the
-result of `<-cmp a`. Our only means of unsticking it is to also do a `with`
-abstraction over `<-cmp a x` and subsequently pattern match on the result:
+result of `bind:a:<-cmp a`. Our only means of unsticking it is to also do a
+`keyword:with` abstraction over `bind:a x:<-cmp a x` and subsequently pattern
+match on the result:
 
 ```agda
     all-insert⅋₇
@@ -1760,15 +1808,19 @@ to complete the function on your own:
     ... | tri> _ _ x<a  = branch l<x px (all-insert a pa x<r)
 ```
 
-Now that we've finished the `def:all-insert` lemma, we're ready to show that
-`def:insert` preserves `type:IsBST`. Again, when implementing this you will see that the
-type will get stuck on `insert x t | <-cmp a x`, and will require another
-pattern match on `<-cmp a x`. This will always be the case, and it is for this
-reason that we say the proof has the same shape as the computation. In many ways
-it is like poetry: it rhymes.
+Now that we've finished the `def:all-insert` lemma, we're ready to pop the stack
+and show that `def:insert` preserves `type:IsBST`.
 
-Implementing `def:bst-insert` isn't much more of a cognitive challenge than
-`def:all-insert` was; just pattern match and then build a proof term via induction:
+Again, when implementing this you will see that the type will get stuck on
+`bind:x t:insert x t` `|` `bind:a x:<-cmp a x`, and will require another pattern
+match on `bind:a x:<-cmp a x`. This will always be the case when proving things
+that pattern match on a `keyword:with` abstraction; it is for this reason that
+we say the proof has the same shape as the computation. It's like poetry: it
+rhymes.
+
+Implementing `def:bst-insert` isn't any more of a cognitive challenge than
+`def:all-insert` was; just pattern match and then build a proof term via
+induction:
 
 ```agda
     bst-insert
@@ -1794,6 +1846,11 @@ Implementing `def:bst-insert` isn't much more of a cognitive challenge than
               lbst
               (bst-insert a rbst)
 ```
+
+With `def:bst-insert` finally implemented, we have now proven that inserting
+into a binary search tree results in another binary search tree. It's a bit of
+an underwhelming result for all the work we've done, isn't it? In the next
+section, we will look at alternative ways of phrasing the problem that can help.
 
 
 ## Intrinsic vs Extrinsic Proofs
