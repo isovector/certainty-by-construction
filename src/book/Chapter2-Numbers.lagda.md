@@ -328,7 +328,7 @@ It will be informative to compare this against a function that computes whether
 a given natural is equal to 2.
 
 
-Exercise
+Exercise (Easy)
 
 :   Implement `def:n=2?` `:` `expr:ℕ → Bool`
 
@@ -630,7 +630,7 @@ possible only when our desired property is *actually true.* We will explore this
 topic more deeply in @sec:proofs.
 
 
-Exercise
+Exercise (Easy)
 
 :   Build an indexed type for `type:IsOdd`.
 
@@ -658,7 +658,7 @@ Hidden
     ```
 
 
-Exercise
+Exercise (Easy)
 
 :   Write an inductive function `def:evenOdd` `:` `expr:{n : ℕ} → IsEven n → IsOdd (suc n)`
     which witnesses the fact that every even number is followed by an odd number.
@@ -672,7 +672,7 @@ Solution
   evenOdd (suc-suc-even x)  = suc-suc-odd (evenOdd x)
     ```
 
-:  or, alternatively,
+:  or, if you took the alternative approach in the previous exercise,
 
 :   ```agda
   evenOdd' : {n : ℕ} → IsEven n → IsOdd' (suc n)
@@ -1158,7 +1158,7 @@ just return zero instead. This operation is called "monus", and given the symbol
 `def:_∸_`, input as [`.-`](AgdaMode).
 
 
-Exercise
+Exercise (Easy)
 
 : Define `def:_∸_` : `expr:ℕ → ℕ → ℕ`
 

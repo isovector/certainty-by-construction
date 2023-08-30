@@ -1908,7 +1908,7 @@ learned. The type you're looking for is:
 ```
 
 
-Exercise
+Exercise (Easy)
 
 :   Implement `def:uncurry`. Remember that [`TypeContext`](AgdaCmd) is an
     invaluable tool if you don't know how to make progress.

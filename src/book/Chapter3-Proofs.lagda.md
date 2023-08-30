@@ -757,7 +757,7 @@ In addition to addition, multiplication also enjoys both left and right
 identities as we have seen. A good exercise is to prove both.
 
 
-Exercise
+Exercise (Easy)
 
 :   Prove that $1 \times a = a$
 
@@ -771,7 +771,7 @@ Solution
     ```
 
 
-Exercise
+Exercise (Easy)
 
 :   Prove that $a \times 1 = a$
 
@@ -797,7 +797,7 @@ but it is not a left identity. As it happens, the monus operation does not have
 a left identity---a fact we will prove in @sec:sigma.
 
 
-Exercise
+Exercise (Easy)
 
 :   Find and prove an identity element for exponentiation.
 
@@ -1019,17 +1019,17 @@ proof, and then we must bind `x : A` and `y : A` for the particular arguments on
 either side of the equals sign:
 
 ```agda
-  sym-involutive
+  sym-involutive⅋
       : {A : Set} → {x y : A}
-      → (p : x ≡ y)
-      → sym (sym p) ≡ p
+      → (p : x ≡ y) → sym (sym p) ≡ p
+  sym-involutive⅋ = ?
 ```
 
 The proof here is simple and satisfying, and is left as an exercise to the
 reader.
 
 
-Exercise
+Exercise (Trivial)
 
 :   Prove `def:sym-involutive`.
 
@@ -1037,6 +1037,9 @@ Exercise
 Solution
 
   :   ```agda
+  sym-involutive
+      : {A : Set} → {x y : A}
+      → (p : x ≡ y) → sym (sym p) ≡ p
   sym-involutive refl = refl
     ```
 
@@ -2039,7 +2042,7 @@ Hidden
       ```
 
 
-Exercise
+Exercise (Easy)
 
 :   Implement  `def:+-suc` `:` `expr:(x y : ℕ) → x + suc y ≡ suc (x + y)`
 
@@ -2065,7 +2068,7 @@ By this point you should be able to put together the type, and show the zero
 case.
 
 
-Exercise
+Exercise (Easy)
 
 :   State the type of, perform induction on the first argument, and solve the
     `ctor:zero` case for `def:+-comm`.
@@ -2185,9 +2188,9 @@ right side of a multiplication term.
 ```
 
 
-Exercise
+Exercise (Challenge)
 
-: Prove `def:*-suc`. Note that this is a difficult proof.
+: Prove `def:*-suc`.
 
 
 Hint
@@ -2237,7 +2240,7 @@ Hidden
   -- fix expr
       ```
 
-Exercise
+Exercise (Medium)
 
 :   Prove `def:*-comm` `:` `expr:(x y : ℕ) → x * y ≡ y * x`.
 
@@ -2264,7 +2267,7 @@ Hidden
 > TODO(sandy): A little prose would go a long way here if I have time!
 
 
-Exercise
+Exercise (Medium)
 
 :   Prove `def:*-distribʳ-+` `:` `expr:(x y z : ℕ) → (y + z) * x ≡ y * x + z * x`.
 
@@ -2291,7 +2294,7 @@ Hidden
       ```
 
 
-Exercise
+Exercise (Hard)
 
 :   Prove `def:*-distribˡ-+` `:` `expr:(x y z : ℕ) → x * (y + z) ≡ x * y + x * z`.
 
@@ -2317,7 +2320,7 @@ Hidden
       ```
 
 
-Exercise
+Exercise (Medium)
 
 : Prove `def:*-assoc` `:` `expr:(x y z : ℕ) → (x * y) * z ≡ x * (y * z)`.
 

@@ -1411,7 +1411,7 @@ Hidden
     ```
 
 
-Exercise
+Exercise (Medium)
 
 :   Show that `bind:P:All P` is `type:Decidable`, given `bind:P:Decidable P`.
 
@@ -2103,7 +2103,8 @@ All that's left is lifting `<-cmp`, which we must do by hand:
             (↑<↑ y<x)
 ```
 
-The end is nigh! We can now define our final `type:BST` as one bounded by `ctor:-∞` and `ctor:+∞`:
+The end is nigh! We can now define our final `type:BST` as one bounded by
+`ctor:-∞` and `ctor:+∞`:
 
 ```agda
   open module Impl = Intrinsic-BST-Impl _<∞_
@@ -2126,20 +2127,33 @@ and finally, define insertion by merely plugging in some trivial proofs:
 ```agda
 module Exports where
   open import Relation.Binary
-    using (Reflexive; Transitive; DecidableEquality; Trichotomous; Tri)
+    using (Reflexive; Transitive; DecidableEquality)
+    using (Trichotomous; Tri)
+    renaming (Decidable to Decidable₂)
     public
-  open Tri public
 
   open import Data.Empty
-    using (⊥)
+    using (⊥; ⊥-elim)
+    public
+
+  open import Relation.Unary
+    using (Decidable)
     public
 
   open import Relation.Nullary
     using (Dec; yes; no; ¬_)
     public
 
+  open import Data.Nat.Properties
+    using (s≤s-injective; <-cmp)
+    public
+
   open import Relation.Binary.PropositionalEquality
     using (_≢_; ≢-sym)
+    public
+
+  open BinaryTrees
+    using (BinTree; empty; branch; leaf)
     public
 ```
 
