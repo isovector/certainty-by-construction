@@ -446,8 +446,8 @@ inputs on one side and the outputs on the other.
 We can transform a function `f` into a relation `def:FnToRel` `f` such that `x`
 is in relation to `y` only when $f x = y$. The definition is a bit silly, but it
 works out nevertheless. To build such a thing, we can use a `keyword:data` type
-that maps from `f` into `def:REL` `A` B` `def:lzero`. If you'll excuse the cute
-notation[^fun-notation], we can call such a thing `def:_maps_↦_` using
+that maps from `f` into `def:REL` `A` `B` `def:lzero`. If you'll excuse the cute
+notation,[^fun-notation] we can call such a thing `def:_maps_↦_` using
 [`r-|`](AgdaMode) for the `↦` symbol.
 
 [^fun-notation]: Frankly, half of the fun in writing Agda is coming up with good
@@ -486,15 +486,15 @@ constraints on any relation we'd like to transform into a function:
    value on the right, and
 2. every value in the left type is related to something in the right.
 
-These properties are called *functional* and *serial*, respectively. In order to
-produce a function out a relation, we must first show the relation has both
-properties, and thus it will do for us to define them.
+These properties are called *functionality* and *totality* respectively. In
+order to produce a function out a relation, we must first show the relation has
+both properties, and thus it will do for us to define them.
 
 More formally, the functional property states that if $x \mathrel{\sim} y$ and
 $x \mathrel{\sim} z$, then it must be the case that $y = z$. We can encode this
-in Agda as a function mapping from `type:REL` into `type:Set`, which you can
-think of as a function which takes a relation and produces the necessary
-constraint.
+in Agda by mapping from `type:REL` into `type:Set`, which you can think of as a
+function which takes a relation and produces the necessary constraint it must
+satisfy.
 
 ```agda
   Functional  : {a b ℓ : Level} {A : Set a} {B : Set b}
@@ -505,33 +505,34 @@ constraint.
     → y ≡ z
 ```
 
-The serial property says that for every $x$, there must exist some $y$ such that
+The total property says that for every $x$, there must exist some $y$ such that
 $x \mathrel{\sim} y$. As before in @sec:sigma, we can turn this "there exists"
 into a `type:Σ` type:
 
 ```agda
-  Serial  : {a b ℓ : Level} {A : Set a} {B : Set b}
-          → REL A B ℓ → Set (a ⊔ b ⊔ ℓ)
-  Serial {A = A} {B} _~_
+  Total  : {a b ℓ : Level} {A : Set a} {B : Set b}
+         → REL A B ℓ → Set (a ⊔ b ⊔ ℓ)
+  Total {A = A} {B} _~_
     = (x : A) → Σ B (λ y → x ~ y)
 ```
 
-Given `def:Functional` and `def:Serial`, we're now ready to turn our relation
+Given `def:Functional` and `def:Total`, we're now ready to turn our relation
 back into a function:
 
 ```agda
   relToFn : {a b ℓ : Level} {A : Set a} {B : Set b}
           → (_~_ : REL A B ℓ)
           → Functional _~_
-          → Serial _~_
+          → Total _~_
           → A → B
-  relToFn _~_ _ serial x with serial x
+  relToFn _~_ _ total x
+    with total x
   ... | y , _ = y
 ```
 
 As it happens, this implementation doesn't actually use the
 `bind:_~_:Functional _~_` argument, but its existence in the type is necessary
-to ensure we didn't just pick an *arbitrary* output from the `type:Serial`
+to ensure we didn't just pick an *arbitrary* output from the `type:Total`
 property.
 
 Of course, nobody would actually do this in practice, but it's useful to see
@@ -576,10 +577,9 @@ of, and constructions over.
 
 ## Equivalence Relations
 
-It's a good habit to look for what generalizes whenever you notice something you
-already understand is a special case of something more abstract. In this case,
-how much of our understanding of propositional equality lifts to relations in
-general?
+It's a good habit to look for what generalizes whenever you notice a connection
+to something you already understand. In this case, how much of our understanding
+of propositional equality lifts to relations in general?
 
 Recall the three properties we showed about propositional equality: reflexivity,
 symmetry, and transitivity. Reflexivity was the notion that every element is
@@ -1010,9 +1010,7 @@ The solution here is to prevent Agda from introducing dot patterns, and the
 simplest way to do *that* is to only ever use *constructors* as indices to your
 data type.
 
----
-
-splice me in, papa
+-- splice me in, papa
 
 ## Comparing Natural Numbers {#sec:comparing}
 
