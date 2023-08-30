@@ -2372,6 +2372,7 @@ module Exports where
     using (  +-identityˡ  ; +-identityʳ
           ;  *-identityˡ  ; *-identityʳ
           ;  *-zeroˡ      ; *-zeroʳ
+          ;  +-comm       ; *-comm
           ;  ^-identityʳ
           ;  ≤-refl       ; ≤-trans
           )

@@ -14,9 +14,21 @@ module Chapter4-Relations where
 Prerequisites
 
 :   ```agda
+import Chapter1-Agda
+open Chapter1-Agda.Exports
+  using (_×_; _,_)
+    ```
+
+:   ```agda
 import Chapter2-Numbers
 open Chapter2-Numbers.Exports
   using (ℕ; zero; suc; _+_)
+    ```
+
+:   ```agda
+import Chapter3-Proofs
+open Chapter3-Proofs.Exports
+  using (_≡_; cong)
     ```
 
 -- TODO(sandy): this intro doesn't make much sense anymore
@@ -267,7 +279,6 @@ into `Set`. Taken at face value, this would give us the following type for a
 relation:
 
 ```agda
-open import Data.Product using (_×_)
 
 postulate
   _ : {A B : Set} → A × B → Set
@@ -287,10 +298,6 @@ third for the resulting `Set`. Thus, we come up with our final definition as
 `REL`:
 
 ```agda
-open import Level
-  using (Level; _⊔_)
-  renaming (zero to lzero; suc to lsuc)
-
 module Sandbox-Relations where
   private variable
     a b ℓ : Level
@@ -309,9 +316,6 @@ mathematics:
 
 ```agda
   module Example₁ where
-    open import Relation.Binary.PropositionalEquality
-      using (_≡_)
-
     IsFunction
         : {A : Set a} {B : Set b}
         → (f : A → B)
@@ -348,8 +352,8 @@ but we can instead give it this type, stressing the fact that it is a homogeneou
 relation:
 
 ```agda
-    data _≡_ {A : Set a} : Rel A a where
-      refl : {x : A} → x ≡ x
+    data _≡⅋_ {A : Set a} : Rel A a where
+      refl⅋ : {x : A} → x ≡⅋ x
 ```
 
 
@@ -423,9 +427,7 @@ We can dodge the issue by renaming the `module:PropositionalEquality` module dow
 
 ```agda
   module Example₃ where
-    import Relation.Binary.PropositionalEquality
-      as PropEq
-    open PropEq using (_≡_)
+    module PropEq = Chapter3-Proofs.Exports
 ```
 
 at which point, building the proof that `type:_≡_` is an equivalence relationship is
@@ -463,10 +465,12 @@ show reflexivity, we simply use $x = 0$. We can set this up, first by importing
 our relation machinery from the standard library:
 
 ```agda
-module Sandbox-Orderings where
-  open import Relation.Binary
-    using (Rel; Reflexive; Transitive; Symmetric; IsEquivalence)
+open import Relation.Binary
+  using (Rel; Reflexive; Transitive; Symmetric; IsEquivalence)
 
+module PropEq = Chapter3-Proofs.Exports
+
+module Sandbox-Orderings where
   open import Data.Nat
     using (ℕ; _+_; zero; suc)
 ```
@@ -593,8 +597,7 @@ type-level, like is required here. This machinery is called `def:subst`, short f
 *substitution*:
 
 ```agda
-    open import Relation.Binary.PropositionalEquality
-      using (_≡_; refl)
+    open PropEq using (refl)
 
     subst
         : {A : Set} {x y : A}
@@ -610,7 +613,7 @@ you'd like the substitution to happen. To illustrate this, we can implement
 `def:≤-refl` via `def:subst`, though the experience is decidedly less than wholesome:
 
 ```agda
-    open import Data.Nat.Properties
+    open Chapter3-Proofs.Exports
      using (+-identityʳ)
 
     ≤-refl′ : Reflexive _≤_
@@ -931,9 +934,6 @@ that our datatype can take, and it subsequently informs the entire definition.
 
 ```agda
 module Definition-LessThanOrEqualTo2 where
-  open import Relation.Binary
-    using (Rel; Reflexive; Transitive; Symmetric; IsEquivalence)
-
   private variable
     m n p : ℕ
 
@@ -970,9 +970,6 @@ says that if we know $m \le n$ and that $n \le m$, then the only solution is if
 $m = n$. This is not very hard to show:
 
 ```agda
-  import Relation.Binary.PropositionalEquality as PropEq
-  open PropEq using (_≡_; cong)
-
   ≤-antisym : m ≤ n → n ≤ m → m ≡ n
   ≤-antisym z≤n z≤n = PropEq.refl
   ≤-antisym (s≤s m≤n) (s≤s n≤m) =
@@ -1256,8 +1253,7 @@ two terms are propositionally equal, it would be nice to be able to use that
 fact in a reasoning block. Thus, we also include `def:_≡⟨_⟩_`:
 
 ```agda
-    open import Relation.Binary.PropositionalEquality
-      using (_≡_; refl)
+    open PropEq using (refl)
 
     _≡⟨_⟩_ : (x : A) → ∀ {y z} → x ≡ y → y ~ z → x ~ z
     _ ≡⟨ refl ⟩ y~z = y~z
@@ -1370,12 +1366,12 @@ We can further use this fact and our preorder reasoning in order to show that $n
 \le n + 1$:
 
 ```agda
-  import Data.Nat.Properties as ℕ
+  open Chapter3-Proofs.Exports using (+-comm)
 
   n≤n+1⅋₀ : (n : ℕ) → n ≤ n + 1
   n≤n+1⅋₀ n = begin
     n      ≈⟨ n≤1+n n ⟩  -- ! 1
-    1 + n  ≡⟨ ℕ.+-comm 1 n ⟩
+    1 + n  ≡⟨ +-comm 1 n ⟩
     n + 1  ∎
     where open PreorderReasoning (≤-preorder)
 ```
@@ -1396,7 +1392,7 @@ the cost of more boilerplate in the `keyword:where` clause:
   n≤n+1⅋₁ : (n : ℕ) → n ≤ n + 1
   n≤n+1⅋₁ n = begin
     n      ≤⟨ n≤1+n n ⟩
-    1 + n  ≡⟨ ℕ.+-comm 1 n ⟩
+    1 + n  ≡⟨ +-comm 1 n ⟩
     n + 1  ∎
     where open PreorderReasoning ≤-preorder
             renaming (_≈⟨_⟩_ to _≤⟨_⟩_)
@@ -1420,7 +1416,7 @@ therefore much more delightful:
   n≤n+1 : (n : ℕ) → n ≤ n + 1
   n≤n+1 n = begin
     n      ≤⟨ n≤1+n n ⟩
-    1 + n  ≡⟨ ℕ.+-comm 1 n ⟩
+    1 + n  ≡⟨ +-comm 1 n ⟩
     n + 1  ∎
     where open ≤-Reasoning
 ```
