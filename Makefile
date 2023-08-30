@@ -1,6 +1,5 @@
 RULES := pdf
 CONTENT := book
-DESIGN_IMAGES := $(addprefix build/,$(wildcard .design-tools/*.png))
 
 PANDOC_OPTS := -F pandoc-crossref \
                --citeproc \
@@ -18,12 +17,14 @@ PANDOC_PDF_OPTS := --from latex+raw_tex \
                    --top-level-division=chapter \
                    -t latex+lagda
 
+CHAPTERS := Chapter00-preface Chapter0-coblub Chapter1-Agda Chapter2-Numbers Chapter3-Proofs Chapter4-Decidability Chapter5-Relations Chapter6-Modular-Arithmetic Chapter7-Structures Chapter8-Isomorphisms Chapter9-Ring-Solving Chapter10-Functions
 
-agda := $(wildcard src/book/*.lagda.md)
+agda := $(patsubst %,src/book/%.lagda.md,$(CHAPTERS))
 
-ALL_LAGDA := $(patsubst src/book/%.lagda.md,build/tex/agda/%.lagda.tex,$(wildcard src/book/*.lagda.md))
+ALL_LAGDA := $(patsubst src/book/%.lagda.md,build/tex/agda/%.lagda.tex,$(agda))
 ALL_AGDA := $(patsubst src/book/%,build/tex/agda/%,$(wildcard src/book/*.agda))
-ALL_TEX := $(patsubst src/book/%.lagda.md,build/tex/book/%.tex,$(wildcard src/book/*.lagda.md))
+
+ALL_TEX := $(patsubst src/book/%.lagda.md,build/tex/book/%.tex,$(agda))
 
 # $(RULES): %: build/%.pdf
 all : build/pdf.pdf

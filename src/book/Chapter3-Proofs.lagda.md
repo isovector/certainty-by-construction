@@ -2417,21 +2417,20 @@ now fits, which completes the definition:
 We will have much more to say about the `type:_≤_` type in @sec:fight-indices,
 where we will explore why exactly we chose this particular encoding, and what
 goes wrong if we were to make a different choice. For now, however, try your
-hand at proving the reflexivity and transitivity of `type:_≤_` before taking a
-well deserved break.
+hand at proving the reflexivity and transitivity of `type:_≤_`:
 
 
 Exercise (Trivial)
 
-:   Prove `def:≤-refl` `:` `expr:(x : ℕ) → x ≤ x`.
+:   Prove `def:≤-refl` `:` `expr:{x : ℕ} → x ≤ x`.
 
 
 Solution
 
 :   ```agda
-  ≤-refl : (x : ℕ) → x ≤ x
-  ≤-refl zero     = z≤n
-  ≤-refl (suc x)  = s≤s (≤-refl x)
+  ≤-refl : {x : ℕ} → x ≤ x
+  ≤-refl {zero}   = z≤n
+  ≤-refl {suc x}  = s≤s ≤-refl
     ```
 
 
@@ -2440,11 +2439,32 @@ Exercise (Easy)
 :   Prove `def:≤-trans` `:` `expr:(x y z : ℕ) → x ≤ y → y ≤ z → x ≤ z`.
 
 :     ```agda
-  ≤-trans : (x y z : ℕ) → x ≤ y → y ≤ z → x ≤ z
-  ≤-trans zero y z x≤y y≤z = z≤n
-  ≤-trans (suc x) (suc y) (suc z) (s≤s x≤y) (s≤s y≤z)
-    = s≤s (≤-trans x y z x≤y y≤z)
+  ≤-trans : {x y z : ℕ} → x ≤ y → y ≤ z → x ≤ z
+  ≤-trans {zero} x≤y y≤z       = z≤n
+  ≤-trans (s≤s x≤y) (s≤s y≤z)  = s≤s (≤-trans x≤y y≤z)
       ```
+
+Exercise (Trivial)
+
+:   Prove `def:≤-suc` `:` `expr:(x : ℕ) → x ≤ suc x`.
+
+:     ```agda
+  ≤-suc : (x : ℕ) → x ≤ suc x
+  ≤-suc zero     = z≤n
+  ≤-suc (suc x)  = s≤s (≤-suc x)
+      ```
+
+Sometimes we might want a *strict* less-than, without any of this "or equal to"
+stuff. That's easy enough; we can just insert a `ctor:suc` on the right side:
+
+```agda
+  _<_ : ℕ → ℕ → Set
+  m < n = m ≤ suc n
+```
+
+That's enough for now. Pat yourself on the back for making it through a chapter
+on rigorous proofs, and take a well deserved break before diving into the next
+chapter where will discuss what all of this has to do with *computability.*
 
 
 ## Wrapping Up
@@ -2485,5 +2505,4 @@ module Exports where
           ;  ≤-refl       ; ≤-trans
           )
     public
-
 ```

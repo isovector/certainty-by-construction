@@ -1530,32 +1530,33 @@ them, but at time of writing, there is alas no automatic means of deriving such.
 
 What we have done thus far is show that there exist things called binary search
 trees, and we have given a definition of what properties we mean when we say
-something is---or isn't---a binary search tree. This is a great start,
-prescriptively speaking, but this is not exactly where most computer science
-textbooks go when they discuss BSTs. Instead, they immediately dive into the
-meat of "what can you do with a BST."
+something is or isn't a binary search tree. This is a great
+start---prescriptively speaking---but this is not exactly where most computer
+science textbooks go when they discuss BSTs. Instead, they immediately dive into
+the meat of "what can you do with a BST."
 
-Insertion is something you can do with a BST, and lest we be left behind by the
-traditional pedagogical material, let's now turn our discussion to insertion.
-The algorithm is easy enough---if the tree is empty, add a leaf. Otherwise,
-compare the value you'd like to insert with the value at the root. If they're
-equal, you're done. Otherwise, recursively insert the value into the correct of
-the subtree.
+*Insertion* is something you can do with a BST, and lest we be left behind by
+the traditional pedagogical material, let's turn our discussion in that
+direction. The algorithm is easy enough---if the tree is `ctor:empty`, add a
+`ctor:leaf`. Otherwise, compare the value you'd like to insert with the value at
+the root. If they're equal, you're done. Otherwise, recursively insert the value
+into the correct subtrees.
 
 The implicit claim here is that this algorithm preserves the `type:IsBST`
-invariant, but that is never explicitly pointed out. For the record, this
-algorithm *does* indeed preserve the `type:IsBST` invariant. However, this poses
-some challenges for us, since in order to show this we must necessarily derive a
-proof, which is going to depend on a proof that we picked the correct subtree to
-recurse on.
+invariant, but that is never explicitly stated. For the record, this algorithm
+*does* indeed preserve the `type:IsBST` invariant. However, this poses some
+challenges for us, since in order to show this we must necessarily derive a
+proof, which is going to recursively depend on a proof that inserted into the
+correct subtree.
 
-What we have to work with thus far is only the fact that `type:_<_` is decidable. But
-if we were to work directly with the decidability `type:_<_`, our algorithm would
-need to first check whether `a < x`, and if it isn't, check that `x < a`, and if
-it isn't check that `x ≡ y`, and if *that isn't,* well then we definitely have a
-problem. This doesn't sound like an enjoyable experience though; as we have seen
-above, every invocation of decidability doubles the amount of work we need to
-do, since we need to use the proof or show a subsequent contradiction.
+What we have to work with thus far is only the fact that `type:_<_` is
+decidable. But if we were to work directly with the decidability `type:_<_`, our
+algorithm would need to first check whether `a < x`, and if it isn't, check that
+`x < a`, and if it isn't check that `x ≡ y`, and if *that isn't,* well then we
+definitely have a problem. This doesn't sound like an enjoyable experience
+though; as we have seen above, every invocation of decidability doubles the
+amount of work we need to do, since we need to use the proof or show a
+subsequent contradiction.
 
 Instead, we can generalize the idea of decidability to a *trichotomy*, which is
 the idea that exactly one of three choices must hold. From this perspective,

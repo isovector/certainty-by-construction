@@ -735,7 +735,7 @@ pattern match inside a copattern, or a copattern match after first splitting
 some variables into their constituent constructors.
 
 Copatterns give rise to a dualistic perspective for thinking about records.
-While building a value out of `keyword:record\{..\}` syntax, we are making an
+While building a value out of `keyword:record` syntax, we are making an
 assertion about what that thing *is.* Contrast that against a value defined via
 copatterns, in which we are making assertions only on the *observations that can
 be made of the value.* Constraining only the observations is much less of an ask
@@ -759,9 +759,8 @@ Exercise
 Solution
 
 :         ```agda
-  equiv→preorder
-      : {_~_ : Rel A ℓ}
-      → IsEquivalence _~_ → IsPreorder _~_
+  equiv→preorder : {_~_ : Rel A ℓ}
+                 → IsEquivalence _~_ → IsPreorder _~_
   IsPreorder.refl  (equiv→preorder x) = IsEquivalence.refl   x
   IsPreorder.trans (equiv→preorder x) = IsEquivalence.trans  x
           ```
