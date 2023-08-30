@@ -993,8 +993,8 @@ containing a value and two subtrees. We can codify this as follows:
 ```agda
 module BinaryTrees where
   data BinTree {ℓ : Level} (A : Set ℓ) : Set ℓ where
-    empty : BinTree A
-    branch : BinTree A → A → BinTree A → BinTree A
+    empty   : BinTree A
+    branch  : BinTree A → A → BinTree A → BinTree A
 ```
 
 To illustrate how this type works, we can build a binary tree as follows:
@@ -1003,16 +1003,18 @@ To illustrate how this type works, we can build a binary tree as follows:
   tree : BinTree ℕ
   tree =
     branch
-      (branch (branch empty 0 empty) 0 (branch empty 4 empty))
-      2
+      (branch (branch empty 0 empty) 0 (branch empty 2 empty))
+      4
       (branch empty 6 empty)
 ```
 
 corresponding to this tree:
 
-```{design=code/Languages/Tree.hs label="\AgdaFunction{tree}"}
-asRose $ "2" [ "0" [ "0" ["", ""], "4" ["", ""]] , "6" ["", ""]]
-```
+
+-- TODO(sandy): fix me when this module is done
+``{design=code/Languages/Tree.hs label="\AgdaFunction{tree}"}
+asRose $ "4" [ "0" [ "0" ["", ""], "2" ["", ""]] , "6" ["", ""]]
+``
 
 where the little points are each an instance of the `ctor:empty` constructor.
 
@@ -1039,8 +1041,8 @@ as in:
 
 ```agda
   is-singleton : {A : Set} → BinTree A → Bool
-  is-singleton (leaf _) = true
-  is-singleton _ = false
+  is-singleton (leaf _)  = true
+  is-singleton _         = false
 ```
 
 In addition, we can use patterns as expressions, as in:
@@ -1134,14 +1136,173 @@ delightfully declarative:
 As usual, see what happens if you give the wrong proof, or change 6 in the type.
 Agda will correctly yell at you, indicating we've done the right thing here.
 
-It might also be desirable to show that every element in the tree satisfies some
-property. Perhaps we'd like to build a binary tree consisting only of odd
-numbers, for example. It's unclear why, but nevertheless it's something we
-*might* want to do. There is no finger pointing here!
 
-Building `type:All` is easy. We can replace every instance of `A` with `P A`, and
-every instance of `type:BinTree` with `type:All`. Modulo a few indices at the end, we're
-left with a reminiscent definition:
+## Decidability of Tree Membership
+
+We've given decidability proofs for equality; can we also give one for
+`type:_∈_`? Certainly we can: given a decidable procedure for `A`, we can
+just try it at every node in the tree and see what shakes out.
+
+But before writing it, however, the following definitions will be useful to help
+corral the types:
+
+```agda
+  Decidable : {ℓ : Level} {A : Set ℓ} → (A → Set ℓ) → Set ℓ
+  Decidable {A = A} P = (a : A) → Dec (P a)
+
+  Decidable₂ : {ℓ : Level} {A : Set ℓ} → (A → A → Set ℓ) → Set ℓ
+  Decidable₂ {A = A} _~_ = (x y : A) → Dec (x ~ y)
+```
+
+
+Footgun
+
+:   Notice that we needed to give local definitions here for `ℓ` and `A`, rather
+    than just use our `keyword:variable`s like before. This is a limitation in
+    how Agda sorts out variables; written with `A` and `ℓ` bound to the
+    `keyword:variable`s, Agda for some reason considers the `ℓ` in our type to
+    be *different* than the `ℓ` in `A :` `type:Set` `ℓ`!
+
+
+The `type:Dec` type corresponds to a particular *decision*, while
+`type:Decidable` states that we can make a decision for *every input.* It's the
+same difference between saying that you, personally, have an age, and saying
+that *everyone* has an age.
+
+Implementing `def:∈?` isn't hard, but has a lot of moving pieces, so let's work
+it through together. Begin with the type:
+
+```agda
+  ∈?⅋₀ : DecidableEquality A → (t : BinTree A) → Decidable (_∈ t)
+  ∈?⅋₀ = ?
+```
+
+What we're saying here is that if we have decidable equality for some type `A`,
+we can then give a decision procedure to check whether any element is in any
+tree. Expanding out the arguments helps to see this:
+
+```agda
+  ∈?⅋₁ : DecidableEquality A → (t : BinTree A) → Decidable (_∈ t)
+  ∈?⅋₁ _≟_ t a = ?
+```
+
+As usual, we can [MakeCase](AgdaCmd) on the only value with an inductive data
+type, that is, `t`:
+
+```agda
+  ∈?⅋₂ : DecidableEquality A → (t : BinTree A) → Decidable (_∈ t)
+  ∈?⅋₂ _≟_ empty a = {! !}
+  ∈?⅋₂ _≟_ (branch l x r) a = {! !}
+```
+
+The `ctor:empty` case is easy, since we know there are no values in
+`ctor:empty`, and thus that the answer must be `ctor:no`.
+
+```agda
+  ∈?⅋₃ : DecidableEquality A → (t : BinTree A) → Decidable (_∈ t)
+  ∈?⅋₃ _≟_ empty a = no λ ()
+  ∈?⅋₃ _≟_ (branch l x r) a = {! !}
+```
+
+Checking out the `ctor:branch` case requires us to determine whether `x` is
+equal to `a`, which we can do by invoking `x ≟ y` in a `keyword:with`
+abstraction.
+
+```agda
+  ∈?⅋₄ : DecidableEquality A → (t : BinTree A) → Decidable (_∈ t)
+  ∈?⅋₄ _≟_ empty a = no λ ()
+  ∈?⅋₄ _≟_ (branch l x r) a
+    with x ≟ a
+  ... | x≡a? = {! !}
+```
+
+Pattern match on `x≡a?`---if the answer is `ctor:yes`, then pattern matching on
+the subsequent proof that `bind:a x:a ≡ x` will allow us to use the `ctor:here`
+constructor to fill the hole:
+
+```agda
+  ∈?⅋₅ : DecidableEquality A → (t : BinTree A) → Decidable (_∈ t)
+  ∈?⅋₅ _≟_ empty a = no λ ()
+  ∈?⅋₅ _≟_ (branch l x r) a
+    with  x ≟ a
+  ... |   yes  refl  = yes here
+  ... |   no   x≢a   = {! !}
+```
+
+If `x` isn't what we were looking for, we can instead try to look down the left
+subtree and see if we get any hits. Change the `keyword:with` abstraction to add
+another binding:
+
+```agda
+  ∈?⅋₆ : DecidableEquality A → (t : BinTree A) → Decidable (_∈ t)
+  ∈?⅋₆ _≟_ empty a = no λ ()
+  ∈?⅋₆ _≟_ (branch l x r) a
+    with  x ≟ a      | ∈?⅋₆ _≟_ l a
+  ... |   yes  refl  | _     = yes here
+  ... |   no   x≢a   | x∈l?  = {! !}
+```
+
+We can play the same game here: pattern matching on `x∈l?` and rebuilding a
+`ctor:yes` if we were successful. Before you ask, you can type `∌` via
+[`nin`](AgdaMode).
+
+```agda
+  ∈?⅋₇ : DecidableEquality A → (t : BinTree A) → Decidable (_∈ t)
+  ∈?⅋₇ _≟_ empty a = no λ ()
+  ∈?⅋₇ _≟_ (branch l x r) a
+    with  x ≟ a      | ∈?⅋₇ _≟_ l a
+  ... |   yes  refl  | _         = yes here
+  ... |   no   _     | yes  x∈l  = yes (left x∈l)
+  ... |   no   x≢a   | no   x∌l  = {! !}
+```
+
+If we didn't find what we were looking for, well, just try again in the right
+branch:
+
+```agda
+  ∈?⅋₈ : DecidableEquality A → (t : BinTree A) → Decidable (_∈ t)
+  ∈?⅋₈ _≟_ empty a = no λ ()
+  ∈?⅋₈ _≟_ (branch l x r) a
+    with  x ≟ a      | ∈?⅋₈ _≟_ l a  | ∈?⅋₈ _≟_ r a
+  ... |   yes  refl  | _             | _         = yes here
+  ... |   no   _     | yes  a∈l      | _         = yes (left a∈l)
+  ... |   no   _     | no   _        | yes  a∈r  = yes (right a∈r)
+  ... |   no   x≢a   | no   a∌l      | no   a∌r  = {! !}
+```
+
+Should the answer to *all* of our queries be `ctor:no`, we can be certain that
+`bind:a t:¬ a ∈ t`. All that's left is to say `ctor:no`, and then refute
+whichever piece of evidence we've got:
+
+```agda
+  ∈? : DecidableEquality A → (t : BinTree A) → Decidable (_∈ t)
+  ∈? _≟_ empty a = no λ ()
+  ∈? _≟_ (branch l x r) a
+    with  x ≟ a      | ∈? _≟_ l a  | ∈? _≟_ r a
+  ... |   yes  refl  | _           | _         = yes here
+  ... |   no   _     | yes  a∈l    | _         = yes (left a∈l)
+  ... |   no   _     | no   _      | yes  a∈r  = yes (right a∈r)
+  ... |   no   x≢a   | no   a∌l    | no   a∌r
+      = no λ  { here          → x≢a refl
+              ; (left   a∈l)  → a∌l a∈l
+              ; (right  a∈r)  → a∌r a∈r
+              }
+```
+
+
+
+
+## The All Predicate
+
+Something else we might want to be able to prove is that every element in a
+`type:BinTree` satisfies some property `P`---perhaps that it consists only of
+odd numbers, as an odd example. For a more enterprise sort of example, perhaps
+we'd like a proof that every employee in our tree has been properly connected to
+payroll.
+
+Building `type:All` is easy enough. We can replace every instance of `A` with `P
+A`, and every instance of `type:BinTree` with `type:All`. Modulo a few indices
+at the end, we're left with a reminiscent definition:
 
 ```agda
   data All (P : A → Set) : BinTree A → Set where
@@ -1149,39 +1310,44 @@ left with a reminiscent definition:
     branch  : All P l → P a → All P r → All P (branch l a r)
 ```
 
-A pattern definition doesn't come with a type signature, and thus it only works
-with whatever constructors existed when it was defined. Since in `type:All` we have
-reused the constructor names `ctor:empty` and `ctor:branch`, we can redefine `ctor:leaf` again
-so that it also works over `type:All`:
+In the `ctor:branch` case, we must show that `P` holds for everything in both
+subtrees, as well as for the value at the root. By induction, we have thus
+covered every element in the tree.
 
--- TODO(sandy): fact check
+Like we did above for `type:BinTree`, it will be convenient to make a
+`ctor:leaf` pattern here too. Because pattern synonyms don't come with a type
+signature and constructor names can be reused, pattern synonyms work over any
+type that has all of the necessary constructors. However, this is only the case
+if those constructors existed before the pattern was defined.
 
+
+Since `type:All` reuses the constructor names `ctor:empty` and `ctor:branch`, we
+need only redefine `ctor:leaf` in order for it to work work not only over
+`type:BinTree`, but `type:All` too.
 
 ```agda
   pattern leaf a = branch empty a empty
 ```
 
-In the `ctor:branch` case, we must show that everything holds in both subtrees, as
-well as that the property holds for the value at the root. By induction, we have
-now covered every element in the tree. We can show it works by coming up with a
-quick predicate, maybe the evenness of a number. We defined a similar thing back
-in @sec:even, however we cannot reuse it here, as it was defined over our custom
-natural numbers, and does not exist in the standard library.
-
--- TODO(sandy): just fix this
+We can show that `type:All` works as expected, by coming up with a quick
+predicate like the evenness of a number. Let's bring the machinery back into
+scope:
 
 
 ```agda
   open Chapter2-Numbers.Exports
     using (IsEven; z-even; ss-even)
-
-  -- data IsEven : ℕ → Set where
-  --   z-even   : IsEven 0
-  --   ss-even  : {n : ℕ} → IsEven n → IsEven (2 + n)
 ```
 
-It's now possible to show every element in `def:tree` is even. In fact, Agda can
-prove it for us, via [Auto](AgdaCmd):
+and now we would like to show that every element in `def:tree` is even:
+
+```agda
+  tree-all-even⅋₀ : All IsEven tree
+  tree-all-even⅋₀ = ?
+```
+
+Thankfully, Agda is capable of proving this fact on our behalf, via
+[Auto](AgdaCmd):
 
 ```agda
   tree-all-even : All IsEven tree
@@ -1195,7 +1361,17 @@ prove it for us, via [Auto](AgdaCmd):
       (branch empty (ss-even (ss-even (ss-even z-even))) empty)
 ```
 
-Of course, a little cleanup goes a long way:
+
+Hidden
+
+:   ```agda
+  -- fix bind
+    ```
+
+Notice the repeated use of `expr:branch empty ? empty` here. Sometimes Agda can
+work out that it should use your pattern synonyms, and sometimes it can't.
+Unfortunately this is one of the times it can't, but we can clean it up
+ourselves by judiciously invoking `ctor:leaf`:
 
 ```agda
   tree-all-even⅋ : All IsEven tree
@@ -1209,35 +1385,20 @@ Of course, a little cleanup goes a long way:
       (leaf (ss-even (ss-even (ss-even z-even))))
 ```
 
-We've given decidability proofs for equality; can we also give one for `All P`?
-Certainly we can; given a decidable procedure for `P`, we can just try it at
-every node in the tree and see what shakes out. But before we write it, the
-following definition will be useful to help corral the types:
 
-```agda
-  -- TODO(sandy): decidable in stdlib is over TWO arguments
+Hidden
 
-  Decidable : (A → Set) → Set
-  Decidable {A} P = (a : A) → Dec (P a)
+:   ```agda
+  -- fix bind
+    ```
 
-  Decidable₂ : (A → A → Set) → Set
-  Decidable₂ {A} _~_ = (x y : A) → Dec (x ~ y)
-```
 
-The `type:Dec` type corresponds to a particular *decision*, while `type:Decidable` states
-that we can make a decision for *every input.* It's the difference between
-saying that I, personally, have an age and saying that *everyone* has an age.
-
-Notice that we used the variable `A` in our type definition for `type:Decidable`. In
-order to bring `A` into scope in the *body* of `type:Decidable`, we need to bind it
-as an implicit argument. This is the general way that variables are
-used---implicitly (in the usual, non-technical sense) in the type, and
-implicitly (in the Agda sense) in the definition.
+## Decidability of All
 
 
 Exercise
 
-:   Show that `All P` is `type:Decidable`, given a decision procedure for `P`.
+:   Show that `bind:P:All P` is `type:Decidable`, given `bind:P:Decidable P`.
 
 
 Solution
@@ -1259,8 +1420,8 @@ Solution
     ```
 
 As this exercise shows, decision procedures are often extremely formulaic. You
-decide each individual piece, and combine them together if you can, or witness a
-contradiction from the bigger structure if you can't.
+decide each individual piece, and combine them together if possible. If not, you
+must find a way to project a contradiction out of the bigger structure.
 
 
 ## Binary Search Trees
@@ -1321,8 +1482,8 @@ we can again ask Agda for a proof that `def:tree` is a BST:
   tree-is-bst : IsBST _≤_ tree
   tree-is-bst =
     bst-branch
-      (branch (leaf z≤n) z≤n (leaf (s≤s (s≤s z≤n))))
-      (leaf (s≤s (s≤s (s≤s (s≤s z≤n)))))
+      (branch (leaf z≤n) z≤n (leaf (s≤s ?)))
+      (leaf (s≤s (s≤s ?)))
       (bst-branch
         (leaf z≤n)
         (leaf z≤n)
@@ -1344,12 +1505,12 @@ which cleans up the above:
 
 ```agda
   tree-is-bst⅋ : IsBST _≤_ tree
-  tree-is-bst⅋ =
-    bst-branch
-      (branch (leaf z≤n) z≤n (leaf (s≤s (s≤s z≤n))))
-      (leaf (s≤s (s≤s (s≤s (s≤s z≤n)))))
-      (bst-branch (leaf z≤n) (leaf z≤n) bst-leaf bst-leaf)
-      bst-leaf
+  tree-is-bst⅋ = ?
+    -- bst-branch
+    --   (branch (leaf z≤n) z≤n (leaf (s≤s (s≤s z≤n))))
+    --   (leaf (s≤s (s≤s (s≤s (s≤s z≤n)))))
+    --   (bst-branch (leaf z≤n) (leaf z≤n) bst-leaf bst-leaf)
+    --   bst-leaf
 ```
 
 Proofs like this are an awful lot of work, but thankfully we never need to write
@@ -1430,7 +1591,8 @@ notion of trichotomy shouldn't be earth-shattering. We can define `type:Tri`
 (analogous to `type:Dec`) as as proof that exactly one of `A`, `B` or `C` holds:
 
 ```agda
-  data Tri (A B C : Set) : Set where
+  data Tri {a b c : Level} (A : Set a) (B : Set b) (C : Set c)
+        : Set (a ⊔ b ⊔ c) where
     tri< :    A → ¬  B → ¬  C → Tri A B C
     tri≈ : ¬  A →    B → ¬  C → Tri A B C
     tri> : ¬  A → ¬  B →    C → Tri A B C
@@ -1441,10 +1603,12 @@ one equality-like, and one less-than-like, we can always determine which holds:
 
 ```agda
   Trichotomous
-      : (_≈_ : A → A → Set)
-      → (_<_ : A → A → Set)
-      → Set
-  Trichotomous {A} _≈_ _<_ =
+      : {ℓ eq lt : Level}
+      → {A : Set ℓ}
+      → (_≈_ : A → A → Set eq)
+      → (_<_ : A → A → Set lt)
+      → Set (lt ⊔ eq ⊔ ℓ)
+  Trichotomous {A = A} _≈_ _<_ =
     (x y : A) → Tri (x < y) (x ≈ y) (y < x)
 ```
 
