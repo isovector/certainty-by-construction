@@ -1699,11 +1699,8 @@ preserves `type:All`! The type we need to show is that if `P a` and `All P t` ho
 
 ```agda
     all-insert⅋₀
-        : {P : A → Set} → (a : A)
-        → P a
-        → {t : BinTree A}
-        → All P t
-        → All P (insert a t)
+        : {P : A → Set ℓ} → (a : A) → P a → {t : BinTree A}
+        → All P t → All P (insert a t)
     all-insert⅋₀ = ?
 ```
 
@@ -1712,7 +1709,7 @@ avoid binding `P`), our function now looks like:
 
 ```agda
     all-insert⅋₁
-        : {P : A → Set} → (a : A) → P a → {t : BinTree A}
+        : {P : A → Set ℓ} → (a : A) → P a → {t : BinTree A}
         → All P t → All P (insert a t)
     all-insert⅋₁ a pa {t} all-pt = {! !}
 ```
@@ -1721,7 +1718,7 @@ Asking now for a [MakeCase:all-pt](AgdaCmd) results in:
 
 ```agda
     all-insert⅋₂
-        : {P : A → Set} → (a : A) → P a → {t : BinTree A}
+        : {P : A → Set ℓ} → (a : A) → P a → {t : BinTree A}
         → All P t → All P (insert a t)
     all-insert⅋₂ a pa {.empty} empty = {! !}
     all-insert⅋₂ a pa {.(branch _ _ _)} (branch l<x px x<r) = {! !}
@@ -1738,7 +1735,7 @@ pattern match:
 
 ```agda
     all-insert⅋₃
-        : {P : A → Set} → (a : A) → P a → {t : BinTree A}
+        : {P : A → Set ℓ} → (a : A) → P a → {t : BinTree A}
         → All P t → All P (insert a t)
     all-insert⅋₃ a pa {empty} empty = {! !}
     all-insert⅋₃ a pa {branch l x r} (branch l<x xp x<r) = {! !}
@@ -1749,7 +1746,7 @@ it doesn't bring any new variables into scope.
 
 ```agda
     all-insert⅋₅
-        : {P : A → Set} → (a : A) → P a → {t : BinTree A}
+        : {P : A → Set ℓ} → (a : A) → P a → {t : BinTree A}
         → All P t → All P (insert a t)
     all-insert⅋₅ a pa empty = {! !}
     all-insert⅋₅ a pa {branch l x r} (branch l<x px x<r) = {! !}
@@ -1760,7 +1757,7 @@ which is our `ctor:leaf` constructor:
 
 ```agda
     all-insert⅋₆
-        : {P : A → Set} → (a : A) → P a → {t : BinTree A}
+        : {P : A → Set ℓ} → (a : A) → P a → {t : BinTree A}
         → All P t → All P (insert a t)
     all-insert⅋₆ a pa empty = leaf pa
     all-insert⅋₆ a pa {branch l x r} (branch l<x px x<r) = {! !}
@@ -1782,7 +1779,7 @@ match on the result:
 
 ```agda
     all-insert⅋₇
-        : {P : A → Set} → (a : A) → P a → {t : BinTree A}
+        : {P : A → Set ℓ} → (a : A) → P a → {t : BinTree A}
         → All P t → All P (insert a t)
     all-insert⅋₇ a pa empty = leaf pa
     all-insert⅋₇ a pa {branch l x r} (branch l<x px x<r)
@@ -1798,7 +1795,7 @@ to complete the function on your own:
 
 ```agda
     all-insert
-        : {P : A → Set} → (a : A) → P a → {t : BinTree A}
+        : {P : A → Set ℓ} → (a : A) → P a → {t : BinTree A}
         → All P t → All P (insert a t)
     all-insert a pa empty = leaf pa
     all-insert a pa {branch l x r} (branch l<x px x<r)
