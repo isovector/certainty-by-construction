@@ -1852,44 +1852,54 @@ section, we will look at alternative ways of phrasing the problem that can help.
 
 ## Intrinsic vs Extrinsic Proofs
 
-This style of proof we have demonstrated, is called an *extrinsic* proof. The
-idea here is that we have defined a type `BinTree A` and an operation `insert :
-A → BinTree A → BinTree A` in such a way that they are not guaranteed to be
-correct. In order to subsequently prove them correct, we added an additional
-layer on top, namely `type:IsBST` and `def:bst-insert` which assert our invariants after
-the fact. This is a very natural way of proving things, and is a natural
-extension of the way we usually do computer science: do the implementation, and
-tack the tests on afterwards.
 
-However, extrinsic proofs are not the only possibility! We can instead make a
-`BST A` type which satisfies the binary search tree invariant *by construction.*
-By virtue of this being by construction, we are not required to tack on any
-additional proof, since the existence of the thing itself is proof enough. We
-call this notion of proof *intrisic*, as it is intrinsic to what the object is
-in the first place.
+Hidden
+
+:   ```agda
+  -- fix bind
+    ```
+
+
+This style of proof we have demonstrated, is called an *extrinsic* proof. The
+idea here is that we have defined a type `bind:A:BinTree A` and an operation
+`def:insert` `:` `bind:A:A → BinTree A → BinTree A` in such a way that they are
+not guaranteed to be correct. In order to subsequently prove that they are, we
+added an additional layer on top, namely `type:IsBST` and `def:bst-insert` which
+assert our invariants after the fact. This is a very natural way of proving
+things, and is a natural extension of the way most people write code: do
+the implementation first, and tack the tests on afterwards.
+
+However, extrinsic proofs are not our only option! We can instead make a
+`type:BST` `A` type which satisfies the binary search tree invariant *by
+construction.* By virtue of this being by construction, we are not required to
+tack on any additional proof: the existence of the thing itself is proof
+enough. We call this notion of proof *intrinsic*, as the proof is intrinsic to
+the construction of the object itself. In a sense, intrinsic proofs don't exist
+at all; they're just cleverly-defined objects of study.
 
 Intrinsic proofs are desirable because they only require you to do the work
 once. Recall that when defining both `def:bst-insert` and `def:all-insert`, we
 essentially had to mirror the definition of `def:insert` modulo a few changes. It
 was quite a lot of work, and you can imagine that this effort would multiply
 substantially for each additional operations we'd like to define over BSTs.
-Extrinsic proofs make you shoulder this burden.
+Extrinsic proofs make you shoulder this burden all on your own.
 
-However, intrinsic proofs do come with a downside, namely that every algorithm
-you have ever seen is given with an extrinsic proof, if it comes with a proof at
-all. Which is to say, not only are we as computer scientists better primed for
-thinking about extrinsic proof, but worse: the field itself is riddled with
-them. Almost every algorithm you have ever heard of isn't amenable to intrinsic
-proof. This is because usually the invariant is a macro-level property, which
-isn't preserved *inside* of operations.
+That's not to say that intrinsic proofs are without downsides. At the forefront,
+almost every algorithm you have ever seen is given with an extrinsic proof---if
+it comes with a proof at all. Not only are we as computer scientists better
+primed for thinking about extrinsic proof, but worse: the field itself is
+riddled with them. Almost every algorithm you have ever heard of isn't amenable
+to intrinsic proof, as most algorithms violate the intrinsic invariant at some
+point. The invariant of most structures is a macro-level property, preserved by
+common operations, but rarely preserved *inside* of them.
 
 For example, consider a heap data structure, which is a particular
-implementation of a priority queue---at any time, you can get the
-highest-priority thing in the queue. Heaps are binary trees (or sometimes,
-clever encodings of binary trees as arrays) with the *heap property:* the root
-node is larger than everything else in the tree. The heap property is also
-satisfied recursively, so that we have a partial ordering over all elements in
-the heap.
+implementation of a priority queue---at any time, you can extract the
+highest-priority thing in the queue. Heaps are usually implemented as binary
+trees (or sometimes, clever encodings of binary trees as arrays) with the *heap
+property:* the root node is larger than everything else in the tree. The heap
+property is also satisfied recursively, so that we have a partial ordering over
+all elements in the heap.
 
 Now imagine we'd like to insert something new into the heap. We don't know where
 it should go, so we insert it into the first empty leaf we can find, and then
@@ -1901,37 +1911,49 @@ the heap invariant is met.
 This algorithm works just fine, but it *cannot* be used in an intrinsic heap,
 because when we first insert the new element into a bottom-most leaf, the heap
 property is immediately broken! It doesn't matter if we eventually fix the
-invariant; the intrinsic encoding means it's impossible to insert an element
-somewhere it doesn't belong.
+invariant; the intrinsic construction of heaps means it's *impossible* to insert
+an element somewhere it doesn't belong, and thus the bubble algorithm cannot be
+used.
 
--- TODO(sandy): conflating between intrinsic proofs and objects defined
--- intrinsically
-
-It is for reasons like these that intrinsic proofs are really hard for computer
+It is for reasons like these that intrinsic proofs are *hard* for computer
 scientists. Fully embracing them requires unlearning a great deal of what our
-discipline has taught us, and that is a notoriously hard position to adopt.
+discipline has taught us, and that is a notoriously difficult thing to do.
 
 
 ## An Intrinsic BST
 
--- TODO(sandy): cite mcbride here
+Constructing an intrinsic BST is not the most straightforward construction, but
+thankfully McBride[^cite-mcbride] has done the hard work for us---we will derive
+his solution here.
 
+[^cite-mcbride]: Conor Thomas McBride. 2014. How to keep your neighbours in order. SIGPLAN Not. 49, 9 (September 2014), 297–309. https://doi.org/10.1145/2692915.2628163
 
 In order to define an intrinsic binary search tree, we will proceed in two
 steps. First, we will define a BST indexed by its upper and lower bounds, which
 we can subsequently use to ensure everything is in its right place, without
-resorting to extrinsic techniques like `type:All`. We begin with a new module to
-sandbox our first step:
+resorting to extrinsic techniques like `type:All`. We will then hide these
+indices again to get a nice interface for the whole thing.
+
+Begin with a new module to sandbox our first step:
 
 ```agda
-module Intrinsic-BST-Impl {A : Set} (_<_ : A → A → Set) where
+module Intrinsic-BST-Impl
+    {c ℓ : Level} {A : Set c} (_<_ : A → A → Set ℓ) where
 ```
 
+
+Hidden
+
+:   ```agda
+  -- fix bind
+    ```
+
 As before, we make a `type:BST` type, but this time parameterized by a `lo` and `hi`
-bound. In the `ctor:empty` constructor we require a proof that `lo < hi`:
+bound. In the `ctor:empty` constructor we require a proof that `bind:lo hi:lo <
+hi`.
 
 ```agda
-  data BST (lo hi : A) : Set where
+  data BST (lo hi : A) : Set (c ⊔ ℓ) where
     empty : lo < hi → BST lo hi
 ```
 
@@ -1952,27 +1974,22 @@ when we build our subtrees. The discrepancy in argument order is why this
 constructor has been named `ctor:xbranch`, as indicated at [2](Ann).
 
 Fortunately, we can use a pattern synonym to shuffle our parameters back into
-the correct shape:
+the correct shape, as well as one to bring back `ctor:leaf`s:
 
 ```agda
   pattern branch lo a hi = xbranch a lo hi
-```
-
-And just as before, we will also add a `ctor:leaf` pattern:
-
-```agda
   pattern leaf lo<a a a<hi = branch (empty lo<a) a (empty a<hi)
 ```
 
-Returning to the issue of `def:insert`, we notice one big problem with putting the
-bounds in the type index: it means that `def:insert` could *change the type* of the
-`type:BST` if it is outside the original bounds! This is a bad state of affairs, and
-will dramatically harm our desired ergonomics. For the time being, we will
-sidestep the issue and merely require proofs that `a` is already in bounds.
-
+Returning to the issue of `def:insert`, we notice one big problem with putting
+the bounds in the type index: it means that `def:insert` could *change the type*
+of the `type:BST` if it is outside the original bounds! This is a bad state of
+affairs, and will dramatically harm our desired ergonomics. For the time being,
+we will sidestep the issue and merely require proofs that `a` is already in
+bounds.
 
 The implementation of `def:insert` is nearly identical to our original,
-extrinsically proven version:
+extrinsically-proven version:
 
 ```agda
   open BinaryTrees using (Trichotomous; Tri)
@@ -1996,40 +2013,46 @@ extrinsically proven version:
 
 This concludes our first step of the problem. We now have an
 intrinsically-proven BST---all that remains is to deal with the type-changing
-problem, and put an ergonomic facade in front.
+problem, putting an ergonomic facade in front.
 
-A cheeky solution to the problem of `def:insert` possibly changing the type is to
-bound all BSTs by the equivalent of negative and positive infinity. This is, in
-essence, throwing away the bounds---at least at the top level. If we can hide
+A cheeky solution to the problem of `def:insert` possibly changing the type is
+to bound all BSTs by the equivalent of negative and positive infinity. This is,
+in essence, throwing away the bounds---at least at the top level. If we can hide
 those details, we will simultaneously have solved the problem of changing types
-and the ergonomics of needing to juggle the bounds.
+and the ergonomics of needing to juggle the bounds. Let's do that now.
 
 The first step is to define a type which *extends* `A` with the notions of
-positive and negative infinity:
+positive and negative infinity. We'll put this in a new module, because we'd
+like to instantiate its parameters differently than those of
+`module:Intrinsic-BST-Impl`:
 
 ```agda
 open BinaryTrees using (Trichotomous)
 
 module Intrinsic-BST
-          {A : Set}
-          {_<_ : A → A → Set}
+          {c ℓ : Level} {A : Set c}
+          {_<_ : A → A → Set ℓ}
           (<-cmp : Trichotomous _≡_ _<_) where
 
-  data ∞ : Set where
-    -∞ +∞  : ∞
-    [_]    : A → ∞
+  data A↑ : Set c where
+    -∞ +∞  : A↑
+    ↑      : A → A↑
 ```
 
-The `ctor:[_]` constructor lifts an `A` into `type:∞`, and it is through this mechanism by
-which we are justified in saying that `type:∞` extends `A`. From here, it's not too
-hard to define a `type:_<_` relationship over `type:∞`:
+We can type the `↑` symbol here as [`u-`](AgdaMode), and `∞` as [inf](AgdaMode).
+
+The `ctor:↑` constructor lifts an `A` into `type:A↑`, and it is through this
+mechanism by which we are justified in saying that `type:A↑` extends `A` with
+`ctor:-∞` and `ctor:+∞`.
+
+From here, it's not too hard to define a `type:_<_` relationship over `type:∞`:
 
 ```agda
-  data _<∞_ : ∞ → ∞ → Set where
-    -∞<[] : {x    : A}          → -∞     <∞ [ x ]
-    []<[] : {x y  : A} → x < y  → [ x ]  <∞ [ y ]
-    []<+∞ : {x    : A}          → [ x ]  <∞ +∞
-    -∞<+∞ : -∞ <∞ +∞
+  data _<∞_ : A↑ → A↑ → Set ℓ where
+    -∞<↑   : {x    : A}          → -∞   <∞ ↑ x
+    ↑<↑    : {x y  : A} → x < y  → ↑ x  <∞ ↑ y
+    ↑<+∞   : {x    : A}          → ↑ x  <∞ +∞
+    -∞<+∞  : -∞ <∞ +∞
 ```
 
 This has all the properties you'd expect, that `ctor:-∞` is less than everything
@@ -2048,43 +2071,43 @@ us by now, and indeed Agda can do the first several cases for us automatically:
   <∞-cmp : Trichotomous _≡_ _<∞_
   <∞-cmp  -∞     -∞     = tri≈ (λ ())  refl    (λ ())
   <∞-cmp  -∞     +∞     = tri< -∞<+∞   (λ ())  (λ ())
-  <∞-cmp  -∞     [ _ ]  = tri< -∞<[]   (λ ())  (λ ())
+  <∞-cmp  -∞     (↑ _)  = tri< -∞<↑    (λ ())  (λ ())
   <∞-cmp  +∞     -∞     = tri> (λ ())  (λ ())  -∞<+∞
   <∞-cmp  +∞     +∞     = tri≈ (λ ())  refl    (λ ())
-  <∞-cmp  +∞     [ _ ]  = tri> (λ ())  (λ ())  []<+∞
-  <∞-cmp  [ _ ]  -∞     = tri> (λ ())  (λ ())  -∞<[]
-  <∞-cmp  [ _ ]  +∞     = tri< []<+∞   (λ ())  (λ ())
+  <∞-cmp  +∞     (↑ _)  = tri> (λ ())  (λ ())  ↑<+∞
+  <∞-cmp  (↑ _)  -∞     = tri> (λ ())  (λ ())  -∞<↑
+  <∞-cmp  (↑ _)  +∞     = tri< ↑<+∞    (λ ())  (λ ())
 ```
 
 All that's left is lifting `<-cmp`, which we must do by hand:
 
 ```agda
-  <∞-cmp [ x ] [ y ]
+  <∞-cmp (↑ x) (↑ y)
     with <-cmp x y
   ... | tri< x<y ¬x=y ¬y<x =
           tri<
-            ([]<[] x<y)
+            (↑<↑ x<y)
             (λ { refl → ¬x=y refl })
-            (λ { ([]<[] y<x) → ¬y<x y<x })
+            (λ { (↑<↑ y<x) → ¬y<x y<x })
   ... | tri≈ ¬x<x refl _ =
           tri≈
-            (λ { ([]<[] x<x) → ¬x<x x<x })
+            (λ { (↑<↑ x<x) → ¬x<x x<x })
             refl
-            (λ { ([]<[] x<x) → ¬x<x x<x })
+            (λ { (↑<↑ x<x) → ¬x<x x<x })
   ... | tri> ¬x<y ¬x=y y<x =
           tri>
-            (λ { ([]<[] x<y) → ¬x<y x<y })
+            (λ { (↑<↑ x<y) → ¬x<y x<y })
             (λ { refl → ¬x=y refl })
-            ([]<[] y<x)
+            (↑<↑ y<x)
 ```
 
-The end is nigh! We can now define a `type:BST` as one bounded by `ctor:-∞` and `ctor:+∞`:
+The end is nigh! We can now define our final `type:BST` as one bounded by `ctor:-∞` and `ctor:+∞`:
 
 ```agda
   open module Impl = Intrinsic-BST-Impl _<∞_
     hiding (BST; insert)
 
-  BST : Set
+  BST : Set (c ⊔ ℓ)
   BST = Impl.BST -∞ +∞
 ```
 
@@ -2092,9 +2115,11 @@ and finally, define insertion by merely plugging in some trivial proofs:
 
 ```agda
   insert : (a : A) → BST → BST
-  insert a t = Impl.insert <∞-cmp [ a ] -∞<[] []<+∞ t
+  insert a t = Impl.insert <∞-cmp (↑ a) -∞<↑ ↑<+∞ t
 ```
 
+
+## Wrapping Up
 
 ```agda
 module Exports where
