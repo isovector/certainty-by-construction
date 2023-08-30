@@ -234,7 +234,7 @@ We will explore equivalence relations in further detail soon when we discuss
 setoids.
 
 
-## Fighting with Agda to Compute on Indices
+## Fighting with Agda to Compute on Indices {#sec:fight-indices}
 
 We have now spent several chapters discussing equality and inequality, but what
 about things like "less than or equal to." *Orderings* like these are relations
@@ -568,6 +568,7 @@ the constraint can't be satisfied, and therefore we are stuck.
 
 
 ## Ordering the Natural Numbers
+-- TODO(sandy): fix me cause moved forwards
 
 What should be the takeaway from this extremely long digression on Agda's sharp
 edges when it comes to indexed data types? It's that when you pattern match on a
@@ -583,12 +584,6 @@ What does this mean in the context of giving a `type:_≤_` ordering on natural
 numbers? Recall that `type:_≤_` is indexed by two naturals, and so we must build our
 indices out of only `zero` and `suc`. This is a dramatic constraint on the forms
 that our datatype can take, and it subsequently informs the entire definition.
-
-A good way to proceed here is to work backwards; starting from each constructor,
-to determine how to use that to show a less-than-or-equal-to relationship. The
-case of zero is easy, since zero is the smallest element, it must be `type:_≤_` any
-other number. We have already shown the `suc` case earlier, namely `≤-suc` which
-states that if `m ≤ n`, then `suc m ≤ suc n`:
 
 ```agda
   private variable

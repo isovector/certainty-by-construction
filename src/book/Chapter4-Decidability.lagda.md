@@ -1243,8 +1243,8 @@ another binding:
 ```
 
 We can play the same game here: pattern matching on `x∈l?` and rebuilding a
-`ctor:yes` if we were successful. Before you ask, you can type `∌` via
-[`nin`](AgdaMode).
+`ctor:yes` if we were successful. Before you ask, you can type `∉` via
+[`inn`](AgdaMode).
 
 ```agda
   ∈?⅋₇ : DecidableEquality A → (t : BinTree A) → Decidable (_∈ t)
@@ -1253,7 +1253,7 @@ We can play the same game here: pattern matching on `x∈l?` and rebuilding a
     with  x ≟ a      | ∈?⅋₇ _≟_ l a
   ... |   yes  refl  | _         = yes here
   ... |   no   _     | yes  x∈l  = yes (left x∈l)
-  ... |   no   x≢a   | no   x∌l  = {! !}
+  ... |   no   x≢a   | no   x∉l  = {! !}
 ```
 
 If we didn't find what we were looking for, well, just try again in the right
@@ -1267,7 +1267,7 @@ branch:
   ... |   yes  refl  | _             | _         = yes here
   ... |   no   _     | yes  a∈l      | _         = yes (left a∈l)
   ... |   no   _     | no   _        | yes  a∈r  = yes (right a∈r)
-  ... |   no   x≢a   | no   a∌l      | no   a∌r  = {! !}
+  ... |   no   x≢a   | no   a∉l      | no   a∉r  = {! !}
 ```
 
 Should the answer to *all* of our queries be `ctor:no`, we can be certain that
@@ -1282,14 +1282,29 @@ whichever piece of evidence we've got:
   ... |   yes  refl  | _           | _         = yes here
   ... |   no   _     | yes  a∈l    | _         = yes (left a∈l)
   ... |   no   _     | no   _      | yes  a∈r  = yes (right a∈r)
-  ... |   no   x≢a   | no   a∌l    | no   a∌r
+  ... |   no   x≢a   | no   a∉l    | no   a∉r
       = no λ  { here          → x≢a refl
-              ; (left   a∈l)  → a∌l a∈l
-              ; (right  a∈r)  → a∌r a∈r
+              ; (left   a∈l)  → a∉l a∈l
+              ; (right  a∈r)  → a∉r a∈r
               }
 ```
 
+The resulting code compiles just fine, which, given the strength of our type
+system, means it *works* just fine. We can convince ourselves by asking Agda,
+leaving underscores in the `type:Dec` constructors---in essence, leaving Agda to
+fill in the underscores but confirm that we picked the right constructors:
 
+```agda
+  _ : ∈? _≟ℕ_ tree 2 ≡ yes _
+  _ = refl
+
+  _ : ∈? _≟ℕ_ tree 7 ≡ no _
+  _ = refl
+```
+
+It's worth comparing and contrasting the implementation of `def:∈?` to that of
+`def:_≟ℕ_`, as this is the form that *every* decision problem takes---at least
+those concerned with the shape of a particular value.
 
 
 ## The All Predicate
@@ -1305,7 +1320,8 @@ A`, and every instance of `type:BinTree` with `type:All`. Modulo a few indices
 at the end, we're left with a reminiscent definition:
 
 ```agda
-  data All (P : A → Set) : BinTree A → Set where
+  data All {ℓ₁ ℓ₂ : Level} {A : Set ℓ₁} (P : A → Set ℓ₂)
+        : BinTree A → Set (ℓ₁ ⊔ ℓ₂) where
     empty   : All P empty
     branch  : All P l → P a → All P r → All P (branch l a r)
 ```
@@ -1393,9 +1409,6 @@ Hidden
     ```
 
 
-## Decidability of All
-
-
 Exercise
 
 :   Show that `bind:P:All P` is `type:Decidable`, given `bind:P:Decidable P`.
@@ -1406,17 +1419,11 @@ Solution
 :   ```agda
   all? : {P : A → Set} → Decidable P → Decidable (All P)
   all? p? empty = yes empty
-  all? p? (branch l a r) with p? a
-  ... | no ¬pa = no λ { (branch _ pa _) → ¬pa pa }
-  ... | yes pa
-    with all? p? l
-  ... | no ¬all-l =
-          no λ { (branch all-l _ _) → ¬all-l all-l }
-  ... | yes all-l
-    with all? p? r
-  ... | no ¬all-r =
-          no λ { (branch _ _ all-r) → ¬all-r all-r }
-  ... | yes all-r = yes (branch all-l pa all-r)
+  all? p? (branch l a r) with p? a | all? p? l | all? p? r
+  ... | no ¬pa  | _       | _       = no λ { (branch _ pa _)  → ¬pa pa }
+  ... | yes _   | no ¬al  | _       = no λ { (branch al _ _)  → ¬al al }
+  ... | yes _   | yes _   | no ¬ar  = no λ { (branch _ _ ar)  → ¬ar ar }
+  ... | yes pa  | yes al  | yes ar  = yes (branch al pa ar)
     ```
 
 As this exercise shows, decision procedures are often extremely formulaic. You
@@ -1428,45 +1435,38 @@ must find a way to project a contradiction out of the bigger structure.
 
 Binary search trees (BSTs) are a refinement of binary trees, with the property
 that everything in the left subtree is less than or equal to the root, and
-everything in the right subtree is greater than or equal to the root.
+everything in the right subtree is greater than or equal to the root. This will
+be our next challenge to define in Agda.
 
-This one is a bit harder to encode, since it requires a notion of ordering. Of
-course, we can always just add it as a parameter, as in:
+You might be starting to see a pattern here. We always just look at the
+individual cases, figure out what we need for each, and then build an indexed
+type that ensures the properties are all met. In this case, we know that an
+`ctor:empty` `type:BinTree` is still a BST, so that's easy enough. In the case
+of a `ctor:branch`, however, we have several properties we'd like to check:
+
+1. Everything in the left subtree is less than the root, and
+2. everything in the right tree is greater than the root, furthermore
+3. the left subtree is itself a BST, and finally
+4. the right subtree is also a BST.
+
+Having worked out the details, the type itself has a straightforward encoding,
+after realizing that we'd like to parameterize the whole thing by an ordering
+relation.
 
 ```agda
-  data IsBST (_≤_ : A → A → Set) : BinTree A → Set where
-```
-
-An empty BST is still a BST, so the base case is simple:
-
-```agda
-    bst-empty : IsBST _≤_ empty
-```
-
-The recursive case requires us to show several things, however. First, we
-require that our invariants hold---everything in the left tree is smaller, and
-everything in the right tree is larger:
-
-```agda
+  data IsBST {ℓ₁ ℓ₂ : Level} {A : Set ℓ₁} (_<_ : A → A → Set ℓ₂)
+      : BinTree A → Set (ℓ₁ ⊔ ℓ₂) where
+    bst-empty : IsBST _<_ empty
     bst-branch
-        : All (_≤ a) l →
-          All (a ≤_) r →
-```
-
-Then, we require that both trees are themselves BSTs:
-
-```agda
-          IsBST _≤_ l →
-          IsBST _≤_ r →
-```
-
-which is sufficient to show that the binary tree is itself a BST:
-
-```agda
-          IsBST _≤_ (branch l a r)
+        : All (_< a) l
+        → All (a <_) r
+        → IsBST _<_ l
+        → IsBST _<_ r
+        → IsBST _<_ (branch l a r)
 ```
 
 -- TODO(sandy): put this sooner in the book!
+-- TODO(sandy): oh god, but where?
 
 Given the standard notion of ordering over the natural numbers:
 
@@ -1476,14 +1476,16 @@ Given the standard notion of ordering over the natural numbers:
     s≤s : {m n : ℕ} → m ≤ n → suc m ≤ suc n
 ```
 
-we can again ask Agda for a proof that `def:tree` is a BST:
+we can again ask Agda for a proof that `def:tree` is a BST under the `type:_≤_`
+ordering relation, by invoking [Auto](AgdaCmd) to give us a definition of
+`def:tree-is-bst`:
 
 ```agda
   tree-is-bst : IsBST _≤_ tree
   tree-is-bst =
     bst-branch
-      (branch (leaf z≤n) z≤n (leaf (s≤s ?)))
-      (leaf (s≤s (s≤s ?)))
+      (branch (leaf z≤n) z≤n (leaf (s≤s (s≤s z≤n))))
+      (leaf (s≤s (s≤s (s≤s (s≤s z≤n)))))
       (bst-branch
         (leaf z≤n)
         (leaf z≤n)
@@ -1492,34 +1494,15 @@ we can again ask Agda for a proof that `def:tree` is a BST:
       (bst-branch empty empty bst-empty bst-empty)
 ```
 
-You'll notice several subexpressions of the form `ctor:bst-branch empty empty
-bst-empty bst-empty`, which is the proof that a `ctor:leaf` is a BST. This is a good
-opportunity for another pattern:
-
-```agda
-  pattern bst-leaf =
-    bst-branch empty empty bst-empty bst-empty
-```
-
-which cleans up the above:
-
-```agda
-  tree-is-bst⅋ : IsBST _≤_ tree
-  tree-is-bst⅋ = ?
-    -- bst-branch
-    --   (branch (leaf z≤n) z≤n (leaf (s≤s (s≤s z≤n))))
-    --   (leaf (s≤s (s≤s (s≤s (s≤s z≤n)))))
-    --   (bst-branch (leaf z≤n) (leaf z≤n) bst-leaf bst-leaf)
-    --   bst-leaf
-```
-
 Proofs like this are an awful lot of work, but thankfully we never need to write
 them by hand. For concrete values, we can always ask Agda to solve them for us,
 and for parameterized values, we can build them by induction.
 
 Speaking of induction, can we decide whether a given tree is a BST? Sure! The
-pattern is exactly the same, decide each piece, derive contradictions on `ctor:no`,
-and assemble the final proof if everything is `ctor:yes`:
+pattern is exactly the same, decide each piece, derive contradictions on
+`ctor:no`, and assemble the final proof if everything is `ctor:yes`. This time,
+rather than doing all of our `keyword:with` abstraction at once, we will test
+one property at a time---leading to a more "vertical" definition:
 
 ```agda
   is-bst?
@@ -1529,29 +1512,22 @@ and assemble the final proof if everything is `ctor:yes`:
   is-bst? _≤?_ empty = yes bst-empty
   is-bst? _≤?_ (branch l a r)
     with all? (_≤? a) l
-  ... | no ¬all≤a-l =
-          no λ { (bst-branch all≤a-l _ _ _)
-                    → ¬all≤a-l all≤a-l }
-  ... | yes all≤a-l
+  ... | no   l≰ = no λ { (bst-branch l≤ _ _ _) → l≰ l≤ }
+  ... | yes  l≤
     with all? (a ≤?_) r
-  ... | no ¬arr≤a-r =
-          no λ { (bst-branch _ arr≤a-r _ _)
-                    → ¬arr≤a-r arr≤a-r }
-  ... | yes arr≤a-r
+  ... | no   ≰r = no λ { (bst-branch _ ≤r _ _) → ≰r ≤r }
+  ... | yes  ≤r
     with is-bst? _≤?_ l
-  ... | no ¬bst-l =
-          no λ { (bst-branch _ _ bst-l _) → ¬bst-l bst-l }
-  ... | yes bst-l
+  ... | no   ¬bst-l = no λ { (bst-branch _ _ bst-l _) → ¬bst-l bst-l }
+  ... | yes  bst-l
     with is-bst? _≤?_ r
-  ... | no ¬bst-r =
-          no λ { (bst-branch _ _ _ bst-r) → ¬bst-r bst-r }
-  ... | yes bst-r =
-          yes (bst-branch all≤a-l arr≤a-r bst-l bst-r)
+  ... | no   ¬bst-r  = no λ { (bst-branch _ _ _ bst-r) → ¬bst-r bst-r }
+  ... | yes  bst-r   = yes (bst-branch l≤ ≤r bst-l bst-r)
 ```
 
 You might be wondering whether there is an easier way to assemble these proofs.
-Unfortunately, there is not. It's not theoretically impossible by any means, but
-at time of writing, there is no automatic means of deriving these proofs.
+Unfortunately, there is not. Nothing in the theory precludes us from generating
+them, but at time of writing, there is alas no automatic means of deriving such.
 
 
 ## Insertion into BSTs
@@ -1570,11 +1546,12 @@ compare the value you'd like to insert with the value at the root. If they're
 equal, you're done. Otherwise, recursively insert the value into the correct of
 the subtree.
 
-The implicit claim here is that this algorithm preserves the `type:IsBST` invariant,
-but that is never explicitly pointed out. For posterity, this algorithm *does*
-indeed preserve the `type:IsBST` invariant. However, this poses some challenges for
-us, since in order to show this we must necessarily derive a proof, which is
-going to depend on a proof that we picked the correct subtree to recurse on.
+The implicit claim here is that this algorithm preserves the `type:IsBST`
+invariant, but that is never explicitly pointed out. For the record, this
+algorithm *does* indeed preserve the `type:IsBST` invariant. However, this poses
+some challenges for us, since in order to show this we must necessarily derive a
+proof, which is going to depend on a proof that we picked the correct subtree to
+recurse on.
 
 What we have to work with thus far is only the fact that `type:_<_` is decidable. But
 if we were to work directly with the decidability `type:_<_`, our algorithm would
@@ -1802,7 +1779,8 @@ Implementing `def:bst-insert` isn't much more of a cognitive challenge than
         → {t : BinTree A}
         → IsBST _<_ t
         → IsBST _<_ (insert a t)
-    bst-insert a bst-empty = bst-leaf
+    bst-insert a bst-empty
+      = bst-branch empty empty bst-empty bst-empty
     bst-insert a {branch l x r} (bst-branch l<x x<r lbst rbst)
       with <-cmp a x
     ... | tri< a<x _ _ =
