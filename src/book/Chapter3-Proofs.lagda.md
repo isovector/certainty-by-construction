@@ -2437,7 +2437,7 @@ Solution
 
 Exercise (Easy)
 
-:   Prove `def:≤-trans `:` `expr:(x y z : ℕ) → x ≤ y → y ≤ z → x ≤ z`.
+:   Prove `def:≤-trans` `:` `expr:(x y z : ℕ) → x ≤ y → y ≤ z → x ≤ z`.
 
 :     ```agda
   ≤-trans : (x y z : ℕ) → x ≤ y → y ≤ z → x ≤ z
