@@ -21,6 +21,38 @@ postulate
   leave-me-as-a-hole : {a : Level} {A : Set a} → A
 ```
 
+-- TODO(sandy): this intro doesn't make much sense anymore
+
+
+One exceptionally common notion in mathematics is the notion of a "set equipped
+with some structure." In this chapter, we will discuss what this means, how to
+build such things, and look at several extremely distinct examples.
+
+The first thing to take note of, however, is that when mathematicians say "set,"
+very rarely do they mean *set* as in, *set theory.* What they really mean is
+"some collection of elements," or even just some *type.* While set theory comes
+with a great deal of axiomization for constructing sets and not shooting oneself
+in the foot with them, it is worth realizing that almost no working
+mathematicians use set theory when they actually get down to work. Even if
+they're explicitly talking about sets.
+
+A second point worthy of our discussion is that even though mathematicians give
+their definitions of mathematical objects in terms of sets, they are not really
+thinking about sets. As Buzzard points out, a group is defined in modern
+textbooks as a non-empty set satisfying the group axioms. However, group theory
+was invented eighty years before set theory. The definitions given are correct,
+but post-hoc and sorted out after the fact. This can cause extreme
+disorientation to the computer scientist, who must construct things from smaller
+pieces, while the mathematicians build the big thing first and figure out how to
+decompose it later.
+
+-- TODO(sandy): cite kevin ^
+
+Bear this in mind as we work through our examples; mathematical constructions
+which might seem insane when taken at face value often make much more sense when
+reconsidered in this context.
+
+
 
 
 A huge amount of mathematical objects are the *structured sets*---that is,
@@ -525,8 +557,8 @@ Of course, `def:foldableList` is not the only inhabitant of `type:Foldable`.
 `type:BinTree`s, for example, are also foldable:
 
 ```agda
-  import  Chapter4-Decidability
-  open Chapter4-Decidability.BinaryTrees
+  import  Chapter5-Decidability
+  open Chapter5-Decidability.BinaryTrees
     using (BinTree; leaf; branch; empty)
 
   foldableBinTree : Foldable {lzero} {ℓ₁} lzero BinTree

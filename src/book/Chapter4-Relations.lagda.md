@@ -4,25 +4,29 @@ Hidden
 
 :   ```agda
 {-# OPTIONS --allow-unsolved-metas #-}
+open import Data.Integer using (ℤ)
+import Chapter1-Agda
+open Chapter1-Agda.Exports renaming (_,_ to _,⅋_; _×_ to _×⅋_)
     ```
 
 ```agda
 module Chapter4-Relations where
 ```
 
-
 Prerequisites
 
 :   ```agda
 import Chapter1-Agda
 open Chapter1-Agda.Exports
-  using (_×_; _,_)
+  using (Bool; not; _×_)
+open Bool
     ```
 
 :   ```agda
 import Chapter2-Numbers
 open Chapter2-Numbers.Exports
-  using (ℕ; zero; suc; _+_)
+  using (ℕ; _+_)
+open ℕ
     ```
 
 :   ```agda
@@ -31,42 +35,19 @@ open Chapter3-Proofs.Exports
   using (_≡_; cong)
     ```
 
--- TODO(sandy): this intro doesn't make much sense anymore
+In the last chapter, we thoroughly investigated the notion of doing proof work
+in Agda. We gave a propositional definition what it means for two things to be
+equal, derived relevant properties of equality, built a domain-specific language
+for doing equational reasoning, and proved many facts about the algebra of the
+natural numbers.
 
-
-One exceptionally common notion in mathematics is the notion of a "set equipped
-with some structure." In this chapter, we will discuss what this means, how to
-build such things, and look at several extremely distinct examples.
-
-The first thing to take note of, however, is that when mathematicians say "set,"
-very rarely do they mean *set* as in, *set theory.* What they really mean is
-"some collection of elements," or even just some *type.* While set theory comes
-with a great deal of axiomization for constructing sets and not shooting oneself
-in the foot with them, it is worth realizing that almost no working
-mathematicians use set theory when they actually get down to work. Even if
-they're explicitly talking about sets.
-
-A second point worthy of our discussion is that even though mathematicians give
-their definitions of mathematical objects in terms of sets, they are not really
-thinking about sets. As Buzzard points out, a group is defined in modern
-textbooks as a non-empty set satisfying the group axioms. However, group theory
-was invented eighty years before set theory. The definitions given are correct,
-but post-hoc and sorted out after the fact. This can cause extreme
-disorientation to the computer scientist, who must construct things from smaller
-pieces, while the mathematicians build the big thing first and figure out how to
-decompose it later.
-
--- TODO(sandy): cite kevin ^
-
-Bear this in mind as we work through our examples; mathematical constructions
-which might seem insane when taken at face value often make much more sense when
-reconsidered in this context.
+Now, we will turn our discussion to *relations* more generally, of which
+equality is only one example. In the process, we will learn about universe
+polymorphism, pre-orders, partially ordered sets, and touch briefly on
+graphs---all while learning much more about working with Agda interactively.
 
 
 ## Universe Levels {#sec:levels}
-
-Before we discuss falseness, we must turn our attention first to a problem in
-the early foundations of mathematics.
 
 Perhaps you have heard of Bertrand Russell's "barber paradox"---if there is a
 barber who shaves only barbers who do not shave themselves, does he shave
@@ -264,97 +245,333 @@ to operate over values when you later decide you also need to be able to operate
 over types. A little discipline in advance goes a long way.
 
 
-## Binary Relations
+## Dependent Pairs {#sec:sigma}
 
-One common variety of structured set is the *relation,* which, in the canon, is
-used to categorize disparate things like functions, equalities, orderings, and
-set membership, to name a few. Let's begin with the mathematical definition, and
-decompile it into something more sensible for our purposes.
+As we have seen, function arguments act as the *for-all* quantifier when
+encoding mathematical statements as types. For example, we can read the
+definition for `type:Transitive` above as "for all `x y z : A`, and for all
+proofs `x ≈ y` and `y ≈ z`, it is the case that `x ≈ z`." The for-all quantifier
+states that something holds true, regardless of the specific details.
+
+Closely related to this is the *there-exists* quantifier, aptly stating that
+there is at least one object which satisfies a given property. As an
+illustration, there exists a number `n :` `type:ℕ` such that $n + 1 = 5$ ,
+namely $n = 4$. But it is certainly not the case *for all* `n :` `type:ℕ`
+that $n + 1 = 5$ holds!
+
+True existential values like this don't exist in Agda since we are restricted to
+a constructive world, in which we must actually build the thing we are claiming
+to exist. This sometimes gets in the way of encoding non-constructive
+mathematics, but it's not usually a problem.
+
+How do we actually build such a there-exists type in Agda? The construction is
+usually known as a *sigma* type, written `type:Σ` and input as [GS](AgdaMode).
+It's definition is given by:
+
+```agda
+module Definition-DependentPair where
+  open Chapter3-Proofs.Exports
+
+  record Σ {ℓ₁ ℓ₂ : Level} (A : Set ℓ₁) (B : A → Set ℓ₂)
+      : Set (lsuc (ℓ₁ ⊔ ℓ₂)) where
+    constructor _,_
+    field
+      proj₁ : A
+      proj₂ : B proj₁  -- ! 1
+```
+
+This definition should feel reminiscent of the tuple type we built in
+@sec:tuples. Despite the gnarly universe polymorphism---which the typechecker
+can help you write for yourself, even if you don't know what it should be---the
+only difference between `type:Σ` and `type:_×_` from earlier is in the second
+parameter. To jog your memory, we can redefine tuples here:
+
+```agda
+  record _×⅋₀_ {ℓ₁ ℓ₂ : Level} (A : Set ℓ₁) (B : Set ℓ₂)
+      : Set (lsuc (ℓ₁ ⊔ ℓ₂)) where
+    constructor _,_
+    field
+      proj₁ : A
+      proj₂ : B
+```
+
+Contrasting the two, we see that in `type:Σ`, the `B` parameter is *indexed* by
+`A`, while in `type:_×_`, `B` exists all by itself. This indexing is extremely
+useful, as it allows us to encode a property about the `A` inside of `B`. As you
+can see at [1](Ann), `field:proj₂` has type `B` `field:proj₁`---in other words,
+that the *type* of `field:proj₂` depends on the *value* we put in for
+`field:proj₁`!
+
+As an example, we can give our earlier example again---typing `∃` as
+[`ex`](AgdaMode):
+
+```agda
+  ∃n,n+1≡5 : Σ ℕ (λ n → n + 1 ≡ 5)
+  ∃n,n+1≡5 = 4 , refl
+```
+
+In the type of `def:∃n,n+1≡5`, we give two arguments to `type:Σ`, the first
+indicating that there exists a `type:ℕ`, and the second being a function that
+describes which property holds for that particular `type:ℕ`. In the value, we
+need to give both the *actual* `type:ℕ`, and a proof that the property holds for
+it.
+
+The `type:Σ` type is one of the most useful constructions in Agda, and we will
+see many examples of it in the upcoming sections. We will import it from the
+standard library for the remainder of this module:
+
+```agda
+open import Data.Product
+  using (Σ; _,_)
+```
+
+
+## Heterogeneous Binary Relations
+
+One extremely common mathematical construction is the *relation,* which, in the
+canon, is used to categorize disparate things like functions, equalities,
+orderings, and set membership, to name a few.
+
+Let's begin with the mathematical definition, and decompile it into something
+more sensible for our purposes.
 
 > A binary relation `_R_` over sets $X$ and $Y$ is a subset of the Cartesian
 > product $X \times Y$.
 
-As we saw when discussing proofs, subsets are best encoded in Agda as functions
-into `Set`. Taken at face value, this would give us the following type for a
-relation:
+Hidden
 
-```agda
+:   ```agda
+-- fix bind
+    ```
 
-postulate
-  _ : {A B : Set} → A × B → Set
-```
+As we saw when in @sec:even when discussing `type:IsEven`s, subsets are best
+encoded in Agda as functions into `type:Set`. Taken at face value, this would
+make a relation have type `expr:{A B : Set} → A × B → Set`.
 
 We can do slightly better however, by recalling the curry/uncurry isomorphism
-(@sec:curry), splitting the explicit Cartesian product into two arguments:
-
-```agda
-  _ : {A B : Set} → A → B → Set
-```
+(@sec:curry) and splitting the explicit Cartesian product into two arguments.
+Such a transformation results then in `expr:{A B : Set} → A → B → Set`.
 
 A fully-fledged solution here must be level polymorphic, since many of the
 relations we'd like to be able to encode will be over higher-level sets. There
 are actually three levels required here, one for `A`, another for `B`, and a
-third for the resulting `Set`. Thus, we come up with our final definition as
-`REL`:
+third for the resulting `type:Set`. Thus, we come up with our final definition
+as `type:REL`:
 
 ```agda
 module Sandbox-Relations where
-  private variable
-    a b ℓ : Level
-
-  REL : Set a → Set b → (ℓ : Level) → Set (a ⊔ b ⊔ lsuc ℓ)
+  REL : {a b : Level}
+      → Set a → Set b → (ℓ : Level)
+      → Set (a ⊔ b ⊔ lsuc ℓ)
   REL A B ℓ = A → B → Set ℓ
 ```
 
+Notice that the `ℓ` parameter is not implicit, as is usually the case with
+`type:Level`s. This is because `type:REL` is almost always used as a type, in
+which case we still need to give a level for the resulting set. Thankfully, we
+can still infer levels `a` and `b` from the `type:Set` parameters to `type:REL`.
+
 This `type:REL` is the type of *heterogeneous* relations, that is, relationships
-between two distinct sets. The most salient relationship of this sort is the
-usual way that functions are defined as mathematical objects---namely, as a
-relation between the input and output types. Thus, we can assert that `f` is a
-function by building a relation $R$ such that if $x R y$ then $f x = y$. It's
-roundabout and non-computable, but such is often the case when dealing with
-mathematics:
+between two distinct sets. Relations are required to satisfy no laws whatsoever,
+meaning anything that can typecheck as a `type:REL` is in fact a relation. In a
+very real way, this means that relations are themselves *meaningless* and
+completely devoid of any semantics; they exist solely as a method of
+organization.
+
+To get a feel for how loosey-goosey relations are, we can define a few for
+ourselves. There is the vacuous relation which relates no values:
 
 ```agda
-  module Example₁ where
-    IsFunction
-        : {A : Set a} {B : Set b}
-        → (f : A → B)
-        → REL A B _
-    -- TODO(sandy): not true! we need to show x is unique too
-    IsFunction f A B = ∀ x y → f x ≡ y
+  data Unrelated {A B : Set} : REL A B lzero where
 ```
 
-Of course, this definition is somewhat cheating, since we already have a
-function to begin with, and are just using it to construct a particular
-relation. Nevertheless, definitions like these arise from what your brain looks
-like without a healthy dose of respect for computability.
-
-The relations we're much more familiar with, however, are *homogeneous*---those
-which relate two elements of the same type. It is under this category that
-things like equality and orderings fall. You will not be surprised to learn that
-homogeneous relations are a special case of heterogeneous ones. In the Agda
-standard library, this is known as `type:Rel`:
+and the trivial relation which relates all values:
 
 ```agda
-  Rel : Set a → (ℓ : Level) → Set (a ⊔ lsuc ℓ)
-  Rel A ℓ = A → A → Set ℓ
+  data Related {A B : Set} : REL A B lzero where
+    related : {a : A} {b : B} → Related a b
 ```
 
-As an illustration, we previously defined propositional equality in this way:
+While being "boring" relations, at least these two are principled. We can also
+define arbitrary relations:
+
+```agda
+  data Foo : Set where
+    f1 f2 f3 : Foo
+
+  data Bar : Set where
+    b1 b2 b3 : Bar
+
+  data FooBar : REL Foo Bar lzero where
+    f2-b2   : FooBar f2 b2
+    f2-b2′  : FooBar f2 b2
+    f2-b    : (b : Bar) → FooBar f2 b
+    f3-b2   : FooBar f3 b2
+```
+
+Hidden
+
+:   ```agda
+  -- fix bind
+    ```
+
+Don't try to make sense of `type:FooBar`, I just made something up. This
+relation does illustrate, however, that two values can be related in many
+different ways. That is, we have *three* different ways of constructing a
+`expr:FooBar f2 b2`---via `ctor:f2-b2`, `ctor:f2-b2′`, or `ctor:f2-b b2`. But
+there is only one `type:Bar` that `ctor:f3` is related to, and poor `ctor:f1`
+has no relations at all!
+
+Our conclusion is that relations are too unconstrained to be interesting. Of
+course, there do exist interesting *particular* relations, but as a class of
+thing they are "too big." Much like how you can represent any value of any type
+as a string if you are willing to suffer hard enough, many things in math can be
+considered relations. But it's the constraints that necessarily make things
+interesting.
+
+
+## The Relationship Between Functions and Relations
+
+The most salient heterogeneous relationship is the "function." I've added the
+scare quotes here because while classical mathematicians will define a function
+in terms of a relation when pressed, this is categorically the wrong way to
+think about things. This is in stark contrast to constructivists and computer
+scientists, who take the function as a fundamental building block and use *it*
+to define relations---insofar as they care about relations at all.
+
+Nevertheless, we will see how to think about functions as relations, and vice
+versa. Doing so requires us to think of a function as a relation between the
+inputs on one side and the outputs on the other.
+
+We can transform a function `f` into a relation `def:FnToRel` `f` such that `x`
+is in relation to `y` only when $f x = y$. The definition is a bit silly, but it
+works out nevertheless. To build such a thing, we can use a `keyword:data` type
+that maps from `f` into `def:REL` `A` B` `def:lzero`. If you'll excuse the cute
+notation[^fun-notation], we can call such a thing `def:_maps_↦_` using
+[`r-|`](AgdaMode) for the `↦` symbol.
+
+[^fun-notation]: Frankly, half of the fun in writing Agda is coming up with good
+  notation like this. I've tried to restrain myself throughout the book, but
+  this one was too delightful to ignore.
+
+```agda
+  data _maps_↦_ {a b : Level} {A : Set a} {B : Set b} (f : A → B)
+        : REL A B lzero where
+     app : {x : A} → f maps x ↦ f x
+```
+
+Believe it or not, this is everything we need. We can now show that the
+`def:not` function relates `ctor:false` and `ctor:true` in both directions:
+
+```agda
+  _ : not maps false ↦ true
+  _ = app
+
+  _ : not maps true ↦ false
+  _ = app
+```
+
+but it doesn't relate `ctor:false` to itself:
+
+```illegal
+  _ : not maps false ↦ false
+  _ = app
+```
+
+Transforming a relation back into a function is harder, as functions have
+significantly *more structure* than relations do. In particular, we require two
+constraints on any relation we'd like to transform into a function:
+
+1. for every distinct value on the left of the relation, there is exactly one
+   value on the right, and
+2. every value in the left type is related to something in the right.
+
+These properties are called *functional* and *serial*, respectively. In order to
+produce a function out a relation, we must first show the relation has both
+properties, and thus it will do for us to define them.
+
+More formally, the functional property states that if $x \mathrel{\sim} y$ and
+$x \mathrel{\sim} z$, then it must be the case that $y = z$. We can encode this
+in Agda as a function mapping from `type:REL` into `type:Set`, which you can
+think of as a function which takes a relation and produces the necessary
+constraint.
+
+```agda
+  Functional  : {a b ℓ : Level} {A : Set a} {B : Set b}
+              → REL A B ℓ → Set (a ⊔ b ⊔ ℓ)
+  Functional {A = A} {B} _~_
+    = {x : A} {y z : B}
+    → x ~ y → x ~ z
+    → y ≡ z
+```
+
+The serial property says that for every $x$, there must exist some $y$ such that
+$x \mathrel{\sim} y$. As before in @sec:sigma, we can turn this "there exists"
+into a `type:Σ` type:
+
+```agda
+  Serial  : {a b ℓ : Level} {A : Set a} {B : Set b}
+          → REL A B ℓ → Set (a ⊔ b ⊔ ℓ)
+  Serial {A = A} {B} _~_
+    = (x : A) → Σ B (λ y → x ~ y)
+```
+
+Given `def:Functional` and `def:Serial`, we're now ready to turn our relation
+back into a function:
+
+```agda
+  relToFn : {a b ℓ : Level} {A : Set a} {B : Set b}
+          → (_~_ : REL A B ℓ)
+          → Functional _~_
+          → Serial _~_
+          → A → B
+  relToFn _~_ _ serial x with serial x
+  ... | y , _ = y
+```
+
+As it happens, this implementation doesn't actually use the
+`bind:_~_:Functional _~_` argument, but its existence in the type is necessary
+to ensure we didn't just pick an *arbitrary* output from the `type:Serial`
+property.
+
+Of course, nobody would actually do this in practice, but it's useful to see
+lots of examples of encoding things in Agda, as well as to get a familiarity
+with strange mathematical constructions.
+
+
+## Homogeneous Relations
+
+The relations we're much more familiar with oare *homogeneous*---those which
+relate two elements of the same type. It is under this category that things like
+equality and orderings fall. You will not be surprised to learn that homogeneous
+relations are a special case of heterogeneous ones. We will name such a thing
+`type:Rel`, which comes with one fewer parameter:
+
+```agda
+  Rel : {a : Level} → Set a → (ℓ : Level) → Set (a ⊔ lsuc ℓ)
+  Rel A ℓ = REL A A ℓ
+```
+
+As an illustration of `type:Rel`, while previously defined propositional
+equality in this way:
 
 ```agda
   module Example₂ where
-    data _≡⅋₀_ {A : Set a} : A → A → Set a where
+    data _≡⅋₀_ {a : Level} {A : Set a} : A → A → Set a where
       refl : {x : A} → x ≡⅋₀ x
 ```
 
-but we can instead give it this type, stressing the fact that it is a homogeneous
-relation:
+but we could have instead given it this type---stressing the fact that it is a
+homogeneous relation:
 
 ```agda
-    data _≡⅋_ {A : Set a} : Rel A a where
+    data _≡⅋_ {a : Level} {A : Set a} : Rel A a where
       refl⅋ : {x : A} → x ≡⅋ x
 ```
+
+We will study more constrained (read: interesting) examples of homogeneous
+relations in the remainder of this chapter, alongside their useful applications
+of, and constructions over.
 
 
 ## Equivalence Relations
@@ -383,6 +600,7 @@ as a proposition about a given relation:
 
 ```agda
   private variable
+    a ℓ : Level
     A : Set a
 
   Reflexive : Rel A ℓ → Set _
@@ -1434,6 +1652,10 @@ module Exports where
     using (Level; _⊔_; lzero; lsuc)
     public
 
+  open import Data.Product
+    using (Σ; _,_)
+    public
+
   open import Data.Nat
     using (_≤_; z≤n; s≤s; _<_)
     public
@@ -1441,4 +1663,6 @@ module Exports where
   open import Data.Nat.Properties
     using (≤-refl; ≤-trans)
     public
+
+
 ```

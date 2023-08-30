@@ -39,7 +39,7 @@ open Chapter3-Proofs.Exports
 :   ```agda
 import Chapter4-Relations
 open Chapter4-Relations.Exports
-  using (Level; _⊔_; lsuc)
+  using (Level; _⊔_; lsuc; Σ; _,_)
     ```
 
 
@@ -489,80 +489,14 @@ above---since we already have a proof `def:2≢3`. Given a hypothetical
 ```
 
 
-## Dependent Pairs {#sec:sigma}
+## No Monus Left-Identity Exists {#sec:no-monus-id}
 
-As we have seen, function arguments act as the *for-all* quantifier when
-encoding mathematical statements as types. For example, we can read the
-definition for `type:Transitive` above as "for all `x y z : A`, and for all
-proofs `x ≈ y` and `y ≈ z`, it is the case that `x ≈ z`." The for-all quantifier
-states that something holds true, regardless of the specific details.
-
-Closely related to this is the *there-exists* quantifier, aptly stating that
-there is at least one object which satisfies a given property. As an
-illustration, there exists a number `n :` `type:ℕ` such that $n + 1 = 5$ ,
-namely $n = 4$. But it is certainly not the case *for all* `n :` `type:ℕ`
-that $n + 1 = 5$ holds!
-
-True existential values like this don't exist in Agda since we are restricted to
-a constructive world, in which we must actually build the thing we are claiming
-to exist. This sometimes gets in the way of encoding non-constructive
-mathematics, but it's not usually a problem.
-
-How do we actually build such a there-exists type in Agda? The construction is
-usually known as a *sigma* type, written `type:Σ` and input as [GS](AgdaMode).
-It's definition is given by:
+To illustrate using negation in the real world, let's prove a claim made back in
+@sec:identities: that there is no left-identity for the monus operation
+`def:_∸_`. First, let's import it.
 
 ```agda
-module Definition-DependentPair where
-  record Σ {ℓ₁ ℓ₂ : Level} (A : Set ℓ₁) (B : A → Set ℓ₂)
-      : Set (lsuc (ℓ₁ ⊔ ℓ₂)) where
-    constructor _,_
-    field
-      proj₁ : A
-      proj₂ : B proj₁  -- ! 1
-```
-
-This definition should feel reminiscent of the tuple type we built in
-@sec:tuples. Despite the gnarly universe polymorphism---which the typechecker
-can help you write for yourself, even if you don't know what it should be---the
-only difference between `type:Σ` and `type:_×_` from earlier is in the second
-parameter. To jog your memory, we can redefine tuples here:
-
-```agda
-  record _×_ {ℓ₁ ℓ₂ : Level} (A : Set ℓ₁) (B : Set ℓ₂)
-      : Set (lsuc (ℓ₁ ⊔ ℓ₂)) where
-    constructor _,_
-    field
-      proj₁ : A
-      proj₂ : B
-```
-
-Contrasting the two, we see that in `type:Σ`, the `B` parameter is *indexed* by
-`A`, while in `type:_×_`, `B` exists all by itself. This indexing is extremely
-useful, as it allows us to encode a property about the `A` inside of `B`. As you
-can see at [1](Ann), `field:proj₂` has type `B` `field:proj₁`---in other words,
-that the *type* of `field:proj₂` depends on the *value* we put in for
-`field:proj₁`!
-
-As an example, we can give our earlier example again---typing `∃` as
-[`ex`](AgdaMode):
-
-```agda
-  ∃n,n+1≡5 : Σ ℕ (λ n → n + 1 ≡ 5)
-  ∃n,n+1≡5 = 4 , refl
-```
-
-In the type of `def:∃,-n+1≡5`, we give two arguments to `type:Σ`, the first
-indicating that there exists a `type:ℕ`, and the second being a function that
-describes which property holds for that particular `type:ℕ`. In the value, we
-need to give both the *actual* `type:ℕ`, and a proof that the property holds for
-it.
-
-To illustrate using a dependent pair in the real world, let's prove a claim made
-back in @sec:identities: that there is no left-identity for the monus operation
-`def:_∸_`. First, let's import it:
-
-```agda
+module Example-NoMonusLeftIdentity where
   open Chapter2-Numbers.Exports using (_∸_)
 ```
 
@@ -571,8 +505,8 @@ the actual argument is. We'd like to say: "it is not the case that there exists
 a number `e :` `type:ℕ` such that for any `x :` `ℕ` it is the case that `bind:x
 e:e ∸ x ≡ x`." A bit of a mouthful certainly, but it encodes rather directly.
 Replace "there exists a number `e :` `type:ℕ` such that" with `expr:Σ ℕ (λ e →
-?)`, and the "for any `x :` `type:ℕ`" with `expr:(x : ℕ) → ?`, and then go from
-there:
+?)`---recalling `type:Σ` from @sec:sigma. After replacing the "for any `x :`
+`type:ℕ`" with `expr:(x : ℕ) → ?`, we're ready to go:
 
 ```agda
   ¬∸-identityˡ⅋₀ : ¬ Σ ℕ (λ e → (x : ℕ) → e ∸ x ≡ x)

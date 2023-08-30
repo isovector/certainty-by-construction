@@ -230,8 +230,8 @@ via our `module:PreorderReasoning` module from @sec:preorderreasoning.
 
 ```agda
   module ≈-Reasoning where
-    open import Chapter5-Relations
-    open Sandbox-Orderings
+    open import Chapter4-Relations
+    open Definition-LessThanOrEqualTo2
 
     ≈-preorder : IsPreorder _≈_
     IsPreorder.refl   ≈-preorder = ≈-refl

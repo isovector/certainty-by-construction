@@ -794,7 +794,7 @@ two-sided. For example, zero is a right identity for monus:
 ```
 
 but it is not a left identity. As it happens, the monus operation does not have
-a left identity---a fact we will prove in @sec:sigma.
+a left identity---a fact we will prove in @sec:no-monus-id.
 
 
 Exercise (Easy)
