@@ -17,7 +17,18 @@ PANDOC_PDF_OPTS := --from latex+raw_tex \
                    --top-level-division=chapter \
                    -t latex+lagda
 
-CHAPTERS := Chapter00-preface Chapter0-coblub Chapter1-Agda Chapter2-Numbers Chapter3-Proofs Chapter4-Decidability Chapter5-Relations Chapter6-Modular-Arithmetic Chapter7-Structures Chapter8-Isomorphisms Chapter9-Ring-Solving Chapter10-Functions
+CHAPTERS := Chapter00-preface \
+            Chapter0-coblub \
+            Chapter1-Agda \
+            Chapter2-Numbers \
+            Chapter3-Proofs \
+            Chapter4-Relations \
+            Chapter5-Decidability \
+            Chapter6-Modular-Arithmetic \
+            Chapter7-Structures \
+            Chapter8-Isomorphisms \
+            Chapter9-Ring-Solving \
+            Chapter10-Functions
 
 agda := $(patsubst %,src/book/%.lagda.md,$(CHAPTERS))
 

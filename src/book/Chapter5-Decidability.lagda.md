@@ -12,7 +12,7 @@ open Chapter1-Agda.Exports renaming (_,_ to _,⅋_; _×_ to _×⅋_)
 
 
 ```agda
-module Chapter4-Decidability where
+module Chapter5-Decidability where
 ```
 
 
@@ -36,6 +36,12 @@ open Chapter3-Proofs.Exports
   using (_≡_; refl; sym; trans; cong; module ≡-Reasoning)
     ```
 
+:   ```agda
+import Chapter4-Relations
+open Chapter4-Relations.Exports
+  using (Level; _⊔_; lsuc)
+    ```
+
 
 In the last chapter, we thoroughly investigated the notion of doing proof work
 in Agda. We gave a propositional definition what it means for two things to be
@@ -56,207 +62,6 @@ Thankfully the answer to all of these is "no," and we will explore each in this
 chapter. Additionally, we will also get our hands dirty modeling and proving
 facts about more computer-sciencey objects. After all, these proof techniques
 are applicable outside of the ivory tower, too!
-
-
-## Universe Levels {#sec:levels}
-
-Before we discuss falseness, we must turn our attention first to a problem in
-the early foundations of mathematics.
-
-Perhaps you have heard of Bertrand Russell's "barber paradox"---if there is a
-barber who shaves only barbers who do not shave themselves, does he shave
-himself? The paradox is that the barber does shave himself if he doesn't, and
-doesn't if he does. The truth value of this proposition seems to flip-flop back
-and forth, from yes to no and back to yes again, forever, never settling down,
-never converging on an answer.
-
-Of course, Russell wasn't actually wondering about barbers; the question was
-posed to underline a problem with the now-called "naive set theory" that was in
-vogue at the time. We call it naive set theory these days because it allowed for
-paradoxes like the one above, and paradoxes are anathema to mathematics. Once
-you have a contradiction, the entire mathematical system falls apart and it's
-possible to prove anything whatsoever. We will look at how to exactly this in
-@sec:negation.
-
-Modern mathematics' solution to the barber paradox is the realization that not
-all collections are sets---some are simply "too big" to be sets. There is no
-"set of all sets" because such a thing is too big. Therefore, the question of
-the barber who doesn't cut his own hair is swept under the rug, much like the
-hair at actual barbershops.
-
-But this only punts on the problem. What is the corresponding mathematical
-object here. If the set of all sets is not a set, then, what exactly is it? The
-trick is to build a hierarchy of set-like things, no one of which contains
-itself, but each subsequent object contains the previous one.
-
-The usual, everyday sets and types that exist in other programming languages are
-`type:Set₀`. `type:Set₀` can be written in Agda as `type:Set` like we have been
-doing so far. But, what is the type of `type:Set` itself? Why, it's `type:Set₁`!
-
-```agda
-_ : Set₁
-_ = Set
-```
-
-We can play the same game, asking what's the type of `type:Set₁`.
-Unsurprisingly, it's `type:Set₂`:
-
-```agda
-_ : Set₂
-_ = Set₁
-```
-
-This collection of sets is an infinite hierarchy, and we refer to each as a
-*sort* or a *universe.* You're welcome to use an arbitrarily large universe if
-you'd like:
-
-```agda
-_ = Set₉₈₆₀₂₅₀
-```
-
-Why do these universes matter? As we have seen, Agda makes no distinction
-between values and types. So far, we've used this functionality primarily when
-working on indexed types, where we've seen values used as indices on types. But
-as we become more sophisticated Agda programmers (*eg.* later in this chapter,)
-we will start going the other direction: using types as values.
-
-When we write a proof about values, such a thing lives in `type:Set`. But proofs
-above *types* must necessarily exist in a higher universe so as to not taunt the
-barber and his dreadful paradox. Of course, proofs about *those* proofs must
-again live in a higher universe.
-
-You can imagine we might want to duplicate some proofs in different universes.
-For example, we might want to say the tuple `expr:1 ,⅋ (2 ,⅋ 3)` is "pretty much
-the same thing[^same-thing]" as `expr:(1 ,⅋ 2) ,⅋ 3`. But then we might want to
-say that a type-level tuple of `expr:ℕ ,⅋ (Bool ,⅋ ℤ)`---*not* `expr:ℕ ×⅋ (Bool
-×⅋ ℤ)`, mind you--- is *also* "pretty much the same thing" as `expr:(ℕ ,⅋ Bool)
-,⅋ ℤ`.
-
-[^same-thing]: For some definition of "pretty much the same thing" that we will
-  make precise in @sec:setoids.
-
-Thankfully, Agda allows us to write this sort of proof once and for all, by
-abstracting over universe levels in the form of *universe polymorphism.* The
-necessary type is `type:Level` from `module:Agda.Primitive`:
-
-```agda
-open import Agda.Primitive
-  using (Level; _⊔_; lzero; lsuc)
-```
-
-Before we play with our new `type:Level`s, let's force Agda to give us an error.
-Recall our old definition of `type:Maybe` from @sec:maybe:
-
-```agda
-module Playground-Level where
-  data Maybe₀ (A : Set) : Set where
-    just₀     : A → Maybe₀ A
-    nothing₀  : Maybe₀ A
-```
-
-We might try to generate a term of type `type:Maybe Set`, as in:
-
-```illegal
-  _ = just₀ ℕ
-```
-
-which Agda doesn't like, and isn't shy about telling us:
-
-```info
-Set₁ != Set
-when checking that the solution Set of metavariable _A_8 has the
-expected type Set
-```
-
-The problem, of course, is that we said `A` was of type `type:Set`, but then
-tried to instantiate this with `A =` `type:Set`. But since `type:Set` `:`
-`type:Set₁`, this is a universe error, and the thing fails to typecheck.
-
-Instead, we can use universe polymorphism in the definition of `type:Maybe`, by
-binding a `type:Level` named `ℓ` ([ell](AgdaMode)), and parameterizing both the
-set `A` and `type:Maybe` by this `type:Level`:
-
-```agda
-  data Maybe₁ {ℓ : Level} (A : Set ℓ) : Set ℓ where
-    just₁     : A → Maybe₁ A
-    nothing₁  : Maybe₁ A
-```
-
-Agda is now happy to accept our previous definition:
-
-```agda
-  _ = just₁ ℕ
-```
-
-In the real world, it happens to be quite a lot of work to bind every level
-every time, so we often use a `keyword:variable` block to define levels:
-
-```agda
-  private variable
-    ℓ : Level
-
-  data Maybe₂ (A : Set ℓ) : Set ℓ where
-    just₂     : A → Maybe₂ A
-    nothing₂  : Maybe₂ A
-```
-
-Variable blocks are a lovely feature in Agda; whenever you reference a binding
-defined in a `keyword:variable`, Agda will automatically insert an implicit
-variable for you. Thus, behind the scenes, Agda is just turning our definition
-for `type:Maybe₂` into exactly the same thing as we wrote by hand for
-`type:Maybe₁`.
-
-Although we didn't define `type:Maybe` this way when we built it in @sec:maybe,
-we don't need to make any changes. This is because
-`module:Chapter2-Numbers.Exports` *re-exports* `type:Maybe` from the standard
-library, which as a principle is always as universe-polymorphic as possible.
-
-
-Hidden
-
-:   ```agda
-  -- fix bind
-    ```
-
-
-There are three other introduction forms for `type:Level` that bear discussion.
-The first is `def:lzero`, which is the universe level of `type:Set₀`. In other
-words, `type:Set₀` is an alias for `expr:Set lzero`. This brings us to our
-second introduction form, `def:lsuc`, which acts exactly as `ctor:suc` does, but
-over the `type:Level`s. That is, `type:Set₁` is an alias for `expr:Set (lsuc
-lzero)`. As you'd expect, we can generate any `type:Level` by subsequent
-applications of `def:lsuc` to `def:lzero`.
-
-Our third and final introduction form for `type:Level` is `def:_⊔_` (input via
-[lub](AgdaMode)), which takes the maximum of two levels. It's unnecessary to use
-`def:_⊔_` when working with concrete levels, but it comes in handy when
-you have multiple `def:Level` variables in scope. For example, you might have
-two different sets with two different levels, lets say `ℓ₁` and `ℓ₂`. The
-appropriate level for such a thing would be either `bind:ℓ₁ ℓ₂:ℓ₁ ⊔ ℓ₂` or
-`bind:ℓ₁ ℓ₂:lsuc (ℓ₁ ⊔ ℓ₂)`, depending on the exact circumstances. Don't worry;
-it's not as onerous in practice as it might seem.
-
-As a beginner writing Agda, getting all of the universes right can be rather
-daunting. I'd recommend you start by putting everything in `type:Set`, and
-generalizing from there only when the typechecker insists that your levels are
-wrong.
-
-When that happens, simply introduce a new implicit `type:Level` for each
-`type:Set` you're binding, and then follow the type errors until everything
-compiles again. Sometimes the errors might be incomplete, complaining that the
-level you gave it is not the level it should be. Just make the change and try
-again; sometimes Agda will further complain, giving you an even higher bound
-that you must respect in your level algebra. It can be frustrating, but keep
-playing along, and Agda will eventually stop complaining.
-
-As you gain more proficiency in Agda, you'll often find yourself trying to do
-interesting things with `type:Set`s, like putting them inside of data
-structures. If you wrote the data structures naively over `type:Set`, this will
-invoke the ire of the universe checker, and Agda will refuse your program. After
-running into this problem a few times, you will begin making all of your
-programs universe-polymorphic. The result is being able to reuse code you wrote
-to operate over values when you later decide you also need to be able to operate
-over types. A little discipline in advance goes a long way.
 
 
 ## Negation {#sec:negation}
@@ -1470,7 +1275,7 @@ relation.
 Given the standard notion of ordering over the natural numbers:
 
 ```agda
-  open Chapter3-Proofs.Exports
+  open Chapter4-Relations.Exports
     using (_≤_; z≤n; s≤s; _<_)
 ```
 

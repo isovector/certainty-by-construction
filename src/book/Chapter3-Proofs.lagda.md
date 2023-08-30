@@ -2167,11 +2167,11 @@ proofs.
 
 ## Exercises in Proof
 
-That covers everything we'd like to say about *equality* in this chapter.
-However, there are a few more properties about the natural numbers we need to
-prove for future chapters, and this is the most obvious place to do it. These
-proofs are too hard to do simply by stacking calls to `def:trans`, and therefore
-gain a lot of tractability when done with equational reasoning.
+That covers everything we'd like to say about proof in this chapter. However,
+there are a few more properties about the natural numbers we'd like to show for
+future chapters, and this is the most obvious place to do it. These proofs are
+too hard to do simply by stacking calls to `def:trans`, and therefore gain a lot
+of tractability when done with equational reasoning.
 
 The diligent reader is encouraged to spend some time proving the results in this
 section for themselves; doing so will be an excellent opportunity to practice
@@ -2339,135 +2339,7 @@ Solution
     where open ≡-Reasoning
       ```
 
-
-## Comparing Natural Numbers {#sec:comparing}
-
-While that's quite enough about equality, we we would like to say something
-about inequalities---in this case, the sort that describe when one number is
-less than or equal to another.
-
-The first thing to notice is that this is not a *general* notion---it is very
-much tied to the natural numbers. We can't build generic machinery that would
-allow us to say a value of some arbitrary type is less than some other value of
-the same. While there are many types that *do* admit the notion of an ordering
-relationship, the nature of that relationship must be specialized for each
-type. Besides, we don't even have a guarantee such an ordering would be
-unique---for example, we might choose to order strings lexicographically or by
-length. One might be the more familiar choice, but it's hard to argue that one
-is *more correct* than the other.
-
-With that being said, how can we give a type that relates one number to all the
-numbers greater than (or equal) to it?
-
-A good way to proceed here is to work backwards; starting from each constructor,
-to determine how to use that to show a less-than-or-equal-to relationship. The
-case of `ctor:zero` is easy, since `ctor:zero` is the smallest element, we have
-the case that `ctor:zero` `type:≤` `n`, for any other number `n`!
-
-In the case of `ctor:suc`, we know that `ctor:suc` `m` `type:≤` `ctor:suc` `n`
-if and only if `m` `type:≤` `n` in the first place. This gives rise to a very
-natural type:
-
-```agda
-module Definition-LessThanOrEqualTo where
-  data _≤_ : ℕ → ℕ → Set where
-    z≤n : {n : ℕ} → zero ≤ n
-    s≤s : {m n : ℕ} → m ≤ n → suc m ≤ suc n
-```
-
-Hidden
-
-:     ```agda
-  -- fix expr
-      ```
-
-We can now try to prove that `expr:2 ≤ 5`. Begin with a quick type:
-
-```agda
-  _ : 2 ≤ 5
-  _ = ?
-```
-
-Asking Agda to [Refine](AgdaCmd) this hole has it use the `ctor:s≤s`
-constructor:
-
-```agda
-  _ : 2 ≤ 5
-  _ = s≤s {! !}
-```
-
-Something interesting has happened here. Invoke [TypeContext](AgdaCmd) on the
-new hole, and you will see it has type `expr: 1 ≤ 4`! By using `ctor:s≤s`, Agda
-has moved *both* sides of the inequality closer to zero. It makes sense when you
-stare at the definition of `ctor:s≤s`, but it's a rather magical thing to behold
-for the first time.
-
-Use another `ctor:s≤s` in the hole:
-
-```agda
-  _ : 2 ≤ 5
-  _ = s≤s (s≤s {! !})
-```
-
-whose new hole now has type `expr:0 ≤ 3`. From here, the constructor `ctor:z≤n`
-now fits, which completes the definition:
-
-```agda
-  _ : 2 ≤ 5
-  _ = s≤s (s≤s z≤n)
-```
-
-We will have much more to say about the `type:_≤_` type in @sec:fight-indices,
-where we will explore why exactly we chose this particular encoding, and what
-goes wrong if we were to make a different choice. For now, however, try your
-hand at proving the reflexivity and transitivity of `type:_≤_`:
-
-
-Exercise (Trivial)
-
-:   Prove `def:≤-refl` `:` `expr:{x : ℕ} → x ≤ x`.
-
-
-Solution
-
-:   ```agda
-  ≤-refl : {x : ℕ} → x ≤ x
-  ≤-refl {zero}   = z≤n
-  ≤-refl {suc x}  = s≤s ≤-refl
-    ```
-
-
-Exercise (Easy)
-
-:   Prove `def:≤-trans` `:` `expr:(x y z : ℕ) → x ≤ y → y ≤ z → x ≤ z`.
-
-:     ```agda
-  ≤-trans : {x y z : ℕ} → x ≤ y → y ≤ z → x ≤ z
-  ≤-trans {zero} x≤y y≤z       = z≤n
-  ≤-trans (s≤s x≤y) (s≤s y≤z)  = s≤s (≤-trans x≤y y≤z)
-      ```
-
-Exercise (Trivial)
-
-:   Prove `def:≤-suc` `:` `expr:(x : ℕ) → x ≤ suc x`.
-
-:     ```agda
-  ≤-suc : (x : ℕ) → x ≤ suc x
-  ≤-suc zero     = z≤n
-  ≤-suc (suc x)  = s≤s (≤-suc x)
-      ```
-
-Sometimes we might want a *strict* less-than, without any of this "or equal to"
-stuff. That's easy enough; we can just insert a `ctor:suc` on the right side:
-
-```agda
-  _<_ : ℕ → ℕ → Set
-  m < n = m ≤ suc n
-```
-
-That's enough for now. Pat yourself on the back for making it through a chapter
-on rigorous proofs, and take a well deserved break before diving into the next
-chapter where will discuss what all of this has to do with *computability.*
+-- TODO(sandy): add some prose here
 
 
 ## Wrapping Up
@@ -2494,10 +2366,6 @@ module Exports where
           ;  ∨-zeroˡ      ; ∨-zeroʳ
           ;  not-involutive
           )
-    public
-
-  open import Data.Nat
-    using (_≤_; z≤n; s≤s; _<_)
     public
 
   open import Data.Nat.Properties
