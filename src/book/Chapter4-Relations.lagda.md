@@ -1162,16 +1162,6 @@ Exercise (Easy)
 ≤-trans (s≤s x≤y) (s≤s y≤z)  = s≤s (≤-trans x≤y y≤z)
       ```
 
-Exercise (Easy)
-
-:   Prove `def:≤-suc` `:` `expr:(x : ℕ) → x ≤ suc x`.
-
-:     ```agda
-≤-suc : (x : ℕ) → x ≤ suc x
-≤-suc zero     = z≤n
-≤-suc (suc x)  = s≤s (≤-suc x)
-      ```
-
 
 ## Preorders
 
@@ -1187,10 +1177,11 @@ properties. Those that do are called *preorders:*
 
 
 ```agda
-record IsPreorder {A : Set a} (_~_ : Rel A ℓ) : Set (a ⊔ ℓ) where
-  field
-    refl   : Reflexive   _~_
-    trans  : Transitive  _~_
+module Sandbox where
+  record IsPreorder {A : Set a} (_~_ : Rel A ℓ) : Set (a ⊔ ℓ) where
+    field
+      refl   : Reflexive   _~_
+      trans  : Transitive  _~_
 ```
 
 Unlike other constructions we've built for ourselves, we will not prefer to get
@@ -1205,9 +1196,9 @@ We have already seen three preorders in this book, perhaps without even
 realizing it. Of course, `type:_≤_` forms one:
 
 ```agda
-≤-preorder : IsPreorder _≤_
-IsPreorder.refl   ≤-preorder = ≤-refl
-IsPreorder.trans  ≤-preorder = ≤-trans
+  ≤-preorder : IsPreorder _≤_
+  IsPreorder.refl   ≤-preorder = ≤-refl
+  IsPreorder.trans  ≤-preorder = ≤-trans
 ```
 
 as does `type:_≡_`, though we need to be a little careful in showing it.
@@ -1224,16 +1215,16 @@ like. We can give the alias `module:PropEq` to `module:Chapter3-Proof.Exports`
 following syntax:
 
 ```agda
-module PropEq = Chapter3-Proofs.Exports
+  module PropEq = Chapter3-Proofs.Exports
 ```
 
 which now gives us unambiguous access to `ctor:PropEq.refl` and
 `def:PropEq.trans`:
 
 ```agda
-≡-preorder⅋₀ : IsPreorder (_≡_)
-IsPreorder.refl   ≡-preorder⅋₀ = PropEq.refl
-IsPreorder.trans  ≡-preorder⅋₀ = PropEq.trans
+  ≡-preorder⅋₀ : IsPreorder (_≡_)
+  IsPreorder.refl   ≡-preorder⅋₀ = PropEq.refl
+  IsPreorder.trans  ≡-preorder⅋₀ = PropEq.trans
 ```
 
 The other issue arising from a naive implementation of `def:≡-preorder` can now
@@ -1246,9 +1237,9 @@ in `type:_≡_`'s implicit `A` parameter, which we'd conveniently to fill in wit
 our `keyword:variable` also named `A`:
 
 ```agda
-≡-preorder : IsPreorder (_≡_ {A = A})
-IsPreorder.refl   ≡-preorder = PropEq.refl
-IsPreorder.trans  ≡-preorder = PropEq.trans
+  ≡-preorder : IsPreorder (_≡_ {A = A})
+  IsPreorder.refl   ≡-preorder = PropEq.refl
+  IsPreorder.trans  ≡-preorder = PropEq.trans
 ```
 
 Exercise (Trivial)
@@ -1260,10 +1251,10 @@ Exercise (Trivial)
 Solution
 
 :     ```agda
-open Sandbox-Relations using (Related; related)
-Related-preorder : IsPreorder (Related {A = A})
-IsPreorder.refl   Related-preorder      = related
-IsPreorder.trans  Related-preorder _ _  = related
+  open Sandbox-Relations using (Related; related)
+  Related-preorder : IsPreorder (Related {A = A})
+  IsPreorder.refl   Related-preorder      = related
+  IsPreorder.trans  Related-preorder _ _  = related
       ```
 
 
@@ -1280,8 +1271,8 @@ going to want to be working in only a single preorder, so we can define a new
 module *parameterized* by the preorder we'd like:
 
 ```agda
-module PreorderReasoning
-    {_~_ : Rel A ℓ} (~-preorder : IsPreorder _~_) where
+  module PreorderReasoning
+      {_~_ : Rel A ℓ} (~-preorder : IsPreorder _~_) where
 ```
 
 By opening the `~-preorder` record, we can bring its record fields into scope.
@@ -1289,7 +1280,7 @@ The syntax here is a little odd, since we need to first tell Agda the type of
 the record:
 
 ```agda
-  open IsPreorder ~-preorder public
+    open IsPreorder ~-preorder public
 ```
 
 By opening it `keyword:public`, we ensure that `field:refl` and `field:trans`
@@ -1303,27 +1294,27 @@ commentary, as there is nothing new here. The only changes are that we've
 replaced `type:_≡_` with `~`, and renamed `def:_≡⟨_⟩_` to `def:_≈⟨_⟩_`:
 
 ```agda
-  begin_ : {x y : A} → x ~ y → x ~ y
-  begin_ x~y = x~y
-  infix 1 begin_
+    begin_ : {x y : A} → x ~ y → x ~ y
+    begin_ x~y = x~y
+    infix 1 begin_
 ```
 
 ```agda
-  _∎ : (x : A) → x ~ x
-  _∎ x = refl
-  infix 3 _∎
+    _∎ : (x : A) → x ~ x
+    _∎ x = refl
+    infix 3 _∎
 ```
 
 ```agda
-  _≡⟨⟩_ : (x : A) → {y : A} → x ~ y → x ~ y
-  x ≡⟨⟩ p = p
-  infixr 2 _≡⟨⟩_
+    _≡⟨⟩_ : (x : A) → {y : A} → x ~ y → x ~ y
+    x ≡⟨⟩ p = p
+    infixr 2 _≡⟨⟩_
 ```
 
 ```agda
-  _≈⟨_⟩_ : (x : A) → ∀ {y z} → x ~ y → y ~ z → x ~ z
-  _ ≈⟨ x~y ⟩ y~z = trans x~y y~z
-  infixr 2 _≈⟨_⟩_
+    _≈⟨_⟩_ : (x : A) → ∀ {y z} → x ~ y → y ~ z → x ~ z
+    _ ≈⟨ x~y ⟩ y~z = trans x~y y~z
+    infixr 2 _≈⟨_⟩_
 ```
 
 We would, however, like to make one addition to this interface: making it play
@@ -1332,9 +1323,9 @@ propositionally equal, it would be nice to be able to use that
 fact in a reasoning block. Thus, we also include `def:_≡⟨_⟩_`:
 
 ```agda
-  _≡⟨_⟩_ : (x : A) → ∀ {y z} → x ≡ y → y ~ z → x ~ z
-  _ ≡⟨ PropEq.refl ⟩ y~z = y~z
-  infixr 2 _≡⟨_⟩_
+    _≡⟨_⟩_ : (x : A) → ∀ {y z} → x ≡ y → y ~ z → x ~ z
+    _ ≡⟨ PropEq.refl ⟩ y~z = y~z
+    infixr 2 _≡⟨_⟩_
 ```
 
 Any code wanting to do equational reasoning over a preorder is now able to: it
@@ -1348,29 +1339,29 @@ Let's quickly prove a non-trivial fact about the natural numbers, namely that $n
 \le 1 + n$. You should be able to do this sort of thing in your sleep by now:
 
 ```agda
-n≤1+n : (n : ℕ) → n ≤ 1 + n
-n≤1+n zero = z≤n
-n≤1+n (suc n) = s≤s (n≤1+n n)
+  n≤1+n : (n : ℕ) → n ≤ 1 + n
+  n≤1+n zero = z≤n
+  n≤1+n (suc n) = s≤s (n≤1+n n)
 ```
 
 We can further use this fact and our preorder reasoning in order to show that $n
 \le n + 1$:
 
 ```agda
-open Chapter3-Proofs.Exports using (+-comm)
+  open Chapter3-Proofs.Exports using (+-comm)
 
-n≤n+1⅋₀ : (n : ℕ) → n ≤ n + 1
-n≤n+1⅋₀ n = begin
-  n      ≈⟨ n≤1+n n ⟩  -- ! 1
-  1 + n  ≡⟨ +-comm 1 n ⟩
-  n + 1  ∎
-  where open PreorderReasoning ≤-preorder
+  n≤n+1⅋₀ : (n : ℕ) → n ≤ n + 1
+  n≤n+1⅋₀ n = begin
+    n      ≈⟨ n≤1+n n ⟩  -- ! 1
+    1 + n  ≡⟨ +-comm 1 n ⟩
+    n + 1  ∎
+    where open PreorderReasoning ≤-preorder
 ```
 
 Hidden
 
 :   ```agda
--- fix bind
+  -- fix bind
     ```
 
 The proof here is fine, but the syntax leaves a little to be desired. Notice
@@ -1388,22 +1379,22 @@ need work. Furthermore, while we're here, we might as well fill in the preorder
 parameter with `def:≤-preorder`:
 
 ```agda
-module ≤-Reasoning where
-  open PreorderReasoning ≤-preorder
-    renaming (_≈⟨_⟩_ to _≤⟨_⟩_)
-    public
+  module ≤-Reasoning where
+    open PreorderReasoning ≤-preorder
+      renaming (_≈⟨_⟩_ to _≤⟨_⟩_)
+      public
 ```
 
 By now using `module:≤-Reasoning` directly, our proof is worthy of much more
 delight:
 
 ```agda
-n≤n+1 : (n : ℕ) → n ≤ n + 1
-n≤n+1 n = begin
-  n      ≤⟨ n≤1+n n ⟩
-  1 + n  ≡⟨ +-comm 1 n ⟩
-  n + 1  ∎
-  where open ≤-Reasoning
+  n≤n+1 : (n : ℕ) → n ≤ n + 1
+  n≤n+1 n = begin
+    n      ≤⟨ n≤1+n n ⟩
+    1 + n  ≡⟨ +-comm 1 n ⟩
+    n + 1  ∎
+    where open ≤-Reasoning
 ```
 
 Don't be shy in introducing helper modules to put a specific spin on more
@@ -1412,71 +1403,209 @@ experience, whether the developer be you or a user of your library. Either way,
 the effort will be appreciated.
 
 
-## GRAVEYARD?
+## Graph Reachability
 
-As it happens, reflexivity, symmetry and transitivity are the definitive
-characteristics of an *equivalence relation*---that is a relation that behaves
-exactly like we expect equality to. This is not an accident, as we chose
-those three properties due to our familiarity with equality.
+We have shown that both `type:_≤_` and `type:_≡_` form a preorders. From this
+you might be tempted to think that preorders are just tools that are sorta like
+ordering or equality. Not so. Let's look at another example to break that intuition.
 
-It can be annoying to always pass around these three functions, so instead it's
-common to *bundle* them together into a `keyword:record`:
+Consider a graph (as in a network, not like a plot.) Math textbooks often begin
+their discussion around graphs with the telltale phrase:
 
-```agda
-  -- record IsEquivalence {A : Set a} (_~_ : Rel A ℓ) : Set (a ⊔ ℓ) where
-  --   field
-  --     refl   : Reflexive   _~_
-  --     sym    : Symmetric   _~_
-  --     trans  : Transitive  _~_
-```
+> Let $G = (V, E)$ be a graph with vertices $V$ and edges $E$.
 
-It's easy to show that `type:_≡_` forms an equivalence relation, since we came up
-with the idea by thinking about `type:_≡_` in the first place. The hardest part here
-is wrangling the namespacing, since we now have two things called `ctor:refl`: the
-specific definition for `type:_≡_`, and the abstract property from `type:IsEquivalence`.
-We can dodge the issue by renaming the `module:PropositionalEquality` module down to
-`module:PropEq`:
+Left completely unsaid in this introduction is that $E$ is in fact a *relation*
+on $V$; given a graph with vertices $V$, it really *ought to be* the case that
+the edges do actually lie between the vertices!
+
+As a computer scientist, you probably have implemented a graph before at some
+point, whether it be via pointer-chasing or as an adjacency matrix. These are
+indeed encodings of graphs, but they are concessions to computability, which we
+are not particularly intersted in. Playing with graphs in Agda requires only
+some set `type:V` and an edge relation `type:_⇒_` ([`=>`](AgdaMode)) over it:
 
 ```agda
-  -- module Example₃ where
-  --   -- module PropEq = Chapter3-Proofs.Exports
+  module Reachability {V : Set ℓ₁} (_⇒_ : Rel V ℓ₂) where
 ```
 
-at which point, building the proof that `type:_≡_` is an equivalence relationship is
-trivial:
+What can we say about `_⇒_`? Does it satisfy any of the usual relation
+properties? Think on that question for a moment before continuing.
+
+Does `_⇒_` satisfy any relation properties? The question is not even wrong.
+We can say nothing about `_⇒_` other than what we have asked of it, since
+it's a *parameter,*  and thus opaque to us. Given the definition, all we can say
+for sure about `_⇒_` is that it's a relation over `V`!
+
+However, what we *can* do is construct a new relation on top of `_⇒_`, and
+stick whatever we'd like into that thing. One salient example here is the notion
+of *reachability*---given a starting vertex on the graph, is their a path to
+some other vertex? The distinction between the relation `_⇒_` and the
+reachable relation on top of it is subtle but important: while there is no
+single road that connects Vancouver to Mexico City, there is certainly a path
+that does!
+
+When exactly is one vertex reachable from another? The easiest case is if we
+already have an edge in `_⇒_` that connects two vertices. As a trivial case, two
+vertices are already connect if they are the same. Finally, if we know an
+intermediary vertex is reachable from our starting point, and that the goal is
+reachable from there, we can connect the two paths. This gives rise to a very
+straightforward definition:
 
 ```agda
-    -- open IsEquivalence
+    private variable
+      v v₁ v₂ v₃ : V
 
-    -- ≡-equiv : IsEquivalence {A = A} _≡_
-    -- refl   ≡-equiv = PropEq.refl
-    -- trans  ≡-equiv = PropEq.trans
-    -- sym    ≡-equiv = PropEq.sym
+    data Path : Rel V (ℓ₁ ⊔ ℓ₂) where
+      ↪_       : v₁ ⇒ v₂ → Path v₁ v₂
+      here     : Path v v
+      connect  : Path v₁ v₂ → Path v₂ v₃ → Path v₁ v₃
 ```
 
-We will explore equivalence relations in further detail soon when we discuss
-setoids.
+Where we can type `↪` by scrolling through the possibilities under [r](AgdaCmd).
+
+It is not difficult to show that `type:Path` forms a preorder:
+
+```agda
+    Path-preorder : IsPreorder Path
+    IsPreorder.refl   Path-preorder = here
+    IsPreorder.trans  Path-preorder = connect
+```
+
+Pay attention to what we've done here, as this is a very general and reusable
+technique. Given some arbitrary relation `_⇒_`, about which we know
+nothing, we were able to *extend* that relation into a preorder. The
+`ctor:↪_` constructor injects values of type `bind:v₁ v₂:v₁ ⇒ v₂` into the type
+``bind:v₁ v₂:Path v₁ v₂`. Since this is possible, it's reasonable to think of
+`type:Path` as `_⇒_`, "but with more stuff in it." Namely, enhanced with
+`ctor:here` and `ctor:connect`.
+
+The attentive reader will notice that it is exactly `ctor:here` and
+`ctor:connect` which are used in `def:Path-preorder`, which is why `type:Path`
+can turn any relation into a preorder.
+
+More generally, the idea behind `type:Path` is to augment a type with just
+enough structure to allow you to build some well-known mathematical (or
+computational) idea on top. Usually the approach is to add constructors for
+every required property. In doing so, you find the *free X*---in this case,
+`type:Path` is the *free preorder.*
 
 
+## Free Preorders in the Wild
 
+We will now combine our free preorder with the preorder reasoning we built in
+@sec:preorder-reasoning to demonstrate actual paths through a social graph.
+
+Rather than incriminate any real group of humans, we can instead use the
+excellent early-noughties romantic comedy *About a Boy*[^aboutboy] as a case
+study. If you haven't seen the film, you should consider remedying that as soon
+as possible. Don't worry though, there are no spoilers here; it's safe to
+continue.
+
+[^aboutboy]: Nick Hornby and Peter Hedges. 2002. About a Boy, United Kingdom: Universal Pictures.
+
+Our first task is to to define the vertices of the social graph, which of
+course are the people involved:
+
+```agda
+  module Example-AboutABoy where
+    data Person : Set where
+      ellie fiona marcus rachel susie will : Person
+```
+
+Some of these people are friends, which we can use as edges in our graph.
+
+```agda
+    private variable
+      p₁ p₂ : Person
+
+    data _IsFriendsWith_ : Rel Person lzero where
+      marcus-will   : marcus  IsFriendsWith will
+      marcus-fiona  : marcus  IsFriendsWith fiona
+      fiona-susie   : fiona   IsFriendsWith susie
+```
+
+Friendship is usually considered to be symmetric. While we could add explicit
+constructors for the other direction of each of these friendships, it's easier
+to add a `ctor:sym` constructor:
+
+```agda
+      sym : p₁ IsFriendsWith p₂ → p₂ IsFriendsWith p₁
+```
+
+What excellent early-noughties romantic comedy is complete without a series of
+potential love interests? We can enumerate who likes whom as another source of
+edges in our graph:
+
+```agda
+    data _IsInterestedIn_ : Rel Person lzero where
+      marcus-ellie  : marcus  IsInterestedIn ellie
+      will-rachel   : will    IsInterestedIn rachel
+      rachel-will   : rachel  IsInterestedIn will
+      susie-will    : susie   IsInterestedIn will
+```
+
+As much as many people would prefer a world in which `type:_IsInterestedIn_` is
+a symmetric relation, this is sadly not the case, and thus we do not require a
+constructor for it.
+
+Finally, we can tie together `type:_IsFriendsWith_` and `type:_IsInterestedIn_`
+with `type:SocialTie` which serves as the definitive set of edges in our graph.
+
+```agda
+    data SocialTie : Rel Person lzero where
+      friendship  : p₁ IsFriendsWith p₂   → SocialTie p₁ p₂
+      interest    : p₁ IsInterestedIn p₂  → SocialTie p₁ p₂
+```
+
+There is no preorder on `type:SocialTie`, but we can get one for free by using
+`type:Path`. Then we can look at how `ctor:will` and `ctor:fiona` relate in the
+social graph:
+
+```agda
+    open Reachability SocialTie
+
+    will-fiona : Path will fiona
+    will-fiona = begin
+      will    ≈⟨ ↪ friendship (sym marcus-will) ⟩
+      marcus  ≈⟨ ↪ friendship marcus-fiona ⟩
+      fiona   ∎
+      where open PreorderReasoning Path-preorder
+```
+
+or how `ctor:rachel` and `ctor:ellie` relate:
+
+```agda
+    rachel-ellie : Path rachel ellie
+    rachel-ellie = begin
+      rachel  ≈⟨ ↪ interest    rachel-will ⟩
+      will    ≈⟨ ↪ friendship  (sym marcus-will) ⟩
+      marcus  ≈⟨ ↪ interest    marcus-ellie ⟩
+      ellie   ∎
+      where open PreorderReasoning Path-preorder
+```
+
+Agda's ability to model and work with things like this is frankly amazing. Of
+course, I am likely the only person in the world interested in the social
+dynamics of *About a Boy,* but the fact that it's possible is a testament to how
+much power we've developed.
 
 
 ## Antisymmetry
 
-Does our shiny new `type:_≤_` support symmetry? A moment's thought convinces us
-that there can be no symmetry for `type:_≤_`. Just because $2 \le 5$ doesn't
-mean that $5 \le 2$.
+Let's take a step back from preorders and look some more at `type:_≤_`. For
+example, does it support symmetry? A moment's thought convinces us that it can't
+possibly.Just because $2 \le 5$ doesn't mean that $5 \le 2$.
 
 However, `type:_≤_` does satisfy a related notion, that of *antisymmetry.*
 Antisymmetry says that if we know $m \le n$ and that $n \le m$, then it must be
-the case that $m = n$. Proving the antisymmetry of `type:_≤_` is rather
+the case that $m = n$. Proving the antisymmetry of `type:_≤_` is
 straightforward:
 
 ```agda
-≤-antisym : {m n : ℕ} → m ≤ n → n ≤ m → m ≡ n
-≤-antisym z≤n z≤n = PropEq.refl
-≤-antisym (s≤s m≤n) (s≤s n≤m) =
-  cong suc (≤-antisym m≤n n≤m)
+  ≤-antisym : {m n : ℕ} → m ≤ n → n ≤ m → m ≡ n
+  ≤-antisym z≤n z≤n = PropEq.refl
+  ≤-antisym (s≤s m≤n) (s≤s n≤m) =
+    cong suc (≤-antisym m≤n n≤m)
 ```
 
 In addition, we can generalize this type to something more reusable, like we did
@@ -1486,212 +1615,114 @@ property over *two* relations: one corresponding to equality, and another to the
 ordering:
 
 ```agda
-Antisymmetric
-    : Rel A ℓ₁
-    → Rel A ℓ₂
-    → Set _
-Antisymmetric _≈_ _≤_ =
-  ∀ {x y} → x ≤ y → y ≤ x → x ≈ y
+  Antisymmetric
+      : Rel A ℓ₁
+      → Rel A ℓ₂
+      → Set _
+  Antisymmetric _≈_ _≤_ =
+    ∀ {x y} → x ≤ y → y ≤ x → x ≈ y
 ```
 
 which does expand to our desired type, as we can show:
 
 ```agda
-_ : Antisymmetric _≡_ _≤_
-_ = ≤-antisym
+  _ : Antisymmetric _≡_ _≤_
+  _ = ≤-antisym
 ```
 
+
+## Equivalence Relations and Posets
+
+The difference between `type:_≡_`'s symmetry and `type:_≤_`'s antisymmetry turns
+out to be the biggest differentiator between the two relations. We have seen
+that both are preorders, but whether a relation is symmetric or antisymmetric
+bifurcates the mathematical hierarchy.
+
+Symmetric preorders like `type:_≡_` are known as *equivalence relations*, and
+such things act exactly as equality should. An equivalence relation forms
+"buckets," with every member of the underlying set in exactly one bucket, and
+everything in the bucket being related. For `type:_≡_` there is one bucket for
+each element in the set, but you could imagine relating strings based on their
+length, where we would then get a bucket for every unique string length.
+
+We're going to define `type:IsEquivalence` and `type:IsPartialOrder` at the same
+time, and both are types parameterized by a given relation. While we could go
+through the effort and writing out all the necessary levels, sets, and
+relationship bindings for both, it's simpler to put that stuff as parameters to
+an anonymous module:
+
+```agda
+  module _ {a ℓ : Level} {A : Set a} (_~_ : Rel A ℓ) where
+```
+
+Anything inside of this module will now inherit each of `a`, `ℓ`, `A`, and
+`_~_`, which can be a great time-saver when defining several closely-related
+objects. And we give the module the name `_` meaning "this is not really a
+module, it exists only to these parameters." Inside the module we are now free
+to define `type:IsEquivalence`:
+
+```agda
+    record IsEquivalence : Set (a ⊔ ℓ) where
+      field
+        isPreorder  : IsPreorder  _~_
+        sym         : Symmetric   _~_
+```
+
+Note that it appears that `type:IsEquivalence` has no parameters, but this is
+not true. The anonymous module above scopes them for us, and any *user* of
+`type:IsEquivalence` will see that it has a `_~_` parameter.
+
+The partially ordered sets, usually shortened to *posets*, are antisymmetric
+preorders. If you think about preorders as directed graphs, then posets
+correspond to directed *acyclic* graphs. Their antisymmetry property precludes
+any possibility of cycles, since from a cycle we could derive the fact that both
+$x \le y$ *and* $y \le x$. Since the natural numbers all sit on a straight line,
+they have no cycles, which is why they form a poset.
+
+We can code up `type:IsPartialOrder` analogously to `type:IsEquivalence`:
+
+```agda
+    record IsPartialOrder : Set (a ⊔ ℓ) where
+      field
+        isPreorder : IsPreorder         _~_
+        antisym    : Antisymmetric _≡_  _~_
+```
+
+After popping the anonymous module; let's show that `type:_≡_` and `type:_≤_`
+really are the sorts of relations we've claimed:
+
+```agda
+  ≡-equiv : IsEquivalence (_≡_ {A = A})
+  IsEquivalence.isPreorder  ≡-equiv = ≡-preorder
+  IsEquivalence.sym         ≡-equiv = PropEq.sym
+```
+
+and
+
+```agda
+  ≤-poset : IsPartialOrder _≤_
+  IsPartialOrder.isPreorder  ≤-poset = ≤-preorder
+  IsPartialOrder.antisym     ≤-poset = ≤-antisym
+```
 
 
 ## Strictly Less Than
 
-Sometimes we might want a *strict* less-than, without any of this "or equal to"
-stuff. That's easy enough; we can just insert a `ctor:suc` on the right side:
+So far we have discussed only the less-than-or-equal to relationship between
+natural numbers. But sometimes we might want a *strict* less-than, without any
+of this "or equal to" business. That's easy enough; we can just insert a
+`ctor:suc` on the right side:
 
 ```agda
-_<_ : ℕ → ℕ → Set
-m < n = m ≤ suc n
+  _<_ : Rel ℕ lzero
+  m < n = m ≤ suc n
+  infix 4 _<_
 ```
 
-
-
-## Graph Reachability
-
-We have shown that `type:_≤_` forms a preorder. From this you might be tempted
-to think that preorders are just tools that generalize ordering over the number
-line. Not so. Let's look at another example to break that intuition.
-
-Consider a graph. Math textbooks often begin a discussion around graphs with the
-telltale phrase
-
-> Let $G = (V, E)$ be a graph with vertices $V$ and edges $E$.
-
-Left completely unsaid in this introduction is that $E$ is in fact a *relation*
-on $V$; given a graph with vertices $V$, it really ought to be the case that the
-edges are actually between the vertices!
-
-As a computer scientist, you probably have implemented a graph before at some
-point, whether it be via pointer-chasing or an adjacency matrix. These are
-indeed encodings of graphs, but they are concessions to computability, which we
-need not pay attention to. In order to work with graphs in Agda, all we need is
-some set `type:V` and an edge relation `type:_⇒_` over it:
-
-```agda
-module Reachability
-      {e ℓ : Level} {V : Set ℓ} (_⇒_ : Rel V e)
-    where
-```
-
-What can we say about `type:_⇒_`? Does it satisfy any of the usual relation
-properties? Think on that question for a moment before continuing.
-
-Does `type:_⇒_` satisfy any relation properties? The question is not even wrong.
-`type:_⇒_` might, or it might not. But it is a *parameter* to this example,
-which means it is completely opaque to us, and all we can say about it is that
-which we asked for in the first place. Given the definition, all we can say for
-sure about `type:_⇒_` is that it's a relation over `type:V`.
-
-However, what we can do is construct a new relation on top of `type:_⇒_`, and
-stick whatever we'd like into that thing. One salient example here is the notion
-of *reachability*---given a starting vertex, is their a path to some other
-vertex? Perhaps you were already thinking about reachability when I asked
-earlier about properties over `type:_⇒_`---after all, this is a very common
-operation over graphs. The distinction between the relation `type:_⇒_` and the
-reachable relation on top of it is subtle but important: while there is no
-single road (edge) that connects Vancouver to New York, there is certainly a
-path that connects them!
-
-So when is one vertex reachable from another? The trivial case is if you're
-already where you'd like to be. Another case is to simply follow an edge.
-Finally, if we know an intermediary vertex is reachable from our starting point,
-and that the goal is reachable from there, we can connect the two paths. This
-gives rise to a very straightforward definition:
-
-```agda
-  private variable
-    v v₁ v₂ v₃ : V
-
-  data Path : Rel V (e ⊔ ℓ) where
-    here    : Path v v
-    follow  : v₁ ⇒ v₂ → Path v₁ v₂
-    connect
-      : Path v₁ v₂
-      → Path v₂ v₃
-      → Path v₁ v₃
-```
-
-It is not difficult to show that `type:Path` forms a preorder:
-
-```agda
-  Path-preorder : IsPreorder Path
-  IsPreorder.refl   Path-preorder = here
-  IsPreorder.trans  Path-preorder = connect
-```
-
-This technique is very general and reusable. We were given some arbitrary
-relation `type:_⇒_`, and built additional structure on top of it for free. The
-construction is merely *syntactic,* in that we simply added new constructors
-corresponding exactly to the desired structure. In doing so, we have deftly
-sidestepped the issue of articulating exactly what these new constructors *mean*
-in the original domain, if anything. This is a problem we will return to when we
-discuss *free constructions* in @sec:free.
-
-
-
-
-## Example from a Film
-
-We can use this new preorder equational reasoning in order to show how two
-people might know one another across a social graph. Rather than incriminate any
-real group of humans, we can instead use the excellent early noughties' film
-*About a Boy*[^aboutboy] as a case study. If you haven't seen the film, you
-should consider remedying that as soon as possible. But don't worry, there are
-no spoilers here, so it's safe to continue.
-
-[^aboutboy]: Nick Hornby and Peter Hedges. 2002. About a Boy, United Kingdom: Universal Pictures.
-
-The first thing to do is to define the vertices of the social graph, which of
-course are the people involved:
-
-```agda
-module Example-AboutABoy where
-  data Person : Set where
-    ellie fiona marcus rachel susie will : Person
-```
-
-Some of these people are friends, which we can use as edges in our graph:
-
-```agda
-  private variable
-    p₁ p₂ : Person
-
-  data _IsFriendsWith_ : Rel Person lzero where
-    marcus-will   : marcus  IsFriendsWith will
-    fiona-marcus  : fiona   IsFriendsWith marcus
-    fiona-susie   : fiona   IsFriendsWith susie
-```
-
-and of course, friendship is symmetric, which we can encode as another
-constructor:
-
-```agda
-    sym : p₁ IsFriendsWith p₂ → p₂ IsFriendsWith p₁
-```
-
-What excellent romantic comedy from the early noughties is complete without a
-series of potential love interests? We can enumerate who likes whom as another
-source of edges in our graph:
-
-```agda
-  data _IsInterestedIn_ : Rel Person lzero where
-    marcus-ellie  : marcus  IsInterestedIn ellie
-    will-rachel   : will    IsInterestedIn rachel
-    rachel-will   : rachel  IsInterestedIn will
-    susie-will    : susie   IsInterestedIn will
-```
-
-Finally, we can tie together `type:_IsFriendsWith_` and `type:_IsInterestedIn_`
-with `type:SocialTie` which serves as the definitive set of edges in our graph.
-
-```agda
-  data SocialTie : Rel Person lzero where
-    friendship  : p₁ IsFriendsWith p₂   → SocialTie p₁ p₂
-    interest    : p₁ IsInterestedIn p₂  → SocialTie p₁ p₂
-```
-
-There is no preorder on `type:SocialTie`, but we can get one for free by using
-`type:Path`. Then it's possible to ask how `ctor:will` and `ctor:fiona` are
-related:
-
-```agda
-  open Reachability SocialTie
-
-  will-fiona : Path will fiona
-  will-fiona = begin
-    will    ≈⟨ follow (friendship (sym marcus-will)) ⟩
-    marcus  ≈⟨ follow (friendship (sym fiona-marcus)) ⟩
-    fiona   ∎
-    where open PreorderReasoning (Path-preorder)
-```
-
-or how `ctor:rachel` and `ctor:ellie` are:
-
-```agda
-  rachel-ellie : Path rachel ellie
-  rachel-ellie = begin
-    rachel  ≈⟨ follow (interest rachel-will) ⟩
-    will    ≈⟨ follow (friendship (sym marcus-will)) ⟩
-    marcus  ≈⟨ follow (interest marcus-ellie) ⟩
-    ellie   ∎
-    where open PreorderReasoning (Path-preorder)
-```
-
-
-
-
-
-
-
+While `def:_<_` comes in handy sometimes, it's not a very well behaved
+relation---it's not reflexive, symmetric, or even antisymmetric! What a bust of
+a relation! We don't yet have the sophistication to prove something is false,
+but that's exactly the sort of thing we'll tackle in the next chapter.
 
 
 ## Wrapping Up
@@ -1706,13 +1737,26 @@ module Exports where
     using (Σ; _,_)
     public
 
+  open import Relation.Binary
+    using (Rel; REL; Transitive; Reflexive; Symmetric; Antisymmetric)
+    public
+
+  open import Relation.Binary.PropositionalEquality
+    using (subst)
+
   open import Data.Nat
     using (_≤_; z≤n; s≤s; _<_)
     public
 
-  open import Data.Nat.Properties
-    using (≤-refl; ≤-trans)
+  open Sandbox
+    using ( IsPreorder; IsEquivalence; IsPartialOrder
+          ; module PreorderReasoning
+          ; ≡-preorder; ≡-equiv
+          ; ≤-preorder; ≤-poset
+          )
     public
 
-
+  open import Data.Nat.Properties
+    using (≤-refl; ≤-trans; ≤-antisym; n≤1+n; module ≤-Reasoning)
+    public
 ```
