@@ -1406,9 +1406,10 @@ n≤n+1 n = begin
   where open ≤-Reasoning
 ```
 
-Don't feel afraid to introduce helper modules that put a specific spin on more
+Don't be shy in introducing helper modules to put a specific spin on more
 general notions. Their judicious use can dramatically improve the developer
-experience, whether the developer be you or a user of your library.
+experience, whether the developer be you or a user of your library. Either way,
+the effort will be appreciated.
 
 
 ## GRAVEYARD?
@@ -1603,9 +1604,11 @@ discuss *free constructions* in @sec:free.
 We can use this new preorder equational reasoning in order to show how two
 people might know one another across a social graph. Rather than incriminate any
 real group of humans, we can instead use the excellent early noughties' film
-"About a Boy" as a case study. If you haven't seen the film, you should consider
-remedying that as soon as possible. But don't worry, there will be no spoilers
-here so it's safe to continue.
+*About a Boy*[^aboutboy] as a case study. If you haven't seen the film, you
+should consider remedying that as soon as possible. But don't worry, there are
+no spoilers here, so it's safe to continue.
+
+[^aboutboy]: Nick Hornby and Peter Hedges. 2002. About a Boy, United Kingdom: Universal Pictures.
 
 The first thing to do is to define the vertices of the social graph, which of
 course are the people involved:
