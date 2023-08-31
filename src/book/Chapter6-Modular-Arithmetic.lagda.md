@@ -231,14 +231,14 @@ via our `module:PreorderReasoning` module from @sec:preorderreasoning.
 ```agda
   module ≈-Reasoning where
     open import Chapter4-Relations
-    open Definition-LessThanOrEqualTo2
+    open Exports using (IsPreorder; module Preorder-Reasoning)
 
     ≈-preorder : IsPreorder _≈_
     IsPreorder.refl   ≈-preorder = ≈-refl
     IsPreorder.trans  ≈-preorder = ≈-trans
 
     open IsEquivalence ≈-equiv using (sym) public
-    open PreorderReasoning ≈-preorder public
+    open Preorder-Reasoning ≈-preorder public
 ```
 
 We're almost ready to build some interesting proofs; but we're going to need to

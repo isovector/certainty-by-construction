@@ -1271,7 +1271,7 @@ going to want to be working in only a single preorder, so we can define a new
 module *parameterized* by the preorder we'd like:
 
 ```agda
-  module PreorderReasoning
+  module Preorder-Reasoning
       {_~_ : Rel A ℓ} (~-preorder : IsPreorder _~_) where
 ```
 
@@ -1284,7 +1284,7 @@ the record:
 ```
 
 By opening it `keyword:public`, we ensure that `field:refl` and `field:trans`
-both "leak" in when we open `module:PreorderReasoning`. In essence,
+both "leak" in when we open `module:Preorder-Reasoning`. In essence,
 `keyword:public` makes it as if we explicitly defined the imported identifiers
 in this module---just like when we write our Exports module at the end of every
 chapter.
@@ -1329,7 +1329,7 @@ fact in a reasoning block. Thus, we also include `def:_≡⟨_⟩_`:
 ```
 
 Any code wanting to do equational reasoning over a preorder is now able to: it
-need only `keyword:open` the `module:PreorderReasoning` module using its proof
+need only `keyword:open` the `module:Preorder-Reasoning` module using its proof
 of being a preorder (that is, `type:IsPreorder`) as an argument.
 
 
@@ -1355,7 +1355,7 @@ We can further use this fact and our preorder reasoning in order to show that $n
     n      ≈⟨ n≤1+n n ⟩  -- ! 1
     1 + n  ≡⟨ +-comm 1 n ⟩
     n + 1  ∎
-    where open PreorderReasoning ≤-preorder
+    where open Preorder-Reasoning ≤-preorder
 ```
 
 Hidden
@@ -1374,13 +1374,13 @@ existing names that it would be preferable to reuse. In this case, we'd like to
 use `≤`!
 
 The trick, as usual, is to make a new module that `keyword:public`ly opens
-`module:PreorderReasoning`, using `keyword:renaming` to change whatever names
+`module:Preorder-Reasoning`, using `keyword:renaming` to change whatever names
 need work. Furthermore, while we're here, we might as well fill in the preorder
 parameter with `def:≤-preorder`:
 
 ```agda
   module ≤-Reasoning where
-    open PreorderReasoning ≤-preorder
+    open Preorder-Reasoning ≤-preorder
       renaming (_≈⟨_⟩_ to _≤⟨_⟩_)
       public
 ```
@@ -1569,7 +1569,7 @@ social graph:
       will    ≈⟨ ↪ friendship (sym marcus-will) ⟩
       marcus  ≈⟨ ↪ friendship marcus-fiona ⟩
       fiona   ∎
-      where open PreorderReasoning Path-preorder
+      where open Preorder-Reasoning Path-preorder
 ```
 
 or how `ctor:rachel` and `ctor:ellie` relate:
@@ -1581,7 +1581,7 @@ or how `ctor:rachel` and `ctor:ellie` relate:
       will    ≈⟨ ↪ friendship  (sym marcus-will) ⟩
       marcus  ≈⟨ ↪ interest    marcus-ellie ⟩
       ellie   ∎
-      where open PreorderReasoning Path-preorder
+      where open Preorder-Reasoning Path-preorder
 ```
 
 Agda's ability to model and work with things like this is frankly amazing. Of
@@ -1750,7 +1750,7 @@ module Exports where
 
   open Sandbox
     using ( IsPreorder; IsEquivalence; IsPartialOrder
-          ; module PreorderReasoning
+          ; module Preorder-Reasoning
           ; ≡-preorder; ≡-equiv
           ; ≤-preorder; ≤-poset
           )
