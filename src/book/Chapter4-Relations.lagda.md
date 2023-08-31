@@ -197,11 +197,29 @@ we don't need to make any changes. This is because
 `module:Chapter2-Numbers.Exports` *re-exports* `type:Maybe` from the standard
 library, which as a principle is always as universe-polymorphic as possible.
 
+These `keyword:variable` bindings are life-saving when working with highly
+polymorphic structures, and so let's pop the module stack and introduce a few in
+the top level for our future definitions:
+
+```agda
+private variable
+  ℓ ℓ₁ ℓ₂ a b c : Level
+  A : Set a
+  B : Set b
+  C : Set c
+```
+
+There's quite a preponderance of levels we've defined here! As you can see,
+variables can depend on one another; using one in a definition will
+automatically pull it and any variables it depends on into scope. Therefore,
+don't be surprised throughout the rest of this chapter if you see variables that
+don't seem to be bound anywhere---this is where they come from!
+
 
 Hidden
 
 :   ```agda
-  -- fix bind
+-- fix bind
     ```
 
 
@@ -272,7 +290,7 @@ It's definition is given by:
 module Definition-DependentPair where
   open Chapter3-Proofs.Exports
 
-  record Σ {ℓ₁ ℓ₂ : Level} (A : Set ℓ₁) (B : A → Set ℓ₂)
+  record Σ (A : Set ℓ₁) (B : A → Set ℓ₂)
       : Set (lsuc (ℓ₁ ⊔ ℓ₂)) where
     constructor _,_
     field
@@ -287,7 +305,7 @@ only difference between `type:Σ` and `type:_×_` from earlier is in the second
 parameter. To jog your memory, we can redefine tuples here:
 
 ```agda
-  record _×⅋₀_ {ℓ₁ ℓ₂ : Level} (A : Set ℓ₁) (B : Set ℓ₂)
+  record _×⅋₀_ (A : Set ℓ₁) (B : Set ℓ₂)
       : Set (lsuc (ℓ₁ ⊔ ℓ₂)) where
     constructor _,_
     field
@@ -360,8 +378,7 @@ as `type:REL`:
 
 ```agda
 module Sandbox-Relations where
-  REL : {a b : Level}
-      → Set a → Set b → (ℓ : Level)
+  REL : Set a → Set b → (ℓ : Level)
       → Set (a ⊔ b ⊔ lsuc ℓ)
   REL A B ℓ = A → B → Set ℓ
 ```
@@ -382,13 +399,13 @@ To get a feel for how loosey-goosey relations are, we can define a few for
 ourselves. There is the vacuous relation which relates no values:
 
 ```agda
-  data Unrelated {A B : Set} : REL A B lzero where
+  data Unrelated : REL A B lzero where
 ```
 
 and the trivial relation which relates all values:
 
 ```agda
-  data Related {A B : Set} : REL A B lzero where
+  data Related : REL A B lzero where
     related : {a : A} {b : B} → Related a b
 ```
 
@@ -409,11 +426,13 @@ define arbitrary relations:
     f3-b2   : FooBar f3 b2
 ```
 
+
 Hidden
 
 :   ```agda
   -- fix bind
     ```
+
 
 Don't try to make sense of `type:FooBar`, I just made something up. This
 relation does illustrate, however, that two values can be related in many
@@ -455,8 +474,7 @@ notation,[^fun-notation] we can call such a thing `def:_maps_↦_` using
   this one was too delightful to ignore.
 
 ```agda
-  data _maps_↦_ {a b : Level} {A : Set a} {B : Set b} (f : A → B)
-        : REL A B lzero where
+  data _maps_↦_ (f : A → B) : REL A B lzero where
      app : {x : A} → f maps x ↦ f x
 ```
 
@@ -497,22 +515,45 @@ function which takes a relation and produces the necessary constraint it must
 satisfy.
 
 ```agda
-  Functional  : {a b ℓ : Level} {A : Set a} {B : Set b}
-              → REL A B ℓ → Set (a ⊔ b ⊔ ℓ)
-  Functional {A = A} {B} _~_
+  Functional  : REL A B ℓ → Set _  -- ! 1
+  Functional {A = A} {B = B} _~_  -- ! 2
     = {x : A} {y z : B}
     → x ~ y → x ~ z
     → y ≡ z
 ```
+
+
+Hidden
+
+:   ```agda
+  -- fix bind
+    ```
+
+
+Footgun
+
+:   Notice that in the definition of [1](Functional) we have given the resulting
+    `type:Level` as `_`---asking Agda to do the work of inferring it for us. It
+    gets correctly inferred as `bind:a b ℓ:a ⊔ b ⊔ ℓ`, but due to a misfeature
+    in how Agda handles `keyword:variable`s, we are unable to write this for
+    ourselves! In brief, the problem arises because variables get freshly
+    instantiated every time they are used, meaning the `a` in the definition of
+    `A` is *not* the same as the `a` we'd like to write here. Furthermore, there
+    *is no way* to directly get our hands on the proper `a`. It's stupid.
+
+At [2](Ann), pay attention to how we can bind the `A` and `B` variables as if
+they were just regular implicit parameters to `type:Functional`. That's because
+they *are* just regular implicit parameters---as long as they are mentioned
+directly in the type. Modulo the footgun above, usage of `keyword:variable`s can
+dramatically improve code's readability.
 
 The total property says that for every $x$, there must exist some $y$ such that
 $x \mathrel{\sim} y$. As before in @sec:sigma, we can turn this "there exists"
 into a `type:Σ` type:
 
 ```agda
-  Total  : {a b ℓ : Level} {A : Set a} {B : Set b}
-         → REL A B ℓ → Set (a ⊔ b ⊔ ℓ)
-  Total {A = A} {B} _~_
+  Total  : REL A B ℓ → Set _
+  Total {A = A} {B = B} _~_
     = (x : A) → Σ B (λ y → x ~ y)
 ```
 
@@ -520,8 +561,7 @@ Given `def:Functional` and `def:Total`, we're now ready to turn our relation
 back into a function:
 
 ```agda
-  relToFn : {a b ℓ : Level} {A : Set a} {B : Set b}
-          → (_~_ : REL A B ℓ)
+  relToFn : (_~_ : REL A B ℓ)
           → Functional _~_
           → Total _~_
           → A → B
@@ -535,9 +575,12 @@ As it happens, this implementation doesn't actually use the
 to ensure we didn't just pick an *arbitrary* output from the `type:Total`
 property.
 
-Of course, nobody would actually do this in practice, but it's useful to see
-lots of examples of encoding things in Agda, as well as to get a familiarity
-with strange mathematical constructions.
+Notice how cool it is that we can define `def:relToFn` without ever giving any
+*actual implementations* of `type:Functional` or `type:Total`. As we get deeper
+into doing math in Agda, most of the work we do will be of this form: put
+together some definitions, and assume we have something that satisfies the
+definition, and use that to show what we intend to. Very rarely do we actually
+need to get our hands dirty and give any implementations.
 
 
 ## Homogeneous Relations
@@ -549,7 +592,7 @@ relations are a special case of heterogeneous ones. We will name such a thing
 `type:Rel`, which comes with one fewer parameter:
 
 ```agda
-  Rel : {a : Level} → Set a → (ℓ : Level) → Set (a ⊔ lsuc ℓ)
+  Rel : Set a → (ℓ : Level) → Set (a ⊔ lsuc ℓ)
   Rel A ℓ = REL A A ℓ
 ```
 
@@ -558,7 +601,7 @@ equality in this way:
 
 ```agda
   module Example₂ where
-    data _≡⅋₀_ {a : Level} {A : Set a} : A → A → Set a where
+    data _≡⅋₀_ {A : Set a} : A → A → Set a where
       refl : {x : A} → x ≡⅋₀ x
 ```
 
@@ -566,7 +609,7 @@ but we could have instead given it this type---stressing the fact that it is a
 homogeneous relation:
 
 ```agda
-    data _≡⅋_ {a : Level} {A : Set a} : Rel A a where
+    data _≡⅋_ {A : Set a} : Rel A a where
       refl⅋ : {x : A} → x ≡⅋ x
 ```
 
@@ -575,165 +618,132 @@ relations in the remainder of this chapter, alongside their useful applications
 of, and constructions over.
 
 
-## Equivalence Relations
+## Standard Properties of Relations
 
 It's a good habit to look for what generalizes whenever you notice a connection
 to something you already understand. In this case, how much of our understanding
 of propositional equality lifts to relations in general?
 
 Recall the three properties we showed about propositional equality: reflexivity,
-symmetry, and transitivity. Reflexivity was the notion that every element is
+symmetry, and transitivity. Reflexivity is the notion that every element is
 equal to itself. Symmetry states that the left and right sides of equality are
-equivalent, and that we can swap between them at will. Transitivity gives us a
-sort of "composition" structure on equality, saying that we can combine two
+equivalent, and therefore that we can swap between them at will. Transitivity
+gives us a notion of composition on equality, saying that we can combine two
 proofs of equality into one, if they share an identical member between them.
 
-You will not be surprised to learn that each of these properties makes sense for
-a general relation, simply by replacing the phrase "is equal to" with "is in
-relation with" above. Of course, not every relation satisfies each of these
-properties, but having some shared vocabulary gives us things to look out for
-when designing our own relations.
+In order to generalize these properties, we need only replace the phrase "is
+equal to" with "is in relation with." Not every relation satisfies each of these
+properties of course, but having some shared vocabulary gives us things to look
+out for when designing our own relations.
 
-The first step is to formalize each of these notions. We can encode reflexivity
-as a proposition about a given relation:
-
+The first step is to formalize each of these notions in the flavor of
+`type:Functional` and `type:Total` above. We can encode reflexivity as a
+proposition stating that all elements are related to themselves:
 
 ```agda
-  private variable
-    a ℓ : Level
-    A : Set a
-
   Reflexive : Rel A ℓ → Set _
-  Reflexive _~_ =
-    ∀ {x} → x ~ x
+  Reflexive {A = A} _~_
+    = {x : A} → x ~ x
 ```
 
-We read this as saying "`_~_` is a reflexive relation if it satisfies the
-property that for any `x`, it is the case that `x ~ x`." Symmetry and
-transitivity follow similarly:
+Similarly, symmetry is nothing other than a function which swaps the two sides
+of the relation:
 
 ```agda
   Symmetric : Rel A ℓ → Set _
-  Symmetric _~_ =
-    ∀ {x y} → x ~ y → y ~ x
+  Symmetric {A = A} _~_
+    = {x y : A} → x ~ y → y ~ x
+```
 
+and transitivity merely glues two related terms together if they share one side
+in common:
+
+```agda
   Transitive : Rel A ℓ → Set _
-  Transitive _~_ =
-    ∀ {x y z} → x ~ y → y ~ z → x ~ z
+  Transitive {A = A} _~_
+    = {x y z : A} → x ~ y → y ~ z → x ~ z
 ```
 
-As it happens, reflexivity, symmetry and transitivity are the definition
-characteristics of an *equivalence relation*---that is a relation that behaves
-like we expect equality to. We can *bundle* these properties together for a
-given relation, to show that it is indeed an equivalence relation.
-
-```agda
-  record IsEquivalence
-          {A : Set a} (_~_ : Rel A ℓ) : Set (a ⊔ ℓ) where
-    field
-      refl   : Reflexive   _~_
-      sym    : Symmetric   _~_
-      trans  : Transitive  _~_
-```
-
-It's easy to show that `type:_≡_` forms an equivalence relation, since we came up
-with the idea by thinking about `type:_≡_` in the first place. The hardest part here
-is wrangling the namespacing, since we now have two things called `ctor:refl`: the
-specific definition for `type:_≡_`, and the abstract property from `type:IsEquivalence`.
-We can dodge the issue by renaming the `module:PropositionalEquality` module down to
-`module:PropEq`:
-
-```agda
-  module Example₃ where
-    module PropEq = Chapter3-Proofs.Exports
-```
-
-at which point, building the proof that `type:_≡_` is an equivalence relationship is
-trivial:
-
-```agda
-    open IsEquivalence
-
-    ≡-equiv : IsEquivalence {A = A} _≡_
-    refl   ≡-equiv = PropEq.refl
-    trans  ≡-equiv = PropEq.trans
-    sym    ≡-equiv = PropEq.sym
-```
-
-We will explore equivalence relations in further detail soon when we discuss
-setoids.
+Now that we have some common things to look for, let's dive into designing some
+new relations and see what shakes out.
 
 
-## Fighting with Agda to Compute on Indices {#sec:fight-indices}
+## Attempting to Order the Naturals
 
-We have now spent several chapters discussing equality and inequality, but what
-about things like "less than or equal to." *Orderings* like these are relations
-in their own regard, and as you might expect, they are just as amenable to
-formalization in Agda as their more exact counterparts.
+We have now spent several chapters discussing numbers and equality, but what
+about concepts like "less than or equal to?" *Orderings* like these are
+relations in their own regard, and as you might expect, they are just as
+amenable to formalization in Agda as their more exact counterparts.
+
+The first thing to notice is that this is not a *general* notion---it is very
+much tied to the natural numbers. We can't build generic machinery that would
+allow us to say a value of some arbitrary type is less than some other value of
+the same. While there are many types that *do* admit the notion of an ordering
+relationship, the nature of that relationship must be specialized for each
+type. Besides, we don't even have a guarantee such an ordering would be
+unique---for example, we might choose to order strings lexicographically or by
+length. One might be the more familiar choice, but it's hard to argue that one
+is *more correct* than the other.
 
 A surprising amount of care is required in order to implement an ordering on the
 natural numbers. There are many gotchas here that serve to illustrate a valuable
 lesson in designing types in Agda, and so it is worthwhile to go slowly, take
 our time, and learn what can go wrong.
 
-How can we prove that one number is less than or equal to another? Recalling
-that there do not exist any negative natural numbers, one possible way is to say
-that $x \le y$ if there exists some $z$ such that $x + z = y$. Thus in order to
-show reflexivity, we simply use $x = 0$. We can set this up, first by importing
-our relation machinery from the standard library:
+How can we prove that one number is less than or equal to another? Recall
+that there do not exist any negative natural numbers, so one possible means is
+to say that $x \le y$ if there exists some $z$ such that $x + z = y$. We can set
+this up, first by importing our previously-defined machinery directly from the
+standard library:
 
 ```agda
 open import Relation.Binary
-  using (Rel; Reflexive; Transitive; Symmetric; IsEquivalence)
-
-module PropEq = Chapter3-Proofs.Exports
-
-module Sandbox-Orderings where
-  open import Data.Nat
-    using (ℕ; _+_; zero; suc)
+  using (Rel; Reflexive; Transitive; Symmetric)
 ```
 
 With surprising prescience, I can tell you that our first attempt at
-implementing `type:_≤_` is going to fail, so let's make a new module and define our
-type:
+implementing `type:_≤_` ([le](AgdaMode)) is going to fail, so let's make a new
+module and define our type:
 
 ```agda
-  module Naive-≤₁ where
-    infix 4 _≤_
-    data _≤_ : Rel ℕ lzero where
-      lte : (a b : ℕ) → a ≤ a + b
+module Naive-≤₁ where
+  data _≤_ : Rel ℕ lzero where
+    lte : (a b : ℕ) → a ≤ a + b
+  infix 4 _≤_
 ```
 
 To a first approximation, it seems to work:
 
 ```agda
-    _ : 2 ≤ 5
-    _ = lte 2 3
+  _ : 2 ≤ 5
+  _ = lte 2 3
 ```
 
-Indeed, Agda can even solve this for us via [`Auto`](AgdaCmd). One of the few
-things we can prove about `type:_≤_` defined in this way is that `suc` is
-*monotonic*---that is, that if `x ≤ y`, then `suc x ≤ suc y`:
+Indeed, Agda can even solve the above definition for us via [`Auto`](AgdaCmd).
+One of the few things we can prove about `type:_≤_` defined in this way is that
+`ctor:suc` is *monotonic*---that is, that if `bind:x y:x ≤ y`, then
+`bind:x y:suc x ≤ suc y`:
 
 ```agda
-    suc-mono : {x y : ℕ} → x ≤ y → suc x ≤ suc y
-    suc-mono (lte x y) = lte (suc x) y
+  suc-mono : {x y : ℕ} → x ≤ y → suc x ≤ suc y
+  suc-mono (lte x y) = lte (suc x) y
 ```
 
 If you attempted to write this for yourself, you might have been surprised that
-[`Refine`](AgdaCmd) refused to fill in the fill in the right-hand side with the
-`ctor:lte` constructor, instead complaining about "no introduction forms found." This
-is a little surprising, but the above definition does in fact work, so we will
-not yet worry too much about it.
+[`Refine`](AgdaCmd) refused to introduce the `ctor:lte` constructor, instead
+complaining about "no introduction forms found." This is a little surprising,
+since the above definition *does* in fact work. Let's agree to scratch our
+collective heads and hope nothing else weird happens.
 
-Things however, go much more wrong when we try to show `def:≤-refl`:
+Something else weird does in fact to happen when we try to show
+`def:≤-refl`---which we should be able to do by picking $y = 0$:
 
-```wrong
-    ≤-refl : Reflexive _≤_
-    ≤-refl {x} = lte x 0
+```illegal
+  ≤-refl⅋⅋ : Reflexive _≤_
+  ≤-refl⅋⅋ {x} = lte x 0
 ```
 
-Attempting to do so presents us with the following error:
+Giving this definition results in an error from Agda:
 
 ```info
 x + 0 != x of type ℕ
@@ -741,28 +751,40 @@ when checking that the expression lte x 0 has type x ≤ x
 ```
 
 Unperturbed, we can try hitting `def:≤-refl` with some of our other proof
-techniques, and see if we can make progress on it in that way. Don't worry,
-we'll circle back to this and see what has gone wrong, but for now, let's
-proceed with naught but brute force and ignorance. Instead, we can try splitting
-on `x`:
+techniques, and see if we can make progress on it in that way. Let's proceed
+with naught but brute force and ignorance, seeing if we can nevertheless bend
+Agda to our will. Try running [MakeCase:x](AgdaCmd):
 
 ```agda
-    ≤-refl⅋₀ : Reflexive _≤_
-    ≤-refl⅋₀ {zero} = lte zero zero
-    ≤-refl⅋₀ {suc x} = ?
+  ≤-refl⅋₀ : Reflexive _≤_
+  ≤-refl⅋₀ {zero}   = {! !}
+  ≤-refl⅋₀ {suc x}  = {! !}
 ```
 
-We clearly need recursion here, so we can try a `with` abstraction:
+It's easy to fill the first hole:
 
 ```agda
-    ≤-refl⅋₁ : Reflexive _≤_
-    ≤-refl⅋₁ {zero} = lte zero zero
-    ≤-refl⅋₁ {suc x} with ≤-refl⅋₁ {x}
-    ... | x≤x = ?
+  ≤-refl⅋₁ : Reflexive _≤_
+  ≤-refl⅋₁ {zero}   = lte zero zero
+  ≤-refl⅋₁ {suc x}  = {! !}
 ```
 
-The usual response now is to try pattern matching on `z`. But attempting to do
-so completely fails, with the mysterious problem:
+This remaining goal has type `bind:x:suc x ≤ suc x`, which sounds like the sort
+of thing we need recursion to solve. So we can introduce a `keyword:with`
+abstraction:
+
+```agda
+  ≤-refl⅋₂ : Reflexive _≤_
+  ≤-refl⅋₂ {zero} = lte zero zero
+  ≤-refl⅋₂ {suc x}
+    with ≤-refl⅋₂ {x}
+  ... | x≤x = ?
+```
+
+giving us `x≤x` whose type is, appropriately, `bind:x:x ≤ x`. The usual move here
+would be to pattern match on `x≤x` to open up its `ctor:lte` constructor, insert
+a `ctor:suc`, and be on our merry way. Putting that plan into action, however,
+immediately goes awry when we run [MakeCase:x≤x](AgdaCmd):
 
 ```info
 I'm not sure if there should be a case for the constructor lte,
@@ -777,71 +799,76 @@ Possible reason why unification failed:
 when checking that the expression ? has type suc x ≤ suc x
 ```
 
-Not to be discouraged, we spot that `x≤x` has a satisfactory type for us to
-invoke `def:suc-mono` and be done with the proof:
+Yikes! Something has gone horribly, horribly wrong. Let's turn our attention to
+this problem momentarily, but out of sheer cheekiness, we can complete the proof
+nevertheless. Spotting that `x≤x` has a satisfactory type for us to invoke
+`def:suc-mono` is sufficient to make progress and fill our final hole:
 
 ```agda
-    ≤-refl : Reflexive _≤_
-    ≤-refl {zero} = lte zero zero
-    ≤-refl {suc x} with ≤-refl {x}
-    ... | x≤x = suc-mono x≤x
+  ≤-refl : Reflexive _≤_
+  ≤-refl {zero} = lte zero zero
+  ≤-refl {suc x} with ≤-refl {x}
+  ... | x≤x = suc-mono x≤x
 ```
 
 
-## Substitution
+## Substitution {#sec:subst}
 
 A surprising number of things went wrong when putting together such a simple
-proof. Let's analyze them together to see what exactly happened. Recall our
-original implementation:
+proof! Let's together analyze each of them in order to see what exactly
+happened. Recall our original implementation which we assumed would work:
 
-```wrong
-    ≤-refl : Reflexive _≤_
-    ≤-refl {x} = lte x 0
+```illegal
+  ≤-refl⅋⅋⅋⅋ : Reflexive _≤_
+  ≤-refl⅋⅋⅋⅋ {x} = lte x 0
 ```
 
-with the error:
+However, Agda gave us this error instead:
 
 ```info
 x + 0 != x of type ℕ
 when checking that the expression lte x 0 has type x ≤ x
 ```
 
-The problem here is that `lte x 0` has type `x ≤ x + 0`, but we are trying to
-assign to `def:≤-refl` which has type `x ≤ x`. You and I know these are the same
-thing, but recall that we did have to prove `def:+-identityʳ` all those chapters ago
-in order to convince Agda of this exact fact. There does exist standard (though
-heavy-handed) machinery for rewriting propositional equalities at the
-type-level, like is required here. This machinery is called `def:subst`, short for
+The problem here is that `bind:x:lte x 0` has type `bind:x:x ≤ x + 0`. From our
+discussion in @sec:cong, we saw just how much work it was to convince Agda that
+$x = x + 0$---we had to go through all the work of proving `def:+-identityʳ`!
+
+Thankfully, that work is not lost to us, and we can reuse it here by way of some
+standard (if heavy-handed) machinery for rewriting propositional equalities at
+the level of types. This machinery is called `def:subst`, short for
 *substitution*:
 
 ```agda
-    open PropEq using (refl)
+  open Chapter3-Proofs.Exports
+    using (refl; +-identityʳ)
 
-    subst
-        : {A : Set} {x y : A}
-        → (P : A → Set)  -- ! 1
-        → x ≡ y
-        → P x → P y
-    subst _ refl px = px
+  subst
+      : {x y : A}
+      → (P : A → Set ℓ)  -- ! 1
+      → x ≡ y
+      → P x → P y
+  subst _ refl px = px
 ```
 
-You can think of `def:subst` as a type-level `def:cong`, as it serves the same purpose.
-At [1](Ann) it takes an argument `P` which is responsible for pointing out where
-you'd like the substitution to happen. To illustrate this, we can implement
-`def:≤-refl` via `def:subst`, though the experience is decidedly less than wholesome:
+You can think of `def:subst` as a type-level `def:cong`, as it serves the same
+purpose. At [1](Ann) it takes an argument `P` which is responsible for pointing
+out where you'd like the substitution to happen---completely analogous to the
+function we gave to `def:cong` for targeting where the rewrite should occur.
+
+To illustrate the use of `def:subst`, we can reimplement `def:≤-refl` in terms
+of it---though the experience is decidedly less than wholesome:
 
 ```agda
-    open Chapter3-Proofs.Exports
-     using (+-identityʳ)
-
-    ≤-refl′ : Reflexive _≤_
-    ≤-refl′ {x} = subst (x ≤_) (+-identityʳ x) (lte x 0)
+  ≤-refl′ : Reflexive _≤_
+  ≤-refl′ {x} = subst (λ φ → x ≤ φ) (+-identityʳ x) (lte x 0)
 ```
 
-It's nice to know about `def:subst`, but as a good rule of thumb, if you find
-yourself reaching for it more than a handful of times, you've painted yourself
-into a corner when you originally put together a definition somewhere. Requiring
-substitution is usually a symptom of an upstream problem.
+It's nice to know that `def:subst` exists, but as a good rule of thumb, it's
+usually the wrong tool for the job. When you find yourself reaching for
+`def:subst` over and over again, it's indicative that you've painted yourself
+into a corner and wrote a bad definition somewhere. Requiring substitution is
+usually a symptom of an upstream problem.
 
 
 ## Unification
@@ -851,31 +878,35 @@ be solved via `def:subst`. Recall our attempt to pattern match on `x≤x` in the
 following:
 
 ```agda
-    ≤-refl⅋₂ : Reflexive _≤_
-    ≤-refl⅋₂ {zero} = lte zero zero
-    ≤-refl⅋₂ {suc x} with ≤-refl⅋₂ {x}
-    ... | x≤x = ?
+  ≤-refl⅋₃ : Reflexive _≤_
+  ≤-refl⅋₃ {zero} = lte zero zero
+  ≤-refl⅋₃ {suc x} with ≤-refl⅋₂ {x}
+  ... | x≤x = ?
 ```
 
-to which Agda replies:
+to which Agda replied:
 
 ```info
 I'm not sure if there should be a case for the constructor lte
 ```
 
-Of course there should be a case for the constructor `ctor:lte`, since it's *the only
-constructor.* But what has gone wrong here, and what can we do about it? The
-problem is that Agda usually really good at pattern matching, and elides
-impossible patterns if the constructor doesn't match. In this case, Agda can't
-decide if the `ctor:lte` constructor *should definitely* be there, or should
-definitely *not be.*
+For goodness sake's, *of course* there should be a case for the constructor
+`ctor:lte`; *it's the only constructor after all!* Our indignation is well
+deserved, but it's more instructive to think about what has gone wrong here, and
+what can we do about it?
 
-Internally, Agda implements this functionality by attempting to *unify* the
-indices on type's constructors with the indices of your expression. In this
-case, we have `x≤x : x ≤ x`, which Agda needs to unify (match syntactically)
-against `ctor:lte` whose eventual indices are `?a ≤ ?a + ?b` (after some renaming to
-avoid confusion.) This sets up the following series of equations that Agda must
-solve:
+The problem is that Agda is usually really good at pattern matching, eliding
+impossible patterns whenever the constructor can't possibly match. In this case,
+Agda somehow can't decide if the `ctor:lte` constructor should definitely be
+there, or whether it definitely shouldn't be. How can this be so?
+
+Internally, Agda implements this functionality by attempting to *unify*---that
+is, via matching syntactically---the indices on type's constructors with the
+indices of your expression. In this case, we have `x≤x` `:` `bind:x:x ≤ x`,
+which Agda needs to unify against `ctor:lte` whose eventual indices are
+`bind:?a ?b:?a ≤ ?a + ?b` (after some renaming to avoid confusion.)
+
+Doing so sets up the following series of equations that Agda must solve:
 
 $$
 \begin{aligned}
@@ -884,22 +915,22 @@ $$
 \end{aligned}
 $$
 
-where `~` means "unifies to" rather than being used as a generic name for a
-relation like we did above. In order to correctly determine if a constructor
-needs to exist in a pattern match, every *metavariable* (here, `?a` and `?b`)
-must unify to something. While it's easy to unify `?a` with `x` from the first
-equation, there is no way to syntactically match `?a + ?b` with `x`. Even after
-replacing `?a`, we get `x + ?b = x`.
+where we read `~` as "unifies to." In order to correctly determine if a
+constructor needs to exist in a pattern match, Agda must be able to
+syntactically assign an expression to each *metavariable* (here, `?a` and `?b`.)
+While we can use the first equation to unify `?a` with `x`, equation, there is
+no way to syntactically unify `?a + ?b` with `x`. Even after replacing `?a`, we
+get `x + ?b ~ x`.
 
--- TODO(sandy): THE ABOVE PARAGRAPH IS NOT TRUE
+The problem is that there's no syntactic way to get the `?b` term all on its own
+in the equation `x + ?b ~ x`. You and I know that the only solution to this
+problem is that `?b = 0`, but this is a statement about number theory, and Agda
+doesn't know anything about number theory. The pattern checker knows only about
+syntax and computation, neither of which make progress here.
 
-
-You and I know that the only solution to this problem is that `?b = 0`, but this
-is a statement about number theory, and Agda doesn't know anything about number
-theory. In its pattern checker, all it knows about is computation and syntax,
-neither of which is of use here. So, because there is no way to syntactically
-assign an expression to `?b`, Agda gets stuck and throws up its hands in
-confusion.
+Since there is no way to solve the unification problem `x + ?b ~ x`, Agda throws
+up its hands and calls uncle. Unfortunately, it chooses to do so with an
+extremely unhelpful error.
 
 One possible solution here would be for Agda to simply allow you to give cases
 that it can't be sure about, but this leads to downstream typechecking issues
@@ -912,29 +943,30 @@ ways here, except to point out how to avoid the situation altogether.
 
 ## Overconstrained by Dot Patterns {#sec:dot-patterns}
 
-But first, one last subtle point about unification. Rather surprisingly, we
-successfully implemented `def:suc-mono`, without encountering the dreaded "not sure
-if there should be a case" problem. How can that have happened? We can get a
-sense of the unification algorithm going on behind the scenes by explicitly
-binding our implicit arguments:
+One last subtle point about unification: rather surprisingly, we successfully
+implemented `def:suc-mono`, without encountering the dreaded "not sure if there
+should be a case" problem. How can that have happened? We can get a feeling for
+the unification algorithm behind the scenes by explicitly binding our
+implicit arguments:
 
 ```agda
-    suc-mono′⅋₀ : {x y : ℕ} → x ≤ y → suc x ≤ suc y
-    suc-mono′⅋₀ {x} {y} x≤y = ?
+  suc-mono′⅋₀ : {x y : ℕ} → x ≤ y → suc x ≤ suc y
+  suc-mono′⅋₀ {x} {y} x≤y = ?
 ```
 
 Doing a [`MakeCase:x≤y`](AgdaCmd) in this hole will correctly split apart the
 `x≤y`, but in doing so, will also leave behind dot patterns for variables that
-it unified in the process. Recall that dot patterns correspond to equalities
-that must hold due to evidence being matched on somewhere else, so this is a
-good way to see what Agda has solved.
+it unified in the process. Recall that dot patterns correspond arise from a
+constructor showing you which indices it must have, and constraining other
+variables in the process. Thus, dot patterns are an excellent way to look at
+what exactly Agda has solved:
 
 ```agda
-    suc-mono′⅋₁ : {x y : ℕ} → x ≤ y → suc x ≤ suc y
-    suc-mono′⅋₁ {x} {.(x + b)} (lte .x b) = lte (suc x) b
+  suc-mono′⅋₁ : {x y : ℕ} → x ≤ y → suc x ≤ suc y
+  suc-mono′⅋₁ {x} {.(x + b)} (lte .x b) = lte (suc x) b
 ```
 
-It's worth going through the constraints being solved here. In splitting `ctor:lte`,
+It's worth going through the solved constraints here. In splitting `ctor:lte`,
 Agda introduced two new variables, `a` and `b`, subject to the constraints:
 
 $$
@@ -956,12 +988,12 @@ $$
 which corresponds exactly to how Agda filled in the dot patterns in
 `def:suc-mono′⅋₁` above.
 
-Rather interestingly, we can implement a monomorphic version of `def:suc-mono′⅋₁` by
-restricting its type:
+Rather interestingly, we can implement a monomorphic version of
+`def:suc-mono′⅋₁` by restricting its type:
 
 ```agda
-    suc-mono-mono⅋₁ : {x : ℕ} → x ≤ x → suc x ≤ suc x
-    suc-mono-mono⅋₁ = suc-mono′⅋₁
+  suc-mono-mono⅋₁ : {x : ℕ} → x ≤ x → suc x ≤ suc x
+  suc-mono-mono⅋₁ = suc-mono′⅋₁
 ```
 
 but we *cannot* inline the definition of `def:suc-mono′⅋₁` here, since we will get
@@ -981,60 +1013,43 @@ b` *somewhere* in the pattern match, but the only variable that isn't already
 spoken for is `b` itself, and we don't have `b` isolated in our equation. Thus,
 the constraint can't be satisfied, and therefore we are stuck.
 
-> isovector: i've picked up the folklore that one shouldn't use computing terms as type indices because it gets agda stuck when you try to pattern match on it
->
-> isovector: this is true but it's not really the full story
->
-> isovector: the problem is not the computation per se, it's that when you pattern match and bring these constraints into scope, the only solution agda has is to introduce a dot pattern
->
-> isovector: the dot pattern reifies the constraint at the cost of eliminating one of your variables
->
-> isovector: eventually you run out of free variables and there's nowhere else to stick an additional constraint, and then agda says "sorry, i don't know if there should be a constructor"
->
-> isovector: when you have a constructor index instead, agda doesn't need the dot pattern and so you get to keep your variables free
->
-> isovector: and thus you avoid overconstraining the solution space
+The Agda folklore warns that one ought not use computing terms (that is to say,
+anything other than constructors) as type indices---for exactly this reason.
+This happens to be true, but as we have seen above, it's not the whole story.
+The problem is not with computation per se, it's that when you pattern match and
+bring these constraints into scope, they don't work out to nice constructors
+that Agda can immediately pattern match on.
 
--- TODO(sandy): hammer home this point somewhere (but maybe not here)
+Instead, Agda's only recourse is to introduce a dot pattern, which reifies the
+computation, but at the cost of eliminating one of your bindings---that is, by
+removing a degree of freedom. When you run out of bindings, Agda has nowhere to
+reify these additional constraints, and you get the dreaded "I'm not sure if
+there should be a case" error.
+
+The takeaway here is that type indices should always be bindings or
+constructors, but never function calls---doing so risks running out of places to
+put the indices and will prevent Agda from being able to pattern match on your
+type. This is a particularly insidious problem because the errors happen far
+away from the definition, and can be hard to diagnose without constant
+vigilance.
 
 
 ## Ordering the Natural Numbers
 
-What should be the takeaway from this extremely long digression on Agda's sharp
-edges when it comes to indexed data types? It's that when you pattern match on a
-type index that contains a computation, Agda replaces a variable with a dot
-pattern for each constraint, and if you ever run out of variables, Agda gives up
-and refuses to pattern match on your constructor.
+Having worked through this extremely long digression on the nature of Agda's
+ability to perform pattern matching, we should now see what's gone wrong with
+our first definition of `type:_≤_` and know how to fix it.
 
 The solution here is to prevent Agda from introducing dot patterns, and the
 simplest way to do *that* is to only ever use *constructors* as indices to your
 data type.
 
--- splice me in, papa
-
-## Comparing Natural Numbers {#sec:comparing}
-
-While that's quite enough about equality, we we would like to say something
-about inequalities---in this case, the sort that describe when one number is
-less than or equal to another.
-
-The first thing to notice is that this is not a *general* notion---it is very
-much tied to the natural numbers. We can't build generic machinery that would
-allow us to say a value of some arbitrary type is less than some other value of
-the same. While there are many types that *do* admit the notion of an ordering
-relationship, the nature of that relationship must be specialized for each
-type. Besides, we don't even have a guarantee such an ordering would be
-unique---for example, we might choose to order strings lexicographically or by
-length. One might be the more familiar choice, but it's hard to argue that one
-is *more correct* than the other.
-
-With that being said, how can we give a type that relates one number to all the
-numbers greater than (or equal) to it?
-
 A good way to proceed here is to work backwards; starting from each constructor,
-to determine how to use that to show a less-than-or-equal-to relationship. The
-case of `ctor:zero` is easy, since `ctor:zero` is the smallest element, we have
-the case that `ctor:zero` `type:≤` `n`, for any other number `n`!
+we can determine how to it in order to show our desired less-than-or-equal-to
+relationship.
+
+The case of `ctor:zero` is easy, since `ctor:zero` is the smallest element, we
+have the case that `ctor:zero` `type:≤` `n`, for any other number `n`!
 
 In the case of `ctor:suc`, we know that `ctor:suc` `m` `type:≤` `ctor:suc` `n`
 if and only if `m` `type:≤` `n` in the first place. This gives rise to a very
@@ -1042,9 +1057,12 @@ natural type:
 
 ```agda
 module Definition-LessThanOrEqualTo where
-  data _≤_ : ℕ → ℕ → Set where
+  open Chapter3-Proofs.Exports using (refl)
+
+  data _≤_ : Rel ℕ lzero where
     z≤n : {n : ℕ} → zero ≤ n
     s≤s : {m n : ℕ} → m ≤ n → suc m ≤ suc n
+  infix 4 _≤_
 ```
 
 Hidden
@@ -1053,7 +1071,7 @@ Hidden
   -- fix expr
       ```
 
-We can now try to prove that `expr:2 ≤ 5`. Begin with a quick type:
+Let's now again prove that `expr:2 ≤ 5`. Begin with a quick type:
 
 ```agda
   _ : 2 ≤ 5
@@ -1089,13 +1107,24 @@ now fits, which completes the definition:
   _ = s≤s (s≤s z≤n)
 ```
 
-We will have much more to say about the `type:_≤_` type in @sec:fight-indices,
-where we will explore why exactly we chose this particular encoding, and what
-goes wrong if we were to make a different choice. For now, however, try your
-hand at proving the reflexivity and transitivity of `type:_≤_`:
+Thankfully, all our hard work now pays off, as we are able to implement our
+desired `def:suc-mono` and `def:≤-refl` without any further hassle.
 
 
 Exercise (Trivial)
+
+:   Prove `def:suc-mono` `:` `expr:{x y : ℕ} → x ≤ y → suc x ≤ suc y`.
+
+
+Solution
+
+:   ```agda
+  suc-mono : {x y : ℕ} → x ≤ y → suc x ≤ suc y
+  suc-mono = s≤s
+    ```
+
+
+Exercise (Easy)
 
 :   Prove `def:≤-refl` `:` `expr:{x : ℕ} → x ≤ x`.
 
@@ -1115,11 +1144,11 @@ Exercise (Easy)
 
 :     ```agda
   ≤-trans : {x y z : ℕ} → x ≤ y → y ≤ z → x ≤ z
-  ≤-trans {zero} x≤y y≤z       = z≤n
+  ≤-trans z≤n  y≤z       = z≤n
   ≤-trans (s≤s x≤y) (s≤s y≤z)  = s≤s (≤-trans x≤y y≤z)
       ```
 
-Exercise (Trivial)
+Exercise (Easy)
 
 :   Prove `def:≤-suc` `:` `expr:(x : ℕ) → x ≤ suc x`.
 
@@ -1128,6 +1157,22 @@ Exercise (Trivial)
   ≤-suc zero     = z≤n
   ≤-suc (suc x)  = s≤s (≤-suc x)
       ```
+
+Does our shiny new `type:_≤_` support symmetry? A moment's thought convinces us
+that there can be no symmetry for `type:_≤_`. Just because $2 \le 5$ doesn't
+mean that $5 \le 2$.
+
+However, `type:_≤_` does satisfy a related notion, that of *antisymmetry.*
+Antisymmetry says that if we know $m \le n$ and that $n \le m$, then it must be
+the case that $m = n$. Proving the antisymmetry of `type:_≤_` is rather
+straightforward:
+
+```agda
+  ≤-antisym : {m n : ℕ} → m ≤ n → n ≤ m → m ≡ n
+  ≤-antisym z≤n z≤n = refl
+  ≤-antisym (s≤s m≤n) (s≤s n≤m) =
+    cong suc (≤-antisym m≤n n≤m)
+```
 
 Sometimes we might want a *strict* less-than, without any of this "or equal to"
 stuff. That's easy enough; we can just insert a `ctor:suc` on the right side:
@@ -1139,69 +1184,12 @@ stuff. That's easy enough; we can just insert a `ctor:suc` on the right side:
 
 
 
---
---
---
-
-What does this mean in the context of giving a `type:_≤_` ordering on natural
-numbers? Recall that `type:_≤_` is indexed by two naturals, and so we must build our
-indices out of only `zero` and `suc`. This is a dramatic constraint on the forms
-that our datatype can take, and it subsequently informs the entire definition.
-
-```agda
-module Definition-LessThanOrEqualTo2 where
-  private variable
-    m n p : ℕ
-
-  data _≤_ : Rel ℕ lzero where
-    z≤n : zero ≤ n
-    s≤s : m ≤ n → suc m ≤ suc n
-  infix 4 _≤_
-```
-
-With only constructors to be found in our indices, we have successfully fended
-off all of Agda's future complains that it might not know how to pattern match
-on `type:_≤_`. We can now return our attention to determining which of the relation
-properties hold for `type:_≤_`. As we have seen before, reflexivity holds, and is now
-much easier to implement:
-
-```agda
-  ≤-refl : Reflexive _≤_
-  ≤-refl {zero}   = z≤n
-  ≤-refl {suc x}  = s≤s ≤-refl
-```
-
-We also have transitivity:
-
-```agda
-  ≤-trans : Transitive _≤_
-  ≤-trans z≤n n≤p = z≤n
-  ≤-trans (s≤s m≤n) (s≤s n≤p) = s≤s (≤-trans m≤n n≤p)
-```
-
-What about symmetry? A moment's thought convinces us that there is no symmetry
-for `type:_≤_`. Just because $2 \le 5$ doesn't mean that $5 \le 2$. However, this
-relation does satisfy a related notion, that of *antisymmetry.* Antisymmetry
-says that if we know $m \le n$ and that $n \le m$, then the only solution is if
-$m = n$. This is not very hard to show:
-
-```agda
-  ≤-antisym : m ≤ n → n ≤ m → m ≡ n
-  ≤-antisym z≤n z≤n = PropEq.refl
-  ≤-antisym (s≤s m≤n) (s≤s n≤m) =
-    cong suc (≤-antisym m≤n n≤m)
-```
-
 In addition, we can generalize this type to something more reusable, like we did
 with `type:Reflexive`, `type:Symmetric` and `type:Transitive`. This one is a
 little trickier, since it's really a property of *two* relations: one
 corresponding to equality, and another to the ordering:
 
 ```agda
-  private variable
-    a ℓ ℓ₁ ℓ₂ : Level
-    A : Set a
-
   Antisymmetric
       : Rel A ℓ₁
       → Rel A ℓ₂
@@ -1222,6 +1210,7 @@ transitivity---are so common that they have a bespoke name. We call such things
 
 
 ```agda
+module okdad where
   record IsPreorder
           {A : Set a} (_~_ : Rel A ℓ) : Set (a ⊔ ℓ) where
     field
@@ -1238,15 +1227,15 @@ challenging, and [`Auto:≤-refl ≤-trans`](AgdaCmd) will actually write the
 necessary definition for you:
 
 ```agda
-  ≤-preorder⅋₀ : IsPreorder _≤_
-  ≤-preorder⅋₀ = {! ≤-refl ≤-trans !}
+  -- ≤-preorder⅋₀ : IsPreorder _≤_
+  -- ≤-preorder⅋₀ = {! ≤-refl ≤-trans !}
 ```
 
 which results in:
 
 ```agda
-  ≤-preorder⅋₁ : IsPreorder _≤_
-  ≤-preorder⅋₁ = record { refl = ≤-refl ; trans = ≤-trans }
+  -- ≤-preorder⅋₁ : IsPreorder _≤_
+  -- ≤-preorder⅋₁ = record { refl = ≤-refl ; trans = ≤-trans }
 ```
 
 As you can see, we can put suggestions for [`Auto`](AgdaCmd) inside the hole,
@@ -1268,8 +1257,8 @@ We can ask Agda to perform a copattern match for us by asking it to
 position your cursor on the hole:
 
 ```agda
-  ≤-preorder⅋₂ : IsPreorder _≤_
-  ≤-preorder⅋₂ = ?
+  -- ≤-preorder⅋₂ : IsPreorder _≤_
+  -- ≤-preorder⅋₂ = ?
 ```
 
 and perform a [`MakeCase:`](AgdaCmd). Agda will replace the definition of
@@ -1277,17 +1266,17 @@ and perform a [`MakeCase:`](AgdaCmd). Agda will replace the definition of
 record.
 
 ```agda
-  ≤-preorder⅋₃ : IsPreorder _≤_
-  IsPreorder.refl   ≤-preorder⅋₃ = {! !}
-  IsPreorder.trans  ≤-preorder⅋₃ = {! !}
+  -- ≤-preorder⅋₃ : IsPreorder _≤_
+  -- IsPreorder.refl   ≤-preorder⅋₃ = {! !}
+  -- IsPreorder.trans  ≤-preorder⅋₃ = {! !}
 ```
 
 These holes are easily filled, as before:
 
 ```agda
-  ≤-preorder : IsPreorder _≤_
-  IsPreorder.refl   ≤-preorder = ≤-refl
-  IsPreorder.trans  ≤-preorder = ≤-trans
+  -- ≤-preorder : IsPreorder _≤_
+  -- IsPreorder.refl   ≤-preorder = ≤-refl
+  -- IsPreorder.trans  ≤-preorder = ≤-trans
 ```
 
 Agda is almost unique among programming languages in its support for copattern
@@ -1320,6 +1309,7 @@ Exercise
 Solution
 
 :         ```agda
+  open import Relation.Binary using (IsEquivalence)
   equiv→preorder : {_~_ : Rel A ℓ}
                  → IsEquivalence _~_ → IsPreorder _~_
   IsPreorder.refl  (equiv→preorder x) = IsEquivalence.refl   x
@@ -1469,7 +1459,8 @@ two terms are propositionally equal, it would be nice to be able to use that
 fact in a reasoning block. Thus, we also include `def:_≡⟨_⟩_`:
 
 ```agda
-    open PropEq using (refl)
+    open Chapter3-Proofs.Exports
+      using (refl)
 
     _≡⟨_⟩_ : (x : A) → ∀ {y z} → x ≡ y → y ~ z → x ~ z
     _ ≡⟨ refl ⟩ y~z = y~z
@@ -1573,6 +1564,8 @@ Let's quickly prove a non-trivial fact about the natural numbers, namely that $n
 \le n + 1$. You should be able to do this sort of thing in your sleep by now:
 
 ```agda
+  open Definition-LessThanOrEqualTo
+
   n≤1+n : (n : ℕ) → n ≤ 1 + n
   n≤1+n zero = z≤n
   n≤1+n (suc n) = s≤s (n≤1+n n)
@@ -1584,12 +1577,12 @@ We can further use this fact and our preorder reasoning in order to show that $n
 ```agda
   open Chapter3-Proofs.Exports using (+-comm)
 
-  n≤n+1⅋₀ : (n : ℕ) → n ≤ n + 1
-  n≤n+1⅋₀ n = begin
-    n      ≈⟨ n≤1+n n ⟩  -- ! 1
-    1 + n  ≡⟨ +-comm 1 n ⟩
-    n + 1  ∎
-    where open PreorderReasoning (≤-preorder)
+  -- n≤n+1⅋₀ : (n : ℕ) → n ≤ n + 1
+  -- n≤n+1⅋₀ n = begin
+  --   n      ≈⟨ n≤1+n n ⟩  -- ! 1
+  --   1 + n  ≡⟨ +-comm 1 n ⟩
+  --   n + 1  ∎
+  --   where open PreorderReasoning (≤-preorder)
 ```
 
 The proof here is fine, but the syntax leaves much to be desired. Notice that at
@@ -1605,13 +1598,13 @@ we import them. We can improve our syntax in the definition of `def:n≤n+1⅋�
 the cost of more boilerplate in the `keyword:where` clause:
 
 ```agda
-  n≤n+1⅋₁ : (n : ℕ) → n ≤ n + 1
-  n≤n+1⅋₁ n = begin
-    n      ≤⟨ n≤1+n n ⟩
-    1 + n  ≡⟨ +-comm 1 n ⟩
-    n + 1  ∎
-    where open PreorderReasoning ≤-preorder
-            renaming (_≈⟨_⟩_ to _≤⟨_⟩_)
+  -- n≤n+1⅋₁ : (n : ℕ) → n ≤ n + 1
+  -- n≤n+1⅋₁ n = begin
+  --   n      ≤⟨ n≤1+n n ⟩
+  --   1 + n  ≡⟨ +-comm 1 n ⟩
+  --   n + 1  ∎
+  --   where open PreorderReasoning ≤-preorder
+  --           renaming (_≈⟨_⟩_ to _≤⟨_⟩_)
 ```
 
 As one final trick, we can package up this choice of `def:≤-preorder` and
@@ -1619,27 +1612,79 @@ subsequent `keyword:renaming` by sticking it into a new module with a public
 open:
 
 ```agda
-  module ≤-Reasoning where
-    open PreorderReasoning ≤-preorder
-      renaming (_≈⟨_⟩_ to _≤⟨_⟩_)
-      public
+  -- module ≤-Reasoning where
+  --   open PreorderReasoning ≤-preorder
+  --     renaming (_≈⟨_⟩_ to _≤⟨_⟩_)
+  --     public
 ```
 
 By now using `module:≤-Reasoning` directly, our proof is much cleaner, and
 therefore much more delightful:
 
 ```agda
-  n≤n+1 : (n : ℕ) → n ≤ n + 1
-  n≤n+1 n = begin
-    n      ≤⟨ n≤1+n n ⟩
-    1 + n  ≡⟨ +-comm 1 n ⟩
-    n + 1  ∎
-    where open ≤-Reasoning
+  -- n≤n+1 : (n : ℕ) → n ≤ n + 1
+  -- n≤n+1 n = begin
+  --   n      ≤⟨ n≤1+n n ⟩
+  --   1 + n  ≡⟨ +-comm 1 n ⟩
+  --   n + 1  ∎
+  --   where open ≤-Reasoning
 ```
 
 Don't be afraid to introduce helper modules that put a specific spin on more
 general notions. Their judicious use can dramatically improve the developer
 experience, whether the developer be you or a user of your library.
+
+
+## GRAVEYARD?
+
+As it happens, reflexivity, symmetry and transitivity are the definitive
+characteristics of an *equivalence relation*---that is a relation that behaves
+exactly like we expect equality to. This is not an accident, as we chose
+those three properties due to our familiarity with equality.
+
+It can be annoying to always pass around these three functions, so instead it's
+common to *bundle* them together into a `keyword:record`:
+
+```agda
+  -- record IsEquivalence {A : Set a} (_~_ : Rel A ℓ) : Set (a ⊔ ℓ) where
+  --   field
+  --     refl   : Reflexive   _~_
+  --     sym    : Symmetric   _~_
+  --     trans  : Transitive  _~_
+```
+
+It's easy to show that `type:_≡_` forms an equivalence relation, since we came up
+with the idea by thinking about `type:_≡_` in the first place. The hardest part here
+is wrangling the namespacing, since we now have two things called `ctor:refl`: the
+specific definition for `type:_≡_`, and the abstract property from `type:IsEquivalence`.
+We can dodge the issue by renaming the `module:PropositionalEquality` module down to
+`module:PropEq`:
+
+```agda
+  module Example₃ where
+    -- module PropEq = Chapter3-Proofs.Exports
+```
+
+at which point, building the proof that `type:_≡_` is an equivalence relationship is
+trivial:
+
+```agda
+    -- open IsEquivalence
+
+    -- ≡-equiv : IsEquivalence {A = A} _≡_
+    -- refl   ≡-equiv = PropEq.refl
+    -- trans  ≡-equiv = PropEq.trans
+    -- sym    ≡-equiv = PropEq.sym
+```
+
+We will explore equivalence relations in further detail soon when we discuss
+setoids.
+
+
+
+
+
+
 
 
 ## Wrapping Up
