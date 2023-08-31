@@ -2380,6 +2380,7 @@ module Exports where
           ;  +-comm       ; *-comm
           ;  ^-identityʳ
           ;  ≤-refl       ; ≤-trans
+          ;  +-suc
           )
     public
 ```

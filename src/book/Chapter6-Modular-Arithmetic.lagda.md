@@ -4,6 +4,23 @@
 module Chapter6-Modular-Arithmetic where
 ```
 
+Prerequisites
+
+:   ```agda
+import Chapter2-Numbers
+open Chapter2-Numbers.Exports
+  using (ℕ; _+_; _*_)
+open ℕ
+    ```
+
+:   ```agda
+import Chapter3-Proofs
+import Chapter4-Relations
+import Chapter5-Decidability
+open Chapter5-Decidability.Exports
+  using (suc-injective)
+    ```
+
 All of the equivalences we have looked at thus far have been combinators on
 existing equivalences. And of course, we have also seen propositional equality,
 but it's reasonable to wonder whether any of this actually "cashes out" in the
@@ -30,7 +47,7 @@ xn = b + yn$.
 open import Data.Nat using (ℕ; _+_; _*_)
 
 module ModularArithmetic where
-  open import Relation.Binary.PropositionalEquality
+  open Chapter3-Proofs.Exports
     using (_≡_; refl)
 
   infix 4 _≈_⟨mod_⟩
@@ -58,8 +75,8 @@ constant:
 ```agda
 module ℕ/nℕ (n : ℕ) where
   open ModularArithmetic public
-  open import Relation.Binary
-    using (Rel)
+  open Chapter4-Relations.Exports
+    using (Rel; Reflexive; Symmetric; Transitive; IsPreorder; IsEquivalence)
 
   infix 4 _≈_
   _≈_ : Rel ℕ _
@@ -70,11 +87,9 @@ As it happens, `type:_≈_` forms an equivalence relation. Showing reflexivity a
 symmetry is simple enough:
 
 ```agda
-  open Relation.Binary
-    using (Reflexive; Symmetric; Transitive; IsEquivalence)
 
   module _ where
-    open import Relation.Binary.PropositionalEquality
+    open Chapter3-Proofs.Exports
 
     ≈-refl : Reflexive _≈_
     ≈-refl = ≈-mod 0 0 refl
@@ -220,9 +235,9 @@ that `type:_≈_` is an equivalence relation.
 
 ```agda
   ≈-equiv : IsEquivalence _≈_
-  IsEquivalence.refl   ≈-equiv = ≈-refl
-  IsEquivalence.sym    ≈-equiv = ≈-sym
-  IsEquivalence.trans  ≈-equiv = ≈-trans
+  IsPreorder.refl   (IsEquivalence.isPreorder ≈-equiv) = ≈-refl
+  IsPreorder.trans  (IsEquivalence.isPreorder ≈-equiv) = ≈-trans
+  IsEquivalence.sym ≈-equiv = ≈-sym
 ```
 
 Additionally, we can use this fact to get equational reasoning syntax for free,
@@ -230,15 +245,18 @@ via our `module:PreorderReasoning` module from @sec:preorderreasoning.
 
 ```agda
   module ≈-Reasoning where
-    open import Chapter4-Relations
-    open Exports using (IsPreorder; module Preorder-Reasoning)
+    open Chapter4-Relations.Exports
+      using (IsPreorder; module Preorder-Reasoning)
 
     ≈-preorder : IsPreorder _≈_
     IsPreorder.refl   ≈-preorder = ≈-refl
     IsPreorder.trans  ≈-preorder = ≈-trans
 
-    open IsEquivalence ≈-equiv using (sym) public
-    open Preorder-Reasoning ≈-preorder public
+    open IsEquivalence ≈-equiv
+      using (sym)
+      public
+    open Preorder-Reasoning ≈-preorder
+      public
 ```
 
 We're almost ready to build some interesting proofs; but we're going to need to
@@ -260,9 +278,9 @@ Let's prove two more fact "by hand", the fact that $0 = n\text{ (mod
 }n\text{)}$:
 
 ```agda
-  import Relation.Binary.PropositionalEquality as PropEq
-  open import Data.Nat
-  open import Data.Nat.Properties
+  module PropEq = Chapter3-Proofs.Exports
+  open Chapter3-Proofs.Exports
+    hiding (refl; sym)
 
   0≈n : 0 ≈ n
   0≈n = ≈-mod 1 0 PropEq.refl

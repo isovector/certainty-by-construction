@@ -1336,12 +1336,12 @@ three options holds.
 
 As a good exercise, we'd like to show that `type:ℕ` is trichotomous with respect
 to `type:_≡_` and `type:_<_`. Doing so will require a couple of quick lemmas.
-The first, `def:s≤s-injective` states that we can cancel outermost `ctor:suc`
+The first, `def:suc-injective` states that we can cancel outermost `ctor:suc`
 constructors in equality over the naturals:
 
 ```agda
-  s≤s-injective : {x y : ℕ} → suc x ≡ suc y → x ≡ y
-  s≤s-injective refl = refl
+  suc-injective : {x y : ℕ} → suc x ≡ suc y → x ≡ y
+  suc-injective refl = refl
 ```
 
 And the other is that if we know $x \nless y$ then we also know $x + 1 \nless y
@@ -1364,7 +1364,7 @@ simply massaging all six of the refutations in the recursive case:
   <-cmp (suc x) (suc y) with <-cmp x y
   ...  | tri< x<y x≉y x≱y
        = tri<  (s≤s x<y)
-               (λ { sx≈sy → x≉y (s≤s-injective sx≈sy) })
+               (λ { sx≈sy → x≉y (suc-injective sx≈sy) })
                (refute x≱y)
   ...  | tri≈ x≮y x≈y x≱y
        = tri≈  (refute x≮y)
@@ -1372,7 +1372,7 @@ simply massaging all six of the refutations in the recursive case:
                (refute x≱y)
   ...  | tri> x≮y x≉y x>y
        = tri>  (refute x≮y)
-               (λ { sx≈sy → x≉y (s≤s-injective sx≈sy) })
+               (λ { sx≈sy → x≉y (suc-injective sx≈sy) })
                (s≤s x>y)
 ```
 
@@ -1884,7 +1884,7 @@ module Exports where
     public
 
   open import Data.Nat.Properties
-    using (s≤s-injective; <-cmp)
+    using (suc-injective; <-cmp)
     public
 
   open import Relation.Binary.PropositionalEquality
