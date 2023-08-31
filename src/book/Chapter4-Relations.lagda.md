@@ -1345,7 +1345,7 @@ of being a preorder (that is, `type:IsPreorder`) as an argument.
 ## Reasoning over `≤`
 
 Let's quickly prove a non-trivial fact about the natural numbers, namely that $n
-\le n + 1$. You should be able to do this sort of thing in your sleep by now:
+\le 1 + n$. You should be able to do this sort of thing in your sleep by now:
 
 ```agda
 n≤1+n : (n : ℕ) → n ≤ 1 + n
@@ -1364,34 +1364,28 @@ n≤n+1⅋₀ n = begin
   n      ≈⟨ n≤1+n n ⟩  -- ! 1
   1 + n  ≡⟨ +-comm 1 n ⟩
   n + 1  ∎
-  where open PreorderReasoning (≤-preorder)
-```
-
-The proof here is fine, but the syntax leaves much to be desired. Notice that at
-[1](Ann) we are required to use `def:_≈⟨_⟩_` to show that `n ≤ 1 + n`. This
-makes sense to us, since we have just gone through the work of defining preorder
-reasoning. But any hapless soul who happens wander in and look at this proof
-without much context will find themself completely flummoxed. While `≈` is a
-reasonable name for a *generic* preorder, many preorders have existing names that
-it would be preferable to reuse.
-
-Fortunately, Agda comes to our rescue, and allows us to rename identifiers when
-we import them. We can improve our syntax in the definition of `def:n≤n+1⅋₀` at
-the cost of more boilerplate in the `keyword:where` clause:
-
-```agda
-n≤n+1⅋₁ : (n : ℕ) → n ≤ n + 1
-n≤n+1⅋₁ n = begin
-  n      ≤⟨ n≤1+n n ⟩
-  1 + n  ≡⟨ +-comm 1 n ⟩
-  n + 1  ∎
   where open PreorderReasoning ≤-preorder
-          renaming (_≈⟨_⟩_ to _≤⟨_⟩_)
 ```
 
-As one final trick, we can package up this choice of `def:≤-preorder` and
-subsequent `keyword:renaming` by sticking it into a new module with a public
-open:
+Hidden
+
+:   ```agda
+-- fix bind
+    ```
+
+The proof here is fine, but the syntax leaves a little to be desired. Notice
+that at [1](Ann) we are required to use `def:_≈⟨_⟩_` to show that `bind:n:n ≤ 1
++ n`. But (from the perspective of someone reading this code with fresh eyes)
+what the heck is `≈`? We're proving something about `type:_≤_`!
+
+While `≈` is a reasonable name for a *generic* preorder, many preorders have
+existing names that it would be preferable to reuse. In this case, we'd like to
+use `≤`!
+
+The trick, as usual, is to make a new module that `keyword:public`ly opens
+`module:PreorderReasoning`, using `keyword:renaming` to change whatever names
+need work. Furthermore, while we're here, we might as well fill in the preorder
+parameter with `def:≤-preorder`:
 
 ```agda
 module ≤-Reasoning where
@@ -1400,8 +1394,8 @@ module ≤-Reasoning where
     public
 ```
 
-By now using `module:≤-Reasoning` directly, our proof is much cleaner, and
-therefore much more delightful:
+By now using `module:≤-Reasoning` directly, our proof is worthy of much more
+delight:
 
 ```agda
 n≤n+1 : (n : ℕ) → n ≤ n + 1
@@ -1412,7 +1406,7 @@ n≤n+1 n = begin
   where open ≤-Reasoning
 ```
 
-Don't be afraid to introduce helper modules that put a specific spin on more
+Don't feel afraid to introduce helper modules that put a specific spin on more
 general notions. Their judicious use can dramatically improve the developer
 experience, whether the developer be you or a user of your library.
 
