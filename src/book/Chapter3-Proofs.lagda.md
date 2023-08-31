@@ -535,7 +535,7 @@ for a moment, in order to work out this problem of fitting a `ctor:suc` into a
 proof-shaped hole.
 
 
-## Congruence
+## Congruence {#sec:cong}
 
 At first blush, we are trying to solve the following problem:
 
@@ -815,10 +815,11 @@ Identities are not limited to numeric operations. For example, `ctor:false` is
 both a left and right identity for `def:_∨_`, as we can show:
 
 ```agda
-
   ∨-identityˡ : (x : Bool) → false ∨ x ≡ x
   ∨-identityˡ _ = refl
+```
 
+```agda
   ∨-identityʳ : (x : Bool) → x ∨ false ≡ x
   ∨-identityʳ false  = refl
   ∨-identityʳ true   = refl
@@ -840,7 +841,9 @@ zero is both a left and right zero:
 ```agda
   *-zeroˡ : (x : ℕ) → zero * x ≡ zero
   *-zeroˡ _ = refl
+```
 
+```agda
   *-zeroʳ : (x : ℕ) → x * zero ≡ zero
   *-zeroʳ zero = refl
   *-zeroʳ (suc x) = *-zeroʳ x
@@ -863,7 +866,9 @@ element:
 ```agda
   ∨-zeroˡ : (x : Bool) → true ∨ x ≡ true
   ∨-zeroˡ _ = refl
+```
 
+```agda
   ∨-zeroʳ : (x : Bool) → x ∨ true ≡ true
   ∨-zeroʳ false = refl
   ∨-zeroʳ true = refl
