@@ -1210,7 +1210,9 @@ transitivity---are so common that they have a bespoke name. We call such things
 
 
 ```agda
-module okdad where
+module Definition-LessThanOrEqualTo2 where
+  open Definition-LessThanOrEqualTo
+
   record IsPreorder
           {A : Set a} (_~_ : Rel A ℓ) : Set (a ⊔ ℓ) where
     field
@@ -1227,15 +1229,15 @@ challenging, and [`Auto:≤-refl ≤-trans`](AgdaCmd) will actually write the
 necessary definition for you:
 
 ```agda
-  -- ≤-preorder⅋₀ : IsPreorder _≤_
-  -- ≤-preorder⅋₀ = {! ≤-refl ≤-trans !}
+  ≤-preorder⅋₀ : IsPreorder _≤_
+  ≤-preorder⅋₀ = {! ≤-refl ≤-trans !}
 ```
 
 which results in:
 
 ```agda
-  -- ≤-preorder⅋₁ : IsPreorder _≤_
-  -- ≤-preorder⅋₁ = record { refl = ≤-refl ; trans = ≤-trans }
+  ≤-preorder⅋₁ : IsPreorder _≤_
+  ≤-preorder⅋₁ = record { refl = ≤-refl ; trans = ≤-trans }
 ```
 
 As you can see, we can put suggestions for [`Auto`](AgdaCmd) inside the hole,
@@ -1257,8 +1259,8 @@ We can ask Agda to perform a copattern match for us by asking it to
 position your cursor on the hole:
 
 ```agda
-  -- ≤-preorder⅋₂ : IsPreorder _≤_
-  -- ≤-preorder⅋₂ = ?
+  ≤-preorder⅋₂ : IsPreorder _≤_
+  ≤-preorder⅋₂ = ?
 ```
 
 and perform a [`MakeCase:`](AgdaCmd). Agda will replace the definition of
@@ -1266,17 +1268,17 @@ and perform a [`MakeCase:`](AgdaCmd). Agda will replace the definition of
 record.
 
 ```agda
-  -- ≤-preorder⅋₃ : IsPreorder _≤_
-  -- IsPreorder.refl   ≤-preorder⅋₃ = {! !}
-  -- IsPreorder.trans  ≤-preorder⅋₃ = {! !}
+  ≤-preorder⅋₃ : IsPreorder _≤_
+  IsPreorder.refl   ≤-preorder⅋₃ = {! !}
+  IsPreorder.trans  ≤-preorder⅋₃ = {! !}
 ```
 
 These holes are easily filled, as before:
 
 ```agda
-  -- ≤-preorder : IsPreorder _≤_
-  -- IsPreorder.refl   ≤-preorder = ≤-refl
-  -- IsPreorder.trans  ≤-preorder = ≤-trans
+  ≤-preorder : IsPreorder _≤_
+  IsPreorder.refl   ≤-preorder = ≤-refl
+  IsPreorder.trans  ≤-preorder = ≤-trans
 ```
 
 Agda is almost unique among programming languages in its support for copattern
@@ -1577,12 +1579,12 @@ We can further use this fact and our preorder reasoning in order to show that $n
 ```agda
   open Chapter3-Proofs.Exports using (+-comm)
 
-  -- n≤n+1⅋₀ : (n : ℕ) → n ≤ n + 1
-  -- n≤n+1⅋₀ n = begin
-  --   n      ≈⟨ n≤1+n n ⟩  -- ! 1
-  --   1 + n  ≡⟨ +-comm 1 n ⟩
-  --   n + 1  ∎
-  --   where open PreorderReasoning (≤-preorder)
+  n≤n+1⅋₀ : (n : ℕ) → n ≤ n + 1
+  n≤n+1⅋₀ n = begin
+    n      ≈⟨ n≤1+n n ⟩  -- ! 1
+    1 + n  ≡⟨ +-comm 1 n ⟩
+    n + 1  ∎
+    where open PreorderReasoning (≤-preorder)
 ```
 
 The proof here is fine, but the syntax leaves much to be desired. Notice that at
@@ -1598,13 +1600,13 @@ we import them. We can improve our syntax in the definition of `def:n≤n+1⅋�
 the cost of more boilerplate in the `keyword:where` clause:
 
 ```agda
-  -- n≤n+1⅋₁ : (n : ℕ) → n ≤ n + 1
-  -- n≤n+1⅋₁ n = begin
-  --   n      ≤⟨ n≤1+n n ⟩
-  --   1 + n  ≡⟨ +-comm 1 n ⟩
-  --   n + 1  ∎
-  --   where open PreorderReasoning ≤-preorder
-  --           renaming (_≈⟨_⟩_ to _≤⟨_⟩_)
+  n≤n+1⅋₁ : (n : ℕ) → n ≤ n + 1
+  n≤n+1⅋₁ n = begin
+    n      ≤⟨ n≤1+n n ⟩
+    1 + n  ≡⟨ +-comm 1 n ⟩
+    n + 1  ∎
+    where open PreorderReasoning ≤-preorder
+            renaming (_≈⟨_⟩_ to _≤⟨_⟩_)
 ```
 
 As one final trick, we can package up this choice of `def:≤-preorder` and
@@ -1612,22 +1614,22 @@ subsequent `keyword:renaming` by sticking it into a new module with a public
 open:
 
 ```agda
-  -- module ≤-Reasoning where
-  --   open PreorderReasoning ≤-preorder
-  --     renaming (_≈⟨_⟩_ to _≤⟨_⟩_)
-  --     public
+  module ≤-Reasoning where
+    open PreorderReasoning ≤-preorder
+      renaming (_≈⟨_⟩_ to _≤⟨_⟩_)
+      public
 ```
 
 By now using `module:≤-Reasoning` directly, our proof is much cleaner, and
 therefore much more delightful:
 
 ```agda
-  -- n≤n+1 : (n : ℕ) → n ≤ n + 1
-  -- n≤n+1 n = begin
-  --   n      ≤⟨ n≤1+n n ⟩
-  --   1 + n  ≡⟨ +-comm 1 n ⟩
-  --   n + 1  ∎
-  --   where open ≤-Reasoning
+  n≤n+1 : (n : ℕ) → n ≤ n + 1
+  n≤n+1 n = begin
+    n      ≤⟨ n≤1+n n ⟩
+    1 + n  ≡⟨ +-comm 1 n ⟩
+    n + 1  ∎
+    where open ≤-Reasoning
 ```
 
 Don't be afraid to introduce helper modules that put a specific spin on more
@@ -1662,19 +1664,19 @@ We can dodge the issue by renaming the `module:PropositionalEquality` module dow
 
 ```agda
   module Example₃ where
-    -- module PropEq = Chapter3-Proofs.Exports
+    module PropEq = Chapter3-Proofs.Exports
 ```
 
 at which point, building the proof that `type:_≡_` is an equivalence relationship is
 trivial:
 
 ```agda
-    -- open IsEquivalence
+    open IsEquivalence
 
-    -- ≡-equiv : IsEquivalence {A = A} _≡_
-    -- refl   ≡-equiv = PropEq.refl
-    -- trans  ≡-equiv = PropEq.trans
-    -- sym    ≡-equiv = PropEq.sym
+    ≡-equiv : IsEquivalence {A = A} _≡_
+    refl   ≡-equiv = PropEq.refl
+    trans  ≡-equiv = PropEq.trans
+    sym    ≡-equiv = PropEq.sym
 ```
 
 We will explore equivalence relations in further detail soon when we discuss
