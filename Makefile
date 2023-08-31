@@ -17,28 +17,34 @@ PANDOC_PDF_OPTS := --from latex+raw_tex \
                    --top-level-division=chapter \
                    -t latex+lagda
 
-CHAPTERS := Chapter00-preface \
-            Chapter0-coblub \
-            Chapter1-Agda \
-            Chapter2-Numbers \
-            Chapter3-Proofs \
-            Chapter4-Relations \
-            Chapter5-Decidability \
-            Chapter6-Modular-Arithmetic \
-            Chapter7-Structures \
-            Chapter8-Isomorphisms \
-            Chapter9-Ring-Solving \
-            Chapter10-Functions
+ALL_CHAPTERS := Chapter00-preface \
+                Chapter0-coblub \
+                Chapter1-Agda \
+                Chapter2-Numbers \
+                Chapter3-Proofs \
+                Chapter4-Relations \
+                Chapter5-Decidability \
+                Chapter6-Modular-Arithmetic \
+                Chapter7-Structures \
+                Chapter8-Isomorphisms \
+                Chapter9-Ring-Solving \
+                Chapter10-Functions
 
-agda := $(patsubst %,src/book/%.lagda.md,$(CHAPTERS))
+ALL_LITERATE_AGDA := $(patsubst %,src/book/%.lagda.md,$(ALL_CHAPTERS))
+ALL_LAGDA_TEX := $(patsubst src/book/%.lagda.md,build/tex/agda/%.lagda.tex,$(ALL_LITERATE_AGDA))
+ALL_AGDA_TEX := $(patsubst src/book/%,build/tex/agda/%,$(wildcard src/book/*.agda))
+ALL_TEX := $(patsubst src/book/%.lagda.md,build/tex/book/%.tex,$(ALL_LITERATE_AGDA))
 
-ALL_LAGDA := $(patsubst src/book/%.lagda.md,build/tex/agda/%.lagda.tex,$(agda))
-ALL_AGDA := $(patsubst src/book/%,build/tex/agda/%,$(wildcard src/book/*.agda))
+SAMPLE_CHAPTERS := Chapter0-coblub \
+                   Chapter5-Decidability
 
-ALL_TEX := $(patsubst src/book/%.lagda.md,build/tex/book/%.tex,$(agda))
+SAMPLE_LITERATE_AGDA := $(patsubst %,src/book/%.lagda.md,$(SAMPLE_CHAPTERS))
+SAMPLE_LAGDA_TEX := $(patsubst src/book/%.lagda.md,build/tex/agda/%.lagda.tex,$(SAMPLE_LITERATE_AGDA))
+SAMPLE_AGDA_TEX := $(patsubst src/book/%,build/tex/agda/%,$(wildcard src/book/*.agda))
+SAMPLE_TEX := $(patsubst src/book/%.lagda.md,build/tex/book/%.tex,$(SAMPLE_LITERATE_AGDA))
 
 # $(RULES): %: build/%.pdf
-all : build/pdf.pdf
+all : build/pdf.pdf build/sample.pdf
 
 # Transpile markdown to latex
 build/tex/agda/%.lagda.tex : src/book/%.lagda.md
@@ -71,13 +77,27 @@ build/tex/pdf.tex : $(ALL_TEX) format/tex/template.tex build/.design-tools Makef
 	sed -i 's/VERYILLEGALCODE/code/g' $@
 	sed -i '/{part}/d' $@
 
+build/tex/sample.tex : $(SAMPLE_TEX) format/tex/template.tex build/.design-tools Makefile
+	cp .design-tools/*.png build/.design-tools
+	pandoc $(PANDOC_PDF_OPTS) -o $@ $(SAMPLE_TEX)
+	sed -i 's/\AgdaComment{--\\ !\\ \([0-9]\)}/annotate{\1}/g' $@
+	sed -i 's/\AgdaPostulate{Level}/\AgdaFunction{Level}/g' $@
+	sed -i 's/\\hypertarget{fig:\([^}]\+\)}{}//g' $@
+	sed -i 's/⅋[^ {}()._\\]*//g' $@
+	sed -i 's/VERYILLEGALCODE/code/g' $@
+	sed -i '/{part}/d' $@
+
 # Copy the agda style
 build/tex/agda.sty : format/tex/agda.sty
 	cp $^ $@
 
 # Build the pdf!
-build/pdf.pdf :  $(ALL_LAGDA) $(ALL_AGDA) build/tex/pdf.tex build/tex/agda.sty
+build/pdf.pdf :  $(ALL_LAGDA_TEX) $(ALL_AGDA_TEX) build/tex/pdf.tex build/tex/agda.sty
 	make -C build pdf.pdf
+
+# Build the pdf!
+build/sample.pdf :  $(SAMPLE_LAGDA_TEX) $(SAMPLE_AGDA_TEX) build/tex/sample.tex build/tex/agda.sty
+	make -C build sample.pdf
 
 
 
@@ -97,7 +117,7 @@ build/pdf.pdf :  $(ALL_LAGDA) $(ALL_AGDA) build/tex/pdf.tex build/tex/agda.sty
 #		sed -i 's/\CommentTok{{-}{-} .via \([^}]\+\)}/reducevia{\1}/g' $@
 #		sed -i 's/\(\\KeywordTok{law} \\StringTok\){"\([^"]\+\)"}/\1{\\lawname{\2}}/g' $@
 
-.NOTINTERMEDIATE: build/tex/agda/%.lagda.tex $(ALL_LAGDA) $(ALL_AGDA)
+.NOTINTERMEDIATE: build/tex/agda/%.lagda.tex $(ALL_LAGDA_TEX) $(ALL_AGDA_TEX)
 
 .PHONY: clean all $(RULES)
 
