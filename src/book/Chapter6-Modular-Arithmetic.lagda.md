@@ -9,13 +9,25 @@ Prerequisites
 :   ```agda
 import Chapter2-Numbers
 open Chapter2-Numbers.Exports
-  using (ℕ; _+_; _*_)
-open ℕ
+  using (ℕ; zero; suc; _+_; _*_)
     ```
 
 :   ```agda
 import Chapter3-Proofs
+open Chapter3-Proofs.Exports
+  using (_≡_; cong; module ≡-Reasoning)
+    ```
+
+:   ```agda
 import Chapter4-Relations
+open Chapter4-Relations.Exports
+  using ( Rel; Reflexive; Symmetric; Transitive
+        ; IsPreorder; IsEquivalence
+        ; module Preorder-Reasoning
+        )
+    ```
+
+:   ```agda
 import Chapter5-Decidability
 open Chapter5-Decidability.Exports
   using (suc-injective)
@@ -44,18 +56,16 @@ xn = b + yn$.
 
 
 ```agda
-open import Data.Nat using (ℕ; _+_; _*_)
+module PropEq = Chapter3-Proofs.Exports
 
 module ModularArithmetic where
-  open Chapter3-Proofs.Exports
-    using (_≡_; refl)
-
-  infix 4 _≈_⟨mod_⟩
   data _≈_⟨mod_⟩ (a b n : ℕ) : Set where
     ≈-mod
       : (x y : ℕ)
       → a + x * n ≡ b + y * n  -- ! 1
       → a ≈ b ⟨mod n ⟩
+
+  infix 4 _≈_⟨mod_⟩
 ```
 
 Notice that we use propositional equality at [1](Ann) to assert that we're
@@ -65,7 +75,7 @@ We can now show that our clock example works as expected:
 
 ```agda
   _ : 11 + 2 ≈ 1 ⟨mod 12 ⟩
-  _ = ≈-mod 0 1 refl
+  _ = ≈-mod 0 1 PropEq.refl
 ```
 
 Of course, it's quite a mouthful to stick in the `⟨mod_⟩` part every time, so we
@@ -75,8 +85,6 @@ constant:
 ```agda
 module ℕ/nℕ (n : ℕ) where
   open ModularArithmetic public
-  open Chapter4-Relations.Exports
-    using (Rel; Reflexive; Symmetric; Transitive; IsPreorder; IsEquivalence)
 
   infix 4 _≈_
   _≈_ : Rel ℕ _
@@ -87,15 +95,11 @@ As it happens, `type:_≈_` forms an equivalence relation. Showing reflexivity a
 symmetry is simple enough:
 
 ```agda
+  ≈-refl : Reflexive _≈_
+  ≈-refl = ≈-mod 0 0 PropEq.refl
 
-  module _ where
-    open Chapter3-Proofs.Exports
-
-    ≈-refl : Reflexive _≈_
-    ≈-refl = ≈-mod 0 0 refl
-
-    ≈-sym : Symmetric _≈_
-    ≈-sym (≈-mod x y p) = ≈-mod y x (sym p)
+  ≈-sym : Symmetric _≈_
+  ≈-sym (≈-mod x y p) = ≈-mod y x (PropEq.sym p)
 ```
 
 However, the transitivity of `type:_≈_` is a significantly harder thing to
@@ -171,30 +175,11 @@ $$
 This gives us our desired numbers `i j : ℕ` for transivity, namely $i = x + z$
 and $j = w + y$.
 
-```agda
-    ≈-trans : Transitive _≈_
-    ≈-trans {a} {b} {c} (≈-mod x y pxy) (≈-mod z w pzw) =
-      ≈-mod (x + z) (w + y)
-```
-
 And now for the hard part---we must give a *proof* that these are in fact the
 right numbers. Most of the work involved is algebraic manipulation, shuffling
 the terms around such that we can apply `pxy` and then `pzw`. Inlining the
 algebraic manipulation is a huge amount of effort, so instead we will use two
 as-of-yet-undefined lemmas that do the heavy lifting.
-
-```agda
-      ( begin
-        a + (x + z) * n      ≡⟨ lemma₁ a n x z ⟩
-        (a + x * n) + z * n  ≡⟨ cong (_+ z * n) pxy ⟩
-        (b + y * n) + z * n  ≡⟨ lemma₂ b (y * n) (z * n) ⟩
-        (b + z * n) + y * n  ≡⟨ cong (_+ y * n) pzw ⟩
-        c + w * n + y * n    ≡⟨ sym (lemma₁ c n w y) ⟩
-        c + (w + y) * n      ∎
-      )
-      where
-        open ≡-Reasoning
-```
 
 Here, `def:lemma₁` distributes `* n` over the addition, and reassociate everything
 so it's in the right shape for `pxy`. Meanwhile, `def:lemma₂` applies the
@@ -204,23 +189,34 @@ Rather than go through the effort of proving these lemmas for ourselves, we can
 turn to the ring solver, and ask it to do the heavy lifting on our behalf.
 First, we must bring the ring solver into scope:
 
-```agda
-        open import Data.Nat.Solver
-        open +-*-Solver
-```
-
 and then we can get our two lemmas by invoking `def:solve` with the number of
 variables in the expression, and a syntactic representation of the problem we'd
 like solved:
 
 ```agda
-        lemma₁ = solve 4
-          (λ a n x z → a :+ (x :+ z) :* n := (a :+ x :* n) :+ z :* n)
-          refl
+  ≈-trans : Transitive _≈_
+  ≈-trans {a} {b} {c} (≈-mod x y pxy) (≈-mod z w pzw) =
+    ≈-mod (x + z) (w + y)
+    ( begin
+      a + (x + z) * n      ≡⟨ lemma₁ a n x z ⟩
+      (a + x * n) + z * n  ≡⟨ cong (_+ z * n) pxy ⟩
+      (b + y * n) + z * n  ≡⟨ lemma₂ b (y * n) (z * n) ⟩
+      (b + z * n) + y * n  ≡⟨ cong (_+ y * n) pzw ⟩
+      c + w * n + y * n    ≡⟨ PropEq.sym (lemma₁ c n w y) ⟩
+      c + (w + y) * n      ∎
+    )
+    where
+      open ≡-Reasoning
+      open import Data.Nat.Solver
+      open +-*-Solver
 
-        lemma₂ = solve 3
-          (λ b i j → (b :+ i) :+ j := (b :+ j) :+ i)
-          refl
+      lemma₁ = solve 4
+        (λ a n x z → a :+ (x :+ z) :* n := (a :+ x :* n) :+ z :* n)
+        PropEq.refl
+
+      lemma₂ = solve 3
+        (λ b i j → (b :+ i) :+ j := (b :+ j) :+ i)
+        PropEq.refl
 ```
 
 The ring solver is a fantastic tool for automating away tedious, symbolic proofs
@@ -234,28 +230,25 @@ Anyway, now that we have reflexivity, symmetry, and transitivity, we now know
 that `type:_≈_` is an equivalence relation.
 
 ```agda
+  ≈-preorder : IsPreorder _≈_
+  IsPreorder.refl   ≈-preorder = ≈-refl
+  IsPreorder.trans  ≈-preorder = ≈-trans
+
   ≈-equiv : IsEquivalence _≈_
-  IsPreorder.refl   (IsEquivalence.isPreorder ≈-equiv) = ≈-refl
-  IsPreorder.trans  (IsEquivalence.isPreorder ≈-equiv) = ≈-trans
-  IsEquivalence.sym ≈-equiv = ≈-sym
+  IsEquivalence.isPreorder  ≈-equiv = ≈-preorder
+  IsEquivalence.sym         ≈-equiv = ≈-sym
 ```
 
 Additionally, we can use this fact to get equational reasoning syntax for free,
 via our `module:PreorderReasoning` module from @sec:preorderreasoning.
 
 ```agda
-  module ≈-Reasoning where
-    open Chapter4-Relations.Exports
-      using (IsPreorder; module Preorder-Reasoning)
+  module Mod-Reasoning where
 
-    ≈-preorder : IsPreorder _≈_
-    IsPreorder.refl   ≈-preorder = ≈-refl
-    IsPreorder.trans  ≈-preorder = ≈-trans
+    open Preorder-Reasoning ≈-preorder
+      public
 
     open IsEquivalence ≈-equiv
-      using (sym)
-      public
-    open Preorder-Reasoning ≈-preorder
       public
 ```
 
@@ -278,7 +271,6 @@ Let's prove two more fact "by hand", the fact that $0 = n\text{ (mod
 }n\text{)}$:
 
 ```agda
-  module PropEq = Chapter3-Proofs.Exports
   open Chapter3-Proofs.Exports
     hiding (refl; sym)
 
@@ -302,10 +294,6 @@ a few primitive lemmas to work with, we're ready to begin proving things about
 modular arithmetic in earnest. We can open the `mod-reasoning` module to enable
 setoid reasoning throughout the rest of the current module.
 
-```agda
-  open ≈-Reasoning
-```
-
 Let's begin by proving the following theorem:
 
 ```agda
@@ -317,26 +305,11 @@ show `a + zero ≈ zero ⟨mod n⟩`. Like when we did reasoning over propositio
 equality, we `begin`:
 
 ```agda
-  +-zero-mod a zero a≈0 =
-    begin
-      a + zero
-```
-
-and we still have access to propositional equality rewriting:
-
-```agda
-    ≡⟨ +-identityʳ a ⟩
-      a
-```
-
-However, now that we have setoid reasoning enable, we can also do *setoid
-rewriting* via the `≈⟨_⟩` operator. We have an `a` and want `zero`, and
-conveniently, already have a proof that `a ≈ 0 ⟨mod n⟩`, so we can just apply it:
-
-```agda
-    ≈⟨ a≈0 ⟩
-      zero
-    ∎
+  +-zero-mod a zero a≈0 = begin
+    a + zero  ≡⟨ +-identityʳ a ⟩
+    a         ≈⟨ a≈0 ⟩
+    zero      ∎
+    where open Mod-Reasoning
 ```
 
 You can see already how much nicer this style of reasoning is, compared with our
@@ -350,6 +323,7 @@ We also need to show the `ctor:suc` case, presented without further commentary.
     suc a + b    ≡⟨⟩
     suc (a + b)  ≈⟨ mod-suc-cong (+-zero-mod a b a≈0) ⟩
     suc b        ∎
+    where open Mod-Reasoning
 ```
 
 Let's hoist another theorem about natural numbers that will come in handy: the
@@ -382,6 +356,7 @@ use of our previous lemma `def:+-zero-mod`:
     c         ≈⟨ pcd ⟩
     d         ≈⟨ sym (+-zero-mod b d (sym pab)) ⟩
     b + d     ∎
+    where open Mod-Reasoning
 ```
 
 In the `ctor:suc` case, we can now case split on `b`. The zero case is equally
@@ -392,6 +367,7 @@ straightforward:
     suc a + c  ≈⟨ +-zero-mod (suc a) c pab ⟩
     c          ≈⟨ pcd ⟩
     d          ∎
+    where open Mod-Reasoning
 ```
 
 And all that's left is the non-zero cases, in which we can hand the problem over
@@ -450,11 +426,12 @@ other. We can show that modular multiplication by zero results in zero:
 
 ```agda
   *-zero-mod : (a b : ℕ) → b ≈ 0 → a * b ≈ 0
-  *-zero-mod zero b x = refl
+  *-zero-mod zero b x = ≈-refl
   *-zero-mod (suc a) b x = begin
     suc a * b  ≡⟨⟩
     b + a * b  ≈⟨ +-cong₂-mod x (*-zero-mod a b x) ⟩
     0          ∎
+    where open Mod-Reasoning
 ```
 
 And at long last, we can show that modular arithmetic is also congruent over
@@ -471,17 +448,20 @@ multiplication, via `def:*-cong₂-mod`:
     zero      ≈⟨ sym (*-zero-mod d b (sym a=b)) ⟩
     d * b     ≡⟨ *-comm d b ⟩
     b * d     ∎
+    where open Mod-Reasoning
   *-cong₂-mod {suc a} {zero} {c} {d} a=b c=d = begin
     suc a * c  ≡⟨ *-comm (suc a) c ⟩
     c * suc a  ≈⟨ *-zero-mod c (suc a) a=b ⟩
     zero       ≡⟨⟩
     zero * d   ∎
+    where open Mod-Reasoning
   *-cong₂-mod {suc a} {suc b} {c} {d} a=b c=d = begin
     suc a * c  ≡⟨⟩
     c + a * c  ≈⟨ +-cong₂-mod c=d
                     (*-cong₂-mod (mod-suc-injective a=b) c=d)⟩
     d + b * d  ≡⟨⟩
     suc b * d  ∎
+    where open Mod-Reasoning
 ```
 
 While the proof of `def:*-cong₂-mod` is still quite involved, again, it's worth

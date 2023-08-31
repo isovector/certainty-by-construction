@@ -1340,6 +1340,7 @@ The first, `def:suc-injective` states that we can cancel outermost `ctor:suc`
 constructors in equality over the naturals:
 
 ```agda
+  -- TODO(sandy): nice thing to put into Chapter3-Proofs if possible
   suc-injective : {x y : ℕ} → suc x ≡ suc y → x ≡ y
   suc-injective refl = refl
 ```
