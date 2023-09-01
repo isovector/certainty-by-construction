@@ -33,7 +33,7 @@ open Chapter2-Numbers.Exports
 :   ```agda
 import Chapter3-Proofs
 open Chapter3-Proofs.Exports
-  using (_≡_; refl; sym; trans; cong; module ≡-Reasoning)
+  using (_≡_; refl; sym; trans; cong; module ≡-Reasoning; suc-injective)
     ```
 
 :   ```agda
@@ -1335,18 +1335,8 @@ three options holds.
 ```
 
 As a good exercise, we'd like to show that `type:ℕ` is trichotomous with respect
-to `type:_≡_` and `type:_<_`. Doing so will require a couple of quick lemmas.
-The first, `def:suc-injective` states that we can cancel outermost `ctor:suc`
-constructors in equality over the naturals:
-
-```agda
-  -- TODO(sandy): nice thing to put into Chapter3-Proofs if possible
-  suc-injective : {x y : ℕ} → suc x ≡ suc y → x ≡ y
-  suc-injective refl = refl
-```
-
-And the other is that if we know $x \nless y$ then we also know $x + 1 \nless y
-+ 1$:
+to `type:_≡_` and `type:_<_`. Doing so will require a quick lemma. If we know
+$x \nless y$ then we also know $x + 1 \nless y + 1$:
 
 ```agda
   refute : {x y : ℕ} → ¬ x < y → ¬ suc x < suc y
@@ -1885,7 +1875,7 @@ module Exports where
     public
 
   open import Data.Nat.Properties
-    using (suc-injective; <-cmp)
+    using (<-cmp)
     public
 
   open import Relation.Binary.PropositionalEquality

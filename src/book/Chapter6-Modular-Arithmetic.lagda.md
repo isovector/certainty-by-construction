@@ -15,7 +15,7 @@ open Chapter2-Numbers.Exports
 :   ```agda
 import Chapter3-Proofs
 open Chapter3-Proofs.Exports
-  using (_≡_; cong; module ≡-Reasoning)
+  using (_≡_; cong; module ≡-Reasoning; suc-injective)
     ```
 
 :   ```agda
@@ -26,19 +26,6 @@ open Chapter4-Relations.Exports
         ; module Preorder-Reasoning
         )
     ```
-
-:   ```agda
-import Chapter5-Decidability
-open Chapter5-Decidability.Exports
-  using (suc-injective)
-    ```
-
-All of the equivalences we have looked at thus far have been combinators on
-existing equivalences. And of course, we have also seen propositional equality,
-but it's reasonable to wonder whether any of this actually "cashes out" in the
-real world. In this section, we will look into a familiar way of quotienting the
-natural numbers, and see just how much leg work this common vocabulary can do
-for us.
 
 A favorite example of quotienting for mathematicians are the so-called "ring of
 natural numbers modulo $n$," more tersely written as $\mathbb{N}/n\mathbb{N}$.

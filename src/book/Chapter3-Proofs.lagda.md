@@ -2182,6 +2182,24 @@ The diligent reader is encouraged to spend some time proving the results in this
 section for themselves; doing so will be an excellent opportunity to practice
 working with Agda and to brandish new tools.
 
+
+For our first exercise, `def:suc-injective` states that we can cancel outermost
+`ctor:suc` constructors in equality over the naturals:
+
+
+Exercise (Trivial)
+
+: Prove `def:suc-injective` `:` `expr:{x y : ℕ} → suc x ≡ suc y → x ≡ y`.
+
+
+Solution
+
+:   ```agda
+  suc-injective : {x y : ℕ} → suc x ≡ suc y → x ≡ y
+  suc-injective refl = refl
+    ```
+
+
 Often, a huge amount of the work to prove something is simply in manipulating
 the expression to be of the right form so that you can apply the relevant lemma.
 This is the case in `def:*-suc`, which allows us to expand a `ctor:suc` on the
@@ -2380,7 +2398,7 @@ module Exports where
           ;  +-comm       ; *-comm
           ;  ^-identityʳ
           ;  ≤-refl       ; ≤-trans
-          ;  +-suc
+          ;  +-suc        ;  suc-injective
           )
     public
 ```
