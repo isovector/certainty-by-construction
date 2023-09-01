@@ -273,7 +273,7 @@ We can get access to the booleans by importing them from our exports from
 @sec:chapter1:
 
 ```agda
-  open Chapter1-Agda.Exports
+  open Chapter1-Agda
     using (Bool; true; false)
 ```
 
@@ -959,7 +959,7 @@ constructor corresponding to `ctor:suc`ing twice:
 
 ```agda
   module Example-Silly where
-    open Chapter1-Agda.Exports
+    open Chapter1-Agda
       using (not)
 
     data ℕ' : Set where
@@ -1828,26 +1828,25 @@ that $1 + 1 = 2$. While we haven't yet *proven* this fact, we are well on our
 way, and will do so in the next chapter when we reflect on the deep nature of
 proof.
 
-In closing, we will again provide an `module:Exports` module to export the
-standard library's versions of everything we've built in this chapter. In
+Before closing, we will explicitly list out our accomplishments from the
+chapter, and export them from the standard library for use in the future. In
 @sec:naturals we constructed the natural numbers `type:ℕ` and their constructors
 `ctor:zero` and `ctor:suc`. Addition comes from @sec:addition, while
 multiplication and exponentiation come from @sec:multiplication. The monus
 operator `def:_∸_` is from @sec:monus.
 
 ```agda
-module Exports where
-  open import Data.Nat
-    using (ℕ; zero; suc; _+_; _*_; _^_; _∸_)
-    public
+open import Data.Nat
+  using (ℕ; zero; suc; _+_; _*_; _^_; _∸_)
+  public
 ```
 
 We also gave definitions for the first four positive naturals:
 
 ```agda
-  open Sandbox-Naturals
-    using (one; two; three; four)
-    public
+open Sandbox-Naturals
+  using (one; two; three; four)
+  public
 ```
 
 While discussing the natural numbers, we looked at two notions of evenness in
@@ -1857,12 +1856,12 @@ those constructors to `ctor:z-even` and `ctor:ss-even` by way of a
 `keyword:renaming` import modifier:
 
 ```agda
-  open Sandbox-Naturals
-    using (IsEven)
-    renaming ( zero-even     to z-even
-             ; suc-suc-even  to ss-even
-             )
-    public
+open Sandbox-Naturals
+  using (IsEven)
+  renaming ( zero-even     to z-even
+           ; suc-suc-even  to ss-even
+           )
+  public
 ```
 
 In @sec:maybe, we constructed the `type:Maybe` type, which we used to wrap
@@ -1871,9 +1870,9 @@ can't return anything, we use the constructor `ctor:nothing`, but if it was
 successful, it can use `ctor:just`:
 
 ```agda
-  open import Data.Maybe
-    using (Maybe; just; nothing)
-    public
+open import Data.Maybe
+  using (Maybe; just; nothing)
+  public
 ```
 
 Discussing the integers made for an interesting exercise, but we will not need

@@ -2231,15 +2231,11 @@ together into funky shapes. Throughout our progression we will learn
 that there was more to learn about these simple pieces all along. Indeed,
 perhaps these primitive elements are much more sophisticated than they look.
 
-As a convention in this book, we will end by making one final module. This
-module exists only to be imported from future chapters. Since we built a lot of
-things by hand, made several examples, and generally went down the garden path,
-we will use this module as the definitive export list. This module is the final
-artifact of our exploration in this chapter.
-
-```agda
-module Exports where
-```
+As a convention in this book, we will end each chapter by exporting what we've
+made, so we can use it in future chapters. Since we built a lot of things by
+hand, made several examples, and generally went down the garden path, we will
+take the time to flesh out exactly what the takeaways should be---both
+in mind and in code.
 
 For the best portability, we will not use our own definitions, but rather reuse
 those which come from the standard library.
@@ -2249,9 +2245,9 @@ In @sec:bools we built `type:Bool` alongside its constructors `ctor:false` and
 defined the boolean OR function `def:_∨_`.
 
 ```agda
-  open import Data.Bool
-    using (Bool; false; true; not; _∨_)
-    public
+open import Data.Bool
+  using (Bool; false; true; not; _∨_)
+  public
 ```
 
 Note the `keyword:public` modifier on this`keyword:import`s. By default, Agda
@@ -2268,9 +2264,9 @@ curried functions and functions which take all of their arguments at once---were
 defined in @sec:currying.
 
 ```agda
-  open import Data.Product public
-    using (_×_; _,_; proj₁; proj₂; curry; uncurry)
-    public
+open import Data.Product public
+  using (_×_; _,_; proj₁; proj₂; curry; uncurry)
+  public
 ```
 
 We have not even begun to scratch the surface of what interesting things are

@@ -6,8 +6,7 @@ Hidden
 :   ```agda
 {-# OPTIONS --allow-unsolved-metas #-}
 open import Data.Integer using (ℤ)
-import Chapter1-Agda
-open Chapter1-Agda.Exports renaming (_,_ to _,⅋_; _×_ to _×⅋_)
+open import Chapter1-Agda using () renaming (_,_ to _,⅋_; _×_ to _×⅋_)
     ```
 
 
@@ -19,26 +18,22 @@ module Chapter5-Decidability where
 Prerequisites
 
 :   ```agda
-import Chapter1-Agda
-open Chapter1-Agda.Exports
+open import Chapter1-Agda
   using (Bool; true; false)
     ```
 
 :   ```agda
-import Chapter2-Numbers
-open Chapter2-Numbers.Exports
+open import Chapter2-Numbers
   using (ℕ; zero; suc; _+_)
     ```
 
 :   ```agda
-import Chapter3-Proofs
-open Chapter3-Proofs.Exports
+open import Chapter3-Proofs
   using (_≡_; refl; sym; trans; cong; module ≡-Reasoning; suc-injective)
     ```
 
 :   ```agda
-import Chapter4-Relations
-open Chapter4-Relations.Exports
+open import Chapter4-Relations
   using (Level; _⊔_; lsuc; Σ; _,_)
     ```
 
@@ -180,7 +175,8 @@ This "pre-explosive" type we'll work with is called the *bottom* type, written
 `type:⊥` and input as [`bot`](AgdaMode). Its definition is short and sweet:
 
 ```agda
-data ⊥ : Set where
+module Definition-Bottom where
+  data ⊥ : Set where
 ```
 
 That's it. There are no constructors for `type:⊥`, meaning that *every* pattern
@@ -189,8 +185,8 @@ slightly different type signature, we can show `def:2≢3` again---with an
 identical proof, but this time using bottom:
 
 ```agda
-2≢3 : 2 ≡ 3 → ⊥
-2≢3 ()
+  2≢3 : 2 ≡ 3 → ⊥
+  2≢3 ()
 ```
 
 Why does this work? Recall the definition of a function: for any input in the
@@ -207,8 +203,8 @@ explosion. This function is called bottom elimination," and is itself another
 easy proof:
 
 ```agda
-⊥-elim : {A : Set} → ⊥ → A
-⊥-elim ()
+  ⊥-elim : {A : Set} → ⊥ → A
+  ⊥-elim ()
 ```
 
 Mathematically, proofs of this flavor are called *vacuously true.* Which is to
@@ -221,8 +217,8 @@ there are none---are equal, or, at least, that they would be equal if there were
 any:
 
 ```agda
-⊥-unique : {x y : ⊥} → x ≡ y
-⊥-unique {x} = ⊥-elim x
+  ⊥-unique : {x y : ⊥} → x ≡ y
+  ⊥-unique {x} = ⊥-elim x
 ```
 
 We have now shown that bottom is a satisfactory definition of false, and that
@@ -231,9 +227,9 @@ is a contradiction. Hence, we can define `type:¬_` ([`neg`](AgdaMode)), which
 states that a given mathematical statement is false:
 
 ```agda
-¬_ : {ℓ : Level} → Set ℓ → Set ℓ
-¬ P = P → ⊥
-infix 3 ¬_
+  ¬_ : {ℓ : Level} → Set ℓ → Set ℓ
+  ¬ P = P → ⊥
+  infix 3 ¬_
 ```
 
 In this definition of `type:¬_`, we have used universe polymorphism in order to
@@ -249,9 +245,9 @@ define inequality (input as [`neq`](AgdaMode)):
 
 
 ```agda
-_≢_ : {A : Set} → A → A → Set
-x ≢ y = ¬ x ≡ y
-infix 4 _≢_
+  _≢_ : {A : Set} → A → A → Set
+  x ≢ y = ¬ x ≡ y
+  infix 4 _≢_
 ```
 
 When defining new relations, it's always a reward experience to investigate
@@ -259,8 +255,8 @@ which properties hold of the new construction. As you might expect, inequality
 is symmetric:
 
 ```agda
-≢-sym : {A : Set} {x y : A} → x ≢ y → y ≢ x
-≢-sym x≢y y=x = x≢y (sym y=x)
+  ≢-sym : {A : Set} {x y : A} → x ≢ y → y ≢ x
+  ≢-sym x≢y y=x = x≢y (sym y=x)
 ```
 
 and it is *not* reflexive. Perhaps this is obvious to you, but if not, recall
@@ -277,11 +273,11 @@ A relation `_≈_ :` `bind:ℓ A:A → A → Set ℓ` is *reflexive* if, for any
 we can construct `x ≈ x`. This definition can be encoded as a type:
 
 ```agda
-Reflexive
-    : {c ℓ : Level} {A : Set c}
-    → (A → A → Set ℓ)
-    → Set (ℓ ⊔ c)
-Reflexive {A = A} _≈_ = {x : A} → x ≈ x -- ! 1
+  Reflexive
+      : {c ℓ : Level} {A : Set c}
+      → (A → A → Set ℓ)
+      → Set (ℓ ⊔ c)
+  Reflexive {A = A} _≈_ = {x : A} → x ≈ x -- ! 1
 ```
 
 Having a value of `type:Reflexive` `_≈_` states that `_≈_` is just such a
@@ -293,8 +289,8 @@ To illustrate exactly what's happening here, we can show that propositional
 equality is reflexive:
 
 ```agda
-≡-refl : {A : Set} → Reflexive {A = A} _≡_
-≡-refl = refl
+  ≡-refl : {A : Set} → Reflexive {A = A} _≡_
+  ≡-refl = refl
 ```
 
 Notice how the type `expr:Reflexive _≡_` expands to the type of `ctor:refl`,
@@ -314,15 +310,15 @@ Contrasting against this example the proof that `type:_≢_` is *not* reflexive.
 The type of such a statement is a very subtle thing:
 
 ```agda
-¬≢-refl⅋₀ : ¬ ({A : Set} → Reflexive {A = A} _≢_)  -- ! 1
-¬≢-refl⅋₀ = ?
+  ¬≢-refl⅋₀ : ¬ ({A : Set} → Reflexive {A = A} _≢_)  -- ! 1
+  ¬≢-refl⅋₀ = ?
 ```
 
 Compare this type to the more "obvious" type:
 
 ```agda
-¬≢-refl-bad⅋₀ : {A : Set} → ¬ Reflexive {A = A} _≢_  -- ! 2
-¬≢-refl-bad⅋₀ = ?
+  ¬≢-refl-bad⅋₀ : {A : Set} → ¬ Reflexive {A = A} _≢_  -- ! 2
+  ¬≢-refl-bad⅋₀ = ?
 ```
 
 The difference between [1](Ann) and [2](Ann) is in the placement of the binder
@@ -351,16 +347,16 @@ Under the lens of this expanded type, it seems reasonable to call the argument
 to our function `¬≡-refl`, as in the following:
 
 ```agda
-¬≢-refl⅋₁ : ¬ ({A : Set} → Reflexive {A = A} _≢_)
-¬≢-refl⅋₁ ¬≡-refl = {! !}
+  ¬≢-refl⅋₁ : ¬ ({A : Set} → Reflexive {A = A} _≢_)
+  ¬≢-refl⅋₁ ¬≡-refl = {! !}
 ```
 
 Of course, we do in fact have a proof of `bind:x:x ≡ x`, namely `ctor:refl`, so
 we can try solving the hole as:
 
 ```agda
-¬≢-refl⅋₂ : ¬ ({A : Set} → Reflexive {A = A} _≢_)
-¬≢-refl⅋₂ ¬≡-refl = ¬≡-refl refl
+  ¬≢-refl⅋₂ : ¬ ({A : Set} → Reflexive {A = A} _≢_)
+  ¬≢-refl⅋₂ ¬≡-refl = ¬≡-refl refl
 ```
 
 Uh oh, something went wrong. This yellow background means that elaboration
@@ -369,8 +365,8 @@ arguments. We can help it out by explicitly introducing holes for each implicit
 argument and solving them ourselves:
 
 ```agda
-¬≢-refl⅋₃ : ¬ ({A : Set} → Reflexive {A = A} _≢_)
-¬≢-refl⅋₃ ¬≡-refl = ¬≡-refl {?} {?} refl
+  ¬≢-refl⅋₃ : ¬ ({A : Set} → Reflexive {A = A} _≢_)
+  ¬≢-refl⅋₃ ¬≡-refl = ¬≡-refl {?} {?} refl
 ```
 
 You'll notice that the yellow warning has disappeared, and we're left only with
@@ -379,16 +375,16 @@ some holes to fill. The first hole has type `type:Set`, while the second has typ
 choose any type we'd like for this first hole, so let's try `type:ℕ`:
 
 ```agda
-¬≢-refl⅋₄ : ¬ ({A : Set} → Reflexive {A = A} _≢_)
-¬≢-refl⅋₄ ¬≡-refl = ¬≡-refl {ℕ} {?} refl
+  ¬≢-refl⅋₄ : ¬ ({A : Set} → Reflexive {A = A} _≢_)
+  ¬≢-refl⅋₄ ¬≡-refl = ¬≡-refl {ℕ} {?} refl
 ```
 
 This refines our other hole to have type `type:ℕ`, and now all we need is to
 pick an arbitrary natural:
 
 ```agda
-¬≢-refl : ¬ ({A : Set} → Reflexive {A = A} _≢_)
-¬≢-refl ≢-refl = ≢-refl {ℕ} {0} refl
+  ¬≢-refl : ¬ ({A : Set} → Reflexive {A = A} _≢_)
+  ¬≢-refl ≢-refl = ≢-refl {ℕ} {0} refl
 ```
 
 What was to be demonstrated has thus been proved. But how? We've shown that
@@ -402,8 +398,8 @@ Since `A` is now a top-level parameter, we can bind it in the function body,
 meaning we have one fewer implicit to fill in:
 
 ```agda
-¬≢-refl-bad : {A : Set} → ¬ Reflexive {A = A} _≢_
-¬≢-refl-bad {A} ¬≡-refl = ¬≡-refl {?} refl
+  ¬≢-refl-bad : {A : Set} → ¬ Reflexive {A = A} _≢_
+  ¬≢-refl-bad {A} ¬≡-refl = ¬≡-refl {?} refl
 ```
 
 But we run into problems trying to fill this last hole. It unfortunately has
@@ -427,16 +423,16 @@ fully normalizing the types of both `def:¬≢-refl` and `def:¬≢-refl-bad`, w
 are left with these:
 
 ```agda
-¬≢-refl⅋⅋      : ({A : Set} → {x : A} → x ≡ x → ⊥) → ⊥
-¬≢-refl-bad⅋⅋  : {A : Set} → ({x : A} → x ≡ x → ⊥) → ⊥
+  ¬≢-refl⅋⅋      : ({A : Set} → {x : A} → x ≡ x → ⊥) → ⊥
+  ¬≢-refl-bad⅋⅋  : {A : Set} → ({x : A} → x ≡ x → ⊥) → ⊥
 ```
 
 
 Hidden
 
 :   ```agda
-¬≢-refl⅋⅋  = _
-¬≢-refl-bad⅋⅋ = _
+  ¬≢-refl⅋⅋  = _
+  ¬≢-refl-bad⅋⅋ = _
     ```
 
 The salient feature of these two types is that they both take functions as
@@ -467,11 +463,11 @@ which we already know is false. We can prove the non-transitivity of inequality
 more formally in Agda by giving a definition for transitivity:
 
 ```agda
-Transitive
-    : {c ℓ : Level} {A : Set c}
-    → (A → A → Set ℓ)
-    → Set (c ⊔ ℓ)
-Transitive {A = A} _≈_ = {x y z : A} → x ≈ y → y ≈ z → x ≈ z
+  Transitive
+      : {c ℓ : Level} {A : Set c}
+      → (A → A → Set ℓ)
+      → Set (c ⊔ ℓ)
+  Transitive {A = A} _≈_ = {x y z : A} → x ≈ y → y ≈ z → x ≈ z
 ```
 
 Spend a moment to parse and understand this type for yourself. Do you agree that
@@ -484,8 +480,8 @@ above---since we already have a proof `def:2≢3`. Given a hypothetical
 `expr:2 ≡ 2`, which acts as the refutation:
 
 ```agda
-¬≢-trans : ¬ ({A : Set} → Transitive {A = A} _≢_)
-¬≢-trans ≢-trans = ≢-trans {ℕ} 2≢3 (≢-sym 2≢3) refl
+  ¬≢-trans : ¬ ({A : Set} → Transitive {A = A} _≢_)
+  ¬≢-trans ≢-trans = ≢-trans {ℕ} 2≢3 (≢-sym 2≢3) refl
 ```
 
 
@@ -496,8 +492,11 @@ To illustrate using negation in the real world, let's prove a claim made back in
 `def:_∸_`. First, let's import it.
 
 ```agda
+open import Relation.Nullary
+  using (¬_)
+
 module Example-NoMonusLeftIdentity where
-  open Chapter2-Numbers.Exports using (_∸_)
+  open Chapter2-Numbers using (_∸_)
 ```
 
 In order to prove this, let's first think about what we'd like to say, and what
@@ -571,7 +570,7 @@ thing like this:
 
 ```agda
 module Sandbox-Decidability where
-  open Chapter2-Numbers.Exports
+  open Chapter2-Numbers
     using (Maybe; just; nothing)
 
   n=5? : (n : ℕ) → Maybe (n ≡ 5)
@@ -591,9 +590,9 @@ More preferable would be a type with slightly more structure, corresponding to a
 *decision* about whether `bind:n:n ≡ 5`:
 
 ```agda
-data Dec {ℓ : Level} (P : Set ℓ) : Set ℓ where
-  yes  :    P → Dec P
-  no   : ¬  P → Dec P
+  data Dec {ℓ : Level} (P : Set ℓ) : Set ℓ where
+    yes  :    P → Dec P
+    no   : ¬  P → Dec P
 ```
 
 Hidden
@@ -611,6 +610,8 @@ As an anti-example, given two numbers, it's not too hard to determine if the two
 are equal:
 
 ```agda
+open import Relation.Nullary using (Dec; yes; no)
+
 module Nat-Properties where
   _==_ : ℕ → ℕ → Bool
   zero   == zero   = true
@@ -700,16 +701,16 @@ is that downstream callers can use it to show their own impossible code-paths.
 We can package up decidable equality into its own type:
 
 ```agda
-DecidableEquality : {ℓ : Level} (A : Set ℓ) → Set ℓ
-DecidableEquality A = (x y : A) → Dec (x ≡ y)
+  DecidableEquality : {ℓ : Level} (A : Set ℓ) → Set ℓ
+  DecidableEquality A = (x y : A) → Dec (x ≡ y)
 ```
 
 and give a more "semantically-inclined" type to our old function:
 
 
 ```agda
-_≟ℕ_ : DecidableEquality ℕ
-_≟ℕ_ = Nat-Properties._≟_
+  _≟ℕ_ : DecidableEquality ℕ
+  _≟ℕ_ = _≟_
 ```
 
 
@@ -730,6 +731,8 @@ A binary tree is either `ctor:empty`, or it is a `ctor:branch`ing node
 containing a value and two subtrees. We can codify this as follows:
 
 ```agda
+open import Relation.Binary using (DecidableEquality)
+
 module BinaryTrees where
   data BinTree {ℓ : Level} (A : Set ℓ) : Set ℓ where
     empty   : BinTree A
@@ -1036,6 +1039,9 @@ leaving underscores in the `type:Dec` constructors---in essence, leaving Agda to
 fill in the underscores but confirm that we picked the right constructors:
 
 ```agda
+  open Nat-Properties
+    using (_≟ℕ_)
+
   _ : ∈? _≟ℕ_ tree 2 ≡ yes _
   _ = refl
 
@@ -1092,7 +1098,7 @@ scope:
 
 
 ```agda
-  open Chapter2-Numbers.Exports
+  open Chapter2-Numbers
     using (IsEven; z-even; ss-even)
 ```
 
@@ -1209,7 +1215,7 @@ relation.
 Given the standard notion of ordering over the natural numbers:
 
 ```agda
-  open Chapter4-Relations.Exports
+  open Chapter4-Relations
     using (_≤_; z≤n; s≤s; _<_)
 ```
 
@@ -1855,35 +1861,34 @@ and finally, define insertion by merely plugging in some trivial proofs:
 ## Wrapping Up
 
 ```agda
-module Exports where
-  open import Relation.Binary
-    using (Reflexive; Transitive; DecidableEquality)
-    using (Trichotomous; Tri)
-    renaming (Decidable to Decidable₂)
-    public
+open import Relation.Binary
+  using (Reflexive; Transitive; DecidableEquality)
+  using (Trichotomous; Tri)
+  renaming (Decidable to Decidable₂)
+  public
 
-  open import Data.Empty
-    using (⊥; ⊥-elim)
-    public
+open import Data.Empty
+  using (⊥; ⊥-elim)
+  public
 
-  open import Relation.Unary
-    using (Decidable)
-    public
+open import Relation.Unary
+  using (Decidable)
+  public
 
-  open import Relation.Nullary
-    using (Dec; yes; no; ¬_)
-    public
+open import Relation.Nullary
+  using (Dec; yes; no; ¬_)
+  public
 
-  open import Data.Nat.Properties
-    using (<-cmp)
-    public
+open import Data.Nat.Properties
+  using (<-cmp)
+  public
 
-  open import Relation.Binary.PropositionalEquality
-    using (_≢_; ≢-sym)
-    public
+open import Relation.Binary.PropositionalEquality
+  using (_≢_; ≢-sym)
+  public
 
-  open BinaryTrees
-    using (BinTree; empty; branch; leaf)
-    public
+open BinaryTrees
+  using (BinTree; empty; branch; leaf)
+  public
 ```
 

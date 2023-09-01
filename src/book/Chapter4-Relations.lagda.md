@@ -5,8 +5,7 @@ Hidden
 :   ```agda
 {-# OPTIONS --allow-unsolved-metas #-}
 open import Data.Integer using (ℤ)
-import Chapter1-Agda
-open Chapter1-Agda.Exports renaming (_,_ to _,⅋_; _×_ to _×⅋_)
+open import Chapter1-Agda using () renaming (_,_ to _,⅋_; _×_ to _×⅋_)
     ```
 
 ```agda
@@ -16,22 +15,17 @@ module Chapter4-Relations where
 Prerequisites
 
 :   ```agda
-import Chapter1-Agda
-open Chapter1-Agda.Exports
-  using (Bool; not; _×_)
-open Bool
+open import Chapter1-Agda
+  using (Bool; false; true; not; _×_)
     ```
 
 :   ```agda
-import Chapter2-Numbers
-open Chapter2-Numbers.Exports
-  using (ℕ; _+_)
-open ℕ
+open import Chapter2-Numbers
+  using (ℕ; zero; suc; _+_)
     ```
 
 :   ```agda
-import Chapter3-Proofs
-open Chapter3-Proofs.Exports
+open import Chapter3-Proofs
   using (_≡_; cong)
     ```
 
@@ -194,7 +188,7 @@ for `type:Maybe₂` into exactly the same thing as we wrote by hand for
 
 Although we didn't define `type:Maybe` this way when we built it in @sec:maybe,
 we don't need to make any changes. This is because
-`module:Chapter2-Numbers.Exports` *re-exports* `type:Maybe` from the standard
+`module:Chapter2-Numbers` *re-exports* `type:Maybe` from the standard
 library, which as a principle is always as universe-polymorphic as possible.
 
 These `keyword:variable` bindings are life-saving when working with highly
@@ -288,7 +282,7 @@ It's definition is given by:
 
 ```agda
 module Definition-DependentPair where
-  open Chapter3-Proofs.Exports
+  open Chapter3-Proofs
 
   record Σ (A : Set ℓ₁) (B : A → Set ℓ₂)
       : Set (lsuc (ℓ₁ ⊔ ℓ₂)) where
@@ -840,7 +834,7 @@ the level of types. This machinery is called `def:subst`, short for
 *substitution*:
 
 ```agda
-  open Chapter3-Proofs.Exports
+  open Chapter3-Proofs
     using (refl; +-identityʳ)
 
   subst
@@ -1057,7 +1051,8 @@ natural type:
 
 ```agda
 module Definition-LessThanOrEqualTo where
-  open Chapter3-Proofs.Exports using (refl)
+  open Chapter3-Proofs
+    using (refl)
 
   data _≤_ : Rel ℕ lzero where
     z≤n : {n : ℕ} → zero ≤ n
@@ -1076,28 +1071,30 @@ want to write against the standard library itself.
 ```agda
 open import Data.Nat
   using (_≤_; z≤n; s≤s)
+
+module Sandbox-≤ where
 ```
 
 
 Hidden
 
 :   ```agda
--- fix bind
+  -- fix bind
     ```
 
 Let's now again prove that `expr:2 ≤ 5`. Begin with a quick type:
 
 ```agda
-_ : 2 ≤ 5
-_ = ?
+  _ : 2 ≤ 5
+  _ = ?
 ```
 
 Asking Agda to [Refine](AgdaCmd) this hole has it use the `ctor:s≤s`
 constructor:
 
 ```agda
-_ : 2 ≤ 5
-_ = s≤s {! !}
+  _ : 2 ≤ 5
+  _ = s≤s {! !}
 ```
 
 Something interesting has happened here. Invoke [TypeContext](AgdaCmd) on the
@@ -1109,16 +1106,16 @@ for the first time.
 Throw another `ctor:s≤s` in the hole:
 
 ```agda
-_ : 2 ≤ 5
-_ = s≤s (s≤s {! !})
+  _ : 2 ≤ 5
+  _ = s≤s (s≤s {! !})
 ```
 
 whose new hole now has type `expr:0 ≤ 3`. From here, the constructor `ctor:z≤n`
 now fits, which completes the definition:
 
 ```agda
-_ : 2 ≤ 5
-_ = s≤s (s≤s z≤n)
+  _ : 2 ≤ 5
+  _ = s≤s (s≤s z≤n)
 ```
 
 Thankfully, all our hard work now pays off, as we are able to implement our
@@ -1133,8 +1130,8 @@ Exercise (Trivial)
 Solution
 
 :   ```agda
-suc-mono : {x y : ℕ} → x ≤ y → suc x ≤ suc y
-suc-mono = s≤s
+  suc-mono : {x y : ℕ} → x ≤ y → suc x ≤ suc y
+  suc-mono = s≤s
     ```
 
 
@@ -1146,9 +1143,9 @@ Exercise (Easy)
 Solution
 
 :   ```agda
-≤-refl : {x : ℕ} → x ≤ x
-≤-refl {zero}   = z≤n
-≤-refl {suc x}  = s≤s ≤-refl
+  ≤-refl : {x : ℕ} → x ≤ x
+  ≤-refl {zero}   = z≤n
+  ≤-refl {suc x}  = s≤s ≤-refl
     ```
 
 
@@ -1157,9 +1154,9 @@ Exercise (Easy)
 :   Prove `def:≤-trans` `:` `expr:(x y z : ℕ) → x ≤ y → y ≤ z → x ≤ z`.
 
 :     ```agda
-≤-trans : {x y z : ℕ} → x ≤ y → y ≤ z → x ≤ z
-≤-trans z≤n  y≤z       = z≤n
-≤-trans (s≤s x≤y) (s≤s y≤z)  = s≤s (≤-trans x≤y y≤z)
+  ≤-trans : {x y z : ℕ} → x ≤ y → y ≤ z → x ≤ z
+  ≤-trans z≤n  y≤z = z≤n
+  ≤-trans (s≤s x≤y) (s≤s y≤z)  = s≤s (≤-trans x≤y y≤z)
       ```
 
 
@@ -1177,7 +1174,9 @@ properties. Those that do are called *preorders:*
 
 
 ```agda
-module Sandbox where
+module Sandbox-Preorders where
+  open Sandbox-≤
+
   record IsPreorder {A : Set a} (_~_ : Rel A ℓ) : Set (a ⊔ ℓ) where
     field
       refl   : Reflexive   _~_
@@ -1210,12 +1209,12 @@ for propositional equality, or `field:refl` from `def:IsPreorder`, and similar
 problems arise for `trans`.
 
 An easy solution is to give qualified identifiers for the particular things we'd
-like. We can give the alias `module:PropEq` to `module:Chapter3-Proof.Exports`
+like. We can give the alias `module:PropEq` to `module:Chapter3-Proof`
 (the module where we first defined `ctor:refl` and `def:trans`) by way of the
 following syntax:
 
 ```agda
-  module PropEq = Chapter3-Proofs.Exports
+  module PropEq = Chapter3-Proofs
 ```
 
 which now gives us unambiguous access to `ctor:PropEq.refl` and
@@ -1286,8 +1285,8 @@ the record:
 By opening it `keyword:public`, we ensure that `field:refl` and `field:trans`
 both "leak" in when we open `module:Preorder-Reasoning`. In essence,
 `keyword:public` makes it as if we explicitly defined the imported identifiers
-in this module---just like when we write our Exports module at the end of every
-chapter.
+in this module---just like when we list out our accomplishments at the end of
+each chapter.
 
 The rest of the preorder reasoning machinery will be presented without further
 commentary, as there is nothing new here. The only changes are that we've
@@ -1348,7 +1347,7 @@ We can further use this fact and our preorder reasoning in order to show that $n
 \le n + 1$:
 
 ```agda
-  open Chapter3-Proofs.Exports using (+-comm)
+  open Chapter3-Proofs using (+-comm)
 
   n≤n+1⅋₀ : (n : ℕ) → n ≤ n + 1
   n≤n+1⅋₀ n = begin
@@ -1728,35 +1727,34 @@ but that's exactly the sort of thing we'll tackle in the next chapter.
 ## Wrapping Up
 
 ```agda
-module Exports where
-  open import Agda.Primitive
-    using (Level; _⊔_; lzero; lsuc)
-    public
+open import Agda.Primitive
+  using (Level; _⊔_; lzero; lsuc)
+  public
 
-  open import Data.Product
-    using (Σ; _,_)
-    public
+open import Data.Product
+  using (Σ; _,_)
+  public
 
-  open import Relation.Binary
-    using (Rel; REL; Transitive; Reflexive; Symmetric; Antisymmetric)
-    public
+open import Relation.Binary
+  using (Rel; REL; Transitive; Reflexive; Symmetric; Antisymmetric)
+  public
 
-  open import Relation.Binary.PropositionalEquality
-    using (subst)
+open import Relation.Binary.PropositionalEquality
+  using (subst)
 
-  open import Data.Nat
-    using (_≤_; z≤n; s≤s; _<_)
-    public
+open import Data.Nat
+  using (_≤_; z≤n; s≤s; _<_)
+  public
 
-  open Sandbox
-    using ( IsPreorder; IsEquivalence; IsPartialOrder
-          ; module Preorder-Reasoning
-          ; ≡-preorder; ≡-equiv
-          ; ≤-preorder; ≤-poset
-          )
-    public
+open Sandbox-Preorders
+  using ( IsPreorder; IsEquivalence; IsPartialOrder
+        ; module Preorder-Reasoning
+        ; ≡-preorder; ≡-equiv
+        ; ≤-preorder; ≤-poset
+        )
+  public
 
-  open import Data.Nat.Properties
-    using (≤-refl; ≤-trans; ≤-antisym; n≤1+n; module ≤-Reasoning)
-    public
+open import Data.Nat.Properties
+  using (≤-refl; ≤-trans; ≤-antisym; n≤1+n; module ≤-Reasoning)
+  public
 ```

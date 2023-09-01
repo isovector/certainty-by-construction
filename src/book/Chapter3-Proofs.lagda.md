@@ -14,14 +14,12 @@ module Chapter3-Proofs where
 Prerequisites
 
 :   ```agda
-import Chapter1-Agda
-open Chapter1-Agda.Exports
+open import Chapter1-Agda
   using (Bool; true; false; _∨_; not)
     ```
 
 :   ```agda
-import Chapter2-Numbers
-open Chapter2-Numbers.Exports
+open import Chapter2-Numbers
   using (ℕ; zero; suc)
     ```
 
@@ -170,7 +168,7 @@ bring back into scope:
 
 ```agda
 module Example-ProofsAsPrograms where
-  open Chapter2-Numbers.Exports
+  open Chapter2-Numbers
     using (ℕ; IsEven)
 ```
 
@@ -410,7 +408,7 @@ module Playground where
   open import Relation.Binary.PropositionalEquality
     using (_≡_; refl)
 
-  open Chapter2-Numbers.Exports
+  open Chapter2-Numbers
 ```
 
 We should not be surprised that Agda can determine that two
@@ -2187,6 +2185,12 @@ For our first exercise, `def:suc-injective` states that we can cancel outermost
 `ctor:suc` constructors in equality over the naturals:
 
 
+Hidden
+
+:     ```agda
+  -- fix expr
+      ```
+
 Exercise (Trivial)
 
 : Prove `def:suc-injective` `:` `expr:{x y : ℕ} → suc x ≡ suc y → x ≡ y`.
@@ -2371,34 +2375,33 @@ Solution
 
 
 ```agda
-module Exports where
-  open import Relation.Binary.PropositionalEquality
-    using (_≡_; refl; cong; sym; trans; module ≡-Reasoning)
-    public
+open import Relation.Binary.PropositionalEquality
+  using (_≡_; refl; cong; sym; trans; module ≡-Reasoning)
+  public
 
-  open import Data.Bool
-    using (if_then_else_)
-    public
+open import Data.Bool
+  using (if_then_else_)
+  public
 
-  open import Function
-    using (case_of_)
-    public
+open import Function
+  using (case_of_)
+  public
 
-  open import Data.Bool.Properties
-    using (  ∨-identityˡ  ; ∨-identityʳ
-          ;  ∨-zeroˡ      ; ∨-zeroʳ
-          ;  not-involutive
-          )
-    public
+open import Data.Bool.Properties
+  using (  ∨-identityˡ  ; ∨-identityʳ
+        ;  ∨-zeroˡ      ; ∨-zeroʳ
+        ;  not-involutive
+        )
+  public
 
-  open import Data.Nat.Properties
-    using (  +-identityˡ  ; +-identityʳ
-          ;  *-identityˡ  ; *-identityʳ
-          ;  *-zeroˡ      ; *-zeroʳ
-          ;  +-comm       ; *-comm
-          ;  ^-identityʳ
-          ;  ≤-refl       ; ≤-trans
-          ;  +-suc        ;  suc-injective
-          )
-    public
+open import Data.Nat.Properties
+  using (  +-identityˡ  ; +-identityʳ
+        ;  *-identityˡ  ; *-identityʳ
+        ;  *-zeroˡ      ; *-zeroʳ
+        ;  +-comm       ; *-comm
+        ;  ^-identityʳ
+        ;  ≤-refl       ; ≤-trans
+        ;  +-suc        ;  suc-injective
+        )
+  public
 ```

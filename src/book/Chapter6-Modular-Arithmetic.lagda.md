@@ -7,20 +7,17 @@ module Chapter6-Modular-Arithmetic where
 Prerequisites
 
 :   ```agda
-import Chapter2-Numbers
-open Chapter2-Numbers.Exports
+open import Chapter2-Numbers
   using (ℕ; zero; suc; _+_; _*_)
     ```
 
 :   ```agda
-import Chapter3-Proofs
-open Chapter3-Proofs.Exports
+open import Chapter3-Proofs
   using (_≡_; cong; module ≡-Reasoning; suc-injective)
     ```
 
 :   ```agda
-import Chapter4-Relations
-open Chapter4-Relations.Exports
+open import Chapter4-Relations
   using ( Rel; Reflexive; Symmetric; Transitive
         ; IsPreorder; IsEquivalence
         ; module Preorder-Reasoning
@@ -43,7 +40,7 @@ xn = b + yn$.
 
 
 ```agda
-module PropEq = Chapter3-Proofs.Exports
+module PropEq = Chapter3-Proofs
 
 module ModularArithmetic where
   data _≈_⟨mod_⟩ (a b n : ℕ) : Set where
@@ -258,7 +255,7 @@ Let's prove two more fact "by hand", the fact that $0 = n\text{ (mod
 }n\text{)}$:
 
 ```agda
-  open Chapter3-Proofs.Exports
+  open Chapter3-Proofs
     hiding (refl; sym)
 
   0≈n : 0 ≈ n
