@@ -2388,20 +2388,22 @@ open import Function
   public
 
 open import Data.Bool.Properties
-  using (  ∨-identityˡ  ; ∨-identityʳ
-        ;  ∨-zeroˡ      ; ∨-zeroʳ
-        ;  not-involutive
-        )
+  using  ( ∨-identityˡ  ; ∨-identityʳ
+         ; ∨-zeroˡ      ; ∨-zeroʳ
+         ; not-involutive
+         )
   public
 
 open import Data.Nat.Properties
-  using (  +-identityˡ  ; +-identityʳ
-        ;  *-identityˡ  ; *-identityʳ
-        ;  *-zeroˡ      ; *-zeroʳ
-        ;  +-comm       ; *-comm
-        ;  ^-identityʳ
-        ;  ≤-refl       ; ≤-trans
-        ;  +-suc        ;  suc-injective
-        )
+  using  ( +-identityˡ  ; +-identityʳ
+         ; *-identityˡ  ; *-identityʳ
+         ; *-zeroˡ      ; *-zeroʳ
+         ; +-assoc      ; *-assoc
+         ; +-comm       ; *-comm
+         ; ^-identityʳ
+         ; ≤-refl       ; ≤-trans
+         ; +-suc        ;  suc-injective
+         ; *-distribˡ-+  ; *-distribʳ-+
+         )
   public
 ```

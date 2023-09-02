@@ -32,7 +32,7 @@ open import Chapter2-Numbers
 
 :   ```agda
 open import Chapter3-Proofs
-  using (_≡_; cong; module ≡-Reasoning; suc-injective)
+  hiding (refl; sym; trans)
     ```
 
 :   ```agda
@@ -295,9 +295,6 @@ will find propositional equality immediately:
   _ = ≡-equiv
 ```
 
-We'll add more instances as we discover more equivalence relations throughout
-this chapter.
-
 
 ## The Ring of Natural Numbers Modulo N
 
@@ -318,87 +315,79 @@ must be parsed as a three-way relationship; that is, the $=$ and $\pmod{n}$
 should be considered part of the same symbol.
 
 Speaking of bad notation, the mathematicians write this so-called ring of
-natural numbers modulo $n$ as `ℕ/nℕ`. No wonder I had such a hard time with this
-back in my undergraduate.
-
-
-A favorite example of quotienting for mathematicians are the so-called "ring of
-natural numbers modulo $n$," more tersely written as $\mathbb{N}/n\mathbb{N}$.
-But what is this ring? This ring is the mathematical way of saying "clock
-addition"---that is, we pick some $n$, maybe $n = 12$ for an example, and say
-that whenever our arithmetic gets to $n$ it overflows back to 0. This is the
-peculiar fact that, on an analog clock, we have the fact that $11 + 2 = 1$. Of
-course, this is a blatant misuse of the equals symbol, so instead we write
-$11 + 2 = 1 \text{(mod 12)}$.
-
-How can we formalize this idea of modular arithmetic? Well, if we'd like to show
-$a = b \text{(mod }n\text{)}$, we would like to find two multiples of $n$ that we can
-use to equate the two. That is to say, we need to find $x, y : ℕ$ such that $a +
-xn = b + yn$.
-
-
-Notice that we use propositional equality at [1](Ann) to assert that we're
-witnessing the fact that these two expressions *really are the same!*
-
-We can now show that our clock example works as expected:
-
-```agda
-  -- _ : 11 + 2 ≈ 1 ⟨mod 12 ⟩
-  -- _ = ≈-mod 0 1 PropEq.refl
-```
-
-Of course, it's quite a mouthful to stick in the `⟨mod_⟩` part every time, so we
-can make a new module and subsequent relation in which we hold the modulus
-constant:
+natural numbers modulo `n` as `ℕ/nℕ`. No wonder I had such a hard time with this
+back in my undergraduate. We can parameterize the entire module over `n :`
+`ℕ`---in essence, holding it constant for the remainder of our definition:
 
 ```agda
 module ℕ/nℕ (n : ℕ) where
+```
+
+So what does it actually mean if $a = b \pmod{n}$? It means that these two
+numbers have the same remainder when divided by `n`. But since we're dealing
+with the natural numbers, we don't have any notion of division at hand. Instead,
+we can phrase the problem as "if we subtract $a$ from $b$, the result should be
+an integer multiple of `n`"  That is, there should exist some `k : ` `type:ℤ`
+such that:
+
+$$
+a - b = kn
+$$
+
+But again, we are dealing with the natural numbers, so we also don't have any
+notion of subtraction. From here we can just bonk the problem with our algebra
+hammer. Split $k$ into $y - x$, and then:
+
+$$
+\begin{aligned}
+& a - b &= (y - x)n \\
+& &= yn - xn \\
+\therefore \quad & a + xn &= b + yn
+\end{aligned}
+$$
+
+This final phrasing of the problem is now something we can represent in the
+natural numbers, and gives rise to our definition of equality modulo `n`:
+
+```agda
   record _≈_ (a b : ℕ) : Set where
     constructor ≈-mod
     field
       x y : ℕ
-      is-mod : a + x * n ≡ b + y * n  -- ! 1
+      is-mod : a + x * n ≡ b + y * n
 
   infix 4 _≈_
 ```
 
-As it happens, `type:_≈_` forms an equivalence relation. Showing reflexivity and
-symmetry is simple enough:
+Note that `type:_≈_` is *parameterized* by `a` and `b`, but *contains* `field:x`
+and `field:y`---this is what we mean above when we say "there exist `field:x`
+and `field:y`, such that..."
+
+Equivalence modulo `n` is really just a particular class of propositional
+equalities, and so we should not be surprised that `type:_≈_` is reflexive---we
+merely pick $x = y$, and the simplest solution here is $x = y = 0$:
 
 ```agda
   ≈-refl : Reflexive _≈_
   ≈-refl = ≈-mod 0 0 refl
+```
 
+Likewise, `type:_≡_` is symmetric, so we should be able to implement the same
+over `type:_≈_`. Just swap the proof around, and rename which variable is
+`field:x` and which is `field:y`:
+
+```agda
   ≈-sym : Symmetric _≈_
   ≈-sym (≈-mod x y p) = ≈-mod y x (sym p)
 ```
 
-However, the transitivity of `type:_≈_` is a significantly harder thing to
-demonstrate. Before diving into the implementation, let's work out the solution
-"on paper" first, where we can more more quickly and require less formality in
-justifying our steps. To set up the problem, given `a ≈ b` and `b ≈ c`, and
-would like to show `a ≈ c`. This looks simple enough, but the short types
-involved here pack quite a punch. Recall that what `a ≈ b` really means is that
-we have two numbers `x y : ℕ`, such that
 
-$$
-a + xn = b + yn
-$$
+## Deriving Transitivity
 
-Similarly for `b ≈ c` we have two more numbers `z w : ℕ` such that
-
-$$
-b + zn = c + wn
-$$
-
-In order to show `type:Transitive _≈_`, we therefore must find two more numbers
-`i j : ℕ` such that the following equation holds:
-
-$$
-a + in = c + jn
-$$
-
-Solving this requires some simultaneous manipulation of the first two equations:
+Showing the transitivity of `type:_≈_` is unfortunately much more involved than
+these two cases. The issue stems from the fact that transitivity requires us to
+glue together two values of `type:_≈_`, each of which, recall, is an equation in
+four variables. Thus, transitivity gives us two equations:
 
 $$
 \begin{aligned}
@@ -407,90 +396,104 @@ b + zn &= c + wn
 \end{aligned}
 $$
 
-We'd like to eliminate the $b$ term, so we can solve both equations for $b$:
+and requires us to find `i j :` `type:ℕ` such that $a + in = c + jn$. Not only
+do we need to solve for `i` and `j`, we must also *prove to Agda* that this is a
+solution. Let's do it on paper first, to get a lower bound for how painful this
+is going to be. We can solve the first equation for $b$:
 
 $$
 \begin{aligned}
-a + xn - yn &= b + yn \\
+a + xn &= b + yn \\
+a + xn - yn &= b
+\end{aligned}
+$$
+
+and the second:
+
+$$
+\begin{aligned}
+b + zn &= c + wn \\
 b &= c + wn - zn
 \end{aligned}
 $$
 
-which then allows us to combine the two equations:
+Since we have separate $b$ on each side, we can combine these two equations into
+one:
 
 $$
-a + xn - yn = b = c + wn - zn
+\begin{aligned}
+a + xn - yn &= b = c + wn - zn \\
+a + xn - yn &= c + wn - zn \\
+\end{aligned}
 $$
 
-and therefore we have:
+and after a little simplification we get our solution:
 
 $$
-a + xn - yn = c + wn - zn
+\begin{aligned}
+a + xn - yn &= c + wn - zn \\
+a + xn + zn &= c + wn + yn \\
+a + (x + z)n &= c + (w + y)n
+\end{aligned}
 $$
 
-Recall, however, that we're working over the natural numbers, which do not have
-a satisfactory implementation of subtraction. So we'd prefer to phrase the
-problem only in addition, which we can do by moving the negative terms to the
-other side:
+namely,
 
 $$
-a + xn + zn = c + wn + yn
+\begin{aligned}
+i &= x + z \\
+j &= w + y
+\end{aligned}
 $$
 
-and all that's left to do is to factor out the $n$:
+The proof is certainly no cake walk, but it does appear to be tractable. Let's
+see if we can convince Agda. What exactly are we going to need? When we get
+started, we'll get two proof terms as arguments, these have type `bind:a b x
+y n:a + x * n ≡ b + y * n` and `bind:b c z w n:b + z * n ≡ c + w * n`
+respectively. Therefore, in order to actually apply those proofs, we're going to
+need some lemmas---the first will need to separate out a `bind:a x n:a + x * n`
+term from `bind:a x z n:a + (x + z) * n`:
 
-$$
-a + (x + z)n = c + (w + y)n
-$$
+```agda
+  lemma₁ : (a x z : ℕ) → a + (x + z) * n ≡ (a + x * n) + z * n
+  lemma₁ a x z = begin
+    a + (x + z) * n      ≡⟨ cong (a +_) (*-distribʳ-+ n x z) ⟩
+    a + (x * n + z * n)  ≡⟨ sym (+-assoc a _ _) ⟩
+    (a + x * n) + z * n  ∎
+    where open ≡-Reasoning
+```
 
-This gives us our desired numbers `i j : ℕ` for transivity, namely $i = x + z$
-and $j = w + y$.
+The other lemma we'll need just swaps two terms in a sum:
 
-And now for the hard part---we must give a *proof* that these are in fact the
-right numbers. Most of the work involved is algebraic manipulation, shuffling
-the terms around such that we can apply `pxy` and then `pzw`. Inlining the
-algebraic manipulation is a huge amount of effort, so instead we will use two
-as-of-yet-undefined lemmas that do the heavy lifting.
+```
+  lemma₂ : (x y z : ℕ) → (x + y) + z ≡ (x + z) + y
+  lemma₂ x y z = begin
+    (x + y) + z  ≡⟨ +-assoc x y z ⟩
+    x + (y + z)  ≡⟨ cong (x +_) (+-comm y z) ⟩
+    x + (z + y)  ≡⟨ sym (+-assoc x z y) ⟩
+    (x + z) + y  ∎
+    where open ≡-Reasoning
+```
 
-Here, `def:lemma₁` distributes `* n` over the addition, and reassociate everything
-so it's in the right shape for `pxy`. Meanwhile, `def:lemma₂` applies the
-commutativity of addition across a pair of parentheses.
+We're now ready to show `def:≈-trans`:
 
 ```agda
   ≈-trans : Transitive _≈_
   ≈-trans {a} {b} {c} (≈-mod x y pxy) (≈-mod z w pzw) =
     ≈-mod (x + z) (w + y)
     ( begin
-      a + (x + z) * n      ≡⟨ lemma₁ a n x z ⟩
+      a + (x + z) * n      ≡⟨ lemma₁ a x z ⟩
       (a + x * n) + z * n  ≡⟨ cong (_+ z * n) pxy ⟩
       (b + y * n) + z * n  ≡⟨ lemma₂ b (y * n) (z * n) ⟩
       (b + z * n) + y * n  ≡⟨ cong (_+ y * n) pzw ⟩
-      c + w * n + y * n    ≡⟨ sym (lemma₁ c n w y) ⟩
+      c + w * n + y * n    ≡⟨ sym (lemma₁ c w y) ⟩
       c + (w + y) * n      ∎
     )
-    where
-      open ≡-Reasoning
-      open import Data.Nat.Solver
-      open +-*-Solver
-
-      lemma₁ = solve 4
-        (λ a n x z → a :+ (x :+ z) :* n := (a :+ x :* n) :+ z :* n)
-        refl
-
-      lemma₂ = solve 3
-        (λ b i j → (b :+ i) :+ j := (b :+ j) :+ i)
-        refl
+    where open ≡-Reasoning
 ```
 
-The ring solver is a fantastic tool for automating away tedious, symbolic proofs
-of this form. Of course, we could have proven these lemmas by hand, but they are
-uninteresting and error-prone. And, after all, why do something by hand when
-it's automateable? What's amazing is that the ring solver is just standard Agda
-library code; it's nothing you couldn't have written for yourself. And indeed,
-we will drill into exactly this problem in @sec:ringsolving.
-
-Anyway, now that we have reflexivity, symmetry, and transitivity, we now know
-that `type:_≈_` is an equivalence relation.
+Haven now shown reflexivity, symmetry, and transitivity, it's clear that
+`type:_≈_` is an equivalence relation:
 
 ```agda
   ≈-preorder : IsPreorder _≈_
@@ -500,56 +503,138 @@ that `type:_≈_` is an equivalence relation.
   ≈-equiv : IsEquivalence _≈_
   IsEquivalence.isPreorder  ≈-equiv = ≈-preorder
   IsEquivalence.sym         ≈-equiv = ≈-sym
-
 ```
 
-Additionally, we can use this fact to get equational reasoning syntax for free,
-via our `module:PreorderReasoning` module from @sec:preorderreasoning.
+Let's drop this fact into the `keyword:instance` environment:
+
+```agda
+  private instance
+    _ = ≈-equiv
+```
+
+and specialize `module:Preorder-Reasoning` so we get reasoning syntax for our
+new preorder:
 
 ```agda
   module Mod-Reasoning = Preorder-Reasoning ≈-preorder
 ```
 
 We're almost ready to build some interesting proofs; but we're going to need to
-define a few more trivial ones first. But let's start proving some properties
-about `type:_≈_` in a new module:
+define a few more trivial ones first. Let's prove two more fact "by hand", the
+fact that $0 = n \pmod{n}$:
 
 ```agda
-
-module mod-properties (n : ℕ) where
-  open ℕ/nℕ n
-
-  private instance
-    _ = ≈-equiv
-```
-
-We'll still need propositional equality for a few things, but the preorder
-reasoning infrastructure is meant to be a mostly drop-in replacement for
-propositional equality.
-
--- TODO(sandy): sloppy; needs some reordering
-
-Let's prove two more fact "by hand", the fact that $0 = n\text{ (mod
-}n\text{)}$:
-
-```agda
-  open Chapter3-Proofs
-    hiding (refl; sym)
-
   0≈n : 0 ≈ n
   0≈n = ≈-mod 1 0 refl
 ```
 
-and the fact that we can `cong suc` onto proofs about `type:_≈_`. While this
-sounds obvious, it doesn't hold for most functions! Most functions do not
+and the fact that the `ctor:suc` function preserves the `type:_≈_` relationship:
+
+```agda
+  suc-cong-mod : {a b : ℕ} → a ≈ b → suc a ≈ suc b
+  suc-cong-mod (≈-mod x y p) = ≈-mod x y (cong suc p)
+```
+
+While this sounds like it should be a freebie, observe that we don't have
+a general `def:cong`-like machine for `type:_≈_`! To convince yourself of this
+claim, consider the function `expr:_∸ 1`, which recall subtracts one from all
+numbers *except zero.* If we had `def:cong` for `type:_≈_`, we could hoist
+`expr:_∸ 1` over $0 = 5 \pmod{5}$ (a true statement), which would give us back
+$0 = 5 \pmod{5}$ (patently false.) Therefore, there can be no `def:cong` for
+`type:_≈_` that allows for arbitrary functions, and so we are forced to prove
+lemmas like `def:suc-cong-mod` as if we were plebs.
+
+With these two hand-proven facts out of the way, we can now show that if
+`bind:a:a ≈ 0`, then `bind:a b:a + b ≈ b`:
+
+```agda
+  +-zero-mod : (a b : ℕ) → a ≈ 0 → a + b ≈ b
+  +-zero-mod a zero a≈0 = begin
+    a + zero  ≡⟨ +-identityʳ a ⟩
+    a         ≈⟨ a≈0 ⟩
+    zero      ∎
+    where open Mod-Reasoning
+  +-zero-mod a (suc b) a≈0 = begin
+    a + suc b    ≡⟨ +-suc a b ⟩
+    suc a + b    ≡⟨⟩
+    suc (a + b)  ≈⟨ suc-cong-mod (+-zero-mod a b a≈0) ⟩
+    suc b        ∎
+    where open Mod-Reasoning
+```
+
+Let's hoist another function about the naturals, namely that `ctor:suc` is
+injective:
+
+```agda
+  suc-injective-mod : {a b : ℕ} → suc a ≈ suc b → a ≈ b
+  suc-injective-mod (≈-mod x y p) = ≈-mod x y (suc-injective p)
+```
+
+Give everything we've built, we can now show a major result, namely that
+`def:_+_` also preserves `type:_≈_`:
+
+```agda
+  +-cong₂-mod : {a b c d : ℕ}
+      → a ≈ b → c ≈ d
+      → a + c ≈ b + d
+  +-cong₂-mod {zero} {b} {c} {d} pab pcd = begin
+    c      ≈⟨ pcd ⟩
+    d      ≈⟨ sym (+-zero-mod b d (sym pab)) ⟩
+    b + d  ∎
+    where open Mod-Reasoning
+  +-cong₂-mod {suc a} {zero} {c} {d} pab pcd = begin
+    suc a + c  ≈⟨ +-zero-mod (suc a) c pab ⟩
+    c          ≈⟨ pcd ⟩
+    d          ∎
+    where open Mod-Reasoning
+  +-cong₂-mod {suc _} {suc _} pab pcd =
+    suc-cong-mod (+-cong₂-mod (suc-injective-mod pab) pcd)
+```
+
+While nobody will argue that `def:+-cong₂-mod` is the prettiest function around,
+it's instructive to compare it to the work we had to do in order to prove
+transitivity. There we had to work out---by hand---exactly what `field:x` and
+`field:y` should be, and then write a big `def:_≡_` term to convince Agda that
+we were right. But now that we have transitivity under our collective belt, we
+can just throw smaller lemmas around and let Agda do all the work computing
+`field:x` and `field:y`.
+
+If we drop out of our module, we can subsequently pick an explicit value for `n`
+and see exactly what happens:
+
+```agda
+  module Playground2 where
+    open ℕ/nℕ 12
+```
+
+
+```agda
+  mod-k+-cong : {a b : ℕ} → (k : ℕ) → a ≈ b → k + a ≈ k + b
+  mod-k+-cong zero a≈b = a≈b
+  mod-k+-cong (suc k) a≈b = suc-cong-mod (mod-k+-cong k a≈b)
+
+  mod-*-cong2 : (k a b : ℕ) → a ≈ b → k * a ≈ k * b
+  mod-*-cong2 k a b (≈-mod x y pab) = ≈-mod (k * x) (k * y) (
+    begin
+    k * a + (k * x) * n  ≡⟨ cong (k * a +_) (*-assoc k x n) ⟩
+    k * a + k * (x * n)  ≡⟨ sym (*-distribˡ-+ k a (x * n)) ⟩
+    k * (a + (x * n))    ≡⟨ cong (k *_) pab ⟩
+    k * (b + (y * n))    ≡⟨ *-distribˡ-+ k b (y * n) ⟩
+    k * b + k * (y * n)  ≡⟨ sym (cong (k * b +_) (*-assoc k y n)) ⟩
+    k * b + (k * y) * n  ∎
+    )
+    where open ≡-Reasoning
+```
+
+and the fact that we can `expr:cong suc` onto proofs about `type:_≈_`. While
+this sounds obvious, it actually doesn't hold for most functions, which makes
+`ctor:suc` special. For example, consider the function `expr:λ n → n * 4`. It's
+certainly true that $3 = 8 \pmod{5}$, but $3 \times 4 = 12 \neq 32 = 8 \times $
+
+Most functions do not
 preserve setoid equality, so it's very exciting to find ones that do. To
 illustrate this point, consider the function `4 *_`, which doesn't preserve
 equality whenever, for example, $n = 5$.
-
-```agda
-  mod-suc-cong : {a b : ℕ} → a ≈ b → suc a ≈ suc b
-  mod-suc-cong (≈-mod x y p) = ≈-mod x y (cong suc p)
-```
 
 Now that our setoid infrastructure is bought and paid for, and also that we have
 a few primitive lemmas to work with, we're ready to begin proving things about
@@ -558,85 +643,12 @@ setoid reasoning throughout the rest of the current module.
 
 Let's begin by proving the following theorem:
 
-```agda
-  +-zero-mod : (a b : ℕ) → a ≈ 0 → a + b ≈ b
-```
-
-We can proceed in two cases, by splitting on `b`. In the zero case, we need to
-show `a + zero ≈ zero ⟨mod n⟩`. Like when we did reasoning over propositional
-equality, we `begin`:
-
-```agda
-  +-zero-mod a zero a≈0 = begin
-    a + zero  ≡⟨ +-identityʳ a ⟩
-    a         ≈⟨ a≈0 ⟩
-    zero      ∎
-    where open Mod-Reasoning
-```
-
-We also need to show the `ctor:suc` case, presented without further commentary.
-
-```agda
-  +-zero-mod a (suc b) a≈0 = begin
-    a + suc b    ≡⟨ +-suc a b ⟩
-    suc a + b    ≡⟨⟩
-    suc (a + b)  ≈⟨ mod-suc-cong (+-zero-mod a b a≈0) ⟩
-    suc b        ∎
-    where open Mod-Reasoning
-```
-
 Let's hoist another theorem about natural numbers that will come in handy: the
 fact that `ctor:suc` is injective.
-
-```agda
-  mod-suc-injective
-    : {a b : ℕ} → suc a ≈ suc b → a ≈ b
-  mod-suc-injective (≈-mod x y p) =
-    ≈-mod x y (suc-injective p)
-```
 
 We're now ready to show a major result, the fact that `type:_≈_` preserves
 addition. Congruence proofs like this are the real workhorses of getting real
 mathematics done, so it's exciting that we're able to build it.
-
-```agda
-  +-cong₂-mod
-      : {a b c d : ℕ}
-      → a ≈ b
-      → c ≈ d
-      → a + c ≈ b + d
-```
-
-We can begin by case splitting on `a`. The zero case is straightforward, making
-use of our previous lemma `def:+-zero-mod`:
-
-```agda
-  +-cong₂-mod {zero} {b} {c} {d} pab pcd = begin
-    c         ≈⟨ pcd ⟩
-    d         ≈⟨ sym (+-zero-mod b d (sym pab)) ⟩
-    b + d     ∎
-    where open Mod-Reasoning
-```
-
-In the `ctor:suc` case, we can now case split on `b`. The zero case is equally
-straightforward:
-
-```agda
-  +-cong₂-mod {suc a} {zero} {c} {d} pab pcd = begin
-    suc a + c  ≈⟨ +-zero-mod (suc a) c pab ⟩
-    c          ≈⟨ pcd ⟩
-    d          ∎
-    where open Mod-Reasoning
-```
-
-And all that's left is the non-zero cases, in which we can hand the problem over
-to induction, using `def:mod-suc-cong` and `def:mod-suc-injective` to manipulate our
-proofs back into the right shape.
-
-```agda
-  +-cong₂-mod {suc a} {suc b} {c} {d} pab pcd =
-      mod-suc-cong (+-cong₂-mod (mod-suc-injective pab) pcd)
-```
 
 `def:+-cong₂-mod` is quite a marvel of a theorem, especially when you consider
 needing to build this proof term by hand. Let's take a moment to appreciate what
@@ -717,7 +729,7 @@ multiplication, via `def:*-cong₂-mod`:
   *-cong₂-mod {suc a} {suc b} {c} {d} a=b c=d = begin
     suc a * c  ≡⟨⟩
     c + a * c  ≈⟨ +-cong₂-mod c=d
-                    (*-cong₂-mod (mod-suc-injective a=b) c=d)⟩
+                    (*-cong₂-mod (suc-injective-mod a=b) c=d)⟩
     d + b * d  ≡⟨⟩
     suc b * d  ∎
     where open Mod-Reasoning
