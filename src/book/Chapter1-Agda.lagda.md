@@ -1479,7 +1479,7 @@ two definitions as:
 Much nicer, isn't it?
 
 
-## Copatterns and Constructors {#sec:tuples}
+## Copatterns and Constructors {#sec:copatterns}
 
 We now have nice syntax for projecting out of records. But can we do anything to
 improve the syntax involved in building them? It would be really nice to be able

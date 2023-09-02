@@ -17,7 +17,9 @@ PANDOC_PDF_OPTS := --from latex+raw_tex \
                    -t latex+lagda
 
 PANDOC_EPUB_OPTS := --from markdown+fancy_lists+raw_html \
+                    -F pandoc-crossref \
                     --toc \
+                    --citeproc \
                     -s \
                     --top-level-division=chapter \
                     -t epub
@@ -85,6 +87,9 @@ build/tex/book/%.tex : build/tex/agda/latex/%.tex
 build-epub/book/%.md : build-epub/agda/html/%.md
 	mv $^ $@
 	sed -i 's/⅋[^ {}()._\\]*//g' $@
+	sed -i 's/id="\([^"]\+\)"/id="$*-\1"/g' $@
+	sed -i 's/href="\([^#]\+\).html#\([^"]\+\)"/href="#\1-\2"/g' $@
+	sed -i 's/href="[^"#]\+"//g' $@
 
 build/.design-tools :
 	mkdir build/.design-tools
