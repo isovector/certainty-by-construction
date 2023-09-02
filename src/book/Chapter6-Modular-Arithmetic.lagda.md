@@ -10,7 +10,7 @@ have tried our hands at building equivalence relations.
 
 Presented in the abstract, it can be easy to miss the forest for the trees, and
 think that all this *stuff* is good only for padding a resume. Not so! In my
-first year being an undergraduate, I was forced to battle with modular
+first year being an undergraduate, p was forced to battle with modular
 arithmetic, and it was one of the worst grades in my academic career. A decade
 later, I'm ready to fight back, and thought it would be fun to put together this
 chapter to prove to myself that Agda really can help me learn difficult topics.
@@ -315,7 +315,7 @@ must be parsed as a three-way relationship; that is, the $=$ and $\pmod{n}$
 should be considered part of the same symbol.
 
 Speaking of bad notation, the mathematicians write this so-called ring of
-natural numbers modulo `n` as `ℕ/nℕ`. No wonder I had such a hard time with this
+natural numbers modulo `n` as `ℕ/nℕ`. No wonder p had such a hard time with this
 back in my undergraduate. We can parameterize the entire module over `n :`
 `ℕ`---in essence, holding it constant for the remainder of our definition:
 
@@ -396,8 +396,8 @@ b + zn &= c + wn
 \end{aligned}
 $$
 
-and requires us to find `i j :` `type:ℕ` such that $a + in = c + jn$. Not only
-do we need to solve for `i` and `j`, we must also *prove to Agda* that this is a
+and requires us to find `p q :` `type:ℕ` such that $a + pn = c + qn$. Not only
+do we need to solve for `p` and `q`, we must also *prove to Agda* that this is a
 solution. Let's do it on paper first, to get a lower bound for how painful this
 is going to be. We can solve the first equation for $b$:
 
@@ -441,8 +441,8 @@ namely,
 
 $$
 \begin{aligned}
-i &= x + z \\
-j &= w + y
+p &= x + z \\
+q &= w + y
 \end{aligned}
 $$
 
@@ -465,13 +465,13 @@ term from `bind:a x z n:a + (x + z) * n`:
 
 The other lemma we'll need just swaps two terms in a sum:
 
-```
-  lemma₂ : (x y z : ℕ) → (x + y) + z ≡ (x + z) + y
-  lemma₂ x y z = begin
-    (x + y) + z  ≡⟨ +-assoc x y z ⟩
-    x + (y + z)  ≡⟨ cong (x +_) (+-comm y z) ⟩
-    x + (z + y)  ≡⟨ sym (+-assoc x z y) ⟩
-    (x + z) + y  ∎
+```agda
+  lemma₂ : (i j k : ℕ) → (i + j) + k ≡ (i + k) + j
+  lemma₂ i j k = begin
+    (i + j) + k  ≡⟨ +-assoc i j k ⟩
+    i + (j + k)  ≡⟨ cong (i +_) (+-comm j k) ⟩
+    i + (k + j)  ≡⟨ sym (+-assoc i k j) ⟩
+    (i + k) + j  ∎
     where open ≡-Reasoning
 ```
 
@@ -516,7 +516,10 @@ and specialize `module:Preorder-Reasoning` so we get reasoning syntax for our
 new preorder:
 
 ```agda
-  module Mod-Reasoning = Preorder-Reasoning ≈-preorder
+  module Mod-Reasoning where
+    open Preorder-Reasoning ≈-preorder
+      hiding (refl; trans)
+      public
 ```
 
 We're almost ready to build some interesting proofs; but we're going to need to
@@ -599,114 +602,26 @@ we were right. But now that we have transitivity under our collective belt, we
 can just throw smaller lemmas around and let Agda do all the work computing
 `field:x` and `field:y`.
 
-If we drop out of our module, we can subsequently pick an explicit value for `n`
-and see exactly what happens:
+Proving these things without our equivalence relation isn't necessarily hard,
+each one is non-trivial amount of work. Worse, however, is that such a proof is
+at a lower level than we'd prefer---we want to be thinking about modular
+arithmetic, not juggling equations!
 
-```agda
-  module Playground2 where
-    open ℕ/nℕ 12
-```
-
-
-```agda
-  mod-k+-cong : {a b : ℕ} → (k : ℕ) → a ≈ b → k + a ≈ k + b
-  mod-k+-cong zero a≈b = a≈b
-  mod-k+-cong (suc k) a≈b = suc-cong-mod (mod-k+-cong k a≈b)
-
-  mod-*-cong2 : (k a b : ℕ) → a ≈ b → k * a ≈ k * b
-  mod-*-cong2 k a b (≈-mod x y pab) = ≈-mod (k * x) (k * y) (
-    begin
-    k * a + (k * x) * n  ≡⟨ cong (k * a +_) (*-assoc k x n) ⟩
-    k * a + k * (x * n)  ≡⟨ sym (*-distribˡ-+ k a (x * n)) ⟩
-    k * (a + (x * n))    ≡⟨ cong (k *_) pab ⟩
-    k * (b + (y * n))    ≡⟨ *-distribˡ-+ k b (y * n) ⟩
-    k * b + k * (y * n)  ≡⟨ sym (cong (k * b +_) (*-assoc k y n)) ⟩
-    k * b + (k * y) * n  ∎
-    )
-    where open ≡-Reasoning
-```
-
-and the fact that we can `expr:cong suc` onto proofs about `type:_≈_`. While
-this sounds obvious, it actually doesn't hold for most functions, which makes
-`ctor:suc` special. For example, consider the function `expr:λ n → n * 4`. It's
-certainly true that $3 = 8 \pmod{5}$, but $3 \times 4 = 12 \neq 32 = 8 \times $
-
-Most functions do not
-preserve setoid equality, so it's very exciting to find ones that do. To
-illustrate this point, consider the function `4 *_`, which doesn't preserve
-equality whenever, for example, $n = 5$.
-
-Now that our setoid infrastructure is bought and paid for, and also that we have
-a few primitive lemmas to work with, we're ready to begin proving things about
-modular arithmetic in earnest. We can open the `mod-reasoning` module to enable
-setoid reasoning throughout the rest of the current module.
-
-Let's begin by proving the following theorem:
-
-Let's hoist another theorem about natural numbers that will come in handy: the
-fact that `ctor:suc` is injective.
-
-We're now ready to show a major result, the fact that `type:_≈_` preserves
-addition. Congruence proofs like this are the real workhorses of getting real
-mathematics done, so it's exciting that we're able to build it.
-
-`def:+-cong₂-mod` is quite a marvel of a theorem, especially when you consider
-needing to build this proof term by hand. Let's take a moment to appreciate what
-we've accomplished here, by reasoning our way through how we would have solved
-the problem naively.
-
-Our parameters to `def:+-cong₂-mod` work out to two equations:
-
-$$
-a + xn = b + yn \\
-c + zn = d + wn
-$$
-
-and we are tasked with finding $p$ and $q$ such that the following holds:
-
-$$
-(a + c) + pn = (b + d) + qn
-$$
-
-The solution is to add the two original equations together, point-wise:
-
-$$
-a + xn + c + zn = b + yn + d + wn
-$$
-
-and then group like terms:
-
-$$
-(a + c) + xn + zn = (b + d) + yn + wn
-$$
-
-of which we can then factor out an $n$ term:
-
-$$
-(a + c) + (x + z)n = (b + d) + (y + w)n
-$$
-
-giving us the solutions $p = x + z$ and $q = y + w$. So far so good, but now we
-are tasked with building this equality term given the original equations. It's
-not hard, but it's a consider amount of work. But the worst part is that this
-reasoning is at a lower level than we'd like to be operating; we want to be
-thinking about modular arithmetic, not juggling equations!
-
-We'll prove two more facts about modular arithmetic, one in service of the
-other. We can show that modular multiplication by zero results in zero:
+Let's prove prove two more facts about modular arithmetic, the first in service
+of the second. We can show that modular multiplication by zero results in zero:
 
 ```agda
   *-zero-mod : (a b : ℕ) → b ≈ 0 → a * b ≈ 0
-  *-zero-mod zero b x = refl
-  *-zero-mod (suc a) b x = begin
+  *-zero-mod zero     b x = refl
+  *-zero-mod (suc a)  b x = begin
     suc a * b  ≡⟨⟩
     b + a * b  ≈⟨ +-cong₂-mod x (*-zero-mod a b x) ⟩
     0          ∎
     where open Mod-Reasoning
 ```
 
-And at long last, we can show that modular arithmetic is also congruent over
-multiplication, via `def:*-cong₂-mod`:
+and use that as a lemma to show that `def:_*_` preserves `type:_≈_`, via
+`def:*-cong₂-mod`:
 
 ```agda
   *-cong₂-mod
@@ -760,10 +675,9 @@ q &= dy + bw + ywn
 \end{aligned}
 $$
 
-Convincing Agda of the equality of these terms is on the order of 50 algebraic
+Proving the equality of these terms in Agda is on the order of 50 algebraic
 manipulations; most of it being gentle massaging of the expression into
-something you can `cong` one proof over, and then massaging it into a form on
-which you can `cong` the other.
+something over which you can continually `def:cong` one proof after another.
 
 All in all, setoids have bought us a great deal of algebraic power. We've used
 them to manage working over an equivalence relation, showing how we can quotient
