@@ -1,0 +1,5 @@
+name: math-for-programmers
+depend: standard-library
+include: agda
+flags:
+  --warning=noUnsupportedIndexedMatch

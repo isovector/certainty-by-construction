@@ -1,11 +1,10 @@
-RULES := pdf
+RULES := pdf epub sample
 CONTENT := book
 
 PANDOC_OPTS := -F pandoc-crossref \
                --citeproc \
                --filter design-tools-exe \
                --from markdown+fancy_lists+raw_tex \
-               -t latex+lagda \
                --tab-stop=100 \
                --no-highlight \
                --top-level-division=part
@@ -16,6 +15,12 @@ PANDOC_PDF_OPTS := --from latex+raw_tex \
                    -s \
                    --top-level-division=chapter \
                    -t latex+lagda
+
+PANDOC_EPUB_OPTS := --from markdown+fancy_lists+raw_html \
+                    --toc \
+                    -s \
+                    --top-level-division=chapter \
+                    -t epub
 
 ALL_CHAPTERS := Chapter00-preface \
                 Chapter0-coblub \
@@ -32,8 +37,9 @@ ALL_CHAPTERS := Chapter00-preface \
 
 ALL_LITERATE_AGDA := $(patsubst %,src/book/%.lagda.md,$(ALL_CHAPTERS))
 ALL_LAGDA_TEX := $(patsubst src/book/%.lagda.md,build/tex/agda/%.lagda.tex,$(ALL_LITERATE_AGDA))
-ALL_AGDA_TEX := $(patsubst src/book/%,build/tex/agda/%,$(wildcard src/book/*.agda))
+ALL_LAGDA_HTML := $(patsubst src/book/%.lagda.md,build-epub/agda/%.lagda.html,$(ALL_LITERATE_AGDA))
 ALL_TEX := $(patsubst src/book/%.lagda.md,build/tex/book/%.tex,$(ALL_LITERATE_AGDA))
+ALL_HTML := $(patsubst src/book/%.lagda.md,build-epub/book/%.md,$(ALL_LITERATE_AGDA))
 
 SAMPLE_CHAPTERS := Chapter0-coblub \
                    Chapter6-Decidability
@@ -44,29 +50,48 @@ SAMPLE_AGDA_TEX := $(patsubst src/book/%,build/tex/agda/%,$(wildcard src/book/*.
 SAMPLE_TEX := $(patsubst src/book/%.lagda.md,build/tex/book/%.tex,$(SAMPLE_LITERATE_AGDA))
 
 # $(RULES): %: build/%.pdf
-all : build/pdf.pdf build/sample.pdf
 
+pdf : build/pdf.pdf
+sample : build/sample.pdf
+epub : build/epub.epub
+
+all : build/pdf.pdf build/sample.pdf build-epub.epub
+
+# -- Source the files
 # Transpile markdown to latex
 build/tex/agda/%.lagda.tex : src/book/%.lagda.md
-	pandoc $(PANDOC_OPTS) -o $@ $^
+	pandoc $(PANDOC_OPTS) -t latex+lagda -o $@ $^
 
-# Copy non-literate agda into build directory
-build/tex/agda/%.agda : src/book/%.agda
+# Just copy for html
+build-epub/agda/%.lagda.md : src/book/%.lagda.md
 	cp $^ $@
 
-# Run the agda processor
+# -- Run the agda processor
+# TEX
 build/tex/agda/latex/%.tex : build/tex/agda/%.lagda.tex
 	(cd build/tex/agda && agda --latex $*.lagda.tex)
 	(grep UnsolvedMeta $@ > /dev/null && scripts/fix-metaspan.sh $@) || echo "ok"
 
-# Copy the resulting latex document
+# HTML
+build-epub/agda/html/%.md : build-epub/agda/%.lagda.md
+	(cd build-epub/agda && agda --html --html-highlight=code $*.lagda.md)
+
+# -- Copy the resulting documents
+# TEX
 build/tex/book/%.tex : build/tex/agda/latex/%.tex
 	mv $^ $@
+
+# HTML
+build-epub/book/%.md : build-epub/agda/html/%.md
+	mv $^ $@
+	sed -i 's/⅋[^ {}()._\\]*//g' $@
 
 build/.design-tools :
 	mkdir build/.design-tools
 
-# Compile all the resulting latex documents together
+
+# -- Compile all the resulting latex documents together
+# TEX
 build/tex/pdf.tex : $(ALL_TEX) format/tex/template.tex build/.design-tools Makefile
 	cp .design-tools/*.png build/.design-tools
 	pandoc $(PANDOC_PDF_OPTS) -o $@ $(ALL_TEX)
@@ -76,6 +101,14 @@ build/tex/pdf.tex : $(ALL_TEX) format/tex/template.tex build/.design-tools Makef
 	sed -i 's/⅋[^ {}()._\\]*//g' $@
 	sed -i 's/VERYILLEGALCODE/code/g' $@
 	sed -i '/{part}/d' $@
+
+# HTML
+build-epub/epub.epub : $(ALL_HTML) format/epub/metadata.md build/.design-tools Makefile
+	cp .design-tools/*.png build/.design-tools
+	pandoc $(PANDOC_EPUB_OPTS) -o $@ format/epub/metadata.md $(ALL_HTML)
+
+build/epub.epub : build-epub/epub.epub
+	cp $^ $@
 
 build/tex/sample.tex : $(SAMPLE_TEX) format/tex/template.tex build/.design-tools Makefile
 	cp .design-tools/*.png build/.design-tools
@@ -92,34 +125,25 @@ build/tex/agda.sty : format/tex/agda.sty
 	cp $^ $@
 
 # Build the pdf!
-build/pdf.pdf :  $(ALL_LAGDA_TEX) $(ALL_AGDA_TEX) build/tex/pdf.tex build/tex/agda.sty
+build/pdf.pdf :  $(ALL_LAGDA_TEX) build/tex/pdf.tex build/tex/agda.sty
 	make -C build pdf.pdf
 
-# Build the pdf!
+# Build the sample!!
 build/sample.pdf :  $(SAMPLE_LAGDA_TEX) $(SAMPLE_AGDA_TEX) build/tex/sample.tex build/tex/agda.sty
 	make -C build sample.pdf
 
 
+.NOTINTERMEDIATE: build/tex/agda/%.lagda.tex $(ALL_LAGDA_TEX)
+
+.PHONY: clean clean-epub all $(RULES)
 
 
-
-
-# targets = $(addsuffix .pdf,$(addprefix build/,$(RULES)))
-# $(targets): build/%.pdf: build/tex/%.tex
-#		make -C build $*.pdf
-
-# sources = $(addsuffix .tex,$(addprefix build/tex/,$(RULES)))
-# prose = $(addsuffix /*.lagda.md,$(addprefix src/,$(CONTENT)))
-# $(sources): build/tex/%.tex: src/metadata.md src/%.md $(prose) format/tex/template.tex
-#		pandoc $(PANDOC_OPTS) $(PANDOC_PDF_OPTS) -o $@ $(filter %.lagda.md,$^)
-#		# cp .design-tools/*.png build/.design-tools
-#		sed -i 's/\CommentTok{{-}{-} ! \([0-9]\)}/annotate{\1}/g' $@
-#		sed -i 's/\CommentTok{{-}{-} .via \([^}]\+\)}/reducevia{\1}/g' $@
-#		sed -i 's/\(\\KeywordTok{law} \\StringTok\){"\([^"]\+\)"}/\1{\\lawname{\2}}/g' $@
-
-.NOTINTERMEDIATE: build/tex/agda/%.lagda.tex $(ALL_LAGDA_TEX) $(ALL_AGDA_TEX)
-
-.PHONY: clean all $(RULES)
+clean-epub:
+	rm -r build-epub/agda/* || echo 0
+	rm -r build-epub/agda/html/* || echo 0
+	rm -r build-epub/book/* || echo 0
+	rm build/epub.epub || echo 0
+	rm build-epub/epub.epub || echo 0
 
 clean:
 	rm -r build/tex/agda/*

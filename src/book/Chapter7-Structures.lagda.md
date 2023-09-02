@@ -1663,46 +1663,46 @@ which maps every element in some other monoid to `field:ε`:
     }
     where open Monoid m
 
-  -- TODO(sandy): fixme; haven't discussed isos
-  open import propisos
+  -- -- TODO(sandy): fixme; haven't discussed isos
+  -- open import propisos
 
-  module _ (m₁ : Monoid c₁ ℓ₁) (m₂ : Monoid c₂ ℓ₂) where
-    open import Relation.Binary using (_Preserves_⟶_)
-    open Monoid m₁ using () renaming (Carrier to X; ε to ε₁; _∙_ to _∙₁_)
-    open Monoid m₂ using () renaming (Carrier to Y; ε to ε₂; _∙_ to _∙₂_)
-    open Monoid
+  -- module _ (m₁ : Monoid c₁ ℓ₁) (m₂ : Monoid c₂ ℓ₂) where
+  --   open import Relation.Binary using (_Preserves_⟶_)
+  --   open Monoid m₁ using () renaming (Carrier to X; ε to ε₁; _∙_ to _∙₁_)
+  --   open Monoid m₂ using () renaming (Carrier to Y; ε to ε₂; _∙_ to _∙₂_)
+  --   open Monoid
 
-    invertible
-        : (iso : Monoid.setoid m₁ ↔ Monoid.setoid m₂)
-        → MonHom m₁ m₂ (_↔_.to iso)
-        → MonHom m₂ m₁ (_↔_.from iso)
-    preserves-ε (invertible iso hom) =
-      begin
-        from ε₂
-      ≈⟨ from-cong (sym m₂ (preserves-ε hom)) ⟩
-        from (to ε₁)
-      ≈⟨ left-inv-of ε₁ ⟩
-        ε₁
-      ∎
-      where
-        open _↔_ iso
-        open Reasoning m₁
-    preserves-∙ (invertible iso hom) a b =
-      begin
-        from (a ∙₂ b)
-      ≈⟨ sym m₁ (from-cong (∙-cong m₂ (right-inv-of _) (right-inv-of _))) ⟩
-        from (to (from a) ∙₂ to (from b))
-      ≈⟨ from-cong (sym m₂ (preserves-∙ hom _ _)) ⟩
-        from (to (from a ∙₁ from b))
-      ≈⟨ left-inv-of (from a ∙₁ from b) ⟩
-        from a ∙₁ from b
-      ∎
-      where
-        open _↔_ iso
-        open Reasoning m₁
-    f-cong (invertible iso hom) {x} {y} x≈₂y = _↔_.from-cong iso x≈₂y
+  --   invertible
+  --       : (iso : Monoid.setoid m₁ ↔ Monoid.setoid m₂)
+  --       → MonHom m₁ m₂ (_↔_.to iso)
+  --       → MonHom m₂ m₁ (_↔_.from iso)
+  --   preserves-ε (invertible iso hom) =
+  --     begin
+  --       from ε₂
+  --     ≈⟨ from-cong (sym m₂ (preserves-ε hom)) ⟩
+  --       from (to ε₁)
+  --     ≈⟨ left-inv-of ε₁ ⟩
+  --       ε₁
+  --     ∎
+  --     where
+  --       open _↔_ iso
+  --       open Reasoning m₁
+  --   preserves-∙ (invertible iso hom) a b =
+  --     begin
+  --       from (a ∙₂ b)
+  --     ≈⟨ sym m₁ (from-cong (∙-cong m₂ (right-inv-of _) (right-inv-of _))) ⟩
+  --       from (to (from a) ∙₂ to (from b))
+  --     ≈⟨ from-cong (sym m₂ (preserves-∙ hom _ _)) ⟩
+  --       from (to (from a ∙₁ from b))
+  --     ≈⟨ left-inv-of (from a ∙₁ from b) ⟩
+  --       from a ∙₁ from b
+  --     ∎
+  --     where
+  --       open _↔_ iso
+  --       open Reasoning m₁
+  --   f-cong (invertible iso hom) {x} {y} x≈₂y = _↔_.from-cong iso x≈₂y
 
-  -- identities are unique
+  -- -- identities are unique
 ```
 
 -- TODO(sandy): other examples?
