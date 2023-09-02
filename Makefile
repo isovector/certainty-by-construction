@@ -23,8 +23,8 @@ ALL_CHAPTERS := Chapter00-preface \
                 Chapter2-Numbers \
                 Chapter3-Proofs \
                 Chapter4-Relations \
-                Chapter5-Decidability \
-                Chapter6-Modular-Arithmetic \
+                Chapter5-Modular-Arithmetic \
+                Chapter6-Decidability \
                 Chapter7-Structures \
                 Chapter8-Isomorphisms \
                 Chapter9-Ring-Solving \
@@ -36,7 +36,7 @@ ALL_AGDA_TEX := $(patsubst src/book/%,build/tex/agda/%,$(wildcard src/book/*.agd
 ALL_TEX := $(patsubst src/book/%.lagda.md,build/tex/book/%.tex,$(ALL_LITERATE_AGDA))
 
 SAMPLE_CHAPTERS := Chapter0-coblub \
-                   Chapter5-Decidability
+                   Chapter6-Decidability
 
 SAMPLE_LITERATE_AGDA := $(patsubst %,src/book/%.lagda.md,$(SAMPLE_CHAPTERS))
 SAMPLE_LAGDA_TEX := $(patsubst src/book/%.lagda.md,build/tex/agda/%.lagda.tex,$(SAMPLE_LITERATE_AGDA))

@@ -11,7 +11,7 @@ open import Chapter1-Agda using () renaming (_,_ to _,⅋_; _×_ to _×⅋_)
 
 
 ```agda
-module Chapter5-Decidability where
+module Chapter6-Decidability where
 ```
 
 

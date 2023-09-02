@@ -1,7 +1,7 @@
 # Modular Arithmetic
 
 ```agda
-module Chapter6-Modular-Arithmetic where
+module Chapter5-Modular-Arithmetic where
 ```
 
 In the last several chapters, we have constructed the natural numbers, proven

@@ -557,8 +557,8 @@ Of course, `def:foldableList` is not the only inhabitant of `type:Foldable`.
 `type:BinTree`s, for example, are also foldable:
 
 ```agda
-  import  Chapter5-Decidability
-  open Chapter5-Decidability.BinaryTrees
+  import  Chapter6-Decidability
+  open Chapter6-Decidability.BinaryTrees
     using (BinTree; leaf; branch; empty)
 
   foldableBinTree : Foldable {lzero} {ℓ₁} lzero BinTree
