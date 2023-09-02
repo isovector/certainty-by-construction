@@ -1160,7 +1160,7 @@ Exercise (Easy)
       ```
 
 
-## Preorders
+## Preorders {#sec:preorders}
 
 As humans, we are naturally drawn to order, structure, and patterns, and thus
 the properties of reflexivity and transitivity can seem mundane to us. But this
