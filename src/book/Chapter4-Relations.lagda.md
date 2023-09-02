@@ -1721,7 +1721,7 @@ of this "or equal to" business. That's easy enough; we can just insert a
 While `def:_<_` comes in handy sometimes, it's not a very well behaved
 relation---it's not reflexive, symmetric, or even antisymmetric! What a bust of
 a relation! We don't yet have the sophistication to prove something is false,
-but that's exactly the sort of thing we'll tackle in the next chapter.
+but that's exactly the sort of thing we'll tackle in @sec:decidability.
 
 
 ## Wrapping Up
