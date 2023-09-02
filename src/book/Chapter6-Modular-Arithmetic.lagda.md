@@ -522,6 +522,9 @@ new preorder:
       public
 ```
 
+
+## Congruence of Addition
+
 We're almost ready to build some interesting proofs; but we're going to need to
 define a few more trivial ones first. Let's prove two more fact "by hand", the
 fact that $0 = n \pmod{n}$:
@@ -607,6 +610,9 @@ each one is non-trivial amount of work. Worse, however, is that such a proof is
 at a lower level than we'd prefer---we want to be thinking about modular
 arithmetic, not juggling equations!
 
+
+## Congruence of Multiplication
+
 Let's prove prove two more facts about modular arithmetic, the first in service
 of the second. We can show that modular multiplication by zero results in zero:
 
@@ -679,20 +685,12 @@ Proving the equality of these terms in Agda is on the order of 50 algebraic
 manipulations; most of it being gentle massaging of the expression into
 something over which you can continually `def:cong` one proof after another.
 
-All in all, setoids have bought us a great deal of algebraic power. We've used
-them to manage working over an equivalence relation, showing how we can quotient
-over values that are not *literally* equal to one another, but still operate in
-a context that allows us to work as if they were. The only real loss here is
-that `cong` no longer holds for all functions, and that we must prove it holds
-whenever we'd like to use that fact. This is a limitation more of Agda's type
-theory than it is of mathematics; in the latter, it's perfectly acceptable to
-define a quotient relationship that holds by fiat. It is only in our
-computational context that we are required to *show* that functions cannot
-observe the difference between quotiented values.
-
-On the other hand, the rigor afforded to us by doing mathematics in a rich type
-theory is what has driven so much of the recent study of equality. When you're
-doing mathematics by pen and paper, it's easy to be sloppy about what equality
-actually *means.* The setoid approach can be paraphrased as "whenever you define
-a set, you must also define what equality means over it."
+All in all, showing `def:_≈_` is an equivalence relation has bought us a great
+deal of algebraic power. We're now able to work with values which are not equal
+*on the nose,* but rather "equal enough" in the circumstances. The only real
+loss here is that `def:cong` no longer holds for all functions, and that we must
+prove it holds on a function-by-function basis. There do exist extensions to
+Agda's type theory which allow us to upgrade equivalence to real,
+honest-to-goodness equality, but they are beyond the scope of this book, and are
+a major driving force in modern type theory research.
 
