@@ -1910,13 +1910,30 @@ I have bound the first to [`step`](AgdaMode), and the latter to
 [`begin`](AgdaMode).
 
 Let's put these to work writing something more useful. We'd like to prove that
-addition is *associative,* which is to say, that it satisfies the following law:
+`def:_∨_` is associative, which is to say, that it satisfies the following law:
 
 $$
-(a + b) + c = a + (b  + c)
+(a \vee b) \vee c = a \vee (b  \vee c)
 $$
 
 We can write this in Agda with the type:
+
+
+```agda
+  ∨-assoc⅋₀ : (a b c : Bool) → (a ∨ b) ∨ c ≡ a ∨ (b ∨ c)
+  ∨-assoc⅋₀ = ?
+```
+
+You should be able to prove this one for yourself:
+
+```agda
+  ∨-assoc : (a b c : Bool) → (a ∨ b) ∨ c ≡ a ∨ (b ∨ c)
+  ∨-assoc false  b c = refl
+  ∨-assoc true   b c = refl
+```
+
+Not too hard at all, is it? Let's now try the same, except this time showing
+that it's addition that's associative:
 
 
 ```agda
@@ -2390,6 +2407,7 @@ open import Function
 open import Data.Bool.Properties
   using  ( ∨-identityˡ  ; ∨-identityʳ
          ; ∨-zeroˡ      ; ∨-zeroʳ
+         ; ∨-assoc
          ; not-involutive
          )
   public

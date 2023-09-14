@@ -8,20 +8,27 @@ Hidden
 
 ```agda
 module Chapter7-Structures where
-
-open import Level
-  using (Level)
-  renaming (zero to lzero; suc to lsuc; _⊔_ to _⊔l_)
 ```
 
--- TODO(sandy): removeme
+Prerequisites
 
-```agda
-postulate
-  leave-me-as-a-hole : {a : Level} {A : Set a} → A
-```
+:   ```agda
+open import Chapter1-Agda
+    ```
 
--- TODO(sandy): this intro doesn't make much sense anymore
+:   ```agda
+open import Chapter2-Numbers
+    ```
+
+:   ```
+open import Chapter3-Proofs
+  hiding (refl; sym; trans)
+module ≡ = Chapter3-Proofs
+    ```
+
+:   ```
+open import Chapter4-Relations
+    ```
 
 
 One exceptionally common notion in mathematics is the notion of a "set equipped
@@ -126,8 +133,10 @@ everything polymorphic, but you should be able to follow along with the
 following, even without necessarily knowing why:
 
 ```agda
-  open import Relation.Binary.PropositionalEquality
+  -- open import Relation.Binary.PropositionalEquality
   import Algebra.Definitions
+
+
 
   -- TODO(sandy): just define assoc / identity for ourselves?
   open module Def {ℓ} {A : Set ℓ}
@@ -193,10 +202,6 @@ Thus, assuming all the necessary laws hold, we can say there exists a monoid
 `def:_∨_`, `ctor:false` over the booleans:
 
 ```agda
-  open import Data.Bool using (Bool; true; false; _∨_)
-  open import Data.Bool.Properties
-    using (∨-assoc; ∨-identityˡ; ∨-identityʳ)
-
   ∨-false : Monoid Bool
   Monoid._∙_  ∨-false = _∨_
   Monoid.ε    ∨-false = false
@@ -205,6 +210,7 @@ Thus, assuming all the necessary laws hold, we can say there exists a monoid
 The laws do in fact happen to hold:
 
 ```agda
+
   Monoid.assoc      ∨-false = ∨-assoc
   Monoid.identityˡ  ∨-false = ∨-identityˡ
   Monoid.identityʳ  ∨-false = ∨-identityʳ
@@ -236,13 +242,13 @@ We can ask whether any of these booleans were `ctor:true` by passing
 
 ```agda
   _ : ex₁ ∨-false ≡ true
-  _ = refl
+  _ = ≡.refl
 
   _ : ex₂ ∨-false ≡ true
-  _ = refl
+  _ = ≡.refl
 
   _ : ex₃ ∨-false ≡ false
-  _ = refl
+  _ = ≡.refl
 ```
 
 Perhaps your spider-sense is tingling; if we can use `def:∨-false` to ask "is
@@ -258,7 +264,7 @@ Exercise
 Solution
 
 :   ```agda
-  open Data.Bool using (_∧_)
+  open import Data.Bool using (_∧_)
   open import Data.Bool.Properties
     using (∧-assoc; ∧-identityˡ; ∧-identityʳ)
     ```
@@ -277,13 +283,13 @@ Using `def:∧-true` to summarize our examples asks whether each is made up of
 
 ```agda
   _ : ex₁ ∧-true ≡ false
-  _ = refl
+  _ = ≡.refl
 
   _ : ex₂ ∧-true ≡ true
-  _ = refl
+  _ = ≡.refl
 
   _ : ex₃ ∧-true ≡ false
-  _ = refl
+  _ = ≡.refl
 ```
 
 These are extremely contrived examples, of course. As two slightly more real
@@ -305,9 +311,6 @@ Booleans are not remotely the only set which admits monoids. Another common
 example is the additive monoid over the natural numbers, namely:
 
 ```agda
-  open import Data.Nat using (ℕ; _+_)
-  open import Data.Nat.Properties
-    using (+-assoc; +-identityˡ; +-identityʳ)
 
   +-0 : Monoid ℕ
   Monoid._∙_  +-0 = _+_
@@ -326,10 +329,6 @@ Monoids over a given type are not unique, as we saw with `def:∨-false` and
 is where the terminology of "multiplication" for `field:_∙_` comes from:
 
 ```agda
-  open Data.Nat using (_*_)
-  open Data.Nat.Properties
-    using (*-assoc; *-identityˡ; *-identityʳ)
-
   *-1 : Monoid ℕ
   Monoid._∙_  *-1 = _*_
   Monoid.ε    *-1 = 1
@@ -375,7 +374,7 @@ example, `def:dual`, which reverses the order in which multiplication occurs:
     dual : Monoid A
     Monoid._∙_  dual = flip _∙_
     Monoid.ε    dual = ε
-    Monoid.assoc      dual x y z  = sym (assoc z y x)
+    Monoid.assoc      dual x y z  = ≡.sym (assoc z y x)
     Monoid.identityˡ  dual        = identityʳ
     Monoid.identityʳ  dual        = identityˡ
 ```
@@ -460,7 +459,7 @@ we can specialize `def:summarizeList` in order to add its elements:
   sum = summarizeList +-0 id
 
   _ : sum (1 ∷ 10 ∷ 100 ∷ []) ≡ 111
-  _ = refl
+  _ = ≡.refl
 ```
 
 or to flatten nested lists:
@@ -474,7 +473,7 @@ or to flatten nested lists:
                ∷ (4 ∷ 5 ∷ []) ∷ []
                )
         ≡ 1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ []
-  _ = refl
+  _ = ≡.refl
 ```
 
 We can extract the first and last elements from a list by using `def:first` and
@@ -496,7 +495,7 @@ we can even use `def:summarize` to *reverse* a list:
   reverse = summarizeList (dual ++-[]) (_∷ [])
 
   _ : reverse (1 ∷ 2 ∷ 3 ∷ []) ≡ 3 ∷ 2 ∷ 1 ∷ []
-  _ = refl
+  _ = ≡.refl
 ```
 
 But that's not all. We can also use `def:summarizeList` to query information
@@ -516,7 +515,7 @@ then accumulating via `def:+-0`:
   size = summarizeList +-0 (const 1)
 
   _ : size (true ∷ false ∷ []) ≡ 2
-  _ = refl
+  _ = ≡.refl
 ```
 
 Similarly, we can determine if a list is empty by checking if it has any
@@ -542,7 +541,7 @@ a bit gnarly:
       : {ℓa ℓb : Level}
       → (ℓf : Level)
       → (Set ℓa → Set ℓf)
-      → Set (lsuc ℓa ⊔l ℓf ⊔l lsuc ℓb)
+      → Set (lsuc ℓa ⊔ ℓf ⊔ lsuc ℓb)
   Foldable {ℓb = ℓb} _ F =
     ∀ {A} {B : Set ℓb} → Monoid B → (A → B) → F A → B
 
@@ -584,11 +583,11 @@ capable of counting every element in any data structure you throw at it:
 
   _ : size′ foldableList
         (1 ∷ 1 ∷ 2 ∷ 3 ∷ []) ≡ 4
-  _ = refl
+  _ = ≡.refl
 
   _ : size′ foldableBinTree
         (branch (leaf true) false (leaf true)) ≡ 3
-  _ = refl
+  _ = ≡.refl
 ```
 
 In this more general domain, there is an interesting summarization, which turns
@@ -680,24 +679,21 @@ With instance arguments under our belt, we can now proceed to creating a monoid
 for a pair of out a pair of monoids:
 
 ```agda
-    open import Data.Product
-      using (_×_; _,_)
-
     ×-monoid : Monoid (A × B)
     Monoid._∙_  ×-monoid (a₁ , b₁) (a₂ , b₂) = a₁ ∙ a₂ , b₁ ∙ b₂
     Monoid.ε    ×-monoid = ε , ε
     Monoid.assoc ×-monoid  (a₁ , b₁) (a₂ , b₂) (a₃ , b₃)
       rewrite assoc a₁ a₂ a₃
       rewrite assoc b₁ b₂ b₃
-        = refl
+        = ≡.refl
     Monoid.identityˡ ×-monoid (a , b)
       rewrite identityˡ a
       rewrite identityˡ b
-        = refl
+        = ≡.refl
     Monoid.identityʳ ×-monoid (a , b)
       rewrite identityʳ a
       rewrite identityʳ b
-        = refl
+        = ≡.refl
 ```
 
 Note that in the above, not only are `field:_∙_` and `field:ε` available to us
@@ -727,9 +723,9 @@ and then give the monoid over it:
   ∘-id : Monoid (A → A)
   Monoid._∙_  ∘-id = _∘_
   Monoid.ε    ∘-id = id
-  Monoid.assoc      ∘-id x y z = refl
-  Monoid.identityˡ  ∘-id x = refl
-  Monoid.identityʳ  ∘-id x = refl
+  Monoid.assoc      ∘-id x y z = ≡.refl
+  Monoid.identityˡ  ∘-id x = ≡.refl
+  Monoid.identityʳ  ∘-id x = ≡.refl
 ```
 
 I personally use `def:∘-id` extremely often. This monoid is useful for
@@ -769,9 +765,9 @@ Unfortunately, proving this is harder than we might expect:
   Monoid._∙_  (pointwise m) = ⊙   m
   Monoid.ε    (pointwise m) = →ε  m
   -- TODO(sandy): leave me as a hole!
-  Monoid.assoc      (pointwise m) x y z = leave-me-as-a-hole
-  Monoid.identityˡ  (pointwise m) = leave-me-as-a-hole
-  Monoid.identityʳ  (pointwise m) = leave-me-as-a-hole
+  Monoid.assoc      (pointwise m) x y z = ?
+  Monoid.identityˡ  (pointwise m) = ?
+  Monoid.identityʳ  (pointwise m) = ?
 ```
 
 We can look at the type of the first goal here, and see:
@@ -944,8 +940,8 @@ and now show that `def:_≗_` is `type:Reflexive` when its `A` parameter is
 instantiated at `type:Fn`:
 
 ```agda
-    open import Relation.Binary
-      using (Reflexive; Symmetric; Transitive; IsEquivalence)
+    -- open import Relation.Binary
+    --   using (Reflexive; Symmetric; Transitive; IsEquivalence)
 
     ≗-refl : Reflexive {A = Fn} _≗_
     ≗-refl x = refl
@@ -966,10 +962,10 @@ operation on the result:
 Therefore `def:_≗_` is an equivalence relation:
 
 ```agda
-    ≗-equiv : IsEquivalence {A = Fn} _≗_
-    IsEquivalence.refl   ≗-equiv = ≗-refl
-    IsEquivalence.sym    ≗-equiv = ≗-sym
-    IsEquivalence.trans  ≗-equiv = ≗-trans
+    -- ≗-equiv : IsEquivalence {A = Fn} _≗_
+    -- IsEquivalence.refl   ≗-equiv = ≗-refl
+    -- IsEquivalence.sym    ≗-equiv = ≗-sym
+    -- IsEquivalence.trans  ≗-equiv = ≗-trans
 ```
 
 
@@ -1048,24 +1044,24 @@ Our second attempt at the problem looks like this:
 
 ```agda
 module Sandbox-Monoids where
-  open import Algebra
-    using (Op₂; Associative; LeftIdentity; RightIdentity)
-  open import Relation.Binary
-    using (Rel; IsEquivalence; _Preserves₂_⟶_⟶_)
+  -- open import Algebra
+  --   using (Op₂; Associative; LeftIdentity; RightIdentity)
+  -- open import Relation.Binary
+  --   using (Rel; IsEquivalence; _Preserves₂_⟶_⟶_)
 
-  record Monoid₂ {a} (Carrier : Set a) (ℓ : Level)
-        : Set (a ⊔l lsuc ℓ) where
-    infix   4 _≈_
-    infixl  7 _∙_
-    field
-      _∙_      : Op₂ Carrier
-      ε        : Carrier
-      _≈_      : Rel Carrier ℓ  -- ! 1
-      isEquivalence : IsEquivalence _≈_  -- ! 2
-      assoc      : Associative    _≈_ _∙_
-      identityˡ  : LeftIdentity   _≈_ ε  _∙_
-      identityʳ  : RightIdentity  _≈_ ε  _∙_
-      ∙-cong     : _∙_ Preserves₂ _≈_ ⟶ _≈_ ⟶ _≈_  -- ! 3
+  -- record Monoid₂ {a} (Carrier : Set a) (ℓ : Level)
+  --       : Set (a ⊔ lsuc ℓ) where
+  --   infix   4 _≈_
+  --   infixl  7 _∙_
+  --   field
+  --     _∙_      : Op₂ Carrier
+  --     ε        : Carrier
+  --     _≈_      : Rel Carrier ℓ  -- ! 1
+  --     isEquivalence : IsEquivalence _≈_  -- ! 2
+  --     assoc      : Associative    _≈_ _∙_
+  --     identityˡ  : LeftIdentity   _≈_ ε  _∙_
+  --     identityʳ  : RightIdentity  _≈_ ε  _∙_
+  --     ∙-cong     : _∙_ Preserves₂ _≈_ ⟶ _≈_ ⟶ _≈_  -- ! 3
 ```
 
 You will notice three additions to this version of `type:Monoid₂`, indicated by
@@ -1089,7 +1085,7 @@ relation all into one object:
 
 ```agda
   module Sandbox-Setoids where
-    record Setoid (c ℓ : Level) : Set (lsuc (c ⊔l ℓ)) where
+    record Setoid (c ℓ : Level) : Set (lsuc (c ⊔ ℓ)) where
       field
         Carrier        : Set c
         _≈_            : Rel Carrier ℓ
@@ -1107,17 +1103,17 @@ interface every time.
 For every type, we also have a canonical setoid given by propositional equality:
 
 ```agda
-    open import Relation.Binary.PropositionalEquality as PropEq
-      using (_≡_)
+    -- open import Relation.Binary.PropositionalEquality as PropEq
+    --   using (_≡_)
 
-    open Setoid
+    -- open Setoid
 
-    setoid : Set → Setoid _ _
-    Carrier (setoid A) = A
-    _≈_ (setoid A) = PropEq._≡_
-    IsEquivalence.refl   (isEquivalence (setoid A)) = PropEq.refl
-    IsEquivalence.sym    (isEquivalence (setoid A)) = PropEq.sym
-    IsEquivalence.trans  (isEquivalence (setoid A)) = PropEq.trans
+    -- setoid : Set → Setoid _ _
+    -- Carrier (setoid A) = A
+    -- _≈_ (setoid A) = PropEq._≡_
+    -- IsEquivalence.refl   (isEquivalence (setoid A)) = PropEq.refl
+    -- IsEquivalence.sym    (isEquivalence (setoid A)) = PropEq.sym
+    -- IsEquivalence.trans  (isEquivalence (setoid A)) = PropEq.trans
 ```
 
 Because setoids are extremely common objects in the Agda standard library, we
@@ -1137,25 +1133,25 @@ we will use a `type:Setoid` to wrangle as much of the complexity for us as
 possible.
 
 ```agda
-  record Monoid (c ℓ : Level) : Set (lsuc (c ⊔l ℓ)) where
-    field
-      setoid : Setoid c ℓ
+  -- record Monoid (c ℓ : Level) : Set (lsuc (c ⊔ ℓ)) where
+  --   field
+  --     setoid : Setoid c ℓ
 
-    open Setoid setoid  -- ! 1
-      renaming (_≈_ to infix 4 _≈_)   -- ! 2
-      public
+  --   open Setoid setoid  -- ! 1
+  --     renaming (_≈_ to infix 4 _≈_)   -- ! 2
+  --     public
 
-    infixl  7 _∙_
-    field
-      _∙_      : Op₂ Carrier
-      ε        : Carrier
-      assoc      : Associative    _≈_ _∙_
-      identityˡ  : LeftIdentity   _≈_ ε  _∙_
-      identityʳ  : RightIdentity  _≈_ ε  _∙_
-      ∙-cong     : _∙_ Preserves₂ _≈_ ⟶ _≈_ ⟶ _≈_
+  --   infixl  7 _∙_
+  --   field
+  --     _∙_      : Op₂ Carrier
+  --     ε        : Carrier
+  --     assoc      : Associative    _≈_ _∙_
+  --     identityˡ  : LeftIdentity   _≈_ ε  _∙_
+  --     identityʳ  : RightIdentity  _≈_ ε  _∙_
+  --     ∙-cong     : _∙_ Preserves₂ _≈_ ⟶ _≈_ ⟶ _≈_
 
-    module Reasoning where
-      open import Relation.Binary.Reasoning.Setoid setoid public
+  --   module Reasoning where
+  --     open import Relation.Binary.Reasoning.Setoid setoid public
 ```
 
 One cool thing about Agda records is that you don't need to define all of your
@@ -1167,24 +1163,24 @@ Given our new definition, it's possible to mechnically translate every "naive"
 `type:Monoid` into this type, as given by `def:recover`.
 
 ```agda
-  private variable
-    a b c ℓ : Level
-    A : Set a
+  -- private variable
+  --   a b c ℓ : Level
+  --   A : Set a
 
-  module Naive = Sandbox-Naive-Monoids
-  import Relation.Binary.PropositionalEquality as PropEq
+  -- module Naive = Sandbox-Naive-Monoids
+  -- import Relation.Binary.PropositionalEquality as PropEq
 
-  recover : {A : Set a} → Naive.Monoid A → Monoid a a
-  recover {A = A} x = record
-    { setoid     = prop-setoid A
-    ; _∙_        = _∙_
-    ; ε          = ε
-    ; assoc      = assoc
-    ; identityˡ  = identityˡ
-    ; identityʳ  = identityʳ
-    ; ∙-cong     = λ { PropEq.refl PropEq.refl → PropEq.refl }
-    }
-    where open Naive.Monoid x
+  -- recover : {A : Set a} → Naive.Monoid A → Monoid a a
+  -- recover {A = A} x = record
+  --   { setoid     = prop-setoid A
+  --   ; _∙_        = _∙_
+  --   ; ε          = ε
+  --   ; assoc      = assoc
+  --   ; identityˡ  = identityˡ
+  --   ; identityʳ  = identityʳ
+  --   ; ∙-cong     = λ { PropEq.refl PropEq.refl → PropEq.refl }
+  --   }
+  --   where open Naive.Monoid x
 ```
 
 After all of this labor, we are now ready to finally implement the
@@ -1193,52 +1189,52 @@ After all of this labor, we are now ready to finally implement the
 
 ```agda
 
-  module _ (A : Set a) (setoid : Setoid c ℓ) where
-    open Setoid renaming (isEquivalence to eq)
-    open IsEquivalence
-    open Setoid setoid
-      using ()
-      renaming ( Carrier to B
-               ; _≈_ to _≈ᵇ_
-               )
+--   module _ (A : Set a) (setoid : Setoid c ℓ) where
+--     open Setoid renaming (isEquivalence to eq)
+--     open IsEquivalence
+--     open Setoid setoid
+--       using ()
+--       renaming ( Carrier to B
+--                ; _≈_ to _≈ᵇ_
+--                )
 
-    _≗_ : Rel (A → B) _
-    f ≗ g = (a : A) → f a ≈ᵇ g a
+--     _≗_ : Rel (A → B) _
+--     f ≗ g = (a : A) → f a ≈ᵇ g a
 
-    ≗-setoid : Setoid _ _
-    Carrier  ≗-setoid = A → B
-    _≈_      ≗-setoid = _≗_
-    refl   (eq ≗-setoid)          a  = refl   setoid
-    sym    (eq ≗-setoid) f≗g      a  = sym    setoid (f≗g a)
-    trans  (eq ≗-setoid) f≗g g≗h  a  = trans  setoid (f≗g a) (g≗h a)
+--     ≗-setoid : Setoid _ _
+--     Carrier  ≗-setoid = A → B
+--     _≈_      ≗-setoid = _≗_
+--     refl   (eq ≗-setoid)          a  = refl   setoid
+--     sym    (eq ≗-setoid) f≗g      a  = sym    setoid (f≗g a)
+--     trans  (eq ≗-setoid) f≗g g≗h  a  = trans  setoid (f≗g a) (g≗h a)
 ```
 
 and then use this fact to construct `def:pointwise` proper:
 
 ```agda
-  module _ (A : Set a) (mb : Monoid c ℓ) where
-    -- open ≗-Def {A = A}
-    open Monoid mb
-      using ()
-      renaming ( _∙_  to _∙ᵇ_
-               ; ε    to εᵇ
-               )
+  -- module _ (A : Set a) (mb : Monoid c ℓ) where
+  --   -- open ≗-Def {A = A}
+  --   open Monoid mb
+  --     using ()
+  --     renaming ( _∙_  to _∙ᵇ_
+  --              ; ε    to εᵇ
+  --              )
 ```
 
 Our hard work is rewarded, in that the definition of `def:pointwise` is as
 straightforward as it feels like it ought to be.
 
 ```agda
-    open Monoid
+    -- open Monoid
 
-    pointwise : Monoid _ _
-    setoid pointwise      = ≗-setoid A (Monoid.setoid mb)
-    _∙_    pointwise f g  = λ x → f x ∙ᵇ g x
-    ε      pointwise      = λ _ → εᵇ
-    assoc      pointwise f g h a    = assoc      mb _ _ _
-    identityˡ  pointwise f a        = identityˡ  mb _
-    identityʳ  pointwise f a        = identityʳ  mb _
-    ∙-cong     pointwise f≗g h≗i a  = ∙-cong     mb (f≗g a) (h≗i a)
+    -- pointwise : Monoid _ _
+    -- setoid pointwise      = ≗-setoid A (Monoid.setoid mb)
+    -- _∙_    pointwise f g  = λ x → f x ∙ᵇ g x
+    -- ε      pointwise      = λ _ → εᵇ
+    -- assoc      pointwise f g h a    = assoc      mb _ _ _
+    -- identityˡ  pointwise f a        = identityˡ  mb _
+    -- identityʳ  pointwise f a        = identityʳ  mb _
+    -- ∙-cong     pointwise f≗g h≗i a  = ∙-cong     mb (f≗g a) (h≗i a)
 ```
 
 
@@ -1311,27 +1307,27 @@ this definition a little more of a mouthful:
 
 ```agda
 module Sandbox-MonoidHomomorphisms where
-  open Sandbox-Monoids
+  -- open Sandbox-Monoids
 
-  private variable
-    c c₁ c₂ ℓ ℓ₁ ℓ₂ : Level
+  -- private variable
+  --   c c₁ c₂ ℓ ℓ₁ ℓ₂ : Level
 
-  module _ (m₁ : Monoid c₁ ℓ₁) (m₂ : Monoid c₂ ℓ₂) where
-    open import Relation.Binary using (_Preserves_⟶_)
-    open Monoid m₁ using () renaming (Carrier to A)
-    open Monoid m₂ using () renaming (Carrier to B)
-    open Monoid ⦃ ... ⦄
+  -- module _ (m₁ : Monoid c₁ ℓ₁) (m₂ : Monoid c₂ ℓ₂) where
+  --   open import Relation.Binary using (_Preserves_⟶_)
+  --   open Monoid m₁ using () renaming (Carrier to A)
+  --   open Monoid m₂ using () renaming (Carrier to B)
+  --   open Monoid ⦃ ... ⦄
 
-    instance
-      _ = m₁
-      _ = m₂
+  --   instance
+  --     _ = m₁
+  --     _ = m₂
 
-    record MonHom (f : A → B)
-         : Set (c₁ ⊔l c₂ ⊔l ℓ₁ ⊔l ℓ₂) where
-      field
-        preserves-ε  : f ε ≈ ε
-        preserves-∙  : (x y : A) → f (x ∙ y) ≈ f x ∙ f y
-        f-cong       : f Preserves _≈_ ⟶ _≈_
+  --   record MonHom (f : A → B)
+  --        : Set (c₁ ⊔ c₂ ⊔ ℓ₁ ⊔ ℓ₂) where
+  --     field
+  --       preserves-ε  : f ε ≈ ε
+  --       preserves-∙  : (x y : A) → f (x ∙ y) ≈ f x ∙ f y
+  --       f-cong       : f Preserves _≈_ ⟶ _≈_
 ```
 
 With the definition in front of us, it's clear that not all functions preserve
@@ -1344,19 +1340,19 @@ We can now `def:recover` some of our simple monoids back into scope, in order to
 show some homomorphisms between them.
 
 ```agda
-  ∧-true   = recover Naive.∧-true
-  ∨-false  = recover Naive.∨-false
-  +-0      = recover Naive.+-0
-  *-1      = recover Naive.*-1
+  -- ∧-true   = recover Naive.∧-true
+  -- ∨-false  = recover Naive.∨-false
+  -- +-0      = recover Naive.+-0
+  -- *-1      = recover Naive.*-1
 
-  private variable
-    a : Level
-    A : Set a
+  -- private variable
+  --   a : Level
+  --   A : Set a
 
-  ++-[] first last : (A : Set a) → Monoid _ _
-  ++-[]  A = recover (Naive.++-[] {A = A})
-  first  A = recover (Naive.first A)
-  last   A = recover (Naive.last A)
+  -- ++-[] first last : (A : Set a) → Monoid _ _
+  -- ++-[]  A = recover (Naive.++-[] {A = A})
+  -- first  A = recover (Naive.first A)
+  -- last   A = recover (Naive.last A)
 ```
 
 
@@ -1369,30 +1365,30 @@ false`. There are only two such functions, `const false` and `def:not`. The
 latter seems more promising, so let's try that:
 
 ```agda
-  open import Data.Bool
-    using (true; false; not)
+  -- open import Data.Bool
+  --   using (true; false; not)
 
-  open MonHom
-  module _ where
-    open import Relation.Binary.PropositionalEquality
+  -- open MonHom
+  -- module _ where
+  --   open import Relation.Binary.PropositionalEquality
 
-    not-hom₁ : MonHom ∧-true ∨-false not
-    preserves-ε  not-hom₁           = refl
-    preserves-∙  not-hom₁ false  y  = refl
-    preserves-∙  not-hom₁ true   y  = refl
-    f-cong       not-hom₁ refl      = refl
+  --   not-hom₁ : MonHom ∧-true ∨-false not
+  --   preserves-ε  not-hom₁           = refl
+  --   preserves-∙  not-hom₁ false  y  = refl
+  --   preserves-∙  not-hom₁ true   y  = refl
+  --   f-cong       not-hom₁ refl      = refl
 ```
 
 However, interestingly, `const false` is *also* a homomorphism between these two
 monoids, albeit not a very interesting one:
 
 ```agda
-    open import Function using (const)
+    -- open import Function using (const)
 
-    false-hom : MonHom ∧-true ∨-false (const false)
-    preserves-ε  false-hom       = refl
-    preserves-∙  false-hom x y   = refl
-    f-cong       false-hom refl  = refl
+    -- false-hom : MonHom ∧-true ∨-false (const false)
+    -- preserves-ε  false-hom       = refl
+    -- preserves-∙  false-hom x y   = refl
+    -- f-cong       false-hom refl  = refl
 ```
 
 Returning to `def:not-hom₁`, expanding out the definition of `field:preserves-∙`
@@ -1416,11 +1412,11 @@ from `def:∨-false` to `def:∧-true`. As it happens, it's not any harder to sh
 `def:not-hom₂`:
 
 ```agda
-    not-hom₂ : MonHom ∨-false ∧-true not
-    preserves-ε  not-hom₂           = refl
-    preserves-∙  not-hom₂ false  y  = refl
-    preserves-∙  not-hom₂ true   y  = refl
-    f-cong       not-hom₂ refl      = refl
+    -- not-hom₂ : MonHom ∨-false ∧-true not
+    -- preserves-ε  not-hom₂           = refl
+    -- preserves-∙  not-hom₂ false  y  = refl
+    -- preserves-∙  not-hom₂ true   y  = refl
+    -- f-cong       not-hom₂ refl      = refl
 ```
 
 Perhaps you're beginning to see the importance of---if maybe not yet the use
@@ -1437,11 +1433,11 @@ the law that `false = const false ε` `= f ε` `= ε = true`. We can show that
 there is no such homomorphism by deriving exactly this contradiction:
 
 ```agda
-    open import Relation.Nullary
+    -- open import Relation.Nullary
 
-    not-false-hom₂ : ¬ MonHom ∨-false ∧-true (const false)
-    not-false-hom₂ x with preserves-ε x
-    ... | ()
+    -- not-false-hom₂ : ¬ MonHom ∨-false ∧-true (const false)
+    -- not-false-hom₂ x with preserves-ε x
+    -- ... | ()
 ```
 
 
@@ -1465,27 +1461,27 @@ the length of the concatenation. And it is the existence of the `def:length-hom`
 monoid homomorphism that ensures these two algorithms compute the same result.
 
 ```agda
-  open import Data.Nat using (ℕ)
-  open import Data.List
-    using (List; []; _∷_)
+  -- open import Data.Nat using (ℕ)
+  -- open import Data.List
+  --   using (List; []; _∷_)
 
-  open import Relation.Binary.PropositionalEquality
-    using ()
-    renaming (setoid to prop-setoid)
+  -- open import Relation.Binary.PropositionalEquality
+  --   using ()
+  --   renaming (setoid to prop-setoid)
 
-  module _ where
-    open import Relation.Binary.PropositionalEquality
+  -- module _ where
+  --   open import Relation.Binary.PropositionalEquality
 
-    length : List A → ℕ
-    length = Naive.size
+  --   length : List A → ℕ
+  --   length = Naive.size
 
-    length-hom : (A : Set a) → MonHom (++-[] A) +-0 length
-    preserves-ε (length-hom A) = refl
-    preserves-∙ (length-hom A) [] y = refl
-    preserves-∙ (length-hom A) (x ∷ xs) y
-      rewrite preserves-∙ (length-hom A) xs y
-        = refl
-    f-cong (length-hom A) refl = refl
+  --   length-hom : (A : Set a) → MonHom (++-[] A) +-0 length
+  --   preserves-ε (length-hom A) = refl
+  --   preserves-∙ (length-hom A) [] y = refl
+  --   preserves-∙ (length-hom A) (x ∷ xs) y
+  --     rewrite preserves-∙ (length-hom A) xs y
+  --       = refl
+  --   f-cong (length-hom A) refl = refl
 ```
 
 It's interesting to note that list concatenation is not *intrinsically* slow;
@@ -1506,43 +1502,43 @@ builders---also known as *difference lists*, or *dlists* for short---take
 advantage of a monoid homomorphism.
 
 ```agda
-    open import Function using (_∘_; id)
+    -- open import Function using (_∘_; id)
 
-    ∘-id : Set a → Monoid _ _
-    Monoid.setoid  (∘-id A)      = ≗-setoid A (prop-setoid A)
-    Monoid._∙_     (∘-id A) g f  = g ∘ f
-    Monoid.ε       (∘-id A)      = id
-    Monoid.assoc      (∘-id A) x y z a  = refl
-    Monoid.identityˡ  (∘-id A) x a      = refl
-    Monoid.identityʳ  (∘-id A) x a      = refl
-    Monoid.∙-cong     (∘-id A) x≗y u≗v a
-      rewrite u≗v a = x≗y _
+    -- ∘-id : Set a → Monoid _ _
+    -- Monoid.setoid  (∘-id A)      = ≗-setoid A (prop-setoid A)
+    -- Monoid._∙_     (∘-id A) g f  = g ∘ f
+    -- Monoid.ε       (∘-id A)      = id
+    -- Monoid.assoc      (∘-id A) x y z a  = refl
+    -- Monoid.identityˡ  (∘-id A) x a      = refl
+    -- Monoid.identityʳ  (∘-id A) x a      = refl
+    -- Monoid.∙-cong     (∘-id A) x≗y u≗v a
+    --   rewrite u≗v a = x≗y _
 ```
 
 We can construct dlists by first making the relevant monoid, and then extracting
 its carrier to get the definition of a `type:DList`:
 
 ```agda
-    module DList where
-      open Data.List using (_++_)
-      open import Data.List.Properties
-        using (++-identityʳ; ++-assoc)
+    -- module DList where
+    --   open Data.List using (_++_)
+    --   open import Data.List.Properties
+    --     using (++-identityʳ; ++-assoc)
 
-      dlist-mon : Set a → Monoid _ _
-      dlist-mon A = ∘-id (List A)
+    --   dlist-mon : Set a → Monoid _ _
+    --   dlist-mon A = ∘-id (List A)
 
-      DList : Set a → Set a
-      DList A = Monoid.Carrier (dlist-mon A)
+    --   DList : Set a → Set a
+    --   DList A = Monoid.Carrier (dlist-mon A)
 ```
 
 There is an isomorphism between `type:List` and `type:DList`, given by:
 
 ```agda
-      toDList : List A → DList A
-      toDList = _++_
+      -- toDList : List A → DList A
+      -- toDList = _++_
 
-      fromDList : DList A → List A
-      fromDList dl = dl []
+      -- fromDList : DList A → List A
+      -- fromDList dl = dl []
 ```
 
 although the proof of this fact is left as an exercise to the reader. Finally,
@@ -1550,10 +1546,10 @@ we can show that `def:toDList` is a monoid homomorphism between lists under
 concatenation and `def:dlist-mon`:
 
 ```agda
-      dlist-hom : MonHom (++-[] A) (dlist-mon A) toDList
-      preserves-ε  dlist-hom a = refl
-      preserves-∙  dlist-hom = ++-assoc
-      f-cong       dlist-hom refl a = refl
+      -- dlist-hom : MonHom (++-[] A) (dlist-mon A) toDList
+      -- preserves-ε  dlist-hom a = refl
+      -- preserves-∙  dlist-hom = ++-assoc
+      -- f-cong       dlist-hom refl a = refl
 ```
 
 While `def:dlist-hom` is in fact a proof that `type:DList` and `type:List`
@@ -1562,17 +1558,17 @@ to *feel* this fact. Thus, even though it is completely unnecessary, we can
 write a little test with a concrete example:
 
 ```agda
-      ex-dlist
-        = fromDList
-          ( toDList (1 ∷ 2 ∷ [])
-          ∙ toDList (3 ∷ 4 ∷ [])
-          ∙ toDList (5 ∷ [])
-          )
-        where
-          open Monoid (dlist-mon ℕ)
+      -- ex-dlist
+      --   = fromDList
+      --     ( toDList (1 ∷ 2 ∷ [])
+      --     ∙ toDList (3 ∷ 4 ∷ [])
+      --     ∙ toDList (5 ∷ [])
+      --     )
+      --   where
+      --     open Monoid (dlist-mon ℕ)
 
-      _ : ex-dlist  ≡ 1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ []
-      _ = refl
+      -- _ : ex-dlist  ≡ 1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ []
+      -- _ = refl
 ```
 
 We're left with only one question---why exactly does all of this work? Our
@@ -1622,14 +1618,14 @@ implementation or the conceptual model.
 ## Homomorphisms in Software Design
 
 ```agda
-  module KeyValStore (Key : Set c₁) (val-monoid : Monoid c₂ ℓ₂) where
-    open Monoid val-monoid using () renaming (Carrier to Val)
+  -- module KeyValStore (Key : Set c₁) (val-monoid : Monoid c₂ ℓ₂) where
+  --   open Monoid val-monoid using () renaming (Carrier to Val)
 
-    KVStore : Set (c₁ ⊔l c₂)
-    KVStore = Key → Val
+  --   KVStore : Set (c₁ ⊔ c₂)
+  --   KVStore = Key → Val
 
-    _[_] : KVStore → Key → Val
-    kv [ ix ] = kv ix
+  --   _[_] : KVStore → Key → Val
+  --   kv [ ix ] = kv ix
 
 ```
 
@@ -1642,67 +1638,67 @@ the trivial one, which maps elements to themselves; and the degenerate one,
 which maps every element in some other monoid to `field:ε`:
 
 ```agda
-  open import Function using (const; id)
+  -- open import Function using (const; id)
 
-  trivial : (m : Monoid c₂ ℓ₂) → MonHom m m id
-  trivial m = record
-    { preserves-ε  = refl
-    ; preserves-∙  = λ  x y → refl
-    ; f-cong       = λ  x → x
-    }
-    where open Monoid m
+  -- trivial : (m : Monoid c₂ ℓ₂) → MonHom m m id
+  -- trivial m = record
+  --   { preserves-ε  = refl
+  --   ; preserves-∙  = λ  x y → refl
+  --   ; f-cong       = λ  x → x
+  --   }
+  --   where open Monoid m
 
-  degenerate
-      : {m₁ : Monoid c₁ ℓ₁}
-      → (m : Monoid c₂ ℓ₂)
-      → MonHom m₁ m (const (Monoid.ε m))
-  degenerate m = record
-    { preserves-ε  = refl
-    ; preserves-∙  = λ  x y → sym (identityʳ _)
-    ; f-cong       = λ  x → refl
-    }
-    where open Monoid m
+  -- degenerate
+  --     : {m₁ : Monoid c₁ ℓ₁}
+  --     → (m : Monoid c₂ ℓ₂)
+  --     → MonHom m₁ m (const (Monoid.ε m))
+  -- degenerate m = record
+  --   { preserves-ε  = refl
+  --   ; preserves-∙  = λ  x y → sym (identityʳ _)
+  --   ; f-cong       = λ  x → refl
+  --   }
+  --   where open Monoid m
 
-  -- -- TODO(sandy): fixme; haven't discussed isos
-  -- open import propisos
+  -- -- -- TODO(sandy): fixme; haven't discussed isos
+  -- -- open import propisos
 
-  -- module _ (m₁ : Monoid c₁ ℓ₁) (m₂ : Monoid c₂ ℓ₂) where
-  --   open import Relation.Binary using (_Preserves_⟶_)
-  --   open Monoid m₁ using () renaming (Carrier to X; ε to ε₁; _∙_ to _∙₁_)
-  --   open Monoid m₂ using () renaming (Carrier to Y; ε to ε₂; _∙_ to _∙₂_)
-  --   open Monoid
+  -- -- module _ (m₁ : Monoid c₁ ℓ₁) (m₂ : Monoid c₂ ℓ₂) where
+  -- --   open import Relation.Binary using (_Preserves_⟶_)
+  -- --   open Monoid m₁ using () renaming (Carrier to X; ε to ε₁; _∙_ to _∙₁_)
+  -- --   open Monoid m₂ using () renaming (Carrier to Y; ε to ε₂; _∙_ to _∙₂_)
+  -- --   open Monoid
 
-  --   invertible
-  --       : (iso : Monoid.setoid m₁ ↔ Monoid.setoid m₂)
-  --       → MonHom m₁ m₂ (_↔_.to iso)
-  --       → MonHom m₂ m₁ (_↔_.from iso)
-  --   preserves-ε (invertible iso hom) =
-  --     begin
-  --       from ε₂
-  --     ≈⟨ from-cong (sym m₂ (preserves-ε hom)) ⟩
-  --       from (to ε₁)
-  --     ≈⟨ left-inv-of ε₁ ⟩
-  --       ε₁
-  --     ∎
-  --     where
-  --       open _↔_ iso
-  --       open Reasoning m₁
-  --   preserves-∙ (invertible iso hom) a b =
-  --     begin
-  --       from (a ∙₂ b)
-  --     ≈⟨ sym m₁ (from-cong (∙-cong m₂ (right-inv-of _) (right-inv-of _))) ⟩
-  --       from (to (from a) ∙₂ to (from b))
-  --     ≈⟨ from-cong (sym m₂ (preserves-∙ hom _ _)) ⟩
-  --       from (to (from a ∙₁ from b))
-  --     ≈⟨ left-inv-of (from a ∙₁ from b) ⟩
-  --       from a ∙₁ from b
-  --     ∎
-  --     where
-  --       open _↔_ iso
-  --       open Reasoning m₁
-  --   f-cong (invertible iso hom) {x} {y} x≈₂y = _↔_.from-cong iso x≈₂y
+  -- --   invertible
+  -- --       : (iso : Monoid.setoid m₁ ↔ Monoid.setoid m₂)
+  -- --       → MonHom m₁ m₂ (_↔_.to iso)
+  -- --       → MonHom m₂ m₁ (_↔_.from iso)
+  -- --   preserves-ε (invertible iso hom) =
+  -- --     begin
+  -- --       from ε₂
+  -- --     ≈⟨ from-cong (sym m₂ (preserves-ε hom)) ⟩
+  -- --       from (to ε₁)
+  -- --     ≈⟨ left-inv-of ε₁ ⟩
+  -- --       ε₁
+  -- --     ∎
+  -- --     where
+  -- --       open _↔_ iso
+  -- --       open Reasoning m₁
+  -- --   preserves-∙ (invertible iso hom) a b =
+  -- --     begin
+  -- --       from (a ∙₂ b)
+  -- --     ≈⟨ sym m₁ (from-cong (∙-cong m₂ (right-inv-of _) (right-inv-of _))) ⟩
+  -- --       from (to (from a) ∙₂ to (from b))
+  -- --     ≈⟨ from-cong (sym m₂ (preserves-∙ hom _ _)) ⟩
+  -- --       from (to (from a ∙₁ from b))
+  -- --     ≈⟨ left-inv-of (from a ∙₁ from b) ⟩
+  -- --       from a ∙₁ from b
+  -- --     ∎
+  -- --     where
+  -- --       open _↔_ iso
+  -- --       open Reasoning m₁
+  -- --   f-cong (invertible iso hom) {x} {y} x≈₂y = _↔_.from-cong iso x≈₂y
 
-  -- -- identities are unique
+  -- -- -- identities are unique
 ```
 
 -- TODO(sandy): other examples?
