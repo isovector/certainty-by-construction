@@ -163,15 +163,35 @@ Returning to monoids, we now have all of the machinery in scope necessary to
 define monoids and their associated laws:
 
 ```agda
+  record IsMonoid {c : Level} {Carrier : Set c}
+                  (∙ : Op₂ Carrier) (ε : Carrier)
+        : Set (lsuc c) where
+    field
+      assoc      : Associative       ∙
+      identityˡ  : LeftIdentity   ε  ∙
+      identityʳ  : RightIdentity  ε  ∙
+
+
+  test : IsMonoid _∨_ false
+  IsMonoid.assoc test = ∨-assoc
+  IsMonoid.identityˡ test = ∨-identityˡ
+  IsMonoid.identityʳ test = ∨-identityʳ
+
   record Monoid {c : Level} (Carrier : Set c) : Set (lsuc c)
       where
     infixl 7 _∙_
     field
-      _∙_      : Op₂ Carrier
-      ε        : Carrier
-      assoc      : Associative       _∙_
-      identityˡ  : LeftIdentity   ε  _∙_
-      identityʳ  : RightIdentity  ε  _∙_
+      _∙_  : Op₂ Carrier
+      ε    : Carrier
+      is-monoid : IsMonoid _∙_ ε
+
+  bundle
+      : {c : Level} {A : Set c} {∙ : Op₂ A} {ε : A}
+      → IsMonoid {Carrier = A} ∙ ε
+      → Monoid A
+  Monoid._∙_  (bundle {∙ = ∙}  x)  = ∙
+  Monoid.ε    (bundle  {ε = ε} x)  = ε
+  Monoid.is-monoid (bundle x) = x
 
   open Monoid ⦃ ... ⦄
 ```
@@ -203,18 +223,21 @@ Thus, assuming all the necessary laws hold, we can say there exists a monoid
 `def:_∨_`, `ctor:false` over the booleans:
 
 ```agda
-  ∨-false : Monoid Bool
-  Monoid._∙_  ∨-false = _∨_
-  Monoid.ε    ∨-false = false
+  ∨-false : IsMonoid _∨_ false
+  -- Monoid._∙_  ∨-false = _∨_
+  -- Monoid.ε    ∨-false = false
 ```
 
 The laws do in fact happen to hold:
 
 ```agda
 
-  Monoid.assoc      ∨-false = ∨-assoc
-  Monoid.identityˡ  ∨-false = ∨-identityˡ
-  Monoid.identityʳ  ∨-false = ∨-identityʳ
+  IsMonoid.assoc      ∨-false = ∨-assoc
+  IsMonoid.identityˡ  ∨-false = ∨-identityˡ
+  IsMonoid.identityʳ  ∨-false = ∨-identityʳ
+
+  any : Monoid Bool
+  any = bundle ∨-false
 ```
 
 Monoids give us a convenient means of summarizing a lot of data. As a silly
@@ -240,13 +263,13 @@ We can ask whether any of these booleans were `ctor:true` by passing
 `def:∨-false` to `def:ex₁`, `def:ex₂`, and `def:ex₃`:
 
 ```agda
-  _ : ex₁ ⦃ ∨-false ⦄ ≡ true
+  _ : ex₁ ⦃ any ⦄ ≡ true
   _ = ≡.refl
 
-  _ : ex₂ ⦃ ∨-false ⦄ ≡ true
+  _ : ex₂ ⦃ any ⦄ ≡ true
   _ = ≡.refl
 
-  _ : ex₃ ⦃ ∨-false ⦄ ≡ false
+  _ : ex₃ ⦃ any ⦄ ≡ false
   _ = ≡.refl
 ```
 
@@ -269,25 +292,28 @@ Solution
     ```
 
 :   ```agda
-  ∧-true : Monoid Bool
-  Monoid._∙_  ∧-true = _∧_
-  Monoid.ε    ∧-true = true
-  Monoid.assoc      ∧-true = ∧-assoc
-  Monoid.identityˡ  ∧-true = ∧-identityˡ
-  Monoid.identityʳ  ∧-true = ∧-identityʳ
+  ∧-true : IsMonoid _∧_ true
+  IsMonoid.assoc      ∧-true = ∧-assoc
+  IsMonoid.identityˡ  ∧-true = ∧-identityˡ
+  IsMonoid.identityʳ  ∧-true = ∧-identityʳ
     ```
+
+```agda
+  all : Monoid Bool
+  all = bundle ∧-true
+```
 
 Using `def:∧-true` to summarize our examples asks whether each is made up of
 *only* `ctor:true` values:
 
 ```agda
-  _ : ex₁ ⦃ ∧-true ⦄ ≡ false
+  _ : ex₁ ⦃ all ⦄ ≡ false
   _ = ≡.refl
 
-  _ : ex₂ ⦃ ∧-true ⦄ ≡ true
+  _ : ex₂ ⦃ all ⦄ ≡ true
   _ = ≡.refl
 
-  _ : ex₃ ⦃ ∧-true ⦄ ≡ false
+  _ : ex₃ ⦃ all ⦄ ≡ false
   _ = ≡.refl
 ```
 
@@ -311,12 +337,10 @@ example is the additive monoid over the natural numbers, namely:
 
 ```agda
 
-  +-0 : Monoid ℕ
-  Monoid._∙_  +-0 = _+_
-  Monoid.ε    +-0 = 0
-  Monoid.assoc      +-0 = +-assoc
-  Monoid.identityˡ  +-0 = +-identityˡ
-  Monoid.identityʳ  +-0 = +-identityʳ
+  +-0 : IsMonoid _+_ 0
+  IsMonoid.assoc      +-0 = +-assoc
+  IsMonoid.identityˡ  +-0 = +-identityˡ
+  IsMonoid.identityʳ  +-0 = +-identityʳ
 ```
 
 Considered as a query, `def:+-0` asks "what's the total sum?" In the special
@@ -328,12 +352,10 @@ Monoids over a given type are not unique, as we saw with `def:∨-false` and
 is where the terminology of "multiplication" for `field:_∙_` comes from:
 
 ```agda
-  *-1 : Monoid ℕ
-  Monoid._∙_  *-1 = _*_
-  Monoid.ε    *-1 = 1
-  Monoid.assoc      *-1 = *-assoc
-  Monoid.identityˡ  *-1 = *-identityˡ
-  Monoid.identityʳ  *-1 = *-identityʳ
+  *-1 : IsMonoid _*_ 1
+  IsMonoid.assoc      *-1 = *-assoc
+  IsMonoid.identityˡ  *-1 = *-identityˡ
+  IsMonoid.identityʳ  *-1 = *-identityʳ
 ```
 
 There are infinitely many monoids. A good habit to get into is to look for a
@@ -352,12 +374,10 @@ identity:
     B : Set b
     C : Set c
 
-  ++-[] : Monoid (List A)
-  Monoid._∙_ ++-[] = _++_
-  Monoid.ε ++-[] = []
-  Monoid.assoc ++-[] = ++-assoc
-  Monoid.identityˡ ++-[] = ++-identityˡ
-  Monoid.identityʳ ++-[] = ++-identityʳ
+  ++-[] : IsMonoid {Carrier = List A} _++_ []
+  IsMonoid.assoc ++-[] = ++-assoc
+  IsMonoid.identityˡ ++-[] = ++-identityˡ
+  IsMonoid.identityʳ ++-[] = ++-identityʳ
 ```
 
 Interestingly, we can often derive monoids from other monoids. Consider as an
@@ -367,16 +387,10 @@ example, `def:dual`, which reverses the order in which multiplication occurs:
   flip : (A → B → C) → B → A → C
   flip f b a = f a b
 
-  module _ (m : Monoid A) where
-    private instance
-      _ = m
-
-    dual : Monoid A
-    Monoid._∙_  dual = flip _∙_
-    Monoid.ε    dual = ε
-    Monoid.assoc      dual x y z  = ≡.sym (assoc z y x)
-    Monoid.identityˡ  dual        = identityʳ
-    Monoid.identityʳ  dual        = identityˡ
+  dual : {_∙_ : Op₂ A} {ε : A} → IsMonoid _∙_ ε → IsMonoid (flip _∙_) ε
+  IsMonoid.assoc      (dual m) x y z  = ≡.sym (IsMonoid.assoc m z y x)
+  IsMonoid.identityˡ  (dual m)        = IsMonoid.identityʳ m
+  IsMonoid.identityʳ  (dual m)        = IsMonoid.identityˡ m
 ```
 
 There also exist some more degenerate monoids, such as `def:first` which keeps
@@ -388,20 +402,18 @@ value multiplied in:
   open import Data.Maybe.Properties
     using (<∣>-assoc; <∣>-identityˡ; <∣>-identityʳ)
 
-  first : (A : Set a) → Monoid (Maybe A)
-  Monoid._∙_ (first A) = _<∣>_
-  Monoid.ε (first A) = nothing
-  Monoid.assoc (first A) = <∣>-assoc
-  Monoid.identityˡ (first A) = <∣>-identityˡ
-  Monoid.identityʳ (first A) = <∣>-identityʳ
+  first : IsMonoid {Carrier = Maybe A} _<∣>_ nothing
+  IsMonoid.assoc      first = <∣>-assoc
+  IsMonoid.identityˡ  first = <∣>-identityˡ
+  IsMonoid.identityʳ  first = <∣>-identityʳ
 ```
 
 We can also dualize `def:first` in order to get a monoid which tracks only the
 last element it has seen:
 
 ```agda
-  last : (A : Set a) → Monoid (Maybe A)
-  last A = dual (first A)
+  last : IsMonoid {Carrier = Maybe A} _ nothing
+  last = dual first
 ```
 
 
@@ -437,10 +449,10 @@ list satisfy a given predicate:
 
 ```agda
   any? : (A → Bool) → List A → Bool
-  any? = summarizeList ⦃ ∨-false ⦄
+  any? = summarizeList ⦃ any ⦄
 
   all? : (A → Bool) → List A → Bool
-  all? = summarizeList ⦃ ∧-true ⦄
+  all? = summarizeList ⦃ all ⦄
 ```
 
 Furthermore, by using the identity function which maps a value to itself:
@@ -454,7 +466,7 @@ we can specialize `def:summarizeList` in order to add its elements:
 
 ```agda
   sum : List ℕ → ℕ
-  sum = summarizeList ⦃ +-0 ⦄ id
+  sum = summarizeList ⦃ bundle +-0 ⦄ id
 
   _ : sum (1 ∷ 10 ∷ 100 ∷ []) ≡ 111
   _ = ≡.refl
@@ -465,7 +477,7 @@ or to flatten nested lists:
 
 ```agda
   flatten : List (List A) → List A
-  flatten = summarizeList ⦃ ++-[] ⦄ id
+  flatten = summarizeList ⦃ bundle ++-[] ⦄ id
 
   _ : flatten  ( (1 ∷ 2 ∷ 3 ∷ [])
                ∷ (4 ∷ 5 ∷ []) ∷ []
@@ -479,10 +491,10 @@ We can extract the first and last elements from a list by using `def:first` and
 
 ```agda
   head : List A → Maybe A
-  head = summarizeList ⦃ first _ ⦄ just
+  head = summarizeList ⦃ bundle first ⦄ just
 
   foot : List A → Maybe A
-  foot = summarizeList ⦃ last _ ⦄ just
+  foot = summarizeList ⦃ bundle last ⦄ just
 ```
 
 By mapping every element of a list into a singleton list, and using `def:dual`,
@@ -490,7 +502,7 @@ we can even use `def:summarize` to *reverse* a list:
 
 ```agda
   reverse : List A → List A
-  reverse = summarizeList ⦃ dual ++-[] ⦄ (_∷ [])
+  reverse = summarizeList ⦃ bundle (dual ++-[]) ⦄ (_∷ [])
 
   _ : reverse (1 ∷ 2 ∷ 3 ∷ []) ≡ 3 ∷ 2 ∷ 1 ∷ []
   _ = ≡.refl
@@ -510,7 +522,7 @@ then accumulating via `def:+-0`:
 
 ```agda
   size : List A → ℕ
-  size = summarizeList ⦃ +-0 ⦄ (const 1)
+  size = summarizeList ⦃ bundle +-0 ⦄ (const 1)
 
   _ : size (true ∷ false ∷ []) ≡ 2
   _ = ≡.refl
@@ -521,7 +533,7 @@ elements:
 
 ```agda
   empty? : List A → Bool
-  empty? = summarizeList ⦃ ∧-true ⦄ (const false)
+  empty? = summarizeList ⦃ all ⦄ (const false)
 ```
 
 In `def:empty?`, we map every element to `ctor:false`, and then combine
@@ -575,7 +587,7 @@ capable of counting every element in any data structure you throw at it:
 
 ```agda
   size′ : ∀ {ℓ F} → Foldable ℓ F → F A → ℕ
-  size′ fold = fold ⦃ +-0 ⦄ (const 1)
+  size′ fold = fold ⦃ bundle +-0 ⦄ (const 1)
 
   _ : size′ foldableList
         (1 ∷ 1 ∷ 2 ∷ 3 ∷ []) ≡ 4
@@ -591,7 +603,7 @@ any `type:Foldable` into a list:
 
 ```agda
   toList : ∀ {ℓ F} → Foldable ℓ F → F A → List A
-  toList fold = fold ⦃ ++-[] ⦄ (_∷ [])
+  toList fold = fold ⦃ bundle ++-[] ⦄ (_∷ [])
 ```
 
 In fact, every function we defined over lists is amenable to this treatment;
@@ -678,18 +690,17 @@ for a pair of out a pair of monoids:
     ×-monoid : Monoid (A × B)
     Monoid._∙_  ×-monoid (a₁ , b₁) (a₂ , b₂) = a₁ ∙ a₂ , b₁ ∙ b₂
     Monoid.ε    ×-monoid = ε , ε
-    Monoid.assoc ×-monoid  (a₁ , b₁) (a₂ , b₂) (a₃ , b₃)
-      rewrite assoc a₁ a₂ a₃
-      rewrite assoc b₁ b₂ b₃
-        = ≡.refl
-    Monoid.identityˡ ×-monoid (a , b)
-      rewrite identityˡ a
-      rewrite identityˡ b
-        = ≡.refl
-    Monoid.identityʳ ×-monoid (a , b)
-      rewrite identityʳ a
-      rewrite identityʳ b
-        = ≡.refl
+    IsMonoid.assoc (Monoid.is-monoid ×-monoid) = {! !}
+    IsMonoid.identityˡ (Monoid.is-monoid ×-monoid) = {! !}
+    IsMonoid.identityʳ (Monoid.is-monoid ×-monoid) = {! !}
+    -- Monoid.identityˡ ×-monoid (a , b)
+    --   rewrite identityˡ a
+    --   rewrite identityˡ b
+    --     = ≡.refl
+    -- Monoid.identityʳ ×-monoid (a , b)
+    --   rewrite identityʳ a
+    --   rewrite identityʳ b
+    --     = ≡.refl
 ```
 
 Note that in the above, not only are `field:_∙_` and `field:ε` available to us
@@ -716,12 +727,10 @@ First, we can define function composition:
 and then give the monoid over it:
 
 ```agda
-  ∘-id : Monoid (A → A)
-  Monoid._∙_  ∘-id = _∘_
-  Monoid.ε    ∘-id = id
-  Monoid.assoc      ∘-id x y z = ≡.refl
-  Monoid.identityˡ  ∘-id x = ≡.refl
-  Monoid.identityʳ  ∘-id x = ≡.refl
+  ∘-id : IsMonoid {Carrier = A → A} _∘_ id
+  IsMonoid.assoc      ∘-id x y z = ≡.refl
+  IsMonoid.identityˡ  ∘-id x = ≡.refl
+  IsMonoid.identityʳ  ∘-id x = ≡.refl
 ```
 
 I personally use `def:∘-id` extremely often. This monoid is useful for
@@ -758,10 +767,11 @@ Unfortunately, proving this is harder than we might expect:
   pointwise : ⦃ Monoid B ⦄ → Monoid (A → B)
   Monoid._∙_  pointwise = ⊙
   Monoid.ε    pointwise = →ε
+  Monoid.is-monoid pointwise = ?
   -- TODO(sandy): leave me as a hole!
-  Monoid.assoc      pointwise x y z = ?
-  Monoid.identityˡ  pointwise = ?
-  Monoid.identityʳ  pointwise = ?
+  -- Monoid.assoc      pointwise x y z = ?
+  -- Monoid.identityˡ  pointwise = ?
+  -- Monoid.identityʳ  pointwise = ?
 ```
 
 We can look at the type of the first goal here, and see:
