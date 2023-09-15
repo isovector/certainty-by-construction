@@ -30,6 +30,19 @@ module ≡ = Chapter3-Proofs
 open import Chapter4-Relations
     ```
 
+```agda
+open IsPreorder ⦃ ... ⦄
+open IsEquivalence ⦃ ... ⦄
+
+instance
+  equiv-to-preorder
+      : {ℓ₁ ℓ₂ : Level} {A : Set ℓ₁} {_~_ : Rel A ℓ₂}
+      → ⦃ IsEquivalence _~_ ⦄
+      → IsPreorder _~_
+  equiv-to-preorder = isPreorder
+
+  _ = ≡-equiv
+```
 
 One exceptionally common notion in mathematics is the notion of a "set equipped
 with some structure." In this chapter, we will discuss what this means, how to
@@ -170,12 +183,13 @@ define monoids and their associated laws:
       assoc      : Associative       ∙
       identityˡ  : LeftIdentity   ε  ∙
       identityʳ  : RightIdentity  ε  ∙
+  open IsMonoid
 
 
   test : IsMonoid _∨_ false
-  IsMonoid.assoc test = ∨-assoc
-  IsMonoid.identityˡ test = ∨-identityˡ
-  IsMonoid.identityʳ test = ∨-identityʳ
+  assoc test = ∨-assoc
+  identityˡ test = ∨-identityˡ
+  identityʳ test = ∨-identityʳ
 
   record Monoid {c : Level} (Carrier : Set c) : Set (lsuc c)
       where
@@ -232,9 +246,9 @@ The laws do in fact happen to hold:
 
 ```agda
 
-  IsMonoid.assoc      ∨-false = ∨-assoc
-  IsMonoid.identityˡ  ∨-false = ∨-identityˡ
-  IsMonoid.identityʳ  ∨-false = ∨-identityʳ
+  assoc      ∨-false = ∨-assoc
+  identityˡ  ∨-false = ∨-identityˡ
+  identityʳ  ∨-false = ∨-identityʳ
 
   any : Monoid Bool
   any = bundle ∨-false
@@ -293,9 +307,9 @@ Solution
 
 :   ```agda
   ∧-true : IsMonoid _∧_ true
-  IsMonoid.assoc      ∧-true = ∧-assoc
-  IsMonoid.identityˡ  ∧-true = ∧-identityˡ
-  IsMonoid.identityʳ  ∧-true = ∧-identityʳ
+  assoc      ∧-true = ∧-assoc
+  identityˡ  ∧-true = ∧-identityˡ
+  identityʳ  ∧-true = ∧-identityʳ
     ```
 
 ```agda
@@ -338,9 +352,9 @@ example is the additive monoid over the natural numbers, namely:
 ```agda
 
   +-0 : IsMonoid _+_ 0
-  IsMonoid.assoc      +-0 = +-assoc
-  IsMonoid.identityˡ  +-0 = +-identityˡ
-  IsMonoid.identityʳ  +-0 = +-identityʳ
+  assoc      +-0 = +-assoc
+  identityˡ  +-0 = +-identityˡ
+  identityʳ  +-0 = +-identityʳ
 ```
 
 Considered as a query, `def:+-0` asks "what's the total sum?" In the special
@@ -353,9 +367,9 @@ is where the terminology of "multiplication" for `field:_∙_` comes from:
 
 ```agda
   *-1 : IsMonoid _*_ 1
-  IsMonoid.assoc      *-1 = *-assoc
-  IsMonoid.identityˡ  *-1 = *-identityˡ
-  IsMonoid.identityʳ  *-1 = *-identityʳ
+  assoc      *-1 = *-assoc
+  identityˡ  *-1 = *-identityˡ
+  identityʳ  *-1 = *-identityʳ
 ```
 
 There are infinitely many monoids. A good habit to get into is to look for a
@@ -375,9 +389,9 @@ identity:
     C : Set c
 
   ++-[] : IsMonoid {Carrier = List A} _++_ []
-  IsMonoid.assoc ++-[] = ++-assoc
-  IsMonoid.identityˡ ++-[] = ++-identityˡ
-  IsMonoid.identityʳ ++-[] = ++-identityʳ
+  assoc ++-[] = ++-assoc
+  identityˡ ++-[] = ++-identityˡ
+  identityʳ ++-[] = ++-identityʳ
 ```
 
 Interestingly, we can often derive monoids from other monoids. Consider as an
@@ -388,9 +402,9 @@ example, `def:dual`, which reverses the order in which multiplication occurs:
   flip f b a = f a b
 
   dual : {_∙_ : Op₂ A} {ε : A} → IsMonoid _∙_ ε → IsMonoid (flip _∙_) ε
-  IsMonoid.assoc      (dual m) x y z  = ≡.sym (IsMonoid.assoc m z y x)
-  IsMonoid.identityˡ  (dual m)        = IsMonoid.identityʳ m
-  IsMonoid.identityʳ  (dual m)        = IsMonoid.identityˡ m
+  assoc      (dual m) x y z  = ≡.sym (assoc m z y x)
+  identityˡ  (dual m)        = identityʳ m
+  identityʳ  (dual m)        = identityˡ m
 ```
 
 There also exist some more degenerate monoids, such as `def:first` which keeps
@@ -403,9 +417,9 @@ value multiplied in:
     using (<∣>-assoc; <∣>-identityˡ; <∣>-identityʳ)
 
   first : IsMonoid {Carrier = Maybe A} _<∣>_ nothing
-  IsMonoid.assoc      first = <∣>-assoc
-  IsMonoid.identityˡ  first = <∣>-identityˡ
-  IsMonoid.identityʳ  first = <∣>-identityʳ
+  assoc      first = <∣>-assoc
+  identityˡ  first = <∣>-identityˡ
+  identityʳ  first = <∣>-identityʳ
 ```
 
 We can also dualize `def:first` in order to get a monoid which tracks only the
@@ -690,9 +704,9 @@ for a pair of out a pair of monoids:
     ×-monoid : Monoid (A × B)
     Monoid._∙_  ×-monoid (a₁ , b₁) (a₂ , b₂) = a₁ ∙ a₂ , b₁ ∙ b₂
     Monoid.ε    ×-monoid = ε , ε
-    IsMonoid.assoc (Monoid.is-monoid ×-monoid) = {! !}
-    IsMonoid.identityˡ (Monoid.is-monoid ×-monoid) = {! !}
-    IsMonoid.identityʳ (Monoid.is-monoid ×-monoid) = {! !}
+    assoc (Monoid.is-monoid ×-monoid) = {! !}
+    identityˡ (Monoid.is-monoid ×-monoid) = {! !}
+    identityʳ (Monoid.is-monoid ×-monoid) = {! !}
     -- Monoid.identityˡ ×-monoid (a , b)
     --   rewrite identityˡ a
     --   rewrite identityˡ b
@@ -728,9 +742,9 @@ and then give the monoid over it:
 
 ```agda
   ∘-id : IsMonoid {Carrier = A → A} _∘_ id
-  IsMonoid.assoc      ∘-id x y z = ≡.refl
-  IsMonoid.identityˡ  ∘-id x = ≡.refl
-  IsMonoid.identityʳ  ∘-id x = ≡.refl
+  assoc      ∘-id x y z = ≡.refl
+  identityˡ  ∘-id x = ≡.refl
+  identityʳ  ∘-id x = ≡.refl
 ```
 
 I personally use `def:∘-id` extremely often. This monoid is useful for
@@ -874,8 +888,8 @@ equal if they map inputs to equal outputs. That is to say, given two functions
 `f` and `g`, we'd like the following property to hold:
 
 ```agda
-  open import Relation.Binary.PropositionalEquality
-    using (_≡_; refl; cong; sym; trans)
+  -- open import Relation.Binary.PropositionalEquality
+  --   using (_≡_; refl; cong; sym; trans)
   open import Relation.Binary using (Rel)
 
   _≗_

@@ -280,7 +280,7 @@ turns an instance of `type:IsEquivalence` into an instance of `type:IsPreorder`
 by way of `field:isPreorder`:
 
 ```agda
-private instance
+instance
   equiv-to-preorder
       : {ℓ₁ ℓ₂ : Level} {A : Set ℓ₁} {_~_ : Rel A ℓ₂}
       → ⦃ IsEquivalence _~_ ⦄
@@ -508,7 +508,7 @@ Haven now shown reflexivity, symmetry, and transitivity, it's clear that
 Let's drop this fact into the `keyword:instance` environment:
 
 ```agda
-  private instance
+  instance
     _ = ≈-equiv
 ```
 
