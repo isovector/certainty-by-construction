@@ -20,13 +20,13 @@ open import Chapter1-Agda
 open import Chapter2-Numbers
     ```
 
-:   ```
+:   ```agda
 open import Chapter3-Proofs
   hiding (refl; sym; trans)
 module ≡ = Chapter3-Proofs
     ```
 
-:   ```
+:   ```agda
 open import Chapter4-Relations
     ```
 
@@ -115,6 +115,9 @@ subtleties here that we don't yet have the experience to appreciate, so we'll
 sandbox our definition into a "naive" module:
 
 ```agda
+Op₂ : {ℓ : Level} → Set ℓ → Set ℓ
+Op₂ A = A → A → A
+
 module Sandbox-Naive-Monoids where
 ```
 
@@ -122,8 +125,6 @@ As preparation for later, we can give a definition for `type:Op₂`, which is th
 type of binary operations:
 
 ```agda
-  Op₂ : ∀ {ℓ} → Set ℓ → Set ℓ
-  Op₂ A = A → A → A
 ```
 
 We will also need propositional equality in scope, and use it to instantiate all
@@ -135,8 +136,6 @@ following, even without necessarily knowing why:
 ```agda
   -- open import Relation.Binary.PropositionalEquality
   import Algebra.Definitions
-
-
 
   -- TODO(sandy): just define assoc / identity for ourselves?
   open module Def {ℓ} {A : Set ℓ}
@@ -173,6 +172,8 @@ define monoids and their associated laws:
       assoc      : Associative       _∙_
       identityˡ  : LeftIdentity   ε  _∙_
       identityʳ  : RightIdentity  ε  _∙_
+
+  open Monoid ⦃ ... ⦄
 ```
 
 As an important aside, this definition of `type:Monoid` diverges rather
@@ -221,16 +222,14 @@ example, we can write a couple of little functions that takes a `type: Monoid Bo
 combines a few randomly chosen booleans:
 
 ```agda
-  ex₁ : Monoid Bool → Bool
-  ex₁ m = false ∙ true ∙ false ∙ false
-    where open Monoid m
+  ex₁ : ⦃ Monoid Bool ⦄ → Bool
+  ex₁ = false ∙ true ∙ false ∙ false
 
-  ex₂ : Monoid Bool → Bool
-  ex₂ m = true ∙ true ∙ true
-    where open Monoid m
+  ex₂ : ⦃ Monoid Bool ⦄ → Bool
+  ex₂ = true ∙ true ∙ true
 
-  ex₃ : Monoid Bool → Bool
-  ex₃ m = false  -- ! 1
+  ex₃ : ⦃ Monoid Bool ⦄ → Bool
+  ex₃ = false  -- ! 1
 ```
 
 Note that at [1](Ann) we don't use `field:_∙_` whatsoever. This is intentional,
@@ -241,13 +240,13 @@ We can ask whether any of these booleans were `ctor:true` by passing
 `def:∨-false` to `def:ex₁`, `def:ex₂`, and `def:ex₃`:
 
 ```agda
-  _ : ex₁ ∨-false ≡ true
+  _ : ex₁ ⦃ ∨-false ⦄ ≡ true
   _ = ≡.refl
 
-  _ : ex₂ ∨-false ≡ true
+  _ : ex₂ ⦃ ∨-false ⦄ ≡ true
   _ = ≡.refl
 
-  _ : ex₃ ∨-false ≡ false
+  _ : ex₃ ⦃ ∨-false ⦄ ≡ false
   _ = ≡.refl
 ```
 
@@ -282,13 +281,13 @@ Using `def:∧-true` to summarize our examples asks whether each is made up of
 *only* `ctor:true` values:
 
 ```agda
-  _ : ex₁ ∧-true ≡ false
+  _ : ex₁ ⦃ ∧-true ⦄ ≡ false
   _ = ≡.refl
 
-  _ : ex₂ ∧-true ≡ true
+  _ : ex₂ ⦃ ∧-true ⦄ ≡ true
   _ = ≡.refl
 
-  _ : ex₃ ∧-true ≡ false
+  _ : ex₃ ⦃ ∧-true ⦄ ≡ false
   _ = ≡.refl
 ```
 
@@ -369,7 +368,8 @@ example, `def:dual`, which reverses the order in which multiplication occurs:
   flip f b a = f a b
 
   module _ (m : Monoid A) where
-    open Monoid m
+    private instance
+      _ = m
 
     dual : Monoid A
     Monoid._∙_  dual = flip _∙_
@@ -414,11 +414,9 @@ trees, and other containers. To illustrate this, we can write
 and then uses a monoid to combine everything together:
 
 ```agda
-  summarizeList : Monoid B → (A → B) → List A → B
-  summarizeList m f [] = ε  -- ! 1
-    where open Monoid m
-  summarizeList m f (x ∷ l) = f x ∙ summarizeList m f l
-    where open Monoid m
+  summarizeList : ⦃ Monoid B ⦄ → (A → B) → List A → B
+  summarizeList f [] = ε  -- ! 1
+  summarizeList f (x ∷ l) = f x ∙ summarizeList f l
 ```
 
 At [1](Ann), you'll notice for the first time, why we need `field:ε`. The
@@ -439,10 +437,10 @@ list satisfy a given predicate:
 
 ```agda
   any? : (A → Bool) → List A → Bool
-  any? = summarizeList ∨-false
+  any? = summarizeList ⦃ ∨-false ⦄
 
   all? : (A → Bool) → List A → Bool
-  all? = summarizeList ∧-true
+  all? = summarizeList ⦃ ∧-true ⦄
 ```
 
 Furthermore, by using the identity function which maps a value to itself:
@@ -456,7 +454,7 @@ we can specialize `def:summarizeList` in order to add its elements:
 
 ```agda
   sum : List ℕ → ℕ
-  sum = summarizeList +-0 id
+  sum = summarizeList ⦃ +-0 ⦄ id
 
   _ : sum (1 ∷ 10 ∷ 100 ∷ []) ≡ 111
   _ = ≡.refl
@@ -467,7 +465,7 @@ or to flatten nested lists:
 
 ```agda
   flatten : List (List A) → List A
-  flatten = summarizeList ++-[] id
+  flatten = summarizeList ⦃ ++-[] ⦄ id
 
   _ : flatten  ( (1 ∷ 2 ∷ 3 ∷ [])
                ∷ (4 ∷ 5 ∷ []) ∷ []
@@ -481,10 +479,10 @@ We can extract the first and last elements from a list by using `def:first` and
 
 ```agda
   head : List A → Maybe A
-  head = summarizeList (first _) just
+  head = summarizeList ⦃ first _ ⦄ just
 
   foot : List A → Maybe A
-  foot = summarizeList (last _) just
+  foot = summarizeList ⦃ last _ ⦄ just
 ```
 
 By mapping every element of a list into a singleton list, and using `def:dual`,
@@ -492,7 +490,7 @@ we can even use `def:summarize` to *reverse* a list:
 
 ```agda
   reverse : List A → List A
-  reverse = summarizeList (dual ++-[]) (_∷ [])
+  reverse = summarizeList ⦃ dual ++-[] ⦄ (_∷ [])
 
   _ : reverse (1 ∷ 2 ∷ 3 ∷ []) ≡ 3 ∷ 2 ∷ 1 ∷ []
   _ = ≡.refl
@@ -512,7 +510,7 @@ then accumulating via `def:+-0`:
 
 ```agda
   size : List A → ℕ
-  size = summarizeList +-0 (const 1)
+  size = summarizeList ⦃ +-0 ⦄ (const 1)
 
   _ : size (true ∷ false ∷ []) ≡ 2
   _ = ≡.refl
@@ -523,7 +521,7 @@ elements:
 
 ```agda
   empty? : List A → Bool
-  empty? = summarizeList ∧-true (const false)
+  empty? = summarizeList ⦃ ∧-true ⦄ (const false)
 ```
 
 In `def:empty?`, we map every element to `ctor:false`, and then combine
@@ -543,7 +541,7 @@ a bit gnarly:
       → (Set ℓa → Set ℓf)
       → Set (lsuc ℓa ⊔ ℓf ⊔ lsuc ℓb)
   Foldable {ℓb = ℓb} _ F =
-    ∀ {A} {B : Set ℓb} → Monoid B → (A → B) → F A → B
+    ∀ {A} {B : Set ℓb} → ⦃ Monoid B ⦄ → (A → B) → F A → B
 
   private variable
     ℓ₁ ℓ₂ : Level
@@ -561,11 +559,9 @@ Of course, `def:foldableList` is not the only inhabitant of `type:Foldable`.
     using (BinTree; leaf; branch; empty)
 
   foldableBinTree : Foldable {lzero} {ℓ₁} lzero BinTree
-  foldableBinTree m f empty = ε
-    where open Monoid m
-  foldableBinTree m f (branch l x r) =
-    foldableBinTree m f l ∙ f x ∙ foldableBinTree m f r
-    where open Monoid m
+  foldableBinTree f empty = ε
+  foldableBinTree f (branch l x r) =
+    foldableBinTree f l ∙ f x ∙ foldableBinTree f r
 ```
 
 Coming up with `type:Foldable`s for other types is done in a similar manner.
@@ -579,7 +575,7 @@ capable of counting every element in any data structure you throw at it:
 
 ```agda
   size′ : ∀ {ℓ F} → Foldable ℓ F → F A → ℕ
-  size′ fold = fold +-0 (const 1)
+  size′ fold = fold ⦃ +-0 ⦄ (const 1)
 
   _ : size′ foldableList
         (1 ∷ 1 ∷ 2 ∷ 3 ∷ []) ≡ 4
@@ -595,7 +591,7 @@ any `type:Foldable` into a list:
 
 ```agda
   toList : ∀ {ℓ F} → Foldable ℓ F → F A → List A
-  toList fold = fold ++-[] (_∷ [])
+  toList fold = fold ⦃ ++-[] ⦄ (_∷ [])
 ```
 
 In fact, every function we defined over lists is amenable to this treatment;
@@ -622,7 +618,7 @@ can instead fall back on Agda's *instance arguments.*
 
 ```agda
   module _ (ma : Monoid A) (mb : Monoid B) where
-    open Monoid ⦃ ... ⦄  -- ! 1
+    -- open Monoid ⦃ ... ⦄  -- ! 1
 ```
 
 Here we've bound our two monoids, and then at [1](Ann) we've opened the
@@ -741,18 +737,16 @@ operator here is a `type:Op₂ (A → B)`, which runs both functions at the same
 input, and combines their results. That is:
 
 ```agda
-  ⊙ : Monoid B → Op₂ (A → B)
-  ⊙ m f g = λ x → f x ∙ g x
-    where open Monoid m
+  ⊙ : ⦃ Monoid B ⦄ → Op₂ (A → B)
+  ⊙ f g = λ x → f x ∙ g x
 ```
 
 We can construct a trivial identity element for these functions simply by always
 returning the identity element from the monoid:
 
 ```agda
-  →ε : Monoid B → (A → B)
-  →ε m = λ _ → ε
-    where open Monoid m
+  →ε : ⦃ Monoid B ⦄ → (A → B)
+  →ε = λ _ → ε
 ```
 
 The claim is that `def:⊙` and `def:→ε` form a monoid over functions `A → B`,
@@ -761,13 +755,13 @@ since it's clear that `type:Monoid B` is the one doing all the work here.
 Unfortunately, proving this is harder than we might expect:
 
 ```agda
-  pointwise : Monoid B → Monoid (A → B)
-  Monoid._∙_  (pointwise m) = ⊙   m
-  Monoid.ε    (pointwise m) = →ε  m
+  pointwise : ⦃ Monoid B ⦄ → Monoid (A → B)
+  Monoid._∙_  pointwise = ⊙
+  Monoid.ε    pointwise = →ε
   -- TODO(sandy): leave me as a hole!
-  Monoid.assoc      (pointwise m) x y z = ?
-  Monoid.identityˡ  (pointwise m) = ?
-  Monoid.identityʳ  (pointwise m) = ?
+  Monoid.assoc      pointwise x y z = ?
+  Monoid.identityˡ  pointwise = ?
+  Monoid.identityʳ  pointwise = ?
 ```
 
 We can look at the type of the first goal here, and see:
@@ -1026,8 +1020,8 @@ propositional equality! No, the problem is in fact earlier, when we imported
   open import Relation.Binary.PropositionalEquality
   import Algebra.Definitions
 
-  open module Def {ℓ} {A : Set ℓ}
-    = Algebra.Definitions {A = A} _≡_
+  open module Def {ℓ} {A : Set ℓ} =
+    Algebra.Definitions {A = A} _≡_
 ```
 
 As it happens, we are not the first people to run into the problem that
