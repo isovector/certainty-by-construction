@@ -23,7 +23,6 @@ open import Chapter2-Numbers
 :   ```agda
 open import Chapter3-Proofs
   hiding (refl; sym; trans)
-module ≡ = Chapter3-Proofs
     ```
 
 :   ```agda
@@ -278,13 +277,13 @@ We can ask whether any of these booleans were `ctor:true` by passing
 
 ```agda
   _ : ex₁ ⦃ any ⦄ ≡ true
-  _ = ≡.refl
+  _ = refl
 
   _ : ex₂ ⦃ any ⦄ ≡ true
-  _ = ≡.refl
+  _ = refl
 
   _ : ex₃ ⦃ any ⦄ ≡ false
-  _ = ≡.refl
+  _ = refl
 ```
 
 Perhaps your spider-sense is tingling; if we can use `def:∨-false` to ask "is
@@ -322,13 +321,13 @@ Using `def:∧-true` to summarize our examples asks whether each is made up of
 
 ```agda
   _ : ex₁ ⦃ all ⦄ ≡ false
-  _ = ≡.refl
+  _ = refl
 
   _ : ex₂ ⦃ all ⦄ ≡ true
-  _ = ≡.refl
+  _ = refl
 
   _ : ex₃ ⦃ all ⦄ ≡ false
-  _ = ≡.refl
+  _ = refl
 ```
 
 These are extremely contrived examples, of course. As two slightly more real
@@ -402,7 +401,7 @@ example, `def:dual`, which reverses the order in which multiplication occurs:
   flip f b a = f a b
 
   dual : {_∙_ : Op₂ A} {ε : A} → IsMonoid _∙_ ε → IsMonoid (flip _∙_) ε
-  assoc      (dual m) x y z  = ≡.sym (assoc m z y x)
+  assoc      (dual m) x y z  = sym (assoc m z y x)
   identityˡ  (dual m)        = identityʳ m
   identityʳ  (dual m)        = identityˡ m
 ```
@@ -483,7 +482,7 @@ we can specialize `def:summarizeList` in order to add its elements:
   sum = summarizeList ⦃ bundle +-0 ⦄ id
 
   _ : sum (1 ∷ 10 ∷ 100 ∷ []) ≡ 111
-  _ = ≡.refl
+  _ = refl
 ```
 
 or to flatten nested lists:
@@ -497,7 +496,7 @@ or to flatten nested lists:
                ∷ (4 ∷ 5 ∷ []) ∷ []
                )
         ≡ 1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ []
-  _ = ≡.refl
+  _ = refl
 ```
 
 We can extract the first and last elements from a list by using `def:first` and
@@ -519,7 +518,7 @@ we can even use `def:summarize` to *reverse* a list:
   reverse = summarizeList ⦃ bundle (dual ++-[]) ⦄ (_∷ [])
 
   _ : reverse (1 ∷ 2 ∷ 3 ∷ []) ≡ 3 ∷ 2 ∷ 1 ∷ []
-  _ = ≡.refl
+  _ = refl
 ```
 
 But that's not all. We can also use `def:summarizeList` to query information
@@ -539,7 +538,7 @@ then accumulating via `def:+-0`:
   size = summarizeList ⦃ bundle +-0 ⦄ (const 1)
 
   _ : size (true ∷ false ∷ []) ≡ 2
-  _ = ≡.refl
+  _ = refl
 ```
 
 Similarly, we can determine if a list is empty by checking if it has any
@@ -605,11 +604,11 @@ capable of counting every element in any data structure you throw at it:
 
   _ : size′ foldableList
         (1 ∷ 1 ∷ 2 ∷ 3 ∷ []) ≡ 4
-  _ = ≡.refl
+  _ = refl
 
   _ : size′ foldableBinTree
         (branch (leaf true) false (leaf true)) ≡ 3
-  _ = ≡.refl
+  _ = refl
 ```
 
 In this more general domain, there is an interesting summarization, which turns
@@ -742,9 +741,9 @@ and then give the monoid over it:
 
 ```agda
   ∘-id : IsMonoid {Carrier = A → A} _∘_ id
-  assoc      ∘-id x y z = ≡.refl
-  identityˡ  ∘-id x = ≡.refl
-  identityʳ  ∘-id x = ≡.refl
+  assoc      ∘-id x y z = refl
+  identityˡ  ∘-id x = refl
+  identityʳ  ∘-id x = refl
 ```
 
 I personally use `def:∘-id` extremely often. This monoid is useful for
