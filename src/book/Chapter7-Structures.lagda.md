@@ -146,7 +146,6 @@ everything polymorphic, but you should be able to follow along with the
 following, even without necessarily knowing why:
 
 ```agda
-  -- open import Relation.Binary.PropositionalEquality
   import Algebra.Definitions
 
   -- TODO(sandy): just define assoc / identity for ourselves?
