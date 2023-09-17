@@ -136,9 +136,6 @@ module Sandbox-Naive-Monoids where
 As preparation for later, we can give a definition for `type:Op₂`, which is the
 type of binary operations:
 
-```agda
-```
-
 We will also need propositional equality in scope, and use it to instantiate all
 of the relevant algebraic definitions, like those of associativity and
 identities. The syntax here is a little roundabout, due to us wanting to keep
@@ -199,7 +196,7 @@ define monoids and their associated laws:
 
   bundle
       : {c : Level} {A : Set c} {∙ : Op₂ A} {ε : A}
-      → IsMonoid {Carrier = A} ∙ ε
+      → IsMonoid ∙ ε
       → Monoid A
   Monoid._∙_  (bundle {∙ = ∙}  x)  = ∙
   Monoid.ε    (bundle  {ε = ε} x)  = ε
@@ -243,7 +240,6 @@ Thus, assuming all the necessary laws hold, we can say there exists a monoid
 The laws do in fact happen to hold:
 
 ```agda
-
   assoc      ∨-false = ∨-assoc
   identityˡ  ∨-false = ∨-identityˡ
   identityʳ  ∨-false = ∨-identityʳ
@@ -275,14 +271,18 @@ We can ask whether any of these booleans were `ctor:true` by passing
 `def:∨-false` to `def:ex₁`, `def:ex₂`, and `def:ex₃`:
 
 ```agda
-  _ : ex₁ ⦃ any ⦄ ≡ true
-  _ = refl
+  module _ where
+    private instance
+      _ = any
 
-  _ : ex₂ ⦃ any ⦄ ≡ true
-  _ = refl
+    _ : ex₁ ≡ true
+    _ = refl
 
-  _ : ex₃ ⦃ any ⦄ ≡ false
-  _ = refl
+    _ : ex₂ ≡ true
+    _ = refl
+
+    _ : ex₃ ≡ false
+    _ = refl
 ```
 
 Perhaps your spider-sense is tingling; if we can use `def:∨-false` to ask "is
@@ -319,14 +319,18 @@ Using `def:∧-true` to summarize our examples asks whether each is made up of
 *only* `ctor:true` values:
 
 ```agda
-  _ : ex₁ ⦃ all ⦄ ≡ false
-  _ = refl
+  module _ where
+    private instance
+      _ = all
 
-  _ : ex₂ ⦃ all ⦄ ≡ true
-  _ = refl
+    _ : ex₁ ≡ false
+    _ = refl
 
-  _ : ex₃ ⦃ all ⦄ ≡ false
-  _ = refl
+    _ : ex₂ ≡ true
+    _ = refl
+
+    _ : ex₃ ≡ false
+    _ = refl
 ```
 
 These are extremely contrived examples, of course. As two slightly more real
@@ -1039,7 +1043,6 @@ propositional equality! No, the problem is in fact earlier, when we imported
 `module:Algebra.Definitions` in this manner:
 
 ```agda
-  open import Relation.Binary.PropositionalEquality
   import Algebra.Definitions
 
   open module Def {ℓ} {A : Set ℓ} =
