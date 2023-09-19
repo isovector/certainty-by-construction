@@ -29,19 +29,10 @@ open import Chapter3-Proofs
 open import Chapter4-Relations
     ```
 
-```agda
-open IsPreorder ⦃ ... ⦄
-open IsEquivalence ⦃ ... ⦄
-
-instance
-  equiv-to-preorder
-      : {ℓ₁ ℓ₂ : Level} {A : Set ℓ₁} {_~_ : Rel A ℓ₂}
-      → ⦃ IsEquivalence _~_ ⦄
-      → IsPreorder _~_
-  equiv-to-preorder = isPreorder
-
-  _ = ≡-equiv
-```
+:   ```agda
+open import Chapter5-Modular-Arithmetic
+  using (equiv-to-preorder; ≡-is-equivalence; refl; sym; trans)
+    ```
 
 One exceptionally common notion in mathematics is the notion of a "set equipped
 with some structure." In this chapter, we will discuss what this means, how to

@@ -269,8 +269,8 @@ This is exactly the trick we will end up using to solve our problem of having
 too many `refl`s to count:
 
 ```agda
-open IsPreorder     ⦃ ... ⦄
-open IsEquivalence  ⦃ ... ⦄
+open IsPreorder     ⦃ ... ⦄ public
+open IsEquivalence  ⦃ ... ⦄ public
 ```
 
 which brings into scope `field:refl` and `field:trans` from `module:IsPreorder`,
@@ -292,7 +292,7 @@ Additionally, let's add `def:≡-equiv` as an instance, so our overloaded terms
 will find propositional equality immediately:
 
 ```agda
-  _ = ≡-equiv
+  ≡-is-equivalence = ≡-equiv
 ```
 
 
