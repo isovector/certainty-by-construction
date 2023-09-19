@@ -413,26 +413,18 @@ module Sandbox-Monoids where
       identityʳ  : (x : Carrier) → x ∙ ε ≈ x
       ∙-cong     : {x y z w : Carrier} → x ≈ y → z ≈ w → x ∙ z ≈ y ∙ w
 
-  module Sandbox-Setoids where
-    record Setoid (c ℓ : Level) : Set (lsuc (c ⊔ ℓ)) where
-      field
-        Carrier        : Set c
-        _≈_            : Rel Carrier ℓ
-        isEquivalence  : IsEquivalence _≈_
-    open Setoid
+  record Setoid (c ℓ : Level) : Set (lsuc (c ⊔ ℓ)) where
+    field
+      Carrier        : Set c
+      _≈_            : Rel Carrier ℓ
+      isEquivalence  : IsEquivalence _≈_
 
-    prop-setoid : Set → Setoid _ _
-    Carrier (prop-setoid A) = A
-    _≈_ (prop-setoid A) = _≡_
-    IsPreorder.refl (IsEquivalence.isPreorder (isEquivalence (prop-setoid A))) = refl
-    IsPreorder.trans (IsEquivalence.isPreorder (isEquivalence (prop-setoid A))) = trans
-    IsEquivalence.sym (isEquivalence (prop-setoid A)) = sym
-
-  open import Relation.Binary
-    using (Setoid)
-  open import Relation.Binary.PropositionalEquality
-    using ()
-    renaming (setoid to prop-setoid)
+  prop-setoid : Set ℓ → Setoid _ _
+  Setoid.Carrier (prop-setoid A) = A
+  Setoid._≈_ (prop-setoid A) = _≡_
+  IsPreorder.refl (IsEquivalence.isPreorder (Setoid.isEquivalence (prop-setoid A))) = refl
+  IsPreorder.trans (IsEquivalence.isPreorder (Setoid.isEquivalence (prop-setoid A))) = trans
+  IsEquivalence.sym (Setoid.isEquivalence (prop-setoid A)) = sym
 
   record Monoid (c ℓ : Level) : Set (lsuc (c ⊔ ℓ)) where
     field
@@ -457,27 +449,29 @@ module Sandbox-Monoids where
   module Naive = Sandbox-Naive-Monoids
   import Relation.Binary.PropositionalEquality as PropEq
 
-  recover : {A : Set ℓ} → Naive.Monoid A → Monoid ℓ ℓ
+  recover : Naive.Monoid A → Monoid _ _
   recover {A = A} x = record
     { setoid     = prop-setoid A
     ; _∙_        = _∙_
     ; ε          = ε
-    ; assoc      = Naive.IsMonoid.assoc is-monoid
-    ; identityˡ  = Naive.IsMonoid.identityˡ is-monoid
-    ; identityʳ  = Naive.IsMonoid.identityʳ is-monoid
+    ; assoc      = assoc
+    ; identityˡ  = identityˡ
+    ; identityʳ  = identityʳ
     ; ∙-cong     = λ { ≡.refl ≡.refl → refl }
     }
-    where open Naive.Monoid x
+    where
+      open Naive.Monoid x
+      open Naive.IsMonoid is-monoid
 
 
---   module _ (A : Set a) (setoid : Setoid c ℓ) where
---     open Setoid renaming (isEquivalence to eq)
---     open IsEquivalence
---     open Setoid setoid
---       using ()
---       renaming ( Carrier to B
---                ; _≈_ to _≈ᵇ_
---                )
+  module _ {c a ℓ : Level} (A : Set a) (setoid : Setoid c ℓ) where
+    open Setoid renaming (isEquivalence to eq)
+    open IsEquivalence
+    open Setoid setoid
+      using ()
+      renaming ( Carrier to B
+               ; _≈_ to _≈ᵇ_
+               )
 
 --     _≗_ : Rel (A → B) _
 --     f ≗ g = (a : A) → f a ≈ᵇ g a
