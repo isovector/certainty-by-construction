@@ -1,4 +1,4 @@
-# Structured Sets
+# Monoids and Setoids
 
 Hidden
 
@@ -35,20 +35,47 @@ open import Chapter5-Modular-Arithmetic
   using (equiv-to-preorder; ≡-is-equivalence; refl; sym; trans)
     ```
 
-> A [widget]{.underline} is a [variety of set]{.underline} equipped with [some
-> operations]{.underline} and [some elements]{.underline}, subject to
-> [laws]{.underline}.
+In this chapter we will now try our hands at interpreting abstract mathematical
+structures, see how we can translate them into Agda definitions, explore what
+can go wrong using only our existing notions of equality, and finally, see how
+these ridiculously far-removed objects can be extremely useful when doing
+everyday programming.
 
-$$
-a \cdot (b \cdot c) = (a \cdot b) \cdot c
-$$
 
-$$
-\begin{aligned}
-\epsilon \cdot x &= x \\
-x \cdot \epsilon &= x
-\end{aligned}
-$$
+## Structured Sets
+
+A huge chunk of "real" mathematics is done over the *structured sets,* which, as
+you might expect, are sets equipped with some structure. That structure usually
+comes in three flavors: elements, operations, and laws. We've already seen
+examples of structured sets---equivalence relations are sets that satisfy the
+laws of reflexivity, symmetry, and transitivity.
+
+When you encounter the definition of a structured set in the wild, it's often
+presented in a sort of mad-libs style, instantiating the following template:
+
+> A *widget* is a *variety of set* equipped with *some operations* and *some
+> elements*, subject to *laws*.
+
+Structured sets are usually given in a concise form, very similar to the above.
+Being able to quickly parse definitions like these is essential to getting real
+work done. That being said, having the definition is only the first
+hurdle---what's much more important is gaining the related intuition behind what
+this widget is and why we should care about it.
+
+In the next section, we will work our way through parsing and subsequently
+understanding a particularly rich example of a structured set: the unassuming,
+understated *monoid.*
+
+
+## Monoids
+
+> A monoid is a set equipped with an associative binary operation `_∙_` and an
+> identity element `ε`.
+
+> A monoid is a set equipped with an associative binary operation `_∙_` and an
+> identity element `ε`, subject to $a \cdot (b \cdot c) = (a \cdot b)
+\cdot c$, $ \epsilon \cdot x = x$ and $x \cdot \epsilon = x$.
+
 
 ```agda
 private variable
@@ -231,6 +258,8 @@ module Sandbox-Naive-Monoids where
 
   flatten : List (List A) → List A
   flatten = summarizeList ⦃ bundle ++-[] ⦄ id
+
+
 
   _ : flatten  ( (1 ∷ 2 ∷ 3 ∷ [])
                ∷ (4 ∷ 5 ∷ []) ∷ []
@@ -416,8 +445,30 @@ module Sandbox-Monoids where
   record Setoid (c ℓ : Level) : Set (lsuc (c ⊔ ℓ)) where
     field
       Carrier        : Set c
-      _≈_            : Rel Carrier ℓ
+      _≈_            : (x y : Carrier) → Set ℓ
       isEquivalence  : IsEquivalence _≈_
+
+  fun-ext : Set → Set → Setoid _ _
+  Setoid.Carrier (fun-ext A B) = A → B
+  Setoid._≈_ (fun-ext A B) f g = ∀ (x : A) → f x ≡ g x
+  IsPreorder.refl (IsEquivalence.isPreorder (Setoid.isEquivalence (fun-ext A B))) {f} a = refl
+  IsPreorder.trans (IsEquivalence.isPreorder (Setoid.isEquivalence (fun-ext A B))) {f} {g} {h} f=g g=h a
+    rewrite f=g a rewrite g=h a = refl
+  IsEquivalence.sym (Setoid.isEquivalence (fun-ext A B)) {f} {g} f=g a = {! !}
+
+  test1 : ℕ → ℕ
+  test1 x = 0
+
+  test2 : ℕ → ℕ
+  test2 _ = 1
+
+  module _ where
+    open Setoid (fun-ext ℕ ℕ)
+
+    is-it-eq : test1 ≈ test2
+    is-it-eq x = {! !}
+
+
 
   prop-setoid : Set ℓ → Setoid _ _
   Setoid.Carrier (prop-setoid A) = A
@@ -464,17 +515,17 @@ module Sandbox-Monoids where
       open Naive.IsMonoid is-monoid
 
 
-  module _ {c a ℓ : Level} (A : Set a) (setoid : Setoid c ℓ) where
+  module _ {c a ℓ : Level} (X : Set a) (setoid : Setoid c ℓ) where
     open Setoid renaming (isEquivalence to eq)
     open IsEquivalence
     open Setoid setoid
       using ()
-      renaming ( Carrier to B
+      renaming ( Carrier to Y
                ; _≈_ to _≈ᵇ_
                )
 
---     _≗_ : Rel (A → B) _
---     f ≗ g = (a : A) → f a ≈ᵇ g a
+    _≗_ : Rel (X → Y) _
+    f ≗ g = (x : X) → f x ≈ᵇ g x
 
 --     ≗-setoid : Setoid _ _
 --     Carrier  ≗-setoid = A → B
