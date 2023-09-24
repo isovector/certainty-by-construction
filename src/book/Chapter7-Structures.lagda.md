@@ -178,6 +178,9 @@ whenever you come across them. Studying concrete examples is an excellent way of
 building intuition for the otherwise abstract nonsense that higher-level math
 can often feel like.
 
+
+## Examples of Monoids
+
 I mentioned above that the terminology of "unit" and "multiplication" for
 monoids' object and operation, respectively, comes historically from the fact
 that monoids generalize multiplication. And indeed, there is a monoid over
@@ -230,10 +233,72 @@ they components of any monoids?
   identityʳ  ∧-true = ∧-identityʳ
 ```
 
+As we have seen, for any given carrier set, there can be many different monoids.
+Interestingly, there can also be different monoids for the same carrier set and
+identity element, as seen below. The `def:xor` function computes whether exactly
+one of its two arguments is `ctor:true`:
+
+```agda
+  xor : Bool → Bool → Bool
+  xor false  y = y
+  xor true   y = not y
+```
+
+We can directly read off of this definition that `ctor:false` is a
+left-identity. As you might expect, `def:xor` also forms a monoid:
+
+```agda
+  xor-false : IsMonoid xor false
+  assoc xor-false false y z        = refl
+  assoc xor-false true false z     = refl
+  assoc xor-false true true false  = refl
+  assoc xor-false true true true   = refl
+  identityˡ xor-false x     = refl
+  identityʳ xor-false false = refl
+  identityʳ xor-false true  = refl
+```
+
+Notice that we have not proven the intermediary results `def:xor-assoc`,
+`def:xor-identityˡ` or `def:xor-identityʳ`, choosing instead to inline their
+definitions. Each of those theorems does indeed hold, and it's good practice to
+write them out for any future proofs that might require such. We will not do it
+here, but you are encouraged to define them on your own.
+
+There are lots more monoids (infinitely many, in fact) but this is a good
+starting point for us to build some intuition. In the next section we'll explore
+what sorts of problems monoids can help us solve.
 
 
+## Monoids as Queries
 
+I like to mentally associate a catchphrase with every abstract mathematical
+idea I come across. Doing so gives me an informal hook on which to hang
+examples, and a convenient question to ask when encountering new problems. After
+all, if I know that structure X solves problems that look like Y, whenever I
+come across a Y problem, I immediately start thinking about X. In the case of
+monoids, my catchphrase is:
 
+> Monoids generate summaries.
+
+Fleshed out in more detail, the carrier set of a monoid corresponds to the
+type of answer I'd like to get. The unit corresponds to the "default" summary,
+and multiplication gives us a means of combining summaries together. Another way
+of thinking about this is that monoids generalize the answers you get when
+querying a database.
+
+We'll see many examples of exactly what I mean by this momentarily. But first,
+we require a little more machinery in Agda.
+
+I said earlier that `type:IsMonoid` is a convenient type for showing off
+monoids, but it's a rather frustrating thing to work with generically. Whenever
+we'd like to talk about `type:IsMonoid`, we'd better have a *particular* `_∙_`
+and `ε` that we can use as parameters. This is great when we'd like to discuss a
+single monoid, but it grows in complexity when we'd like to talk about the
+structure abstractly.
+
+A common solution in Agda is to "bundle" a type's parameters with its contents,
+so you just pass the whole structure around at once. The bundled version of
+`type:IsMonoid` is just `type:Monoid`, and it looks like this:
 
 ```agda
   record Monoid {c : Level} (Carrier : Set c) : Set (lsuc c) where
@@ -242,7 +307,21 @@ they components of any monoids?
       _∙_  : Op₂ Carrier
       ε    : Carrier
       is-monoid : IsMonoid _∙_ ε
+```
 
+We could have also chosen to bundle up the carrier set inside
+`type:Monoid`[^as-the-stdlib], but such will be inconvenient for us, as we'd
+like to give `type:Monoid` instances to Agda so we can overload the syntax of
+`field_∙_` and `field:ε`. Doing so, however, requires *something* for Agda to
+dispatch on, and we will use the carrier set for that purpose.
+
+[^as-the-stdlib]: The standard library does indeed bundle the carrier set. This
+makes some tasks easier, and some harder.
+
+With our new `type:Monoid` bundle in hand, we can use the `def:bundle` function
+to repackage a `type:IsMonoid` as a `type:Monoid`:
+
+```agda
   bundle
       : {c : Level} {A : Set c} {∙ : Op₂ A} {ε : A}
       → IsMonoid ∙ ε
@@ -250,25 +329,42 @@ they components of any monoids?
   Monoid._∙_  (bundle {∙ = ∙}  x)  = ∙
   Monoid.ε    (bundle  {ε = ε} x)  = ε
   Monoid.is-monoid (bundle x) = x
+```
 
+Finally, we will open `type:Monoid` as as typeclass:
+
+```agda
   open Monoid ⦃ ... ⦄
+```
 
+We are now ready to investigate the sense in which a monoid can be considered a
+summary of data. Let's make a new module parameterized by some `expr:Monoid
+Bool` instance. Doing so will allow us to use `field:_∙_` and `field:ε`
+abstractly:
+
+```agda
   module _ ⦃ _ : Monoid Bool ⦄ where
     ex₁ : Bool
     ex₁ = false ∙ true ∙ false ∙ false
 
     ex₂ : Bool
-    ex₂ = true ∙ true ∙ true
+    ex₂ = true ∙ true ∙ true ∙ true
 
     ex₃ : Bool
-    ex₃ = false  -- ! 1
+    ex₃ = ε
+  -- FIXEXPR
+```
 
-  any : Monoid Bool
-  any = bundle ∨-false
+The way to think about `def:ex₁` and friends is that they compute abstract
+summaries of the booleans multiplied together in each. By instantiating them
+with different `def:Monoid`s, we can get different summaries of the data. For
+example, if we were to use `expr:bundle ∨-false`, we could compute if there
+exists at least one `ctor:true` in each data set:
 
+```agda
   module _ where
     private instance
-      _ = any
+      _ = bundle ∨-false
 
     _ : ex₁ ≡ true
     _ = refl
@@ -278,13 +374,16 @@ they components of any monoids?
 
     _ : ex₃ ≡ false
     _ = refl
+  -- FIXEXPR
+```
 
-  all : Monoid Bool
-  all = bundle ∧-true
+Alternatively, if we were to use `expr:bundle ∧-true`, we would instead compute
+whether *every* boolean in the dataset be `ctor:true`:
 
+```agda
   module _ where
     private instance
-      _ = all
+      _ = bundle ∧-true
 
     _ : ex₁ ≡ false
     _ = refl
@@ -292,46 +391,157 @@ they components of any monoids?
     _ : ex₂ ≡ true
     _ = refl
 
-    _ : ex₃ ≡ false
+    _ : ex₃ ≡ true
+    _ = refl
+```
+
+Note that in the `def:ex₃` case, there are *no* booleans, and so vacuously they
+are all `ctor:true`.
+
+As a third illustration of summarizing this dataset, we can use the
+`def:xor-false` monoid to determine whether there is an *odd* number of
+`ctor:true`s in each example. This summary is often known as a "parity" or
+"checksum," and is used as a simple way of checking for errors when transmitting
+data across a noisy channel[^checksum].
+
+[^checksum]: The idea is to compute the parity of the data you'd like to send,
+  and then to add an extra bit which ensures the parity is always `ctor:false`.
+  When you receive the data, you can *check* the parity *sum* for yourself, and
+  if it's `ctor:true`, you know something went wrong during transmission. Of
+  course, an even number of things could have gone wrong and you wouldn't know,
+  so checksums in practice often consist of many different parity checks at
+  once.
+
+```agda
+  module _ where
+    private instance
+      _ = bundle xor-false
+
+    _ : ex₁ ≡ true
     _ = refl
 
---   open import Data.List using (List; _∷_; []; _++_)
---   open import Data.List.Properties
---     using (++-assoc; ++-identityˡ; ++-identityʳ)
+    _ : ex₂ ≡ false
+    _ = refl
+
+    _ : ex₃ ≡ false
+    _ = refl
+  -- FIXEXPR
+```
+
+There you have it---three different monoids give us three different answers when
+summarizing each of `def:ex₁`, `def:ex₂`, and `def:ex₃`. When we conceptualize
+`def:ex₁` and friends as datasets, our different monoids correspond to different
+questions we can ask about that data.
+
+Of course, the booleans are such a small type that the sort of questions we can
+ask are extremely limited. Let's therefore take some time to find more examples
+of monoids, keeping our catchphrase that "monoids generate summaries" in mind as
+we do so.
 
 
+## More Monoids
+
+In @sec:maybe we looked at the `type:Maybe` type, which is parameterized by
+another type, extending it with the possibility that there might not be any data
+inside. Recall that we use the `ctor:nothing` constructor to give this lack of
+data, and the `ctor:just` constructor to inject a value of type `A` into
+`expr:Maybe A`.
+
+A natural operation over `type:Maybe` is thus to combine two maybe values,
+hoping that at least one of them is a `ctor:just`. This operation is called
+`def:_<∣>_` and pronounced "alt." Make sure you type the vertical bar via
+[`|`](AgdaMode), because the usual vertical bar on your keyboard has special
+meaning in Agda and you will get mysterious errors if you use it.
+
+```agda
   _<∣>_ : Maybe A → Maybe A → Maybe A
   just x  <∣> my = just x
   nothing <∣> my = my
+```
 
-  first : IsMonoid {Carrier = Maybe A} _<∣>_ nothing
-  assoc first (just x)  y z = refl
-  assoc first nothing   y z  = refl
-  identityˡ first x = refl
-  identityʳ first (just x)  = refl
-  identityʳ first nothing   = refl
+Given `def:_<∣>_`, we can show it forms a monoid with `ctor:nothing` as the
+unit:
 
+```agda
+  <∣>-nothing : IsMonoid {Carrier = Maybe A} _<∣>_ nothing
+  assoc <∣>-nothing (just x)  y z = refl
+  assoc <∣>-nothing nothing   y z  = refl
+  identityˡ <∣>-nothing x = refl
+  identityʳ <∣>-nothing (just x)  = refl
+  identityʳ <∣>-nothing nothing   = refl
+```
+
+Because we'd like `def:<∣>-nothing` to work over any type at all, we must
+explicitly state its carrier is `type:Maybe` `A` in the type signature.
+
+As a summarizing mechanism, `def:<∣>-nothing` gives us back the first
+`ctor:just` in a dataset, ignoring everything that comes afterwards. In case
+that there are no `ctor:just`s to be found, we will get back a `ctor:nothing`.
+While this is nice, you might wonder if there is a corresponding monoid that
+takes the *last* `ctor:just` that it finds. And of course, there is.
+
+But rather than going through all of the effort of writing a right-biased
+version of `def:_<∣>_`, we can instead consider the problem more generally.
+Since `field:ε` is both a left- and a right-identity for `field:_∙_`, the only
+asymmetry here comes from `field:_∙_` itself. However, nothing in the problem
+statement enforces this asymmetry on us; it just reflects an arbitrary choice on
+which of the two arguments to `field:_∙_` we decide to privilege.
+
+Whenever you find yourself at the whim of an arbitrary choice made, your spidey
+senses should start tingling. Usually it's an opportunity for us to get a
+different arbitrary choice for free. This is the motivation behind the
+`def:dual` monoid, which states that we can always derive a new monoid by
+flipping the order of the arguments on `field:_∙_`.
+
+We can construct the dual in two pieces. First, we must show that for any
+non-dependent function, we can flip the order of its arguments:
+
+```agda
   flip : (A → B → C) → B → A → C
   flip f b a = f a b
+```
 
-  dual : {_∙_ : Op₂ A} {ε : A} → IsMonoid _∙_ ε → IsMonoid (flip _∙_) ε
+and now, we can show that given some `type:IsMonoid`, we can derive another
+whose operation has been `def:flip`ped:
+
+```agda
+  dual : {_∙_ : Op₂ A} {ε : A}
+       → IsMonoid _∙_         ε
+       → IsMonoid (flip _∙_)  ε
   assoc      (dual m) x y z  = sym (assoc m z y x)
   identityˡ  (dual m)        = identityʳ m
   identityʳ  (dual m)        = identityˡ m
+```
 
-  last : IsMonoid {Carrier = Maybe A} _ nothing
-  last = dual first
+We can now get the last-`just`-wins monoid for free, since it's just
+`expr:dual <∣>-nothing`.
 
+As another example of monoids, we note that lists form one under concatenation
+and the empty list. Rather incredibly, we've made it all the way to chapter 7
+in a book on function programming without mentioning lists, so let's quickly
+give a definition:
+
+```agda
   data List (A : Set ℓ) : Set ℓ where
     []   : List A
     _∷_  : A → List A → List A
   infixr 5 _∷_
+```
 
+Lists of `A` are either empty (given by `ctor:[]`), or they are given by an `A`
+stuck in front of another list. With this definition, we can quickly define list
+concatenation:
+
+```agda
   _++_ : List A → List A → List A
   []        ++ ys = ys
   (x ∷ xs)  ++ ys = x ∷ (xs ++ ys)
   infixr 5 _++_
+```
 
+and now show that there is indeed a monoid under `def:_++_` and `ctor:[]`:
+
+```agda
   ++-[] : IsMonoid {Carrier = List A} _++_ []
   assoc ++-[] [] y z = refl
   assoc ++-[] (x ∷ xs) y z
@@ -342,16 +552,31 @@ they components of any monoids?
   identityʳ ++-[] (x ∷ xs)
     rewrite identityʳ ++-[] xs
       = refl
+```
 
+Again, `def:++-[]` should really be pulled apart into three additional
+definitions: `def:++-assoc`, `def:++-identityˡ` and `def:++-identityʳ` for
+maximum reusability of the sub-proofs. The reader is encouraged to give these
+proofs on ones own, and redefine `def:++-[]` in terms of them.
+
+Considered as a summary, `def:++-[]` allows us to inspect each individual term
+of the dataset. This is the usual way in which a relational database is
+queried, where we'd just like to get back each of the actual rows without any
+aggregation.
+
+
+## Monoidal Origami
+
+```agda
   summarizeList : ⦃ Monoid B ⦄ → (A → B) → List A → B
   summarizeList f [] = ε  -- ! 1
   summarizeList f (x ∷ l) = f x ∙ summarizeList f l
 
   any? : (A → Bool) → List A → Bool
-  any? = summarizeList ⦃ any ⦄
+  any? = summarizeList ⦃ bundle ∨-false ⦄
 
   all? : (A → Bool) → List A → Bool
-  all? = summarizeList ⦃ all ⦄
+  all? = summarizeList ⦃ bundle ∧-true ⦄
 
   id : A → A
   id a = a
@@ -375,10 +600,10 @@ they components of any monoids?
   _ = refl
 
   head : List A → Maybe A
-  head = summarizeList ⦃ bundle first ⦄ just
+  head = summarizeList ⦃ bundle <∣>-nothing ⦄ just
 
   foot : List A → Maybe A
-  foot = summarizeList ⦃ bundle last ⦄ just
+  foot = summarizeList ⦃ bundle (dual <∣>-nothing) ⦄ just
 
   reverse : List A → List A
   reverse = summarizeList ⦃ bundle (dual ++-[]) ⦄ (_∷ [])
@@ -393,7 +618,7 @@ they components of any monoids?
   _ = refl
 
   empty? : List A → Bool
-  empty? = summarizeList ⦃ all ⦄ (const false)
+  empty? = summarizeList ⦃ bundle ∧-true ⦄ (const false)
 
   record Foldable {ℓ₁ ℓ₂ : Level} (Container : Set ℓ₁ → Set ℓ₂)
       : Set (lsuc (ℓ₁ ⊔ ℓ₂)) where
