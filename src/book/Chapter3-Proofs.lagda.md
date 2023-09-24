@@ -15,7 +15,7 @@ Prerequisites
 
 :   ```agda
 open import Chapter1-Agda
-  using (Bool; true; false; _∨_; not)
+  using (Bool; true; false; _∨_; _∧_; not)
     ```
 
 :   ```agda
@@ -823,6 +823,26 @@ both a left and right identity for `def:_∨_`, as we can show:
   ∨-identityʳ true   = refl
 ```
 
+
+Exercise
+
+: Prove analogous facts about the boolean AND function `def:_∧_`.
+
+
+Solution
+
+:   ```agda
+  ∧-identityˡ : (x : Bool) → true ∧ x ≡ x
+  ∧-identityˡ _ = refl
+    ```
+
+:   ```agda
+  ∧-identityʳ : (x : Bool) → x ∧ true ≡ x
+  ∧-identityʳ false  = refl
+  ∧-identityʳ true   = refl
+    ```
+
+
 While identity elements might seem unexciting and pointless right now, but they
 are an integral part for a rich computational structure that we will study in
 @sec:monoids. For the time being, we will remark only that the discovery of the
@@ -875,6 +895,25 @@ element:
 Annihilators can dramatically simplify a proof. If you can spot one lurking, you
 know its existence must immediately trivialize a subexpression, reducing it to a
 zero. Often recursively.
+
+
+Exercise
+
+: Find an analogous annihilator for `def:_∧_`.
+
+
+Solution
+
+:   ```agda
+  ∧-zeroˡ : (x : Bool) → false ∧ x ≡ false
+  ∧-zeroˡ _ = refl
+    ```
+
+:   ```agda
+  ∧-zeroʳ : (x : Bool) → x ∧ false ≡ false
+  ∧-zeroʳ false = refl
+  ∧-zeroʳ true = refl
+    ```
 
 
 ## Symmetry and Involutivity
@@ -1932,6 +1971,20 @@ You should be able to prove this one for yourself:
   ∨-assoc true   b c = refl
 ```
 
+
+Exercise
+
+: Also prove `def:∧-assoc`.
+
+Solution
+
+:   ```agda
+  ∧-assoc : (a b c : Bool) → (a ∨ b) ∨ c ≡ a ∨ (b ∨ c)
+  ∧-assoc false  b c = refl
+  ∧-assoc true   b c = refl
+    ```
+
+
 Not too hard at all, is it? Let's now try the same, except this time showing
 that it's addition that's associative:
 
@@ -2407,7 +2460,9 @@ open import Function
 open import Data.Bool.Properties
   using  ( ∨-identityˡ  ; ∨-identityʳ
          ; ∨-zeroˡ      ; ∨-zeroʳ
-         ; ∨-assoc
+         ; ∨-assoc      ; ∧-assoc
+         ; ∧-identityˡ  ; ∧-identityʳ
+         ; ∧-zeroˡ      ; ∧-zeroʳ
          ; not-involutive
          )
   public

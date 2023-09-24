@@ -1111,6 +1111,23 @@ specific value, even if we don't know what that value is. For this reason, we
 sometimes call variables *bindings.*
 
 
+Exercise
+
+: The `def:_∨_` function corresponds to the boolean operation OR, which is
+  `ctor:true` if either of its arguments was. There is an analogous function
+  `def:_∧_` (input via [and](AgdaMode)), which returns `ctor:true` if *both*
+  only when both of its arguments are. Define this function.
+
+
+Solution
+
+:   ```agda
+  _∧_ : Bool → Bool → Bool
+  true   ∧ other = other
+  false  ∧ other = false
+    ```
+
+
 ## Agda's Computational Model
 
 Let's compare our two definitions of `def:_∨_`, reproduced here with slightly
@@ -2242,11 +2259,12 @@ those which come from the standard library.
 
 In @sec:bools we built `type:Bool` alongside its constructors `ctor:false` and
 `ctor:true`. In @sec:not we implemented `def:not`, and in @sec:operators we
-defined the boolean OR function `def:_∨_`.
+defined the boolean OR function `def:_∨_`. As an exercise, you were tasked with
+defining the AND function `def:_∧_`.
 
 ```agda
 open import Data.Bool
-  using (Bool; false; true; not; _∨_)
+  using (Bool; false; true; not; _∨_; _∧_)
   public
 ```
 

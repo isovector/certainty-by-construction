@@ -36,10 +36,18 @@ open import Chapter5-Modular-Arithmetic
     ```
 
 In this chapter we will now try our hands at interpreting abstract mathematical
-structures, see how we can translate them into Agda definitions, explore what
-can go wrong using only our existing notions of equality, and finally, see how
-these ridiculously far-removed objects can be extremely useful when doing
-everyday programming.
+structures. We will see how we can translate them into Agda definitions and
+explore what can go wrong when we use only our existing notions of equality. But
+most excitingly, we will look at a bevy of usual functions in computer science,
+and see how they all arise "for free" by instantiating the same generic code
+with different abstract mathematical objects.
+
+This is one of my favorite examples for bridging between pure math and computer
+science, as it shows an exciting side-effect---not only is the math interesting
+for its own sake, but it also is real-world applicable, and serves to illustrate
+patterns in code that you might never have noticed before.
+
+Without further ado, let's begin.
 
 
 ## Structured Sets
@@ -63,19 +71,51 @@ hurdle---what's much more important is gaining the related intuition behind what
 this widget is and why we should care about it.
 
 In the next section, we will work our way through parsing and subsequently
-understanding a particularly rich example of a structured set: the unassuming,
-understated *monoid.*
+understanding a particularly rich example of a structured set: the unassuming
+and understated *monoid.*
 
 
 ## Monoids
 
+The terse, textbook definition of a *monoid* is:
+
 > A monoid is a set equipped with an associative binary operation `_∙_` and an
 > identity element `ε`.
 
-> A monoid is a set equipped with an associative binary operation `_∙_` and an
-> identity element `ε`, subject to $a \cdot (b \cdot c) = (a \cdot b)
-\cdot c$, $ \epsilon \cdot x = x$ and $x \cdot \epsilon = x$.
+We can parse out the mad-libs here, which tells us a monoid is a *set* (that is
+to say, it's not a special case of some other structured set), equipped with one
+*binary operation* `_∙_`, and has *one element* `ε`. The *laws* are left implicit
+in this definition, but not unsaid.
 
+Reading between the lines, we see that the binary operation is said to be
+*associative*, and that `ε` is an *identity.* An identity must always be
+relative to some operation, and there is only one operation around, so we infer
+that `ε` must be an identity for `_∙_`. Furthermore, we are not told whether `ε`
+is a left- or a right- identity on `_∙_`, so we assume it must be both.
+
+Therefore, we can see that there are three laws hidden in the original
+definition: `_∙_` is associative, `ε` is a left-identity on `_∙_`, and that `ε`
+is a right-identity on `_∙_`. Fleshing these laws out into symbols, they say:
+
+$$
+a \cdot (b \cdot c) = (a \cdot b) \cdot c
+$$
+
+$$
+\epsilon \cdot x = x
+$$
+
+$$
+x \cdot \epsilon = x
+$$
+
+As a note on terminology, the element `ε` is often called the *unit* of the
+monoid, and the operation `_∙_` is often called *multiplication.* These names
+are historical, but come from the fact that monoids generalize a lot of the
+intuition we have regarding everyday multiplication over numbers.
+
+Having now mentally parsed the definition of a monoid, let's see about coding it
+all up in Agda. We'll start with some variables to simplify some definitions:
 
 ```agda
 private variable
@@ -83,28 +123,119 @@ private variable
   A : Set ℓ
   B : Set ℓ
   C : Set ℓ
+```
 
+And will introduce `type:Op₂`, which is the type of a binary operation:
+
+```agda
 private
   Op₂ : {ℓ : Level} → Set ℓ → Set ℓ
   Op₂ A = A → A → A
+```
 
+Note that we have marked `type:Op₂` as `keyword:private` only as a technical
+detail. A `keyword:private` definition can still be used in the current module,
+but it isn't automatically exported. This is because we'd like to export
+`type:Op₂` from the standard library at the end of this chapter, and can't be
+bothered to deal with identifier conflicts.
+
+With that digression made, we can now make a new module to encode monoids. I
+happen to know that something will go wrong in the process, so we will call this
+module `module:Sandbox-Naive-Monoids`.
+
+```agda
 module Sandbox-Naive-Monoids where
+```
 
-  record IsMonoid {c : Level} {Carrier : Set c}
-                  (_∙_ : Op₂ Carrier) (ε : Carrier)
-        : Set (lsuc c) where
+We will now formalize monoids. Recall their definition:
+
+> A monoid is *a set* equipped with an associative binary operation `_∙_` and an
+> identity element `ε`.
+
+Given this definition, we'd like to build a type `type:IsMonoid` which states
+that `_∙_` and `ε` form a monoid. This is not the only way to do things, but it
+does lead to very clear type signatures. I've italicized the words *a set* in
+the definition to emphasize that this definition is also parameterized over some
+`type:Set`, which we call the *carrier set.*
+
+All of this lends itself to a concise definition of `type:IsMonoid`:
+
+```agda
+  record IsMonoid {Carrier : Set ℓ}
+                  (_∙_ : Op₂ Carrier)
+                  (ε : Carrier)
+        : Set (lsuc ℓ) where
     field
       assoc      : (x y z : Carrier) → (x ∙ y) ∙ z ≡ x ∙ (y ∙ z)
       identityˡ  : (x : Carrier) → ε ∙ x ≡ x
       identityʳ  : (x : Carrier) → x ∙ ε ≡ x
+
   open IsMonoid
+```
+
+It's a good habit to look for concrete examples of mathematical structures
+whenever you come across them. Studying concrete examples is an excellent way of
+building intuition for the otherwise abstract nonsense that higher-level math
+can often feel like.
+
+I mentioned above that the terminology of "unit" and "multiplication" for
+monoids' object and operation, respectively, comes historically from the fact
+that monoids generalize multiplication. And indeed, there is a monoid over
+`def:ℕ`, literally using `def:_*_` as the multiplication and 1 as the unit:
+
+```agda
+  -- TODO(sandy): Maybe just import the chapter qualified at the beginning, and
+  -- import these definitions as needed.
+
+  *-1 : IsMonoid _*_ 1
+  assoc      *-1 = *-assoc
+  identityˡ  *-1 = *-identityˡ
+  identityʳ  *-1 = *-identityʳ
+```
+
+The idea behind monoids is that their multiplication corresponds to some
+abstract "operation" (in the usual sense of the word), together with some means
+of *doing nothing.* In the `def:*-1` example, multiplication by one doesn't
+change the result, and therefore does nothing. The associativity requirement is
+a little more subtle, which we will explore in more detail when discussing how
+to actually *use* monoids.
+
+Let's take some time to look for other examples of monoids. Staying on the
+natural numbers, is there some other operation you can think of that also comes
+with a notion of "don't do anything?"
+
+Addition with zero seems to satisfy the intuition. And indeed, we can show it
+also forms a monoid:
+
+```agda
+  +-0 : IsMonoid _+_ 0
+  assoc      +-0 = +-assoc
+  identityˡ  +-0 = +-identityˡ
+  identityʳ  +-0 = +-identityʳ
+```
+
+When you start looking for them, you'll begin to monoids everywhere. Let's
+consider the booleans. Recall our two functions `def:_∨_` and `def:_∧_`---are
+they components of any monoids?
+
+```agda
+  ∨-false : IsMonoid _∨_ false
+  assoc      ∨-false = ∨-assoc
+  identityˡ  ∨-false = ∨-identityˡ
+  identityʳ  ∨-false = ∨-identityʳ
+
+  ∧-true : IsMonoid _∧_ true
+  assoc      ∧-true = ∧-assoc
+  identityˡ  ∧-true = ∧-identityˡ
+  identityʳ  ∧-true = ∧-identityʳ
+```
 
 
-  test : IsMonoid _∨_ false
-  assoc test = ∨-assoc
-  identityˡ test = ∨-identityˡ
-  identityʳ test = ∨-identityʳ
 
+
+
+
+```agda
   record Monoid {c : Level} (Carrier : Set c) : Set (lsuc c) where
     infixl 7 _∙_
     field
@@ -121,11 +252,6 @@ module Sandbox-Naive-Monoids where
   Monoid.is-monoid (bundle x) = x
 
   open Monoid ⦃ ... ⦄
-
-  ∨-false : IsMonoid _∨_ false
-  assoc      ∨-false = ∨-assoc
-  identityˡ  ∨-false = ∨-identityˡ
-  identityʳ  ∨-false = ∨-identityʳ
 
   module _ ⦃ _ : Monoid Bool ⦄ where
     ex₁ : Bool
@@ -153,15 +279,6 @@ module Sandbox-Naive-Monoids where
     _ : ex₃ ≡ false
     _ = refl
 
-  open import Data.Bool using (_∧_)
-  open import Data.Bool.Properties
-    using (∧-assoc; ∧-identityˡ; ∧-identityʳ)
-
-  ∧-true : IsMonoid _∧_ true
-  assoc      ∧-true = ∧-assoc
-  identityˡ  ∧-true = ∧-identityˡ
-  identityʳ  ∧-true = ∧-identityʳ
-
   all : Monoid Bool
   all = bundle ∧-true
 
@@ -177,16 +294,6 @@ module Sandbox-Naive-Monoids where
 
     _ : ex₃ ≡ false
     _ = refl
-
-  +-0 : IsMonoid _+_ 0
-  assoc      +-0 = +-assoc
-  identityˡ  +-0 = +-identityˡ
-  identityʳ  +-0 = +-identityʳ
-
-  *-1 : IsMonoid _*_ 1
-  assoc      *-1 = *-assoc
-  identityˡ  *-1 = *-identityˡ
-  identityʳ  *-1 = *-identityʳ
 
 --   open import Data.List using (List; _∷_; []; _++_)
 --   open import Data.List.Properties
