@@ -876,21 +876,67 @@ All of the rewriting here is a little annoying, but is much terser than doing
 the equational reasoning ourselves and showing that both sides respect their
 respective identity laws.
 
+Because functions `A → B` can be thought of as really big pairs of `B` (in
+particular, one for every possible value of `A`)---a fact that we will prove in
+@sec:exponents---we should be able to build a similar monoid over functions.
+That is, whenever `B` is a monoid, we should be able to build a monoid over `A →
+B` given by the *pointwise* action on the functions. That is, the unit in `A →
+B` is a constant function that produces the unit in `B`:
+
+$$
+\varepsilon = x \mapsto \varepsilon
+$$
+
+and the operation on `A → B` invokes the operation on `B` after calling both
+functions, that is:
+
+$$
+f \cdot g = x \mapsto f(x) \cdot g(x)
+$$
+
+We can try to build this monoid in Agda, first by defining the operation:
 
 ```agda
   ⊙ : ⦃ Monoid B ⦄ → Op₂ (A → B)
   ⊙ f g = λ x → f x ∙ g x
+```
 
-  →ε : ⦃ Monoid B ⦄ → (A → B)
-  →ε = λ _ → ε
+and then filling out `def:pointwise` results in:
 
-  pointwise : ⦃ Monoid B ⦄ → Monoid (A → B)
-  Monoid._∙_  pointwise = ⊙
-  Monoid.ε    pointwise = →ε
-  assoc (Monoid.is-monoid pointwise) = {! !}
-  identityˡ (Monoid.is-monoid pointwise) = {! !}
-  identityʳ (Monoid.is-monoid pointwise) = {! !}
+```agda
+  pointwise : ⦃ _ : Monoid B ⦄ → IsMonoid (⊙ {A = A}) (const ε)
+  assoc pointwise f g h = {! !}
+  identityˡ pointwise = {! !}
+  identityʳ pointwise = {! !}
+```
 
+Unforuntately, here is where we get stuck. The first hole here has type
+
+```info
+⊙ (⊙ f g) h ≡ ⊙ f (⊙ g h)
+```
+
+which doesn't seem too bad until you expand the definition of `def:⊙`, which
+results in:
+
+```info
+(λ x → (f x ∙ g x) ∙ h x)
+  ≡ (λ x → f x ∙ (g x ∙ h x))
+```
+
+Something we've been carefully avoiding throughout this entire text is the
+equality of functions. If you look back closely, you'll notice that we have
+always had functions which return equality of terms; we have never once needed
+to show the equality of *two functions!* We've avoided doing so because this is
+where things get surprisingly hairy, but we can't kick the can any further. Our
+monoid `def:pointwise` really and truly is perfectly acceptable mathematically,
+but try as we might, we are unable to fill the above holes.
+
+
+## Function Extensionality
+
+
+```agda
 module Sandbox-IntensionalExtensional where
   open import Data.Nat
     using (ℕ; _+_;  _*_)
