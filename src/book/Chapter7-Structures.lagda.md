@@ -108,11 +108,11 @@ a \cdot (b \cdot c) = (a \cdot b) \cdot c
 $$
 
 $$
-\epsilon \cdot x = x
+\varepsilon \cdot x = x
 $$
 
 $$
-x \cdot \epsilon = x
+x \cdot \varepsilon = x
 $$
 
 As a note on terminology, the element `ε` is often called the *unit* of the
@@ -572,6 +572,40 @@ of the dataset. This is the usual way in which a relational database is
 queried, where we'd just like to get back each of the actual rows without any
 aggregation.
 
+One interesting monoid is the monoid of *endomorphisms*, which is just a
+fancy word for saying "functions of type `A → A`." First we can define function
+composition:
+
+```agda
+  _∘_ : (B → C) → (A → B) → (A → C)
+  (g ∘ f) x = g (f x)
+```
+
+Furthermore, we have the *identity* function which simply does nothing, merely
+immediately gives back its argument:
+
+```agda
+  id : A → A
+  id a = a
+```
+
+By now fixing `A = B = C`, we can show that `def:_∘_` forms a monoid with `def:id` as
+the unit:
+
+```agda
+  ∘-id : IsMonoid {Carrier = A → A} _∘_ id
+  assoc      ∘-id x y z = refl
+  identityˡ  ∘-id x = refl
+  identityʳ  ∘-id x = refl
+```
+
+I personally really like the `def:∘-id` monoid, which is extremely useful in
+pure functional programming settings. Many languages, including Agda, don't have
+any notion of mutable variables, and so we must get creative in order to achieve
+the same effect. Instead of having a mutable variable of type `A`, we can
+instead represent *mutations*  as functions `A → A`. The `def:∘-id` monoid
+therefore corresponds to performing one mutation after another.
+
 
 ## Monoidal Origami
 
@@ -628,8 +662,6 @@ necessary. In cases like these, it can be helpful to use the *identity function*
 which simply gives back its argument:
 
 ```agda
-    id : A → A
-    id a = a
 
     sum : List ℕ → ℕ
     sum = foldList ⦃ bundle +-0 ⦄ id
@@ -785,13 +817,46 @@ types need to change, and what can you say about the resulting functions?
 
 ## Composition of Monoids
 
+A common theme in mathematics and functional programming is composition---the
+building of larger objects out of smaller ones. Here, we'd like to explore how
+we can combine simple monoids to make more complicated ones. For the time being,
+we will content ourselves with two examples: building a monoid over *products,*
+and building one over *functions*.
 
+Let's consider the case of a product type `A` `type:×` `B`. Is there a general
+means of constructing a monoid over this carrier set? As it happens, such a
+thing is possible whenever we have a monoid on both of `A` and `B`. The
+construction isn't particularly insightful---we just work on both monoids at
+once. That is, we give the operation as:
+
+$$
+(a_1, b_1) \cdot (a_2, b_2) = (a_1 \cdot a_2, b_1 \cdot b_2)
+$$
+
+and the identity as:
+
+$$
+\varepsilon = (\varepsilon, \varepsilon)
+$$
+
+The laws fall out for free, since we're just combining two monoids "in
+parallel." We can construct the whole thing in Agda by way of a module that
+binds the monoids:
 
 ```agda
   module _ ⦃ m₁ : Monoid A ⦄ ⦃ m₂ : Monoid B ⦄ where
+```
+
+We can now define the multiplication:
+
+```agda
     _⊗_ : Op₂ (A × B)
     (a₁ , b₁) ⊗ (a₂ , b₂) = (a₁ ∙ a₂) , (b₁ ∙ b₂)
+```
 
+and build the monoid over the product as follows:
+
+```
     ×-is-monoid : IsMonoid _⊗_ (ε , ε)
     assoc ×-is-monoid (a₁ , b₁) (a₂ , b₂) (a₃ , b₃)
       rewrite assoc is-monoid  a₁ a₂ a₃
@@ -805,15 +870,14 @@ types need to change, and what can you say about the resulting functions?
       rewrite identityʳ is-monoid a
       rewrite identityʳ is-monoid b
         = refl
+```
 
-  _∘_ : (B → C) → (A → B) → (A → C)
-  (g ∘ f) x = g (f x)
+All of the rewriting here is a little annoying, but is much terser than doing
+the equational reasoning ourselves and showing that both sides respect their
+respective identity laws.
 
-  ∘-id : IsMonoid {Carrier = A → A} _∘_ id
-  assoc      ∘-id x y z = refl
-  identityˡ  ∘-id x = refl
-  identityʳ  ∘-id x = refl
 
+```agda
   ⊙ : ⦃ Monoid B ⦄ → Op₂ (A → B)
   ⊙ f g = λ x → f x ∙ g x
 
