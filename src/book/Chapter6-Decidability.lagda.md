@@ -714,7 +714,7 @@ and give a more "semantically-inclined" type to our old function:
 ```
 
 
-## Binary Trees
+## Binary Trees {#sec:bintrees}
 
 Perhaps you are tired of always working with numbers. After all, isn't this
 supposed to be a book about applying mathematical techniques to computer

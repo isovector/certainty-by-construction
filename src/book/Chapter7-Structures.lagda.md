@@ -35,6 +35,12 @@ open import Chapter5-Modular-Arithmetic
   using (equiv-to-preorder; ≡-is-equivalence; refl; sym; trans)
     ```
 
+:   ```agda
+import Chapter6-Decidability
+open Chapter6-Decidability.BinaryTrees
+  using (BinTree; leaf; branch; empty)
+    ```
+
 In this chapter we will now try our hands at interpreting abstract mathematical
 structures. We will see how we can translate them into Agda definitions and
 explore what can go wrong when we use only our existing notions of equality. But
@@ -445,7 +451,7 @@ In @sec:maybe we looked at the `type:Maybe` type, which is parameterized by
 another type, extending it with the possibility that there might not be any data
 inside. Recall that we use the `ctor:nothing` constructor to give this lack of
 data, and the `ctor:just` constructor to inject a value of type `A` into
-`expr:Maybe A`.
+`type:Maybe` `A`.
 
 A natural operation over `type:Maybe` is thus to combine two maybe values,
 hoping that at least one of them is a `ctor:just`. This operation is called
@@ -513,7 +519,7 @@ whose operation has been `def:flip`ped:
   identityʳ  (dual m)        = identityˡ m
 ```
 
-We can now get the last-`just`-wins monoid for free, since it's just
+We can now get the last-`ctor:just`-wins monoid for free, since it's just
 `expr:dual <∣>-nothing`.
 
 As another example of monoids, we note that lists form one under concatenation
@@ -528,9 +534,11 @@ give a definition:
   infixr 5 _∷_
 ```
 
+You can type `∷` by way of [`::`](AgdaMode).
+
 Lists of `A` are either empty (given by `ctor:[]`), or they are given by an `A`
-stuck in front of another list. With this definition, we can quickly define list
-concatenation:
+stuck in front of another list (via `ctor:_∷_`.) With this definition, we can
+quickly define list concatenation:
 
 ```agda
   _++_ : List A → List A → List A
@@ -567,58 +575,141 @@ aggregation.
 
 ## Monoidal Origami
 
+When we previously looked at examples of "datasets" that we wanted to summarize,
+we built them out of explicit invocations of `field:_∙_` and `field:ε`. A more
+modular way of doing this is to instead put all of the data we're interested in
+into a list, and then *folding* that list into the summary we care about. The
+high-level idea is to take a `type:List` `A`, transform each element into a `B`
+for which we have a `type:Monoid`, and then combine all of the `B`s together via
+`field:_∙_`. This is all put together in `def:foldList`:
+
 ```agda
-  summarizeList : ⦃ Monoid B ⦄ → (A → B) → List A → B
-  summarizeList f [] = ε  -- ! 1
-  summarizeList f (x ∷ l) = f x ∙ summarizeList f l
+  module ListSummaries where
+    foldList : ⦃ Monoid B ⦄ → (A → B) → List A → B
+    foldList f [] = ε  -- ! 1
+    foldList f (x ∷ l) = f x ∙ foldList f l  -- ! 2
+```
 
-  any? : (A → Bool) → List A → Bool
-  any? = summarizeList ⦃ bundle ∨-false ⦄
+Note that at [1](Ann) we are forced to return `field:ε`, because we don't have
+any other means of getting a `B`. The recursive call to `def:foldList` at
+[2](Ann) must therefore eventually multiply in this unit, but don't worry! Such
+a thing can never change the result of our summary, because we know that
+`field:ε` is a unit for `field:_∙_` and thus that we can multiply it in as often
+as we'd like without changing anything. It is exactly for this reason that we
+desire the existence of `field:ε`, as it gives us a meaningful (if boring)
+answer for how to summarize an absence of data.
 
-  all? : (A → Bool) → List A → Bool
-  all? = summarizeList ⦃ bundle ∧-true ⦄
+By instantiating `def:foldList` with different monoids, we change how it
+*combines* the summaries of each element in the list. But we also have this `A →
+B` parameter to play with, and it corresponds to the way we'd like to summarize
+each element in the first place.
 
-  id : A → A
-  id a = a
+For example, by requiring a function that turns an `A` into a `def:Bool`, we can
+use `def:∨-false` to determine whether any element in the list makes the
+function true:
 
-  sum : List ℕ → ℕ
-  sum = summarizeList ⦃ bundle +-0 ⦄ id
+```agda
+    any? : (A → Bool) → List A → Bool
+    any? = foldList ⦃ bundle ∨-false ⦄
+```
 
-  _ : sum (1 ∷ 10 ∷ 100 ∷ []) ≡ 111
-  _ = refl
+Similarly, `def:∧-true` lets us determine if the function is true of *every*
+element in the list .
 
+```agda
+    all? : (A → Bool) → List A → Bool
+    all? = foldList ⦃ bundle ∧-true ⦄
+```
 
-  flatten : List (List A) → List A
-  flatten = summarizeList ⦃ bundle ++-[] ⦄ id
+In some cases, we might not need to perform this initial summarization of the
+data, like in the case of `def:sum` which adds up all of the numbers in a list.
+Here, the list already contains the data we want to combine, so no mapping is
+necessary. In cases like these, it can be helpful to use the *identity function*
+which simply gives back its argument:
 
+```agda
+    id : A → A
+    id a = a
 
+    sum : List ℕ → ℕ
+    sum = foldList ⦃ bundle +-0 ⦄ id
+```
 
-  _ : flatten  ( (1 ∷ 2 ∷ 3 ∷ [])
-               ∷ (4 ∷ 5 ∷ []) ∷ []
-               )
-        ≡ 1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ []
-  _ = refl
+Our new `def:sum` function works exactly as you'd expect:
 
-  head : List A → Maybe A
-  head = summarizeList ⦃ bundle <∣>-nothing ⦄ just
+```agda
+    _ : sum (1 ∷ 20 ∷ 300 ∷ []) ≡ 321
+    _ = refl
+```
 
-  foot : List A → Maybe A
-  foot = summarizeList ⦃ bundle (dual <∣>-nothing) ⦄ just
+We can do the same trick with `def:*-1`:
 
-  reverse : List A → List A
-  reverse = summarizeList ⦃ bundle (dual ++-[]) ⦄ (_∷ [])
+```agda
+    product : List ℕ → ℕ
+    product = foldList ⦃ bundle *-1 ⦄ id
+```
 
-  const : A → B → A
-  const a _ = a
+which instead multiples all of the values in the list.
 
-  size : List A → ℕ
-  size = summarizeList ⦃ bundle +-0 ⦄ (const 1)
+Many functions we don't traditionally consider "summaries" can also be written
+by way of `def:foldList` with a well-chosen monoid. We can, for example,
+flatten nested lists:
 
-  _ : size (true ∷ false ∷ []) ≡ 2
-  _ = refl
+```agda
+    flatten : List (List A) → List A
+    flatten = foldList ⦃ bundle ++-[] ⦄ id
+```
 
-  empty? : List A → Bool
-  empty? = summarizeList ⦃ bundle ∧-true ⦄ (const false)
+or find their first and last elements:
+
+```agda
+    head : List A → Maybe A
+    head = foldList ⦃ bundle <∣>-nothing ⦄ just
+
+    foot : List A → Maybe A
+    foot = foldList ⦃ bundle (dual <∣>-nothing) ⦄ just
+```
+
+We can even reverse lists by using the `def:dual` monoid to `def:++-[]`.
+
+```agda
+    reverse : List A → List A
+    reverse = foldList ⦃ bundle (dual ++-[]) ⦄ (_∷ [])
+```
+
+Sometimes we'd like to summarize the *structure* of the list, rather than
+inspect any of its elements. For this we can introduce the `def:const`
+function, which always ignores its second argument:
+
+```agda
+    const : A → B → A
+    const a _ = a
+```
+
+We can then compute the `def:size` of a list by replacing each of its elements
+with the number 1 and then using `def:+-0`:
+
+```agda
+    size : List A → ℕ
+    size = foldList ⦃ bundle +-0 ⦄ (const 1)
+```
+
+or we can determine whether a list is empty by mapping each element to
+`ctor:false`:
+
+```agda
+    empty? : List A → Bool
+    empty? = foldList ⦃ bundle ∧-true ⦄ (const false)
+```
+
+If you look closely, you'll notice that there is nothing intrinsically special
+about lists---they merely happen to be a convenient data structure. If we
+move away from lists, we'll see that there are *lots* of data structures
+that we can fold over. We can reify this idea via `type:Foldable`, which
+gives us a means of folding over some `Container`:
+
+```agda
+  open import Function using (id; const)
 
   record Foldable {ℓ₁ ℓ₂ : Level} (Container : Set ℓ₁ → Set ℓ₂)
       : Set (lsuc (ℓ₁ ⊔ ℓ₂)) where
@@ -628,40 +719,75 @@ aggregation.
         → (A → B)
         → Container A
         → B
+```
 
+We will use `type:Foldable` as a typeclass, and note that as already shown,
+`type:List` is `def:Foldable`:
+
+```agda
   open Foldable ⦃ ... ⦄
 
-
-
-  foldable-list : Foldable {ℓ} List
-  Foldable.fold foldable-list = summarizeList
-
-  import  Chapter6-Decidability
-  open Chapter6-Decidability.BinaryTrees
-    using (BinTree; leaf; branch; empty)
-
-  foldable-bintree : Foldable {ℓ} BinTree
-  Foldable.fold foldable-bintree f empty = ε
-  Foldable.fold foldable-bintree f (branch l x r)
-    = Foldable.fold foldable-bintree f l
-        ∙ f x ∙ Foldable.fold foldable-bintree f r
-
-  size′ : ∀ {Container} → ⦃ Foldable Container ⦄ → Container A → ℕ
-  size′ = fold ⦃ monoid = bundle +-0 ⦄ (const 1)
-
   instance
-    _ = foldable-list
-    _ = foldable-bintree
+    fold-list : Foldable {ℓ} List
+    Foldable.fold fold-list = ListSummaries.foldList
+```
 
-  _ : size′ (1 ∷ 1 ∷ 2 ∷ 3 ∷ []) ≡ 4
+However, most other containers are `def:Foldable` too. In @sec:bindtrees we
+defined `type:BinTree`, which also admits folding:
+
+```agda
+    fold-bintree : Foldable {ℓ} BinTree
+    Foldable.fold fold-bintree f empty = ε
+    Foldable.fold fold-bintree f (branch l x r)
+      = Foldable.fold fold-bintree f l
+          ∙ f x ∙ Foldable.fold fold-bintree f r
+```
+
+as does `type:Maybe`:
+
+```agda
+    fold-maybe : Foldable {ℓ} Maybe
+    Foldable.fold fold-maybe f (just x)  = f x
+    Foldable.fold fold-maybe f nothing   = ε
+```
+
+Almost every data structure you've ever encountered also admits an instance of
+`def:Foldable`, and it's left as an exercise to the reader to work out the
+details for any particular examples that might come to mind.
+
+Armed with a definition of `def:Foldable`, we can now write container-agnostic
+folds, which summarize their data in any of the ways we saw above for lists. As
+one example, we can reimplement `def:size` to now count the number of elements
+in any container:
+
+```agda
+  size : ∀ {Container} → ⦃ Foldable Container ⦄ → Container A → ℕ
+  size = fold ⦃ monoid = bundle +-0 ⦄ (const 1)
+
+  _ : size (1 ∷ 1 ∷ 2 ∷ 3 ∷ []) ≡ 4
   _ = refl
 
-  _ : size′ (branch (leaf true) false (leaf true)) ≡ 3
+  _ : size (branch (leaf true) false (leaf true)) ≡ 3
   _ = refl
+```
 
+Or we can extract every element from a container into a `def:List`:
+
+```agda
   toList : ∀ {Container} → ⦃ Foldable Container ⦄ → Container A → List A
   toList = fold ⦃ monoid = bundle ++-[] ⦄ (_∷ [])
+```
 
+You are encouraged to work through the other examples in `module:ListSummaries`
+and see how they generalize to arbitrary `def:Foldable` containers. How do the
+types need to change, and what can you say about the resulting functions?
+
+
+## Composition of Monoids
+
+
+
+```agda
   module _ ⦃ m₁ : Monoid A ⦄ ⦃ m₂ : Monoid B ⦄ where
     _⊗_ : Op₂ (A × B)
     (a₁ , b₁) ⊗ (a₂ , b₂) = (a₁ ∙ a₂) , (b₁ ∙ b₂)
