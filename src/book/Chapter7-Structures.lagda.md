@@ -1088,6 +1088,7 @@ an equivalence relation and its carrier set:
 
 ```agda
 record Setoid (c ℓ : Level) : Set (lsuc (c ⊔ ℓ)) where
+  infix 4 _≈_
   field
     Carrier        : Set c
     _≈_            : (x y : Carrier) → Set ℓ
@@ -1209,20 +1210,23 @@ setoid function extensionality, known as `type:_⇒_` and typed as
 `type:Pi` types, and relation is a proof that everything does in fact hold:
 
 ```agda
-  module _ where
+  module _ {a b : Level} (s₁ : Setoid a ℓ₁) (s₂ : Setoid b ℓ₂) where
     open Pi
 
-    _⇒_ : {a b : Level} → Setoid a ℓ₁ → Setoid b ℓ₂ → Setoid _ _
-    Carrier (s₁ ⇒ s₂) = Pi s₁ s₂
-    _≈_ (s₁ ⇒ s₂) f g  = {x y : s₁ .Carrier}
-                       → (s₁ ._≈_) x y
-                       → (s₂ ._≈_) (f .func x) (g .func y)
-    refl′   (pre (equiv (s₁ ⇒ s₂))) {f} x=y = f .cong x=y
-    trans′  (pre (equiv (s₁ ⇒ s₂))) ij jk x=y
+    open Setoid s₁ renaming (Carrier to From; _≈_ to _≈₁_)
+    open Setoid s₂ renaming (_≈_ to _≈₂_)
+
+    _⇒_ : Setoid _ _
+    Carrier _⇒_ = Pi s₁ s₂
+    _≈_ _⇒_ f g  = {x y : From}
+                 → x ≈₁ y
+                 → f .func x ≈₂ g .func y
+    refl′   (pre (equiv _⇒_)) {f} x=y = f .cong x=y
+    trans′  (pre (equiv _⇒_)) ij jk x=y
       = trans′  (pre (equiv s₂))
                 (ij x=y)
                 (jk (refl′ (pre (equiv s₁))))
-    sym′ (equiv (s₁ ⇒ s₂)) ij x=y
+    sym′ (equiv _⇒_) ij x=y
       = sym′ (equiv s₂) (ij (sym′ (equiv s₁) x=y))
 ```
 
@@ -1244,56 +1248,73 @@ the problems we ran into previously.
 
 ## Back to Monoids
 
+The catchphrase of setoids is "always parameterize equality," so returning to
+our example of monoids, we must put a `type:Setoid` inside of our `type:Monoid`
+bundle. Doing so will allow us to use a custom notion of equality when proving
+the monoid laws for `def:pointwise`, and therefore allow us to sidestep the
+issue that our two functions were not propositionally equal. Thus:
+
+```agda
+record Monoid (c ℓ : Level) : Set (lsuc (c ⊔ ℓ)) where
+  field
+    setoid : Setoid c ℓ
+
+  open Setoid setoid
+    public
+```
+
+As it happens, we can `keyword:open` records inside of other records; doing so
+brings everything relevant into scope for the remainder of our fields. With the
+setoid in scope, we can carry on with our definition of `type:Monoid`. There are
+two salient differences here: all of our previous uses of `type:_≡_` are now
+replaced with `field:_≈_`, and we have an additional proof burden---we must
+showw that `field:_∙_` is congruent with respect to our equivalence relation:
+
+```agda
+  infixl  7 _∙_
+  field
+    _∙_  : Op₂ Carrier
+    ε    : Carrier
+    assoc  : (x y z : Carrier)
+           → (x ∙ y) ∙ z ≈ x ∙ (y ∙ z)
+    identityˡ  : (x : Carrier) → ε ∙ x ≈ x
+    identityʳ  : (x : Carrier) → x ∙ ε ≈ x
+    ∙-cong  : {x y z w : Carrier}
+            → x ≈ y → z ≈ w
+            → x ∙ z ≈ y ∙ w
+```
 
 
 ```agda
-module _ where
-  record Monoid (c ℓ : Level) : Set (lsuc (c ⊔ ℓ)) where
-    field
-      setoid : Setoid c ℓ
+module Naive = Sandbox-Naive-Monoids
+import Relation.Binary.PropositionalEquality as PropEq
 
-    open Setoid setoid  -- ! 1
-      renaming (_≈_ to infix 4 _≈_)   -- ! 2
-      public
-
-    infixl  7 _∙_
-    field
-      _∙_      : Op₂ Carrier
-      ε        : Carrier
-      assoc      : (x y z : Carrier) → (x ∙ y) ∙ z ≈ x ∙ (y ∙ z)
-      identityˡ  : (x : Carrier) → ε ∙ x ≈ x
-      identityʳ  : (x : Carrier) → x ∙ ε ≈ x
-      ∙-cong     : {x y z w : Carrier} → x ≈ y → z ≈ w → x ∙ z ≈ y ∙ w
-
-  module Naive = Sandbox-Naive-Monoids
-  import Relation.Binary.PropositionalEquality as PropEq
-
-  recover : Naive.Monoid A → Monoid _ _
-  recover {A = A} x = record
-    { setoid     = prop-setoid A
-    ; _∙_        = _∙_
-    ; ε          = ε
-    ; assoc      = assoc
-    ; identityˡ  = identityˡ
-    ; identityʳ  = identityʳ
-    ; ∙-cong     = λ { ≡.refl ≡.refl → refl }
-    }
-    where
-      open Naive.Monoid x
-      open Naive.IsMonoid is-monoid
+recover : Naive.Monoid A → Monoid _ _
+recover {A = A} x = record
+  { setoid     = prop-setoid A
+  ; _∙_        = _∙_
+  ; ε          = ε
+  ; assoc      = assoc
+  ; identityˡ  = identityˡ
+  ; identityʳ  = identityʳ
+  ; ∙-cong     = λ { ≡.refl ≡.refl → refl }
+  }
+  where
+    open Naive.Monoid x
+    open Naive.IsMonoid is-monoid
 
 
-  module _ {c a ℓ : Level} (X : Set a) (setoid : Setoid c ℓ) where
-    open Setoid renaming (isEquivalence to eq)
-    open IsEquivalence
-    open Setoid setoid
-      using ()
-      renaming ( Carrier to Y
-               ; _≈_ to _≈ᵇ_
-               )
+module _ {c a ℓ : Level} (X : Set a) (setoid : Setoid c ℓ) where
+  open Setoid renaming (isEquivalence to eq)
+  open IsEquivalence
+  open Setoid setoid
+    using ()
+    renaming ( Carrier to Y
+              ; _≈_ to _≈ᵇ_
+              )
 
-    _≗_ : Rel (X → Y) _
-    f ≗ g = (x : X) → f x ≈ᵇ g x
+  _≗_ : Rel (X → Y) _
+  f ≗ g = (x : X) → f x ≈ᵇ g x
 
 --     ≗-setoid : Setoid _ _
 --     Carrier  ≗-setoid = A → B
@@ -1302,24 +1323,24 @@ module _ where
 --     sym    (eq ≗-setoid) f≗g      a  = sym    setoid (f≗g a)
 --     trans  (eq ≗-setoid) f≗g g≗h  a  = trans  setoid (f≗g a) (g≗h a)
 
-  -- module _ (A : Set a) (mb : Monoid c ℓ) where
-  --   -- open ≗-Def {A = A}
-  --   open Monoid mb
-  --     using ()
-  --     renaming ( _∙_  to _∙ᵇ_
-  --              ; ε    to εᵇ
-  --              )
+-- module _ (A : Set a) (mb : Monoid c ℓ) where
+--   -- open ≗-Def {A = A}
+--   open Monoid mb
+--     using ()
+--     renaming ( _∙_  to _∙ᵇ_
+--              ; ε    to εᵇ
+--              )
 
-    -- open Monoid
+  -- open Monoid
 
-    -- pointwise : Monoid _ _
-    -- setoid pointwise      = ≗-setoid A (Monoid.setoid mb)
-    -- _∙_    pointwise f g  = λ x → f x ∙ᵇ g x
-    -- ε      pointwise      = λ _ → εᵇ
-    -- assoc      pointwise f g h a    = assoc      mb _ _ _
-    -- identityˡ  pointwise f a        = identityˡ  mb _
-    -- identityʳ  pointwise f a        = identityʳ  mb _
-    -- ∙-cong     pointwise f≗g h≗i a  = ∙-cong     mb (f≗g a) (h≗i a)
+  -- pointwise : Monoid _ _
+  -- setoid pointwise      = ≗-setoid A (Monoid.setoid mb)
+  -- _∙_    pointwise f g  = λ x → f x ∙ᵇ g x
+  -- ε      pointwise      = λ _ → εᵇ
+  -- assoc      pointwise f g h a    = assoc      mb _ _ _
+  -- identityˡ  pointwise f a        = identityˡ  mb _
+  -- identityʳ  pointwise f a        = identityʳ  mb _
+  -- ∙-cong     pointwise f≗g h≗i a  = ∙-cong     mb (f≗g a) (h≗i a)
 ```
 
 
