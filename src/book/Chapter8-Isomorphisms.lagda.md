@@ -749,7 +749,7 @@ of its projections, albeit invoking `def:×-preserves-↔` and
 ```
 
 
-## Functions as Exponents
+## Functions as Exponents {#sec:exponents}
 
 In a non-dependent world, we have three interesting type formers---products,
 coproducts, and functions. Having looked already at the first two, we now turn

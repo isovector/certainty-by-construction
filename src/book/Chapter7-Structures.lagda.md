@@ -22,7 +22,7 @@ open import Chapter2-Numbers
 
 :   ```agda
 open import Chapter3-Proofs
-  hiding (refl; sym; trans)
+  hiding (refl; sym; trans; cong)
 import Chapter3-Proofs as ≡
     ```
 
@@ -990,7 +990,7 @@ propositionally equal at all points. Under this relation, we can now show that
 ```agda
   f₁≗f₂ : f₁ ≗ f₂
   f₁≗f₂ zero = refl
-  f₁≗f₂ (suc x) = cong suc (+-comm x 2)
+  f₁≗f₂ (suc x) = ≡.cong suc (+-comm x 2)
 ```
 
 As you'd expect, in order for `def:_≗_` to be a model of equality, it certainly
@@ -1117,15 +1117,21 @@ particular equivalence relation:
 Given all of this work, we can now define a few setoids to get a flavor for
 them. However, by this point, building objects out of copatterns on copatterns
 results in extremely long names, so we'll take great care to rename everything.
+We'll need all of this renaming several times, as we define a couple of setoids,
+and then give some examples, and then define a few more, so we can do the
+necessary work in a new module:
 
 ```agda
-module _ where
+module Setoid-Renaming where
   open Setoid
     renaming (isEquivalence to equiv)
+    public
   open IsPreorder
     renaming (refl to refl′; trans to trans′)
+    public
   open IsEquivalence
     renaming (isPreorder to pre; sym to sym′)
+    public
 ```
 
 In particular, we must rename `field:refl` to `field:refl′`, since when we
@@ -1137,6 +1143,9 @@ Having done the hard work, we can lift propositional equality on any type into a
 setoid, as in `def:prop-setoid`:
 
 ```agda
+module _ where
+  open Setoid-Renaming
+
   prop-setoid : Set ℓ → Setoid _ _
   Carrier (prop-setoid A)  = A
   _≈_     (prop-setoid A)  = _≡_
@@ -1148,16 +1157,93 @@ setoid, as in `def:prop-setoid`:
 Furthermore, we can build a setoid corresponding to function extensionality:
 
 ```agda
-  fun-ext : Set ℓ₁ → Set ℓ₂ → Setoid _ _
-  Carrier  (fun-ext A B)      = A → B
-  _≈_      (fun-ext A B) f g  = ∀ (x : A) → f x ≡ g x
-  refl′    (pre (equiv (fun-ext A B))) _ = refl
-  trans′   (pre (equiv (fun-ext A B))) f=g g=h a
+  fun-ext⅋ : Set ℓ₁ → Set ℓ₂ → Setoid _ _
+  Carrier  (fun-ext⅋ A B)      = A → B
+  _≈_      (fun-ext⅋ A B) f g  = (x : A) → f x ≡ g x
+  refl′    (pre (equiv (fun-ext⅋ A B))) _ = refl
+  trans′   (pre (equiv (fun-ext⅋ A B))) f=g g=h a
     rewrite f=g a
     rewrite g=h a
       = refl
-  sym′     (equiv (fun-ext A B)) f=g a = sym (f=g a)
+  sym′     (equiv (fun-ext⅋ A B)) f=g a = sym (f=g a)
 ```
+
+Oh sorry, I did that wrong. Recall that the trick to setoids is to parameterize
+*everything* by a new notion of equality. We can't just hard-code `type:_≡_`
+here in the definition of `field:_≈_`. No, instead we'd like to parameterize the
+whole thing by a setoid on `B`:
+
+```agda
+  fun-ext : Set ℓ₁ → Setoid ℓ₂ ℓ → Setoid _ _
+  Carrier  (fun-ext A B)      = A → B .Carrier
+  _≈_      (fun-ext A B) f g  = (x : A) → (B ._≈_) (f x) (g x)
+  refl′    (pre (equiv (fun-ext A B))) _ = refl′ (pre (equiv B))
+  trans′   (pre (equiv (fun-ext A B))) f=g g=h a
+    = trans′ (pre (equiv B)) (f=g a) (g=h a)
+  sym′     (equiv (fun-ext A B)) f=g a = B .equiv .sym′ (f=g a)
+```
+
+Wait, is *this* one right? Still no! Because we have an *implicit* use of
+propositional equality here. Where? In the `A` we're passing around in the
+relation. Instead, a real notion of function extensionality over setoids should
+map equal elements in one setoid to equal elements in the other. Of course, this
+is not true of all functions between the carriers of `A` and `B`---it is exactly
+those which are congruent. So we can't yet define this setoid, we must first
+define a type corresponding to congruent functions between our two carrier sets:
+
+```agda
+  record Pi {a b : Level} (From : Setoid a ℓ₁) (To : Setoid b ℓ₂)
+        : Set (a ⊔ b ⊔ ℓ₁ ⊔ ℓ₂) where
+    field
+      func  : From .Carrier → To .Carrier
+      cong  : {x y : From .Carrier}
+            → From  ._≈_  x         y
+            → To    ._≈_  (func x)  (func y)
+```
+
+The type `type:Pi` now encodes functions between the carriers of `A` and `B`,
+along with a proof that those functions are congruent with respect to the setoid
+equality on either end. From here we can finally encode the proper version of
+setoid function extensionality, known as `type:_⇒_` and typed as
+[`=>`](AgdaMode). This type generates a setoid whose *carrier* is now these
+`type:Pi` types, and relation is a proof that everything does in fact hold:
+
+```agda
+  module _ where
+    open Pi
+
+    _⇒_ : {a b : Level} → Setoid a ℓ₁ → Setoid b ℓ₂ → Setoid _ _
+    Carrier (s₁ ⇒ s₂) = Pi s₁ s₂
+    _≈_ (s₁ ⇒ s₂) f g  = {x y : s₁ .Carrier}
+                       → (s₁ ._≈_) x y
+                       → (s₂ ._≈_) (f .func x) (g .func y)
+    refl′   (pre (equiv (s₁ ⇒ s₂))) {f} x=y = f .cong x=y
+    trans′  (pre (equiv (s₁ ⇒ s₂))) ij jk x=y
+      = trans′  (pre (equiv s₂))
+                (ij x=y)
+                (jk (refl′ (pre (equiv s₁))))
+    sym′ (equiv (s₁ ⇒ s₂)) ij x=y
+      = sym′ (equiv s₂) (ij (sym′ (equiv s₁) x=y))
+```
+
+Welcome to the godawful world of *setoid hell,* where the burden of the
+should-be-mechanical congruence proofs are handed over to you, poor, sweet
+reader. And before you ask, no, I don't understand all the details of the proofs
+in `def:_⇒_`---I just set up the types and bashed my way through the
+implementation for twenty minutes. `def:_⇒_` is an egregious example of a
+setoid, but not particularly so. As a general rule, you are going to need to
+make a helper data type that looks a lot like the thing you're trying to show a
+setoid over, use that thing as your setoid carrier, and then give a relation
+that preserves all the relevant equivalences. It's a nightmare. And don't worry;
+we'll see a great deal more of them in our future.
+
+We've taken a great detour from our original discussion about monoids, so let's
+now unwind the stack and return there, seeing how setoids can help (and hinder)
+the problems we ran into previously.
+
+
+## Back to Monoids
+
 
 
 ```agda
