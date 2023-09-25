@@ -34,8 +34,8 @@ ALL_CHAPTERS := Chapter00-preface \
                 Chapter6-Decidability \
                 Chapter7-Structures \
                 Chapter8-Isomorphisms \
-                Chapter9-Ring-Solving \
-                Chapter10-Functions
+                Chapter9-Functions \
+                Appendix1-Ring-Solving
 
 ALL_LITERATE_AGDA := $(patsubst %,src/book/%.lagda.md,$(ALL_CHAPTERS))
 ALL_LAGDA_TEX := $(patsubst src/book/%.lagda.md,build/tex/agda/%.lagda.tex,$(ALL_LITERATE_AGDA))

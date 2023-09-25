@@ -1,7 +1,7 @@
 # Functions, Big and Small
 
 ```agda
-module Chapter10-Functions where
+module Chapter9-Functions where
 
 open import Level
   using (Level)

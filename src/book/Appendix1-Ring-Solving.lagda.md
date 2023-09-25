@@ -1,7 +1,9 @@
+\backmatter
+
 # Ring Solving
 
 ```agda
-module Chapter9-Ring-Solving where
+module Appendix1-Ring-Solving where
 
 open import Data.Nat using (ℕ)
 ```
