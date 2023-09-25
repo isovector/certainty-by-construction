@@ -1075,57 +1075,93 @@ worse---solution to the problem.
 
 ## Setoid Hell
 
+An alternative to postulating function extensionality is to parameterize
+*everything* by "what exactly do we mean by equality?" This approach is
+significantly messier and much more annoying to work with than simply positing
+`postulate:fun-ext`, but applies in many more situations. For example, we might
+want a more relaxed notion of equality when comparing two lists, requiring not
+that they be on-the-nose equal, but merely that corresponding elements be
+*equivalent* in some way.
+
+The actual construction here is the `def:Setoid`, which is a bundled version of
+an equivalence relation and its carrier set:
+
 ```agda
-module Sandbox-Monoids where
-  record Monoid₂ {a} (Carrier : Set a) (ℓ : Level)
-        : Set (a ⊔ lsuc ℓ) where
-    infix   4 _≈_
-    infixl  7 _∙_
-    field
-      _∙_      : Op₂ Carrier
-      ε        : Carrier
-      _≈_      : Rel Carrier ℓ  -- ! 1
-      isEquivalence : IsEquivalence _≈_  -- ! 2
-      assoc      : (x y z : Carrier) → (x ∙ y) ∙ z ≈ x ∙ (y ∙ z)
-      identityˡ  : (x : Carrier) → ε ∙ x ≈ x
-      identityʳ  : (x : Carrier) → x ∙ ε ≈ x
-      ∙-cong     : {x y z w : Carrier} → x ≈ y → z ≈ w → x ∙ z ≈ y ∙ w
+record Setoid (c ℓ : Level) : Set (lsuc (c ⊔ ℓ)) where
+  field
+    Carrier        : Set c
+    _≈_            : (x y : Carrier) → Set ℓ
+    isEquivalence  : IsEquivalence _≈_
+```
 
-  record Setoid (c ℓ : Level) : Set (lsuc (c ⊔ ℓ)) where
-    field
-      Carrier        : Set c
-      _≈_            : (x y : Carrier) → Set ℓ
-      isEquivalence  : IsEquivalence _≈_
+Notice the three fields here, corresponding to the carrier set, a relation over
+that set, and a proof that the relation is an equivalence. The idea now is
+whenever we'd like to discuss equality, we instead discuss equality *modulo some
+setoid.* In practice, that means parameterizing things by a setoid and replacing
+every use of `type:_≡_` with the `field:_≈_` field above. Since they're both
+equivalence relations, everything works out, but as we will see, it comes with a
+significant proof burden.
 
-  fun-ext : Set → Set → Setoid _ _
-  Setoid.Carrier (fun-ext A B) = A → B
-  Setoid._≈_ (fun-ext A B) f g = ∀ (x : A) → f x ≡ g x
-  IsPreorder.refl (IsEquivalence.isPreorder (Setoid.isEquivalence (fun-ext A B))) {f} a = refl
-  IsPreorder.trans (IsEquivalence.isPreorder (Setoid.isEquivalence (fun-ext A B))) {f} {g} {h} f=g g=h a
-    rewrite f=g a rewrite g=h a = refl
-  IsEquivalence.sym (Setoid.isEquivalence (fun-ext A B)) {f} {g} f=g a = {! !}
+But I'm getting ahead of myself. Before we finish the definition of
+`type:Setoid`, we will add a `module:Reasoning` sub-module which simply
+repackages the `module:Preorder-Reasoning` reasoning syntax applied to our
+particular equivalence relation:
 
-  test1 : ℕ → ℕ
-  test1 x = 0
+```agda
+  module Reasoning where
+    open Preorder-Reasoning
+      (IsEquivalence.isPreorder isEquivalence)
+      public
+```
 
-  test2 : ℕ → ℕ
-  test2 _ = 1
+Given all of this work, we can now define a few setoids to get a flavor for
+them. However, by this point, building objects out of copatterns on copatterns
+results in extremely long names, so we'll take great care to rename everything.
 
-  module _ where
-    open Setoid (fun-ext ℕ ℕ)
+```agda
+module _ where
+  open Setoid
+    renaming (isEquivalence to equiv)
+  open IsPreorder
+    renaming (refl to refl′; trans to trans′)
+  open IsEquivalence
+    renaming (isPreorder to pre; sym to sym′)
+```
 
-    is-it-eq : test1 ≈ test2
-    is-it-eq x = {! !}
+In particular, we must rename `field:refl` to `field:refl′`, since when we
+opened `type:IsPreorder` as a typeclass earlier, we brought `field:refl` into
+scope with the wrong type to work here. It's reasons like this that I often feel
+the hardest part of working in Agda is avoiding identifier clashes.
 
+Having done the hard work, we can lift propositional equality on any type into a
+setoid, as in `def:prop-setoid`:
 
-
+```agda
   prop-setoid : Set ℓ → Setoid _ _
-  Setoid.Carrier (prop-setoid A) = A
-  Setoid._≈_ (prop-setoid A) = _≡_
-  IsPreorder.refl (IsEquivalence.isPreorder (Setoid.isEquivalence (prop-setoid A))) = refl
-  IsPreorder.trans (IsEquivalence.isPreorder (Setoid.isEquivalence (prop-setoid A))) = trans
-  IsEquivalence.sym (Setoid.isEquivalence (prop-setoid A)) = sym
+  Carrier (prop-setoid A)  = A
+  _≈_     (prop-setoid A)  = _≡_
+  refl′   (pre (equiv (prop-setoid A))) = refl
+  trans′  (pre (equiv (prop-setoid A))) = trans
+  sym′    (equiv (prop-setoid A)) = sym
+```
 
+Furthermore, we can build a setoid corresponding to function extensionality:
+
+```agda
+  fun-ext : Set ℓ₁ → Set ℓ₂ → Setoid _ _
+  Carrier  (fun-ext A B)      = A → B
+  _≈_      (fun-ext A B) f g  = ∀ (x : A) → f x ≡ g x
+  refl′    (pre (equiv (fun-ext A B))) _ = refl
+  trans′   (pre (equiv (fun-ext A B))) f=g g=h a
+    rewrite f=g a
+    rewrite g=h a
+      = refl
+  sym′     (equiv (fun-ext A B)) f=g a = sym (f=g a)
+```
+
+
+```agda
+module _ where
   record Monoid (c ℓ : Level) : Set (lsuc (c ⊔ ℓ)) where
     field
       setoid : Setoid c ℓ
@@ -1142,9 +1178,6 @@ module Sandbox-Monoids where
       identityˡ  : (x : Carrier) → ε ∙ x ≈ x
       identityʳ  : (x : Carrier) → x ∙ ε ≈ x
       ∙-cong     : {x y z w : Carrier} → x ≈ y → z ≈ w → x ∙ z ≈ y ∙ w
-
-  --   module Reasoning where
-  --     open import Relation.Binary.Reasoning.Setoid setoid public
 
   module Naive = Sandbox-Naive-Monoids
   import Relation.Binary.PropositionalEquality as PropEq
