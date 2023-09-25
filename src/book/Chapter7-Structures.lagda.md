@@ -1175,13 +1175,13 @@ here in the definition of `field:_≈_`. No, instead we'd like to parameterize t
 whole thing by a setoid on `B`:
 
 ```agda
-  fun-ext : Set ℓ₁ → Setoid ℓ₂ ℓ → Setoid _ _
-  Carrier  (fun-ext A B)      = A → B .Carrier
-  _≈_      (fun-ext A B) f g  = (x : A) → (B ._≈_) (f x) (g x)
-  refl′    (pre (equiv (fun-ext A B))) _ = refl′ (pre (equiv B))
-  trans′   (pre (equiv (fun-ext A B))) f=g g=h a
+  fun-ext⅋₁ : Set ℓ₁ → Setoid ℓ₂ ℓ → Setoid _ _
+  Carrier  (fun-ext⅋₁ A B)      = A → B .Carrier
+  _≈_      (fun-ext⅋₁ A B) f g  = (x : A) → (B ._≈_) (f x) (g x)
+  refl′    (pre (equiv (fun-ext⅋₁ A B))) _ = refl′ (pre (equiv B))
+  trans′   (pre (equiv (fun-ext⅋₁ A B))) f=g g=h a
     = trans′ (pre (equiv B)) (f=g a) (g=h a)
-  sym′     (equiv (fun-ext A B)) f=g a = B .equiv .sym′ (f=g a)
+  sym′     (equiv (fun-ext⅋₁ A B)) f=g a = B .equiv .sym′ (f=g a)
 ```
 
 Wait, is *this* one right? Still no! Because we have an *implicit* use of
@@ -1193,7 +1193,7 @@ those which are congruent. So we can't yet define this setoid, we must first
 define a type corresponding to congruent functions between our two carrier sets:
 
 ```agda
-  record Pi {a b : Level} (From : Setoid a ℓ₁) (To : Setoid b ℓ₂)
+  record Fn {a b : Level} (From : Setoid a ℓ₁) (To : Setoid b ℓ₂)
         : Set (a ⊔ b ⊔ ℓ₁ ⊔ ℓ₂) where
     field
       func  : From .Carrier → To .Carrier
@@ -1202,32 +1202,41 @@ define a type corresponding to congruent functions between our two carrier sets:
             → To    ._≈_  (func x)  (func y)
 ```
 
-The type `type:Pi` now encodes functions between the carriers of `A` and `B`,
+The type `type:Fn` now encodes functions between the carriers of `A` and `B`,
 along with a proof that those functions are congruent with respect to the setoid
-equality on either end. From here we can finally encode the proper version of
-setoid function extensionality, known as `type:_⇒_` and typed as
-[`=>`](AgdaMode). This type generates a setoid whose *carrier* is now these
-`type:Pi` types, and relation is a proof that everything does in fact hold:
+equality on either end. This proof of `field:cong` is important, since equality
+is now a relation we're stating should hold, rather than showing it does simply
+by construction.  This is where a great deal of the pain of setoids comes from,
+since it requires us to prove that every function we'd care to work with is
+well-behaved when it comes to equality. We'll get a firsthand feel for the agony
+when we soon return to build the `def:pointwise` monoid.
+
+Given `type:Fn`, we're finally ready to encode the proper version of setoid
+function extensionality, known as `type:_⇒_` and typed as [`=>`](AgdaMode). This
+type generates a setoid whose *carrier* is now these `type:Fn` types, and
+relation is a proof that everything does in fact hold:
 
 ```agda
   module _ {a b : Level} (s₁ : Setoid a ℓ₁) (s₂ : Setoid b ℓ₂) where
-    open Pi
+    open Fn
 
     open Setoid s₁ renaming (Carrier to From; _≈_ to _≈₁_)
     open Setoid s₂ renaming (_≈_ to _≈₂_)
 
-    _⇒_ : Setoid _ _
-    Carrier _⇒_ = Pi s₁ s₂
-    _≈_ _⇒_ f g  = {x y : From}
+    fun-ext : Setoid _ _
+    Carrier fun-ext = Fn s₁ s₂
+    _≈_ fun-ext f g  = {x y : From}
                  → x ≈₁ y
                  → f .func x ≈₂ g .func y
-    refl′   (pre (equiv _⇒_)) {f} x=y = f .cong x=y
-    trans′  (pre (equiv _⇒_)) ij jk x=y
+    refl′   (pre (equiv fun-ext)) {f} x=y = f .cong x=y
+    trans′  (pre (equiv fun-ext)) ij jk x=y
       = trans′  (pre (equiv s₂))
                 (ij x=y)
                 (jk (refl′ (pre (equiv s₁))))
-    sym′ (equiv _⇒_) ij x=y
+    sym′ (equiv fun-ext) ij x=y
       = sym′ (equiv s₂) (ij (sym′ (equiv s₁) x=y))
+
+  _⇒_ = fun-ext
 ```
 
 Welcome to the godawful world of *setoid hell,* where the burden of the
@@ -1284,13 +1293,15 @@ showw that `field:_∙_` is congruent with respect to our equivalence relation:
             → x ∙ z ≈ y ∙ w
 ```
 
+It's possible to recover all of our previous, propositionally-equal monoids,
+moving them to this new and exciting land of setoids, by way of `def:recover`:
+
 
 ```agda
 module Naive = Sandbox-Naive-Monoids
-import Relation.Binary.PropositionalEquality as PropEq
 
-recover : Naive.Monoid A → Monoid _ _
-recover {A = A} x = record
+recover : {_∙_ : Op₂ A} {ε : A} → Naive.IsMonoid _∙_ ε → Monoid _ _
+recover {A = A} {_∙_} {ε} x = record
   { setoid     = prop-setoid A
   ; _∙_        = _∙_
   ; ε          = ε
@@ -1299,49 +1310,71 @@ recover {A = A} x = record
   ; identityʳ  = identityʳ
   ; ∙-cong     = λ { ≡.refl ≡.refl → refl }
   }
-  where
-    open Naive.Monoid x
-    open Naive.IsMonoid is-monoid
-
-
-module _ {c a ℓ : Level} (X : Set a) (setoid : Setoid c ℓ) where
-  open Setoid renaming (isEquivalence to eq)
-  open IsEquivalence
-  open Setoid setoid
-    using ()
-    renaming ( Carrier to Y
-              ; _≈_ to _≈ᵇ_
-              )
-
-  _≗_ : Rel (X → Y) _
-  f ≗ g = (x : X) → f x ≈ᵇ g x
-
---     ≗-setoid : Setoid _ _
---     Carrier  ≗-setoid = A → B
---     _≈_      ≗-setoid = _≗_
---     refl   (eq ≗-setoid)          a  = refl   setoid
---     sym    (eq ≗-setoid) f≗g      a  = sym    setoid (f≗g a)
---     trans  (eq ≗-setoid) f≗g g≗h  a  = trans  setoid (f≗g a) (g≗h a)
-
--- module _ (A : Set a) (mb : Monoid c ℓ) where
---   -- open ≗-Def {A = A}
---   open Monoid mb
---     using ()
---     renaming ( _∙_  to _∙ᵇ_
---              ; ε    to εᵇ
---              )
-
-  -- open Monoid
-
-  -- pointwise : Monoid _ _
-  -- setoid pointwise      = ≗-setoid A (Monoid.setoid mb)
-  -- _∙_    pointwise f g  = λ x → f x ∙ᵇ g x
-  -- ε      pointwise      = λ _ → εᵇ
-  -- assoc      pointwise f g h a    = assoc      mb _ _ _
-  -- identityˡ  pointwise f a        = identityˡ  mb _
-  -- identityʳ  pointwise f a        = identityʳ  mb _
-  -- ∙-cong     pointwise f≗g h≗i a  = ∙-cong     mb (f≗g a) (h≗i a)
+  where open Naive.IsMonoid x
 ```
+
+which we can then use to actually recover our "naive" monoids:
+
+```agda
+∧-true   = recover Naive.∧-true
+∨-false  = recover Naive.∨-false
++-0      = recover Naive.+-0
+*-1      = recover Naive.*-1
+
+++-[] <∣>-nothing : {A : Set ℓ} → Monoid _ _
+++-[]        {A = A} = recover (Naive.++-[] {A = A})
+<∣>-nothing  {A = A} = recover (Naive.<∣>-nothing {A = A})
+```
+
+So how does any of this help us write `def:pointwise`, the long-standing thorn
+in our side? The construction is not particularly elucidating---as it is just a
+very long-winded way of lifting a monoid over a function---but we can finally
+build it for ourselves:
+
+```agda
+module _ {a c : Level} (A : Set a) (mb : Monoid c ℓ) where
+  open Monoid
+  open Monoid mb
+    renaming  ( ε to εᴮ; _∙_ to _∙ᴮ_; _≈_ to _≈ᴮ_
+              ; setoid to setoidᴮ
+              )
+  open Fn
+
+  reflᴮ : Reflexive _≈ᴮ_
+  reflᴮ = refl′ (pre (equiv setoidᴮ))
+    where open Setoid-Renaming
+
+  pointwise : Monoid _ _
+  setoid pointwise                 = prop-setoid A ⇒ setoidᴮ
+  func (_∙_ pointwise f g) a       = func f a ∙ᴮ func g a
+  cong (_∙_ pointwise f g) ≡.refl  = ∙-cong mb reflᴮ reflᴮ
+  func (ε pointwise) a       = εᴮ
+  cong (ε pointwise) ≡.refl  = reflᴮ
+  assoc pointwise f g h {x} ≡.refl  = assoc mb  (func f x)
+                                                (func g x)
+                                                (func h x)
+  identityˡ pointwise f {x} ≡.refl  = identityˡ mb (func f x)
+  identityʳ pointwise f {x} ≡.refl  = identityʳ mb (func f x)
+  ∙-cong pointwise x=y z=y ≡.refl   = ∙-cong mb (x=y refl) (z=y refl)
+```
+
+The `def:pointwise` function is an excellent demonstration of why setoids are
+awful to work with, since the compiler forces upon us the burden of showing the
+congruence of everything involved. Not only do we need to show `field:∙-cong`
+for our monoid, which seems like it might be a reasonable ask, but we must
+*also* show the congruence of `field:_∙_` and `field:ε` themselves.
+
+The necessity, ubiquity, and pain of setoids in Martin--Löf Type Theory (the
+underpinning logic of Agda) is a major driver behind modern type theory
+research. Homotopy Type Theory in particular is based on the idea that
+equivalence is equivalent to equality, which would allow us to immediately lift
+our equivalence relation into a honest-to-goodness equality relation. Other type
+theories are beyond the scope of this book, however, but the interested reader
+is encouraged to explore this direction on their own.
+
+
+## Monoid Homomorphisms
+
 
 
 $$
