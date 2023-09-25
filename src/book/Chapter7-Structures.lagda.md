@@ -935,40 +935,84 @@ but try as we might, we are unable to fill the above holes.
 
 ## Function Extensionality
 
+All of this bring up an interesting question at the foundation of
+mathematics---when exactly are two functions equal? The answer is not very cut
+and dry, and it's quite a hard a hard problem. Consider functions `def:f₁`,
+and `def:f₂`:
+
 
 ```agda
-module Sandbox-IntensionalExtensional where
-  open import Data.Nat
-    using (ℕ; _+_;  _*_)
-  open ℕ
+module Sandbox-Extensionality where
+  f₁ : ℕ → ℕ
+  f₁ x = x + 2
 
-  ex₁ : ℕ → ℕ
-  ex₁ x = x + 2
+  f₂ : ℕ → ℕ
+  f₂ x = 2 + x
+```
 
-  ex₂ : ℕ → ℕ
-  ex₂ x = 2 * x
+Are these two functions equal? It's unclear exactly what the question means. Are
+they syntactically the same function? No, not at all! But do they compute the
+same output for every input? Absolutely! Do they follow the same computation to
+get that answer? No again. And so the problem really cashes out as "what do we
+mean when we ask if two functions are equal?"
 
-  ex₃ : ℕ → ℕ
-  ex₃ x = suc (suc x)
+Many programming languages sidestep the issue by saying two functions are equal
+if their underlying pointer is equal. Thus two functions are the same if they
+exist at the same place in memory, but this is mathematically abhorrent for many
+reasons---the worst of which is that the runtime gets to decide whether two
+functions are equal, and it might make a different choice if you run the
+program a second time. There are many ways to describe this behavior, but
+none of "sane", "mathematical", or even "good programming practice" are one.
 
-  open import Relation.Binary using (Rel)
+The answer in most of mathematics is that two functions are equal if and only if
+they produce the same output for every input. This is known both as *extensional
+equality* of functions, and as *Leibniz equality.* The question was less salient
+when it was originally posed, as computation hadn't yet been invented. Under
+extensional equality, bubblesort and quicksort are equal functions, even though
+their computational properties are wildly divergent.
 
+We can define extensional equality between dependent functions `f` and `g` in
+Agda as:
+
+```agda
   _≗_
-      : {A : Set ℓ₁} {B : A → Set ℓ₂}  -- ! 1
-      → Rel ((x : A) → B x) _ -- ! 2
-  _≗_ f g = ∀ x → f x ≡ g x
+      : {A : Set ℓ₁} {B : A → Set ℓ₂}
+      → Rel ((x : A) → B x) _
+  _≗_ {A = A} f g = (x : A) → f x ≡ g x
+```
 
+where the `≗` symbol is input as (AgdaMode). The type here is a little
+hairy, but it shouldn't give you too much challenge by this point. The idea is
+that `def:_≗_` forms a relation over functions that ensures their images are
+propositionally equal at all points. Under this relation, we can now show that
+`def:f₁` and `def:f₂` from above are extensionally equal:
 
-  ex₁≗ex₃ : ex₁ ≗ ex₃
-  ex₁≗ex₃ zero = refl
-  ex₁≗ex₃ (suc x) = cong suc (+-comm x 2)
+```agda
+  f₁≗f₂ : f₁ ≗ f₂
+  f₁≗f₂ zero = refl
+  f₁≗f₂ (suc x) = cong suc (+-comm x 2)
+```
 
-  module _ {a b : Level} {A : Set a} {B : A → Set b} where
+As you'd expect, in order for `def:_≗_` to be a model of equality, it certainly
+ought to form an equivalence relation. And in fact it does. The construction is
+a little annoying to type due to the high parametricity, but we can build it
+together. For some types `A and `B`:
 
+```agda
+  module _ {A : Set ℓ₁} {B : A → Set ℓ₂} where
+```
+
+we can build the type of dependent functions between them:
+
+```agda
     private
       Fn : Set _
       Fn = (x : A) → B x
+```
 
+and now show that `def:_≗_` is a `type:Fn`-typed equivalence relation:
+
+```agda
     ≗-refl : Reflexive {A = Fn} _≗_
     ≗-refl x = refl
 
@@ -982,19 +1026,56 @@ module Sandbox-IntensionalExtensional where
     IsPreorder.refl (IsEquivalence.isPreorder ≗-equiv) = ≗-refl
     IsPreorder.trans (IsEquivalence.isPreorder ≗-equiv) = ≗-trans
     IsEquivalence.sym ≗-equiv = ≗-sym
+```
 
+For good measure, we can also add `def:≗-equiv` to the `keyword:instance`
+environment, allowing us to use `field:refl`, `field:sym`, and `field:trans`
+polymorphically to work with it:
+
+```agda
     instance
       ≗-is-equiv = ≗-equiv
+```
 
+We have thus shown that extensional equality is a meaningful notion of equality.
+
+If you are working in more of a mathematical domain (as opposed to a
+computational one), you might now want to postulate *function extensionality*:
+the notion that extensionally equal functions are in fact *propositionally
+equal.* As we have seen, this doesn't make sense when computation is your main
+goal, but if you are simply modeling the world, it's an extremely convenient
+thing to have around. Agda has no opinion as to whether function extensionality
+holds or not, and its underlying theory is compatible with or without it.
+Therefore, the decision is up to us. If we'd like it, we must
+`keyword:postulate` `postulate:fun-ext`, which upgrades `def:_≗_` into
+`def:_≡_`:
+
+```agda
   postulate
     fun-ext
-        : {a b : Level} {A : Set a} {B : A → Set b}
+        : {A : Set ℓ₁} {B : A → Set ℓ₂}
         → {f g : (x : A) → B x}
         → f ≗ g → f ≡ g
+```
 
-  ex₁≡ex₃ : ex₁ ≡ ex₃
-  ex₁≡ex₃ = fun-ext ex₁≗ex₃
+Given `postulate:fun-ext`, we can show that `def:f₁` and `def:f₂` are
+*propositionally equal:*
 
+```agda
+  f₁≡f₃ : f₁ ≡ f₂
+  f₁≡f₃ = fun-ext f₁≗f₂
+```
+
+Similarly, if we were to return to our `def:pointwise` example showing we can
+lift a monoid over arbitrary functions, we could now invoke `postulate:fun-ext`
+in order to help fill our holes. While that's a perfectly good solution, in the
+next section we will instead explore a different---and much, much
+worse---solution to the problem.
+
+
+## Setoid Hell
+
+```agda
 module Sandbox-Monoids where
   record Monoid₂ {a} (Carrier : Set a) (ℓ : Level)
         : Set (a ⊔ lsuc ℓ) where
