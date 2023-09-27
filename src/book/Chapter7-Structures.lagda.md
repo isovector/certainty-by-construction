@@ -1501,16 +1501,16 @@ type `type:Bool` `→` `type:Bool`, which we will prove for ourselves in
 ```agda
 open MonHom
 
-∧-true⇒∨-false : MonHom ∧-true ∨-false not
-preserves-ε  ∧-true⇒∨-false           = refl
-preserves-∙  ∧-true⇒∨-false false  y  = refl
-preserves-∙  ∧-true⇒∨-false true   y  = refl
-f-cong       ∧-true⇒∨-false ≡.refl    = refl
+not-hom : MonHom ∧-true ∨-false not
+preserves-ε  not-hom           = refl
+preserves-∙  not-hom false  y  = refl
+preserves-∙  not-hom true   y  = refl
+f-cong       not-hom ≡.refl    = refl
 ```
 
 We have therefore proven that `def:not` is in fact a monoid homomorphism between
 `def:∧-true` and `def:∨-false`. But is it the only one? For a giggle, we can
-also try to see if our only other option---`expr:const false`---also forms a
+also try to see if our only other option---`def:const` `ctor:false`---also forms a
 homomorphism. Rather surprisingly, it does:
 
 ```agda
@@ -1543,38 +1543,83 @@ mon-hom-not-unique
       →  f ≡ g
       )
 mon-hom-not-unique claim
-  with claim ∧-true⇒∨-false false-hom
-... | not=const-false = obviously-untrue ( begin
+  with claim not-hom false-hom
+... | not=false = obviously-untrue ( begin
   true               ≡⟨⟩
-  not false          ≡⟨ ≡.cong (λ φ → φ false) not=const-false ⟩
+  not false          ≡⟨ ≡.cong (λ φ → φ false) not=false ⟩
   const false false  ≡⟨⟩
   false              ∎)
   where open ≡-Reasoning
+-- FIX
 ```
+
+For technical reasons, we are forced to say that `s₁` and `s₂` are monoids over
+`expr:lzero`---work through where the quantification goes wrong if you'd like to
+see why. This is not a fundamental limitation in Agda, but working around it
+here is much more effort than it's worth.[^level-lifting]
+
+[^level-lifting]: The construction, for those interested, requires showing that
+we can lift a `type:Monoid` up levels, that is, we require a function
+`expr:{c c′ ℓ ℓ′ : Level} → Monoid c ℓ → Monoid (c ⊔ c′) (ℓ ⊔ ℓ′)`, give a
+similar lift for `def:MonHom`s, and then use this to lift `def:not-hom` and
+`def:false-hom` to the necessary levels.
+
+Returning to `def:not-hom`, expanding out the definition of `field:preserves-∙`
+gives us the following equation:
 
 $$
 \neg (a \wedge b) = \neg a \vee \neg b
 $$
 
+This is an exceptionally famous mathematical theorem, known as one half of *De
+Morgan's laws.* The other half is the fact that
+
 $$
 \neg (a \vee b) = \neg a \wedge \neg b
 $$
 
+which also looks suspiciously like a monoid homomorphism---albeit this time
+from `def:∨-false` to `def:∧-true`, which is no harder to prove:
+
 ```agda
-not-hom₂ : MonHom ∨-false ∧-true not
-preserves-ε  not-hom₂           = refl
-preserves-∙  not-hom₂ false  y  = refl
-preserves-∙  not-hom₂ true   y  = refl
-f-cong       not-hom₂ ≡.refl    = refl
+not-hom′ : MonHom ∨-false ∧-true not
+preserves-ε  not-hom′           = refl
+preserves-∙  not-hom′ false  y  = refl
+preserves-∙  not-hom′ true   y  = refl
+f-cong       not-hom′ ≡.refl    = refl
+```
 
-not-false-hom₂ : ¬ MonHom ∨-false ∧-true (const false)
-not-false-hom₂ x with preserves-ε x
+Perhaps you're beginning to see the importance---if maybe not yet the *use*
+---of monoid homomorphisms. We managed to rediscover an important mathematical
+fact simply by trying to find an example! In looking for monoid homomorphisms,
+we have seemingly stumbled across a good "pruning" strategy in the search of
+interesting theorems. This shouldn't come as much of a surprise; there are
+crushingly many functions out there, and most of them *can't* be interesting.
+Homomorphisms sufficiently constrain the search space without being so
+restrictive that they're hard to find.
+
+Hot off the success of deriving `def:not-hom′` from looking only at
+`def:not-hom`, can we switch around the monoids in `def:false-hom` to find a
+homomorphism going the other direction for `expr:const false`? A little
+investigation shows that no, we cannot find such a homomorphism. Its existence
+would violate the law stating identities must be sent to identities. While
+`expr:const false` sends everything to `ctor:false`, the identity we're looking
+for is `ctor:true`, and thus we are unable to get where we need:
+
+```agda
+¬false-hom′ : ¬ MonHom ∨-false ∧-true (const false)
+¬false-hom′ x with preserves-ε x
 ... | ()
+```
 
-not-false-hom₃ : ¬ MonHom +-0 *-1 (1 +_)
-not-false-hom₃ x with preserves-∙ x 1 1
-... | ()
+which therefore immediately tells us that homomorphisms are not, in general,
+invertible.
 
+
+## Finding Equivalent Computations
+
+
+```agda
 open import Data.List using (List; []; _∷_; _++_)
 
 length : {A : Set} → List A → ℕ
