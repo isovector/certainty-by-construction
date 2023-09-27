@@ -36,7 +36,8 @@ open import Chapter5-Modular-Arithmetic
     ```
 
 :   ```agda
-import Chapter6-Decidability
+open import Chapter6-Decidability
+  using (¬_)
 open Chapter6-Decidability.BinaryTrees
   using (BinTree; leaf; branch; empty)
     ```
@@ -528,10 +529,11 @@ in a book on function programming without mentioning lists, so let's quickly
 give a definition:
 
 ```agda
-  data List (A : Set ℓ) : Set ℓ where
-    []   : List A
-    _∷_  : A → List A → List A
-  infixr 5 _∷_
+  module Definition-List where
+    data List (A : Set ℓ) : Set ℓ where
+      []   : List A
+      _∷_  : A → List A → List A
+    infixr 5 _∷_
 ```
 
 You can type `∷` by way of [`::`](AgdaMode).
@@ -541,15 +543,20 @@ stuck in front of another list (via `ctor:_∷_`.) With this definition, we can
 quickly define list concatenation:
 
 ```agda
-  _++_ : List A → List A → List A
-  []        ++ ys = ys
-  (x ∷ xs)  ++ ys = x ∷ (xs ++ ys)
-  infixr 5 _++_
+    _++_ : List A → List A → List A
+    []        ++ ys = ys
+    (x ∷ xs)  ++ ys = x ∷ (xs ++ ys)
+    infixr 5 _++_
 ```
 
-and now show that there is indeed a monoid under `def:_++_` and `ctor:[]`:
+
+and now show that there is indeed a monoid under `def:_++_` and `ctor:[]`---but
+not before getting their definitions from the standard library for maximum
+reusability:
 
 ```agda
+  open import Data.List using (List; []; _∷_; _++_)
+
   ++-[] : IsMonoid {Carrier = List A} _++_ []
   assoc ++-[] [] y z = refl
   assoc ++-[] (x ∷ xs) y z
@@ -793,8 +800,10 @@ one example, we can reimplement `def:size` to now count the number of elements
 in any container:
 
 ```agda
-  size : ∀ {Container} → ⦃ Foldable Container ⦄ → Container A → ℕ
-  size = fold ⦃ monoid = bundle +-0 ⦄ (const 1)
+  size  : {A : Set ℓ} {Container : Set ℓ → Set}
+        → ⦃ Foldable Container ⦄
+        → Container A → ℕ
+  size  = fold ⦃ monoid = bundle +-0 ⦄ (const 1)
 
   _ : size (1 ∷ 1 ∷ 2 ∷ 3 ∷ []) ≡ 4
   _ = refl
@@ -1375,27 +1384,37 @@ is encouraged to explore this direction on their own.
 
 ## Monoid Homomorphisms
 
+One particularly fruitful area to find mathematics that "work" for real problems
+is to investigate functions which *preserve structure* between mathematical
+structures. Since we're still jiving and excited about monoids, let's consider
+these structure-preserving functions in the context of monoids.
 
+Consider therefore what it would mean for a function to preserve the structure
+of a monoid. It's worth asking ourselves exactly what structure monoids have in
+the first place! Recall, there is an associative binary operator `field:_∙_`,
+with a unit `field:ε`.
 
-$$
-f(\varepsilon) = \varepsilon
-$$
-
-and
-
-$$
-f(a \cdot b) = f(a) \cdot f(b)
-$$
-
-$$
-f(\varepsilon_1) =_2 \varepsilon_2
-$$
-
-and
+Now, if we have two `type:Monoid`s, one whose carrier is `A`, and the other
+whose carrier is `B`, a monoidal-structure-preserving function `f : A → B` seems
+like it ought to (at least) map the identity element in `A` to the identity
+element in `B`. Symbolically, that is:
 
 $$
-f(a \cdot_1 b) =_2 f(a) \cdot_2 f(b)
+f(\varepsilon_A) = \varepsilon_B
 $$
+
+But we have a much more stringent requirement on `f`---we'd like it to also
+preserve multiplication. Symbolically then, we'd like:
+
+$$
+f(x \cdot_A y) = f(x) \cdot_B f(y)
+$$
+
+It's important to point out that while these equations look simple, they are
+much harder to satisfy than they might seem. The reason is that the notation
+$f(x \cdot_A y)$ is merely *syntax.* Assuming a potential monoid homomorphism
+between `def:+-0` and `def:*-1`, in the wild these equations might look like any
+of the following:
 
 $$
 \begin{aligned}
@@ -1406,64 +1425,47 @@ f(13) &= 30
 \end{aligned}
 $$
 
+depending on exactly how much normalization occurred before we got a chance to
+look at it. As you can see, being a homomorphism is an extremely stringent
+requirement of a function, due to the astronomical number of equations that it
+must satisfy.
+
 ```agda
 module Sandbox-MonoidHomomorphisms where
-  -- open Sandbox-Monoids
+  private variable
+    c c₁ c₂ : Level
 
-  -- private variable
-  --   c c₁ c₂ ℓ ℓ₁ ℓ₂ : Level
+  module _ (m₁ : Monoid c₁ ℓ₁) (m₂ : Monoid c₂ ℓ₂) where
+    open Monoid m₁ using () renaming (Carrier to X)
+    open Monoid m₂ using () renaming (Carrier to Y)
+    open Monoid ⦃ ... ⦄
 
-  -- module _ (m₁ : Monoid c₁ ℓ₁) (m₂ : Monoid c₂ ℓ₂) where
-  --   open import Relation.Binary using (_Preserves_⟶_)
-  --   open Monoid m₁ using () renaming (Carrier to A)
-  --   open Monoid m₂ using () renaming (Carrier to B)
-  --   open Monoid ⦃ ... ⦄
+    private instance
+      _ = m₁
+      _ = m₂
 
-  --   instance
-  --     _ = m₁
-  --     _ = m₂
+    record MonHom (f : X → Y)
+         : Set (c₁ ⊔ c₂ ⊔ ℓ₁ ⊔ ℓ₂) where
+      field
+        preserves-ε  : f ε ≈ ε
+        preserves-∙  : (a b : X) → f (a ∙ b) ≈ f a ∙ f b
+        f-cong       : {a b : X} → a ≈ b → f a ≈ f b
 
-  --   record MonHom (f : A → B)
-  --        : Set (c₁ ⊔ c₂ ⊔ ℓ₁ ⊔ ℓ₂) where
-  --     field
-  --       preserves-ε  : f ε ≈ ε
-  --       preserves-∙  : (x y : A) → f (x ∙ y) ≈ f x ∙ f y
-  --       f-cong       : f Preserves _≈_ ⟶ _≈_
+  open MonHom
+  module _ where
 
-  -- ∧-true   = recover Naive.∧-true
-  -- ∨-false  = recover Naive.∨-false
-  -- +-0      = recover Naive.+-0
-  -- *-1      = recover Naive.*-1
+    not-hom₁ : MonHom ∧-true ∨-false not
+    preserves-ε  not-hom₁           = refl
+    preserves-∙  not-hom₁ false  y  = refl
+    preserves-∙  not-hom₁ true   y  = refl
+    f-cong       not-hom₁ ≡.refl    = refl
 
-  -- private variable
-  --   a : Level
-  --   A : Set a
+    open import Function using (const)
 
-  -- ++-[] first last : (A : Set a) → Monoid _ _
-  -- ++-[]  A = recover (Naive.++-[] {A = A})
-  -- first  A = recover (Naive.first A)
-  -- last   A = recover (Naive.last A)
-
-
-  -- open import Data.Bool
-  --   using (true; false; not)
-
-  -- open MonHom
-  -- module _ where
-  --   open import Relation.Binary.PropositionalEquality
-
-  --   not-hom₁ : MonHom ∧-true ∨-false not
-  --   preserves-ε  not-hom₁           = refl
-  --   preserves-∙  not-hom₁ false  y  = refl
-  --   preserves-∙  not-hom₁ true   y  = refl
-  --   f-cong       not-hom₁ refl      = refl
-
-    -- open import Function using (const)
-
-    -- false-hom : MonHom ∧-true ∨-false (const false)
-    -- preserves-ε  false-hom       = refl
-    -- preserves-∙  false-hom x y   = refl
-    -- f-cong       false-hom refl  = refl
+    false-hom : MonHom ∧-true ∨-false (const false)
+    preserves-ε  false-hom         = refl
+    preserves-∙  false-hom x y     = refl
+    f-cong       false-hom ≡.refl  = refl
 ```
 
 $$
@@ -1475,51 +1477,34 @@ $$
 $$
 
 ```agda
-    -- not-hom₂ : MonHom ∨-false ∧-true not
-    -- preserves-ε  not-hom₂           = refl
-    -- preserves-∙  not-hom₂ false  y  = refl
-    -- preserves-∙  not-hom₂ true   y  = refl
-    -- f-cong       not-hom₂ refl      = refl
+    not-hom₂ : MonHom ∨-false ∧-true not
+    preserves-ε  not-hom₂           = refl
+    preserves-∙  not-hom₂ false  y  = refl
+    preserves-∙  not-hom₂ true   y  = refl
+    f-cong       not-hom₂ ≡.refl    = refl
 
-    -- open import Relation.Nullary
+    not-false-hom₂ : ¬ MonHom ∨-false ∧-true (const false)
+    not-false-hom₂ x with preserves-ε x
+    ... | ()
 
-    -- not-false-hom₂ : ¬ MonHom ∨-false ∧-true (const false)
-    -- not-false-hom₂ x with preserves-ε x
-    -- ... | ()
+    not-false-hom₃ : ¬ MonHom +-0 *-1 (1 +_)
+    not-false-hom₃ x with preserves-∙ x 1 1
+    ... | ()
 
-  -- open import Data.Nat using (ℕ)
-  -- open import Data.List
-  --   using (List; []; _∷_)
+    open import Data.List using (List; []; _∷_; _++_)
 
-  -- open import Relation.Binary.PropositionalEquality
-  --   using ()
-  --   renaming (setoid to prop-setoid)
+    length : {A : Set} → List A → ℕ
+    length = Naive.size
 
-  -- module _ where
-  --   open import Relation.Binary.PropositionalEquality
+    length-hom : MonHom (++-[] {A = A}) +-0 length
+    preserves-ε length-hom = refl
+    preserves-∙ length-hom [] y = refl
+    preserves-∙ length-hom (x ∷ xs) y
+      rewrite preserves-∙ length-hom xs y
+        = refl
+    f-cong length-hom ≡.refl = refl
 
-  --   length : List A → ℕ
-  --   length = Naive.size
-
-  --   length-hom : (A : Set a) → MonHom (++-[] A) +-0 length
-  --   preserves-ε (length-hom A) = refl
-  --   preserves-∙ (length-hom A) [] y = refl
-  --   preserves-∙ (length-hom A) (x ∷ xs) y
-  --     rewrite preserves-∙ (length-hom A) xs y
-  --       = refl
-  --   f-cong (length-hom A) refl = refl
-
-    -- open import Function using (_∘_; id)
-
-    -- ∘-id : Set a → Monoid _ _
-    -- Monoid.setoid  (∘-id A)      = ≗-setoid A (prop-setoid A)
-    -- Monoid._∙_     (∘-id A) g f  = g ∘ f
-    -- Monoid.ε       (∘-id A)      = id
-    -- Monoid.assoc      (∘-id A) x y z a  = refl
-    -- Monoid.identityˡ  (∘-id A) x a      = refl
-    -- Monoid.identityʳ  (∘-id A) x a      = refl
-    -- Monoid.∙-cong     (∘-id A) x≗y u≗v a
-    --   rewrite u≗v a = x≗y _
+    open import Function using (_∘_; id)
 
     -- module DList where
     --   open Data.List using (_++_)
