@@ -1204,6 +1204,7 @@ define a type corresponding to congruent functions between our two carrier sets:
 ```agda
   record Fn {a b : Level} (From : Setoid a ℓ₁) (To : Setoid b ℓ₂)
         : Set (a ⊔ b ⊔ ℓ₁ ⊔ ℓ₂) where
+    constructor fn
     field
       func  : From .Carrier → To .Carrier
       cong  : {x y : From .Carrier}
@@ -1544,11 +1545,13 @@ mon-hom-not-unique
       )
 mon-hom-not-unique claim
   with claim not-hom false-hom
-... | not=false = obviously-untrue ( begin
-  true               ≡⟨⟩
-  not false          ≡⟨ ≡.cong (λ φ → φ false) not=false ⟩
-  const false false  ≡⟨⟩
-  false              ∎)
+... | not=false = obviously-untrue
+  (begin
+    true               ≡⟨⟩
+    not false          ≡⟨ ≡.cong (λ φ → φ false) not=false ⟩
+    const false false  ≡⟨⟩
+    false              ∎
+  )
   where open ≡-Reasoning
 -- FIX
 ```
@@ -1618,6 +1621,25 @@ invertible.
 
 ## Finding Equivalent Computations
 
+Armed with some understanding of the importance of monoid homomorphisms, let's
+now attempt to develop an intuition as to what they *are.* If a function `f` is
+a monoid homomorphism it means we can play fast-and-loose about when we want to
+apply `f`. Maybe `f` is expensive, so we'd like to batch all of our monoidal
+combining work first, and only ever call `f` once. Alternatively, maybe
+`field:_∙₁_` is expensive, in which case we might prefer to first map every `A`
+term into a `B` before accumulating them together.
+
+Consider the case of list appending; each call to `def:_++_` is $O(n)$ time, and
+thus we run in quadratic time when we have a linear number of lists to append.
+If all we'd like to do is count the number of elements in the resulting list, we
+have two options: concatenate the lists and subsequently take the length of the
+result, or take the lengths individually and add them. Because addition runs in
+$O(1)$ time[^in-reality], it is asymptotically faster to add the lengths rather
+than taking the length of the concatenation. And it is *precisely* the existence
+of the `def:length-hom` monoid homomorphism that ensures these two algorithms
+compute the same result:
+
+[^in-reality]: At least, on real computers.
 
 ```agda
 open import Data.List using (List; []; _∷_; _++_)
@@ -1632,31 +1654,80 @@ preserves-∙ length-hom (x ∷ xs) y
   rewrite preserves-∙ length-hom xs y
     = refl
 f-cong length-hom ≡.refl = refl
+```
 
+It's interesting to note that list concatenation is not *intrinsically* slow;
+merely that `bind:x y:x ++ y` has linear runtime in the length of `x`, but
+constant runtime in the length of `y`. Therefore, it's *much* more efficient to
+compute `bind:x y z w:x ++ (y ++ (z ++ w))` than it is to compute `bind:x y z
+w:((x ++ y) ++ z) ++ w`.
+
+Unfortunately, it's very natural to write code that produces the slow,
+left-associative tree of `def:_++_` expressions. This is because we prefer to
+think about algorithms running forwards, and thus it makes more sense to build
+the beginning of a string before the subsequent pieces. Nothing prevents us from
+building a string backwards, it's just an unnatural way to structure code. But
+what if there were some way to write our code in the usual "beginning-first"
+style, and have the computer automatically restructure things so we get the fast
+performance we'd like.
+
+This is the key insight behind *string builders,* which are types that, as
+expected, efficiently build big strings. String builders are cleverly
+implemented to ensure that all the strings they combine are right-associated,
+and thus take advantage of this linear runtime.
+
+Rather amazingly, string builders exploit a monoid homomorphism in order to
+improve the asymptotics of producing large lists. The key insight is that
+concatenation and the empty list for a monoid over lists, and so we must be
+looking for a monoid homomorphism *into* `def:++-[]`.
+
+```agda
 open import Function using (_∘_; id)
 
-    -- module DList where
-    --   open Data.List using (_++_)
-    --   open import Data.List.Properties
-    --     using (++-identityʳ; ++-assoc)
+module DList where
+  open Data.List using (_++_)
+  open import Data.List.Properties
+    using (++-identityʳ; ++-assoc)
 
-    --   dlist-mon : Set a → Monoid _ _
-    --   dlist-mon A = ∘-id (List A)
+  open Monoid
+  open Fn
 
-    --   DList : Set a → Set a
-    --   DList A = Monoid.Carrier (dlist-mon A)
+  ∘-id : Set ℓ → Monoid _ _
+  setoid (∘-id A) = prop-setoid A ⇒ prop-setoid A
+  ε      (∘-id A)      = fn id                 λ { ≡.refl → refl }
+  _∙_    (∘-id A) f g  = fn (func f ∘ func g)  λ { ≡.refl → refl }
+  assoc     (∘-id A) f g h  ≡.refl  = refl
+  identityˡ (∘-id A) f  ≡.refl      = refl
+  identityʳ (∘-id A) f  ≡.refl      = refl
+  ∙-cong (∘-id A) {x} {y} {z} {w} x=y z=w {a} ≡.refl = begin
+    (func x ∘ func z) a  ≡⟨⟩
+    func x (func z a)    ≡⟨ x=y refl ⟩
+    func y (func z a)    ≡⟨ ≡.cong (func y) (z=w refl) ⟩
+    func y (func w a)    ≡⟨⟩
+    (func y ∘ func w) a  ∎
+    where open ≡-Reasoning
 
-      -- toDList : List A → DList A
-      -- toDList = _++_
+  dlist-mon : Set ℓ → Monoid _ _
+  dlist-mon A = ∘-id (List A)
 
-      -- fromDList : DList A → List A
-      -- fromDList dl = dl []
+  DList : Set ℓ → Set ℓ
+  DList A = Monoid.Carrier (dlist-mon A)
 
-      -- dlist-hom : MonHom (++-[] A) (dlist-mon A) toDList
-      -- preserves-ε  dlist-hom a = refl
-      -- preserves-∙  dlist-hom = ++-assoc
-      -- f-cong       dlist-hom refl a = refl
+  toDList : List A → DList A
+  toDList l = fn (l ++_) λ { ≡.refl → refl }
 
+  fromDList : DList A → List A
+  fromDList dl = func dl []
+
+
+  open MonHom
+  dlist-hom : MonHom (++-[] {A = A}) (dlist-mon A) toDList
+  preserves-ε  dlist-hom ≡.refl             = refl
+  preserves-∙  dlist-hom xs ys {zs} ≡.refl  = ++-assoc xs ys zs
+  f-cong       dlist-hom ≡.refl ≡.refl      = refl
+```
+
+```agda
       -- ex-dlist
       --   = fromDList
       --     ( toDList (1 ∷ 2 ∷ [])
@@ -1672,74 +1743,12 @@ open import Function using (_∘_; id)
   -- module KeyValStore (Key : Set c₁) (val-monoid : Monoid c₂ ℓ₂) where
   --   open Monoid val-monoid using () renaming (Carrier to Val)
 
+
   --   KVStore : Set (c₁ ⊔ c₂)
   --   KVStore = Key → Val
 
   --   _[_] : KVStore → Key → Val
   --   kv [ ix ] = kv ix
-
-
-  -- open import Function using (const; id)
-
-  -- trivial : (m : Monoid c₂ ℓ₂) → MonHom m m id
-  -- trivial m = record
-  --   { preserves-ε  = refl
-  --   ; preserves-∙  = λ  x y → refl
-  --   ; f-cong       = λ  x → x
-  --   }
-  --   where open Monoid m
-
-  -- degenerate
-  --     : {m₁ : Monoid c₁ ℓ₁}
-  --     → (m : Monoid c₂ ℓ₂)
-  --     → MonHom m₁ m (const (Monoid.ε m))
-  -- degenerate m = record
-  --   { preserves-ε  = refl
-  --   ; preserves-∙  = λ  x y → sym (identityʳ _)
-  --   ; f-cong       = λ  x → refl
-  --   }
-  --   where open Monoid m
-
-  -- -- -- TODO(sandy): fixme; haven't discussed isos
-  -- -- open import propisos
-
-  -- -- module _ (m₁ : Monoid c₁ ℓ₁) (m₂ : Monoid c₂ ℓ₂) where
-  -- --   open import Relation.Binary using (_Preserves_⟶_)
-  -- --   open Monoid m₁ using () renaming (Carrier to X; ε to ε₁; _∙_ to _∙₁_)
-  -- --   open Monoid m₂ using () renaming (Carrier to Y; ε to ε₂; _∙_ to _∙₂_)
-  -- --   open Monoid
-
-  -- --   invertible
-  -- --       : (iso : Monoid.setoid m₁ ↔ Monoid.setoid m₂)
-  -- --       → MonHom m₁ m₂ (_↔_.to iso)
-  -- --       → MonHom m₂ m₁ (_↔_.from iso)
-  -- --   preserves-ε (invertible iso hom) =
-  -- --     begin
-  -- --       from ε₂
-  -- --     ≈⟨ from-cong (sym m₂ (preserves-ε hom)) ⟩
-  -- --       from (to ε₁)
-  -- --     ≈⟨ left-inv-of ε₁ ⟩
-  -- --       ε₁
-  -- --     ∎
-  -- --     where
-  -- --       open _↔_ iso
-  -- --       open Reasoning m₁
-  -- --   preserves-∙ (invertible iso hom) a b =
-  -- --     begin
-  -- --       from (a ∙₂ b)
-  -- --     ≈⟨ sym m₁ (from-cong (∙-cong m₂ (right-inv-of _) (right-inv-of _))) ⟩
-  -- --       from (to (from a) ∙₂ to (from b))
-  -- --     ≈⟨ from-cong (sym m₂ (preserves-∙ hom _ _)) ⟩
-  -- --       from (to (from a ∙₁ from b))
-  -- --     ≈⟨ left-inv-of (from a ∙₁ from b) ⟩
-  -- --       from a ∙₁ from b
-  -- --     ∎
-  -- --     where
-  -- --       open _↔_ iso
-  -- --       open Reasoning m₁
-  -- --   f-cong (invertible iso hom) {x} {y} x≈₂y = _↔_.from-cong iso x≈₂y
-
-  -- -- -- identities are unique
 ```
 
 ```agda
