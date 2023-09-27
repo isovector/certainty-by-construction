@@ -37,7 +37,7 @@ open import Chapter5-Modular-Arithmetic
 
 :   ```agda
 open import Chapter6-Decidability
-  using (¬_)
+  using (¬_; ⊥)
 open Chapter6-Decidability.BinaryTrees
   using (BinTree; leaf; branch; empty)
     ```
@@ -1213,12 +1213,18 @@ define a type corresponding to congruent functions between our two carrier sets:
 
 The type `type:Fn` now encodes functions between the carriers of `A` and `B`,
 along with a proof that those functions are congruent with respect to the setoid
-equality on either end. This proof of `field:cong` is important, since equality
-is now a relation we're stating should hold, rather than showing it does simply
-by construction.  This is where a great deal of the pain of setoids comes from,
-since it requires us to prove that every function we'd care to work with is
-well-behaved when it comes to equality. We'll get a firsthand feel for the agony
-when we soon return to build the `def:pointwise` monoid.
+equality on either end. You might be wondering where exactly this type came
+from---the answer is that I tried to give a setoid over functions whose carrier
+was just a function over carriers, but got stuck needing to show congruence.
+That congruence must come from somewhere, and so we push the burden of
+congruence up to the setoid carrier itself.
+
+This proof of `field:cong` is important, since equality is now a relation we're
+stating should hold, rather than showing it does simply by construction.  This
+is where a great deal of the pain of setoids comes from, since it requires us to
+prove that every function we'd care to work with is well-behaved when it comes
+to equality. We'll get a firsthand feel for the agony when we soon return to
+build the `def:pointwise` monoid.
 
 Given `type:Fn`, we're finally ready to encode the proper version of setoid
 function extensionality, known as `type:_⇒_` and typed as [`=>`](AgdaMode). This
@@ -1410,6 +1416,17 @@ $$
 f(x \cdot_A y) = f(x) \cdot_B f(y)
 $$
 
+In the literature, the subscripts here are often omitted, giving us laws that
+require mental typechecking in order to make sense of:
+
+$$
+f(\varepsilon) = \varepsilon
+$$
+
+$$
+f(x \cdot y) = f(x) \cdot f(y)
+$$
+
 It's important to point out that while these equations look simple, they are
 much harder to satisfy than they might seem. The reason is that the notation
 $f(x \cdot_A y)$ is merely *syntax.* Assuming a potential monoid homomorphism
@@ -1421,7 +1438,7 @@ $$
 f(13) &= f(10) \cdot f(3) \\
 f(13) &= f(13) \cdot f(0) \\
 f(13) &= 1 \cdot f(13) \\
-f(13) &= 30
+f(13) &= 150
 \end{aligned}
 $$
 
@@ -1430,42 +1447,109 @@ look at it. As you can see, being a homomorphism is an extremely stringent
 requirement of a function, due to the astronomical number of equations that it
 must satisfy.
 
+These structure-preserving functions are known as *homomorphisms,* and are often
+qualified by the object they preserve---thus, we have been looking at *monoid
+homomorphisms.* Now that we have our setoid machinery sorted out, coding up
+monoid homomorphisms is piece of cake. After setting up some environment:
+
 ```agda
-module Sandbox-MonoidHomomorphisms where
-  private variable
-    c c₁ c₂ : Level
+private variable
+  c c₁ c₂ : Level
 
-  module _ (m₁ : Monoid c₁ ℓ₁) (m₂ : Monoid c₂ ℓ₂) where
-    open Monoid m₁ using () renaming (Carrier to X)
-    open Monoid m₂ using () renaming (Carrier to Y)
-    open Monoid ⦃ ... ⦄
+module _ (m₁ : Monoid c₁ ℓ₁) (m₂ : Monoid c₂ ℓ₂) where
+  open Monoid ⦃ ... ⦄
 
-    private instance
-      _ = m₁
-      _ = m₂
+  private instance
+    _ = m₁
+    _ = m₂
 
-    record MonHom (f : X → Y)
-         : Set (c₁ ⊔ c₂ ⊔ ℓ₁ ⊔ ℓ₂) where
-      field
-        preserves-ε  : f ε ≈ ε
-        preserves-∙  : (a b : X) → f (a ∙ b) ≈ f a ∙ f b
-        f-cong       : {a b : X} → a ≈ b → f a ≈ f b
+  X = m₁ .Monoid.Carrier
+  Y = m₂ .Monoid.Carrier
+```
 
-  open MonHom
-  module _ where
+we are ready to give a definition `type:MonHom`, witnessing the fact that some
+function `f : X → Y` is a homomorphism. The only potential gotcha here is, as
+always when dealing with setoids, a proof of congruence:
 
-    not-hom₁ : MonHom ∧-true ∨-false not
-    preserves-ε  not-hom₁           = refl
-    preserves-∙  not-hom₁ false  y  = refl
-    preserves-∙  not-hom₁ true   y  = refl
-    f-cong       not-hom₁ ≡.refl    = refl
+```agda
+  record MonHom (f : X → Y)
+        : Set (c₁ ⊔ c₂ ⊔ ℓ₁ ⊔ ℓ₂) where
+    field
+      preserves-ε  : f ε ≈ ε
+      preserves-∙  : (a b : X) → f (a ∙ b) ≈ f a ∙ f b
+      f-cong       : {a b : X} → a ≈ b → f a ≈ f b
+-- FIX
+```
 
-    open import Function using (const)
+Now that we have the machinery in place to prove we're not fooling ourselves,
+let's begin our hunt for a monoid homomorphism. The simplest monoids we have are
+those over the booleans, so let's look there. The monoids we have at hand are
+`def:∧-true` and `def:∨-false`. How can we find a homomorphism here?
 
-    false-hom : MonHom ∧-true ∨-false (const false)
-    preserves-ε  false-hom         = refl
-    preserves-∙  false-hom x y     = refl
-    f-cong       false-hom ≡.refl  = refl
+Given the constraints of the problem, we must be looking for a function `f :`
+`type:Bool` `→` `type:Bool`, with the property that `f` `ctor:true` `type:≡`
+`ctor:false`. There are only two such functions[^cardinality], `def:const`
+`ctor:false` and `def:not`. The latter seems more promising, so let's try that.
+We are therefore looking for an inhabitant of the type `expr:MonHom ∧-true
+∨-false not`, and after phrasing the problem, Agda does most of the work:
+
+[^cardinality]: This fact comes from an argument about the cardinality of the
+type `type:Bool` `→` `type:Bool`, which we will prove for ourselves in
+@sec:exponents.
+
+
+```agda
+open MonHom
+
+∧-true⇒∨-false : MonHom ∧-true ∨-false not
+preserves-ε  ∧-true⇒∨-false           = refl
+preserves-∙  ∧-true⇒∨-false false  y  = refl
+preserves-∙  ∧-true⇒∨-false true   y  = refl
+f-cong       ∧-true⇒∨-false ≡.refl    = refl
+```
+
+We have therefore proven that `def:not` is in fact a monoid homomorphism between
+`def:∧-true` and `def:∨-false`. But is it the only one? For a giggle, we can
+also try to see if our only other option---`expr:const false`---also forms a
+homomorphism. Rather surprisingly, it does:
+
+```agda
+open import Function using (const)
+
+false-hom : MonHom ∧-true ∨-false (const false)
+preserves-ε  false-hom         = refl
+preserves-∙  false-hom x y     = refl
+f-cong       false-hom ≡.refl  = refl
+```
+
+And therefore we have proven that there might several different homomorphisms
+between any two monoids. In fact, we can formally prove this by way of a helper
+function:
+
+```agda
+obviously-untrue : true ≡ false → ⊥
+obviously-untrue ()
+```
+
+and can then falsify any claim that the existence of two monoid homomorphisms
+implies the equality of their mappings over the carriers:
+
+```agda
+mon-hom-not-unique
+  : ¬ (  {s₁ : Monoid lzero lzero} {s₂ : Monoid lzero lzero}
+         {f g : s₁ .Monoid.Carrier → s₂ .Monoid.Carrier}
+      →  (hom₁ : MonHom s₁ s₂ f)
+      →  (hom₂ : MonHom s₁ s₂ g)
+      →  f ≡ g
+      )
+mon-hom-not-unique claim
+  with claim ∧-true⇒∨-false false-hom
+... | not=const-false = obviously-untrue ( begin
+  true               ≡⟨⟩
+  not false          ≡⟨ ≡.cong (λ φ → φ false) not=const-false ⟩
+  const false false  ≡⟨⟩
+  false              ∎)
+  where open ≡-Reasoning
 ```
 
 $$
@@ -1477,34 +1561,34 @@ $$
 $$
 
 ```agda
-    not-hom₂ : MonHom ∨-false ∧-true not
-    preserves-ε  not-hom₂           = refl
-    preserves-∙  not-hom₂ false  y  = refl
-    preserves-∙  not-hom₂ true   y  = refl
-    f-cong       not-hom₂ ≡.refl    = refl
+not-hom₂ : MonHom ∨-false ∧-true not
+preserves-ε  not-hom₂           = refl
+preserves-∙  not-hom₂ false  y  = refl
+preserves-∙  not-hom₂ true   y  = refl
+f-cong       not-hom₂ ≡.refl    = refl
 
-    not-false-hom₂ : ¬ MonHom ∨-false ∧-true (const false)
-    not-false-hom₂ x with preserves-ε x
-    ... | ()
+not-false-hom₂ : ¬ MonHom ∨-false ∧-true (const false)
+not-false-hom₂ x with preserves-ε x
+... | ()
 
-    not-false-hom₃ : ¬ MonHom +-0 *-1 (1 +_)
-    not-false-hom₃ x with preserves-∙ x 1 1
-    ... | ()
+not-false-hom₃ : ¬ MonHom +-0 *-1 (1 +_)
+not-false-hom₃ x with preserves-∙ x 1 1
+... | ()
 
-    open import Data.List using (List; []; _∷_; _++_)
+open import Data.List using (List; []; _∷_; _++_)
 
-    length : {A : Set} → List A → ℕ
-    length = Naive.size
+length : {A : Set} → List A → ℕ
+length = Naive.size
 
-    length-hom : MonHom (++-[] {A = A}) +-0 length
-    preserves-ε length-hom = refl
-    preserves-∙ length-hom [] y = refl
-    preserves-∙ length-hom (x ∷ xs) y
-      rewrite preserves-∙ length-hom xs y
-        = refl
-    f-cong length-hom ≡.refl = refl
+length-hom : MonHom (++-[] {A = A}) +-0 length
+preserves-ε length-hom = refl
+preserves-∙ length-hom [] y = refl
+preserves-∙ length-hom (x ∷ xs) y
+  rewrite preserves-∙ length-hom xs y
+    = refl
+f-cong length-hom ≡.refl = refl
 
-    open import Function using (_∘_; id)
+open import Function using (_∘_; id)
 
     -- module DList where
     --   open Data.List using (_++_)
