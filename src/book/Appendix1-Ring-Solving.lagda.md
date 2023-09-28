@@ -1,6 +1,6 @@
 \backmatter
 
-# Ring Solving
+# Appendix: Ring Solving
 
 ```agda
 module Appendix1-Ring-Solving where
