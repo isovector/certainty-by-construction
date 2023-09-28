@@ -23,6 +23,7 @@ open import Chapter2-Numbers
 :   ```agda
 open import Chapter3-Proofs
   hiding (refl; sym; trans; cong)
+-- TODO(sandy): do this in the proofs chapter!
 import Chapter3-Proofs as ≡
     ```
 
@@ -1271,7 +1272,7 @@ now unwind the stack and return there, seeing how setoids can help (and hinder)
 the problems we ran into previously.
 
 
-## Back to Monoids
+## Pointwise
 
 The catchphrase of setoids is "always parameterize equality," so returning to
 our example of monoids, we must put a `type:Setoid` inside of our `type:Monoid`
@@ -1657,9 +1658,9 @@ f-cong length-hom ≡.refl = refl
 ```
 
 It's interesting to note that list concatenation is not *intrinsically* slow;
-merely that `bind:x y:x ++ y` has linear runtime in the length of `x`, but
-constant runtime in the length of `y`. Therefore, it's *much* more efficient to
-compute `bind:x y z w:x ++ (y ++ (z ++ w))` than it is to compute `bind:x y z
+merely that `bind:x y:x ++ y` has *linear* runtime in the length of `x`, but
+*constant* runtime in the length of `y`. Therefore, it's *much* more efficient
+to compute `bind:x y z w:x ++ (y ++ (z ++ w))` than it is to compute `bind:x y z
 w:((x ++ y) ++ z) ++ w`.
 
 Unfortunately, it's very natural to write code that produces the slow,
@@ -1739,20 +1740,21 @@ module DList where
 
       -- _ : ex-dlist  ≡ 1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ []
       -- _ = refl
-
-  -- module KeyValStore (Key : Set c₁) (val-monoid : Monoid c₂ ℓ₂) where
-  --   open Monoid val-monoid using () renaming (Carrier to Val)
-
-
-  --   KVStore : Set (c₁ ⊔ c₂)
-  --   KVStore = Key → Val
-
-  --   _[_] : KVStore → Key → Val
-  --   kv [ ix ] = kv ix
 ```
+
+
+## Wrapping Up
 
 ```agda
 open import Algebra
-  using (Op₂) public
+  using (Op₂)
+  public
+
+open import Function
+  using (id; _∘_; const)
+  public
+
+open import Data.List
+  using (List; []; _∷_; _++_)
 ```
 
