@@ -816,8 +816,8 @@ in any container:
 Or we can extract every element from a container into a `def:List`:
 
 ```agda
-  toList : ∀ {Container} → ⦃ Foldable Container ⦄ → Container A → List A
-  toList = fold ⦃ monoid = bundle ++-[] ⦄ (_∷ [])
+  build : ∀ {Container} → ⦃ Foldable Container ⦄ → Container A → List A
+  build = fold ⦃ monoid = bundle ++-[] ⦄ (_∷ [])
 ```
 
 You are encouraged to work through the other examples in `module:ListSummaries`
@@ -1678,68 +1678,121 @@ implemented to ensure that all the strings they combine are right-associated,
 and thus take advantage of this linear runtime.
 
 Rather amazingly, string builders exploit a monoid homomorphism in order to
-improve the asymptotics of producing large lists. The key insight is that
-concatenation and the empty list for a monoid over lists, and so we must be
-looking for a monoid homomorphism *into* `def:++-[]`.
+improve the asymptotics of producing large lists. Since we'd like to eventually
+build a list, we should be looking for a monoid homomorphism *into* `def:++-[]`.
+
+The key insight here is that the domain of our homomorphism should be some
+object that supports constant-time, right-associative "concatenation." Such a
+thing is necessarily fast to build, and its right-associativity ensures that
+building the eventual list will avoid the pathological $O(n^2)$ case.
+
+Thus our goal is refined to finding a constant-time, right-associative monoid.
+Here's where it's helpful to have wide knowledge of the monoid "zoo"---is such a
+monoid already well-known? It is, and we have already seen it: this is none
+other than the monoid of function composition `def:∘-id`!
+
+While we already defined `def:∘-id` as a naive monoid, we're unable to
+satisfactorily `def:recover` it to be used here; doing so would require an
+explicit invocation of function extensionality when we go to show our
+homomorphism respects associativity. Thus we resign ourselves to rewriting
+`def:∘-id`, this time in its full setoid generality:
 
 ```agda
 open import Function using (_∘_; id)
 
+open Monoid
+open Fn
+
+∘-id : Set ℓ → Monoid _ _
+setoid (∘-id A) = prop-setoid A ⇒ prop-setoid A
+ε      (∘-id A)      = fn id                 λ { ≡.refl → refl }
+_∙_    (∘-id A) f g  = fn (func f ∘ func g)  λ { ≡.refl → refl }
+assoc     (∘-id A) f g h  ≡.refl  = refl
+identityˡ (∘-id A) f  ≡.refl      = refl
+identityʳ (∘-id A) f  ≡.refl      = refl
+∙-cong (∘-id A) {x} {y} {z} {w} x=y z=w {a} ≡.refl = begin
+  (func x ∘ func z) a  ≡⟨⟩
+  func x (func z a)    ≡⟨ x=y refl ⟩
+  func y (func z a)    ≡⟨ ≡.cong (func y) (z=w refl) ⟩
+  func y (func w a)    ≡⟨⟩
+  (func y ∘ func w) a  ∎
+  where open ≡-Reasoning
+-- FIXME
+```
+
+Armed with `def:∘-id`, we can now implement our string builder---better known in
+the literature as a *difference list*, or *dlist* for short. It will be helpful
+to specialize `def:∘-id` for `bind:A:List A`, which we will call the dlist
+monoid:
+
+```agda
 module DList where
   open Data.List using (_++_)
-  open import Data.List.Properties
-    using (++-identityʳ; ++-assoc)
-
-  open Monoid
-  open Fn
-
-  ∘-id : Set ℓ → Monoid _ _
-  setoid (∘-id A) = prop-setoid A ⇒ prop-setoid A
-  ε      (∘-id A)      = fn id                 λ { ≡.refl → refl }
-  _∙_    (∘-id A) f g  = fn (func f ∘ func g)  λ { ≡.refl → refl }
-  assoc     (∘-id A) f g h  ≡.refl  = refl
-  identityˡ (∘-id A) f  ≡.refl      = refl
-  identityʳ (∘-id A) f  ≡.refl      = refl
-  ∙-cong (∘-id A) {x} {y} {z} {w} x=y z=w {a} ≡.refl = begin
-    (func x ∘ func z) a  ≡⟨⟩
-    func x (func z a)    ≡⟨ x=y refl ⟩
-    func y (func z a)    ≡⟨ ≡.cong (func y) (z=w refl) ⟩
-    func y (func w a)    ≡⟨⟩
-    (func y ∘ func w) a  ∎
-    where open ≡-Reasoning
 
   dlist-mon : Set ℓ → Monoid _ _
   dlist-mon A = ∘-id (List A)
+```
 
+A `type:DList` is thus the carrier of this monoid:
+
+```agda
   DList : Set ℓ → Set ℓ
   DList A = Monoid.Carrier (dlist-mon A)
+```
 
-  toDList : List A → DList A
-  toDList l = fn (l ++_) λ { ≡.refl → refl }
+Furthermore, we have an isomorphism between `bind:A:List A` and `bind:A:DList A`
+witnessed by `def:hurry` (which speeds up concatenation of lists) and
+`def:build` (which gives back the eventual list):
 
-  fromDList : DList A → List A
-  fromDList dl = func dl []
+```agda
+  hurry : List A → DList A
+  hurry l = fn (l ++_) λ { ≡.refl → refl }
+
+  build : DList A → List A
+  build dl = func dl []
+```
+
+Practically speaking, at this point we're finished---we can `def:hurry` each
+substring we'd like to append, use `field:_∙_` from `def:dlist-mon` to glue them
+together, and construct the final list via `def:build`:
+
+```agda
+  ex-dlist
+    = build
+      ( hurry (1 ∷ 2 ∷ [])
+      ∙ hurry (3 ∷ 4 ∷ [])
+      ∙ hurry (5 ∷ [])
+      )
+    where open Monoid (dlist-mon ℕ)
+
+  _ : ex-dlist ≡ 1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ []
+  _ = refl
+```
+
+However, as this book is on the topic of correctness, we must give a proof that
 
 
+
+```agda
   open MonHom
-  dlist-hom : MonHom (++-[] {A = A}) (dlist-mon A) toDList
+  open import Data.List.Properties
+    using (++-assoc)
+
+  dlist-hom : MonHom (++-[] {A = A}) (dlist-mon A) hurry
   preserves-ε  dlist-hom ≡.refl             = refl
   preserves-∙  dlist-hom xs ys {zs} ≡.refl  = ++-assoc xs ys zs
   f-cong       dlist-hom ≡.refl ≡.refl      = refl
-```
 
-```agda
-      -- ex-dlist
-      --   = fromDList
-      --     ( toDList (1 ∷ 2 ∷ [])
-      --     ∙ toDList (3 ∷ 4 ∷ [])
-      --     ∙ toDList (5 ∷ [])
-      --     )
-      --   where
-      --     open Monoid (dlist-mon ℕ)
-
-      -- _ : ex-dlist  ≡ 1 ∷ 2 ∷ 3 ∷ 4 ∷ 5 ∷ []
-      -- _ = refl
+  dlist-hom′ : MonHom (dlist-mon A) (++-[] {A = A}) build
+  preserves-ε dlist-hom′ = refl
+  preserves-∙ dlist-hom′ f g =
+    begin
+      func f (func g [])
+    ≡⟨ {! cong f !} ⟩
+      func f [] ++ func g []
+    ∎
+    where open ≡-Reasoning
+  f-cong dlist-hom′ func-cong = func-cong refl
 ```
 
 
