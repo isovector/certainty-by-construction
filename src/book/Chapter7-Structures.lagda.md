@@ -1793,11 +1793,10 @@ homomorphism we've been searching for this whole time:
 ```agda
   open MonHom
 
-  dlist-hom : MonHom (++-[] {A = A}) (dlist-mon A) hurry
-  preserves-ε  dlist-hom ≡.refl = refl
-  preserves-∙  dlist-hom xs ys {zs} ≡.refl
-    = Monoid.assoc ++-[] xs ys zs
-  f-cong       dlist-hom ≡.refl ≡.refl = refl
+  hurry-hom : MonHom ++-[] (dlist-mon A) hurry
+  preserves-ε  hurry-hom ≡.refl             = refl
+  preserves-∙  hurry-hom xs ys {zs} ≡.refl  = Monoid.assoc ++-[] xs ys zs
+  f-cong       hurry-hom ≡.refl ≡.refl      = refl
 ```
 
 Hidden
@@ -1807,7 +1806,7 @@ Hidden
     open Monoid (dlist-mon ℕ)
       ```
 
-Recall that `def:dlist-hom` is (among other things) a proof that `def:hurry`
+Recall that `def:hurry-hom` is (among other things) a proof that `def:hurry`
 `x` `field:∙` `def:hurry` `y` `field:≈` `bind:x y:hurry (x ++ y)`, and when
 combined with `def:build∘hurry`, we get our desired elimination of `def:hurry`,
 leaving behind only the appended list.
