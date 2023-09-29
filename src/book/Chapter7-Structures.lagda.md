@@ -1679,11 +1679,16 @@ and thus take advantage of this linear runtime.
 
 Rather amazingly, string builders exploit a monoid homomorphism in order to
 improve the asymptotics of producing large lists. Since we'd like to eventually
-build a list, we should be looking for a monoid homomorphism *into* `def:++-[]`.
+build a list, it *seems* like we should be looking for a monoid homomorphism
+into `def:++-[]`. However, this thought is misleading. Recall that homomorphisms
+preserve relevant structure, and the relevant structure we'd like to preserve is
+the way that lists behave when you concatenate them. Thus we are looking for a
+monoid homomorphism *out* of `def:++-[]`! The intuition here is that the
+homomorphism proves that one structure can be *embedded* into another.
 
-The key insight here is that the domain of our homomorphism should be some
-object that supports constant-time, right-associative "concatenation." Such a
-thing is necessarily fast to build, and its right-associativity ensures that
+Therefore, the key insight is that the codomain of our homomorphism should be
+some object that supports constant-time, right-associative "concatenation." Such
+a thing is necessarily fast to build, and its right-associativity ensures that
 building the eventual list will avoid the pathological $O(n^2)$ case.
 
 Thus our goal is refined to finding a constant-time, right-associative monoid.
@@ -1699,24 +1704,25 @@ homomorphism respects associativity. Thus we resign ourselves to rewriting
 
 ```agda
 open import Function using (_∘_; id)
-
-open Monoid
 open Fn
 
-∘-id : Set ℓ → Monoid _ _
-setoid (∘-id A) = prop-setoid A ⇒ prop-setoid A
-ε      (∘-id A)      = fn id                 λ { ≡.refl → refl }
-_∙_    (∘-id A) f g  = fn (func f ∘ func g)  λ { ≡.refl → refl }
-assoc     (∘-id A) f g h  ≡.refl  = refl
-identityˡ (∘-id A) f  ≡.refl      = refl
-identityʳ (∘-id A) f  ≡.refl      = refl
-∙-cong (∘-id A) {x} {y} {z} {w} x=y z=w {a} ≡.refl = begin
-  (func x ∘ func z) a  ≡⟨⟩
-  func x (func z a)    ≡⟨ x=y refl ⟩
-  func y (func z a)    ≡⟨ ≡.cong (func y) (z=w refl) ⟩
-  func y (func w a)    ≡⟨⟩
-  (func y ∘ func w) a  ∎
-  where open ≡-Reasoning
+module _ where
+  open Monoid
+
+  ∘-id : Set ℓ → Monoid _ _
+  setoid (∘-id A) = prop-setoid A ⇒ prop-setoid A
+  ε      (∘-id A)      = fn id                 λ { ≡.refl → refl }
+  _∙_    (∘-id A) f g  = fn (func f ∘ func g)  λ { ≡.refl → refl }
+  assoc     (∘-id A) f g h  ≡.refl  = refl
+  identityˡ (∘-id A) f  ≡.refl      = refl
+  identityʳ (∘-id A) f  ≡.refl      = refl
+  ∙-cong (∘-id A) {x} {y} {z} {w} x=y z=w {a} ≡.refl = begin
+    (func x ∘ func z) a  ≡⟨⟩
+    func x (func z a)    ≡⟨ x=y refl ⟩
+    func y (func z a)    ≡⟨ ≡.cong (func y) (z=w refl) ⟩
+    func y (func w a)    ≡⟨⟩
+    (func y ∘ func w) a  ∎
+    where open ≡-Reasoning
 -- FIXME
 ```
 
@@ -1769,31 +1775,41 @@ together, and construct the final list via `def:build`:
   _ = refl
 ```
 
-However, as this book is on the topic of correctness, we must give a proof that
+However, as this book is on the topic of correctness, we are still on the hook
+to actually *prove* that `def:build` and `def:hurry` work as promised. We will
+do this in two steps; first show that `def:build` is indeed a left-inverse of
+`def:hurry`. This fact follows immediately from the fact that `def:build`
+appends the unit of the list monoid:
 
+```agda
+  build∘hurry : (x : List A) → build (hurry x) ≡ x
+  build∘hurry = Monoid.identityʳ ++-[]
+```
 
+Our other proof burden is to show that `def:hurry` preserves all of the monoidal
+structure over lists, which you will not be surprised to see is exactly the
+homomorphism we've been searching for this whole time:
 
 ```agda
   open MonHom
-  open import Data.List.Properties
-    using (++-assoc)
 
   dlist-hom : MonHom (++-[] {A = A}) (dlist-mon A) hurry
-  preserves-ε  dlist-hom ≡.refl             = refl
-  preserves-∙  dlist-hom xs ys {zs} ≡.refl  = ++-assoc xs ys zs
-  f-cong       dlist-hom ≡.refl ≡.refl      = refl
-
-  dlist-hom′ : MonHom (dlist-mon A) (++-[] {A = A}) build
-  preserves-ε dlist-hom′ = refl
-  preserves-∙ dlist-hom′ f g =
-    begin
-      func f (func g [])
-    ≡⟨ {! cong f !} ⟩
-      func f [] ++ func g []
-    ∎
-    where open ≡-Reasoning
-  f-cong dlist-hom′ func-cong = func-cong refl
+  preserves-ε  dlist-hom ≡.refl = refl
+  preserves-∙  dlist-hom xs ys {zs} ≡.refl
+    = Monoid.assoc ++-[] xs ys zs
+  f-cong       dlist-hom ≡.refl ≡.refl = refl
 ```
+
+Hidden
+
+:     ```agda
+  module _ where
+    open Monoid (dlist-mon ℕ)
+      ```
+
+Recall that `def:dlist-hom` is (among other things) a proof that `bind:x y:hurry
+x ∙ y ≡ hurry (x ++ y)`, and when combined with `def:build∘hurry`, we get our
+desired elimination of `def:hurry`, leaving behind only the appended list.
 
 
 ## Wrapping Up
