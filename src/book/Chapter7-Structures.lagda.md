@@ -1807,9 +1807,10 @@ Hidden
     open Monoid (dlist-mon ℕ)
       ```
 
-Recall that `def:dlist-hom` is (among other things) a proof that `bind:x y:hurry
-x ∙ y ≡ hurry (x ++ y)`, and when combined with `def:build∘hurry`, we get our
-desired elimination of `def:hurry`, leaving behind only the appended list.
+Recall that `def:dlist-hom` is (among other things) a proof that `def:hurry`
+`x` `field:∙` `def:hurry` `y` `field:≈` `bind:x y:hurry (x ++ y)`, and when
+combined with `def:build∘hurry`, we get our desired elimination of `def:hurry`,
+leaving behind only the appended list.
 
 
 ## Wrapping Up
