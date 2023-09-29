@@ -228,7 +228,6 @@ $endif$
 $if(title)$
 \title{$title$$if(thanks)$\thanks{$thanks$}$endif$}
 $endif$
-$if(subtitle)$
 \usepackage{etoolbox}
 \makeatletter
 \providecommand{\subtitle}[1]{% add subtitle to \maketitle
@@ -236,7 +235,6 @@ $if(subtitle)$
 }
 \makeatother
 \subtitle{$subtitle$}
-$endif$
 \author{$for(author)$$author$$sep$ \and $endfor$}
 \date{$date$}
 
@@ -511,24 +509,51 @@ $endfor$
 }
 }
 
+\title{Certainty by Construction}
+\subtitle{Software \& Mathematics in Agda}
+\author{Sandy Maguire}
+\maketitle
+
 \thispagestyle{empty}
 \null\vfill
 
 \raggedright
 
-Copyright \textcopyright 2023, Sandy Maguire
+{\Small
+Cofree Press
+
+\quad
+
+First published 2023
+
+\quad
+
+Copyright \textcopyright\;2023, Sandy Maguire
 
 All rights reserved.
-\spaceMyBox
-Version 0.1.9 / 2023-09-01
 
+\quad
+
+Version 0.2.1 / 2023-09-28
+
+}
 
 \justify
 
-
 \clearpage
 \thispagestyle{empty}
-\quad
+\newcommand{\dedicationname}{Dedication}
+\pdfbookmark{\dedicationname}{dedication}
+
+\null\vfill
+\begin{center}
+{\large For Erin Jackes,} \\
+{\small who knows much about equality}
+\end{center}
+\vfill
+\vfill
+\vfill
+
 \clearpage
 
 
@@ -540,15 +565,15 @@ Version 0.1.9 / 2023-09-01
 \thispagestyle{empty}
 \null\vfill
 
-\settowidth\longest{\Large Then I would have felt sorry for the dear Lord.}
-\bigQuote{Albert Einstein}{
-  Then I would have felt sorry for the dear Lord. \\
-  The theory is correct.
+\settowidth\longest{\Large The first principle is that you must not fool yourself,}
+\bigQuote{Richard Feynman}{
+  The first principle is that you must not fool yourself,\\
+  and you are the easiest person to fool.
 }
 
 \justify
 
-\vfill\vfill
+\vfill\vfill\vfill
 
 % \tcbset{listing engine=listings}
 % \tcbset{no listing options}
@@ -559,8 +584,6 @@ $if(toc)$
 $if(toc-title)$
 \renewcommand*\contentsname{$toc-title$}
 $endif$
-$if(beamer)$
-$else$
 {
 $if(colorlinks)$
 \hypersetup{linkcolor=$if(toccolor)$$toccolor$$else$$endif$}
@@ -568,7 +591,6 @@ $endif$
 \setcounter{tocdepth}{$toc-depth$}
 \tableofcontents
 }
-$endif$
 $endif$
 $if(lof)$
 \listoffigures
