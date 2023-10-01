@@ -1,9 +1,43 @@
 # Isomorphisms
 
-```agda
+Hidden
+
+:   ```agda
 {-# OPTIONS --allow-unsolved-metas #-}
+    ```
+
+```agda
 module Chapter8-Isomorphisms where
 ```
+
+Prerequisites
+
+:   ```agda
+open import Chapter2-Numbers
+  using (ℕ; zero; suc; _+_; _*_; _^_)
+    ```
+
+:   ```agda
+open import Chapter3-Proofs
+  hiding (refl; sym; trans)
+-- TODO(sandy): do this in the proofs chapter!
+import Chapter3-Proofs as ≡
+    ```
+
+:   ```agda
+open import Chapter4-Relations
+  using (Level; lzero; _⊔_)
+    ```
+
+:   ```agda
+open import Chapter5-Modular-Arithmetic
+  using (equiv-to-preorder; ≡-is-equivalence; refl; sym; trans)
+    ```
+
+:   ```agda
+open import Chapter7-Structures
+  using (prop-setoid)
+    ```
 
 In this chapter we will discuss when are two *types* the same, in essence,
 looking for a suitable notion of equality for types themselves. Surprisingly,
@@ -40,7 +74,6 @@ ensure it matches the length of an array. We will look at examples of both of
 these use cases in a moment, but first we must define the type.
 
 ```agda
-open import Data.Nat as ℕ using (ℕ)
 private variable
   m n : ℕ
 
@@ -111,7 +144,6 @@ instead import an equivalently-defined version from the standard library:
 
 ```agda
 open import Data.Fin using (Fin; zero; suc)
-open import Data.Nat using (ℕ; zero; suc)
 ```
 
 ## Finites for Vector Lookup
@@ -131,9 +163,6 @@ definition of a vector is straightforward---every time you stick an element in,
 we increase its length type index:
 
 ```agda
-open import Level
-  renaming (zero to lzero; suc to lsuc; _⊔_ to _⊔l_)
-
 private variable
   ℓ : Level
 
@@ -148,9 +177,10 @@ As usual, rather than defining this type ourselves, we will use the equivalent
 definition from the standard library:
 
 ```agda
+open import Data.Vec
+  using (Vec; []; _∷_)
+
 module Example-Vectors where
-  open import Data.Vec using (Vec) public
-  open Vec public
 ```
 
 Now, given a vector, we can easily extract its length, simply by taking the
@@ -180,7 +210,7 @@ To illustrate this function, we can show that it works as expected:
 ```agda
   open import Data.Char
   open import Relation.Binary.PropositionalEquality
-    using (_≡_; refl)
+    using (_≡_)
 
   _ : lookup ('a' ∷ 'b' ∷ 'c' ∷ []) (suc zero) ≡ 'b'
   _ = refl
@@ -301,8 +331,8 @@ quickly come in handy. First, we can define the type itself, as a relation
 between two setoids:
 
 ```agda
-open import Relation.Binary
-  using (Setoid; _Preserves_⟶_)
+open import Chapter7-Structures
+  using (Setoid)
 
 private variable
   c₁ c₂ c₃ c₄ ℓ₁ ℓ₂ ℓ₃ ℓ₄ : Level
@@ -310,7 +340,7 @@ private variable
 record Iso
       (s₁ : Setoid c₁ ℓ₁)
       (s₂ : Setoid c₂ ℓ₂)
-      : Set (c₁ ⊔l c₂ ⊔l ℓ₁ ⊔l ℓ₂) where
+      : Set (c₁ ⊔ c₂ ⊔ ℓ₁ ⊔ ℓ₂) where
   constructor iso
 ```
 
@@ -337,8 +367,8 @@ relevant equalities:
     from : B → A
     from∘to  : (x : A) → from (to x) ≈₁ x
     to∘from  : (x : B) → to (from x) ≈₂ x
-    to-cong    : to    Preserves _≈₁_ ⟶ _≈₂_
-    from-cong  : from  Preserves _≈₂_ ⟶ _≈₁_
+    to-cong    : {x y : A} → x ≈₁ y → to x ≈₂ to y
+    from-cong  : {x y : B} → x ≈₂ y → from x ≈₁ from y
 ```
 
 One last thing that we'll pack inside the definition of `type:Iso` are
@@ -347,12 +377,12 @@ name `module:A-Reasoning` and `module:B-Reasoning`---corresponding to the types
 `A` and `B` for the respective carriers.
 
 ```agda
-  module A-Reasoning where
-    open import Relation.Binary.Reasoning.Setoid s₁
-      public
-  module B-Reasoning where
-    open import Relation.Binary.Reasoning.Setoid s₂
-      public
+  -- module A-Reasoning where
+  --   open import Relation.Binary.Reasoning.Setoid s₁
+  --     public
+  -- module B-Reasoning where
+  --   open import Relation.Binary.Reasoning.Setoid s₂
+  --     public
 ```
 
 While `type:Iso` is a good name for the record, and especially when doing
@@ -368,16 +398,12 @@ Before we go on to say too much more about isomorphisms, we can first show that
 import wrangling:
 
 ```agda
-open import Relation.Binary.PropositionalEquality
-  using ()
-  renaming (setoid to prop-setoid)
 
 open Iso
 
 module _ where
   open Example-Vectors
 
-  open Relation.Binary.PropositionalEquality using (refl; _≡_; cong)
   open import Function using (_∘_)
 ```
 
@@ -404,20 +430,20 @@ automatically fall out from computation.
   open import Data.Vec.Relation.Binary.Pointwise.Inductive
     using (Pointwise-≡⇒≡; ≡⇒Pointwise-≡)
 
-  vec-iso
-      : {A : Set c₁}
-      → vec-setoid (prop-setoid A) n
-      ↔ (prop-setoid (Fin n) ⇨ prop-setoid A)
-  func   (to  vec-iso x)  = lookup x
-  fcong  (to  vec-iso x)  = cong (lookup x)
-  from        vec-iso     = fromVec′ ∘ func
-  from∘to     vec-iso x
-    rewrite fromVec′∘toVec′ x
-      = ≋-refl (prop-setoid _)
-  to∘from vec-iso x {ix} refl = toVec′∘fromVec′ (func x) ix
-  to-cong vec-iso x refl rewrite Pointwise-≡⇒≡ x = refl
-  from-cong   (vec-iso {A = A}) {x} {y} f
-    = ≡⇒Pointwise-≡ (lemma _ (func x) (func y) λ { a → f refl })
+  -- vec-iso
+  --     : {A : Set c₁}
+  --     → vec-setoid (prop-setoid A) n
+  --     ↔ (prop-setoid (Fin n) ⇨ prop-setoid A)
+  -- func   (to  vec-iso x)  = lookup x
+  -- fcong  (to  vec-iso x)  = cong (lookup x)
+  -- from        vec-iso     = fromVec′ ∘ func
+  -- from∘to     vec-iso x
+  --   rewrite fromVec′∘toVec′ x
+  --     = ≋-refl (prop-setoid _)
+  -- to∘from vec-iso x {ix} ≡.refl = toVec′∘fromVec′ (func x) ix
+  -- to-cong vec-iso x ≡.refl rewrite Pointwise-≡⇒≡ x = refl
+  -- from-cong   (vec-iso {A = A}) {x} {y} f
+  --   = ≡⇒Pointwise-≡ (lemma _ (func x) (func y) λ { a → f refl })
 ```
 
 In order to show the `def:lemma`, we must prove that every element in
@@ -425,16 +451,16 @@ In order to show the `def:lemma`, we must prove that every element in
 via induction on `n`, and proceeds methodically:
 
 ```agda
-    where
-      lemma
-          : ∀ n → (x y : Fin n → A)
-          → (f : ∀ a → x a ≡ y a)
-          → fromVec′ x ≡ fromVec′ y
-      lemma zero x y f = refl
-      lemma (suc n) x y f
-        rewrite f zero
-        rewrite lemma n (x ∘ suc) (y ∘ suc) (f ∘ suc)
-          = refl
+    -- where
+    --   lemma
+    --       : ∀ n → (x y : Fin n → A)
+    --       → (f : ∀ a → x a ≡ y a)
+    --       → fromVec′ x ≡ fromVec′ y
+    --   lemma zero x y f = refl
+    --   lemma (suc n) x y f
+    --     rewrite f zero
+    --     rewrite lemma n (x ∘ suc) (y ∘ suc) (f ∘ suc)
+    --       = refl
 ```
 
 With our first taste of isomorphism, we are now ready to investigate them more
@@ -459,8 +485,8 @@ open import Relation.Binary using (Reflexive; Symmetric; Transitive)
 open import Function using (id; _∘_)
 
 ↔-refl : s₁ ↔ s₁
-↔-refl {s₁ = s} =
-  iso id id (λ x → Setoid.refl s) (λ x → Setoid.refl s) id id
+↔-refl {s₁ = s} = ?
+  -- iso id id (λ x → refl s) (λ x → refl s) id id
 ```
 
 Showing symmetry requires us only to change which function we're calling
@@ -482,20 +508,21 @@ module _ where
   open Iso
 
   ↔-trans : s₁ ↔ s₂ → s₂ ↔ s₃ → s₁ ↔ s₃
-  to    (↔-trans f g) = to g ∘ to f
-  from  (↔-trans f g) = from f ∘ from g
-  from∘to (↔-trans f g) x = begin
-    from f (from g (to g (to f x)))  ≈⟨ from-cong f (from∘to g _) ⟩
-    from f (to f x)                  ≈⟨ from∘to f x ⟩
-    x                                ∎
-    where open A-Reasoning f
-  to∘from (↔-trans f g) x = begin
-    to g (to f (from f (from g x)))  ≈⟨ to-cong g (to∘from f _) ⟩
-    to g (from g x)                  ≈⟨ to∘from g x ⟩
-    x                                ∎
-    where open B-Reasoning g
-  to-cong    (↔-trans f g) x≈y = to-cong    g (to-cong    f x≈y)
-  from-cong  (↔-trans f g) x≈y = from-cong  f (from-cong  g x≈y)
+  ↔-trans = ?
+  -- to    (↔-trans f g) = to g ∘ to f
+  -- from  (↔-trans f g) = from f ∘ from g
+  -- from∘to (↔-trans f g) x = begin
+  --   from f (from g (to g (to f x)))  ≈⟨ from-cong f (from∘to g _) ⟩
+  --   from f (to f x)                  ≈⟨ from∘to f x ⟩
+  --   x                                ∎
+  --   where open A-Reasoning f
+  -- to∘from (↔-trans f g) x = begin
+  --   to g (to f (from f (from g x)))  ≈⟨ to-cong g (to∘from f _) ⟩
+  --   to g (from g x)                  ≈⟨ to∘from g x ⟩
+  --   x                                ∎
+  --   where open B-Reasoning g
+  -- to-cong    (↔-trans f g) x≈y = to-cong    g (to-cong    f x≈y)
+  -- from-cong  (↔-trans f g) x≈y = from-cong  f (from-cong  g x≈y)
 ```
 
 These three proofs together show that `type:_↔_` is indeed an equivalence
@@ -526,7 +553,7 @@ definition for finite types by way of `type:_Has_Elements`:
 open import Data.Fin using (Fin; zero; suc)
 
 module Sandbox-Finite where
-  _Has_Elements : Setoid c₁ ℓ₁ → ℕ → Set (c₁ ⊔l ℓ₁)
+  _Has_Elements : Setoid c₁ ℓ₁ → ℕ → Set (c₁ ⊔ ℓ₁)
   s Has cardinality Elements = s ↔ prop-setoid (Fin cardinality)
 ```
 
@@ -537,7 +564,6 @@ can show that `type:Bool` has two inhabitants:
   open import Data.Bool using (Bool; true; false)
   open Iso
 
-  open Relation.Binary.PropositionalEquality using (refl; cong)
 
   bool-fin : prop-setoid Bool Has 2 Elements
   to         bool-fin false       = zero
@@ -548,8 +574,8 @@ can show that `type:Bool` has two inhabitants:
   from∘to    bool-fin true        = refl
   to∘from    bool-fin zero        = refl
   to∘from    bool-fin (suc zero)  = refl
-  to-cong    bool-fin refl        = refl
-  from-cong  bool-fin refl        = refl
+  to-cong    bool-fin ≡.refl        = refl
+  from-cong  bool-fin ≡.refl        = refl
 ```
 
 While we don't need an isomorphism to convince ourselves that `type:Bool` does
@@ -583,15 +609,15 @@ the product setoid given by `def:×-preserves-↔`:
   open import Data.Product.Relation.Binary.Pointwise.NonDependent
     using (×-setoid)
 
-  ×-preserves-↔ : s₁ ↔ s₂ → s₃ ↔ s₄ → ×-setoid s₁ s₃ ↔ ×-setoid s₂ s₄
-  to    (×-preserves-↔ s t) = ×.map (to s) (to t)
-  from  (×-preserves-↔ s t) = ×.map (from s) (from t)
-  from∘to (×-preserves-↔ s t) (x , y) =
-    from∘to s x , from∘to t y
-  to∘from (×-preserves-↔ s t) (x , y) =
-    to∘from s x , to∘from t y
-  to-cong    (×-preserves-↔ s t) = ×.map (to-cong s) (to-cong t)
-  from-cong  (×-preserves-↔ s t) = ×.map (from-cong s) (from-cong t)
+  -- ×-preserves-↔ : s₁ ↔ s₂ → s₃ ↔ s₄ → ×-setoid s₁ s₃ ↔ ×-setoid s₂ s₄
+  -- to    (×-preserves-↔ s t) = ×.map (to s) (to t)
+  -- from  (×-preserves-↔ s t) = ×.map (from s) (from t)
+  -- from∘to (×-preserves-↔ s t) (x , y) =
+  --   from∘to s x , from∘to t y
+  -- to∘from (×-preserves-↔ s t) (x , y) =
+  --   to∘from s x , to∘from t y
+  -- to-cong    (×-preserves-↔ s t) = ×.map (to-cong s) (to-cong t)
+  -- from-cong  (×-preserves-↔ s t) = ×.map (from-cong s) (from-cong t)
 ```
 
 Similarly, we can give the same treatment to `type:_⊎_`, as in
@@ -604,17 +630,17 @@ Similarly, we can give the same treatment to `type:_⊎_`, as in
   open import Data.Sum using (_⊎_; inj₁; inj₂)
   import Data.Sum as +
 
-  ⊎-preserves-↔ : s₁ ↔ s₂ → s₃ ↔ s₄ → ⊎-setoid s₁ s₃ ↔ ⊎-setoid s₂ s₄
-  to         (⊎-preserves-↔ s t)           = +.map (to s) (to t)
-  from       (⊎-preserves-↔ s t)           = +.map (from s) (from t)
-  from∘to    (⊎-preserves-↔ s t) (inj₁ x)  = inj₁ (from∘to s x)
-  from∘to    (⊎-preserves-↔ s t) (inj₂ y)  = inj₂ (from∘to t y)
-  to∘from    (⊎-preserves-↔ s t) (inj₁ x)  = inj₁ (to∘from s x)
-  to∘from    (⊎-preserves-↔ s t) (inj₂ y)  = inj₂ (to∘from t y)
-  to-cong    (⊎-preserves-↔ s t) (inj₁ x)  = inj₁ (to-cong s x)
-  to-cong    (⊎-preserves-↔ s t) (inj₂ x)  = inj₂ (to-cong t x)
-  from-cong  (⊎-preserves-↔ s t) (inj₁ x)  = inj₁ (from-cong s x)
-  from-cong  (⊎-preserves-↔ s t) (inj₂ x)  = inj₂ (from-cong t x)
+  -- ⊎-preserves-↔ : s₁ ↔ s₂ → s₃ ↔ s₄ → ⊎-setoid s₁ s₃ ↔ ⊎-setoid s₂ s₄
+  -- to         (⊎-preserves-↔ s t)           = +.map (to s) (to t)
+  -- from       (⊎-preserves-↔ s t)           = +.map (from s) (from t)
+  -- from∘to    (⊎-preserves-↔ s t) (inj₁ x)  = inj₁ (from∘to s x)
+  -- from∘to    (⊎-preserves-↔ s t) (inj₂ y)  = inj₂ (from∘to t y)
+  -- to∘from    (⊎-preserves-↔ s t) (inj₁ x)  = inj₁ (to∘from s x)
+  -- to∘from    (⊎-preserves-↔ s t) (inj₂ y)  = inj₂ (to∘from t y)
+  -- to-cong    (⊎-preserves-↔ s t) (inj₁ x)  = inj₁ (to-cong s x)
+  -- to-cong    (⊎-preserves-↔ s t) (inj₂ x)  = inj₂ (to-cong t x)
+  -- from-cong  (⊎-preserves-↔ s t) (inj₁ x)  = inj₁ (from-cong s x)
+  -- from-cong  (⊎-preserves-↔ s t) (inj₂ x)  = inj₂ (from-cong t x)
 ```
 
 Given two finite numbers, we can combine them in either of two every-day
@@ -627,7 +653,6 @@ as a sum type, we can show this "reinterpretation" of a sum of two `type:Fin`s
 via `def:join`.
 
 ```agda
-  open Data.Nat using (_*_; _+_)
   open Data.Fin using (inject+; raise)
 
   module Join-SplitAt where
@@ -659,16 +684,16 @@ you of an isomorphism, and indeed, there is such an isomorphism given by
   open Data.Fin using (splitAt; join)
   open import Data.Fin.Properties
 
-  join-splitAt-iso
-      : prop-setoid (Fin (m + n))
-      ↔ ⊎-setoid (prop-setoid (Fin m)) (prop-setoid (Fin n))
-  to         join-splitAt-iso = splitAt _
-  from       join-splitAt-iso = join _ _
-  from∘to    (join-splitAt-iso {m = m}) = join-splitAt m _
-  to∘from    join-splitAt-iso x = ≡⇒Pointwise-≡ (splitAt-join _ _ x)
-  to-cong    join-splitAt-iso refl        = ⊎-refl refl refl
-  from-cong  join-splitAt-iso (inj₁ refl) = refl
-  from-cong  join-splitAt-iso (inj₂ refl) = refl
+  -- join-splitAt-iso
+  --     : prop-setoid (Fin (m + n))
+  --     ↔ ⊎-setoid (prop-setoid (Fin m)) (prop-setoid (Fin n))
+  -- to         join-splitAt-iso = splitAt _
+  -- from       join-splitAt-iso = join _ _
+  -- from∘to    (join-splitAt-iso {m = m}) = join-splitAt m _
+  -- to∘from    join-splitAt-iso x = ≡⇒Pointwise-≡ (splitAt-join _ _ x)
+  -- to-cong    join-splitAt-iso ≡.refl        = ⊎-refl refl refl
+  -- from-cong  join-splitAt-iso (inj₁ ≡.refl) = refl
+  -- from-cong  join-splitAt-iso (inj₂ ≡.refl) = refl
 ```
 
 Where there is a mathematical object for coproducts, there is usually one
@@ -714,16 +739,16 @@ products, as in `def:combine-remQuot-iso`:
 ```agda
   open import Data.Fin using (combine; remQuot)
 
-  combine-remQuot-iso
-      : prop-setoid (Fin (m * n))
-      ↔ ×-setoid (prop-setoid (Fin m)) (prop-setoid (Fin n))
-  to       combine-remQuot-iso              = remQuot _
-  from     combine-remQuot-iso (fst , snd)  = combine fst snd
-  from∘to  (combine-remQuot-iso {m = m}) x  = combine-remQuot {m} _ x
-  to∘from  combine-remQuot-iso (x , y) with remQuot-combine x y
-  ... | p = cong proj₁ p , cong proj₂ p
-  to-cong    combine-remQuot-iso refl           = refl , refl
-  from-cong  combine-remQuot-iso (refl , refl)  = refl
+  -- combine-remQuot-iso
+  --     : prop-setoid (Fin (m * n))
+  --     ↔ ×-setoid (prop-setoid (Fin m)) (prop-setoid (Fin n))
+  -- to       combine-remQuot-iso              = remQuot _
+  -- from     combine-remQuot-iso (fst , snd)  = combine fst snd
+  -- from∘to  (combine-remQuot-iso {m = m}) x  = combine-remQuot {m} _ x
+  -- to∘from  combine-remQuot-iso (x , y) with remQuot-combine x y
+  -- ... | p = cong proj₁ p , cong proj₂ p
+  -- to-cong    combine-remQuot-iso ≡.refl           = refl , refl
+  -- from-cong  combine-remQuot-iso (≡.refl , ≡.refl)  = refl
 ```
 
 At long last, we are now ready to show that coproducts add the cardinalities of
@@ -731,10 +756,10 @@ their injections. The trick is to map both finite isomorphisms across the
 `type:_⊎_`, and then invoke `def:join-splitAt-iso`, as in the following:
 
 ```agda
-  ⊎-fin : s₁ Has m Elements → s₂ Has n Elements
-        → ⊎-setoid s₁ s₂ Has m + n Elements
-  ⊎-fin fin₁ fin₂
-    = ↔-trans (⊎-preserves-↔ fin₁ fin₂) (↔-sym join-splitAt-iso)
+  -- ⊎-fin : s₁ Has m Elements → s₂ Has n Elements
+  --       → ⊎-setoid s₁ s₂ Has m + n Elements
+  -- ⊎-fin fin₁ fin₂
+  --   = ↔-trans (⊎-preserves-↔ fin₁ fin₂) (↔-sym join-splitAt-iso)
 ```
 
 We can do a similar trick to show that `type:_×_` multiplies the cardinalities
@@ -742,10 +767,10 @@ of its projections, albeit invoking `def:×-preserves-↔` and
 `def:combine-remQuot-iso` instead:
 
 ```agda
-  ×-fin : s₁ Has m Elements → s₂ Has n Elements
-        → ×-setoid s₁ s₂ Has m * n Elements
-  ×-fin fin₁ fin₂
-    = ↔-trans (×-preserves-↔ fin₁ fin₂) (↔-sym combine-remQuot-iso)
+  -- ×-fin : s₁ Has m Elements → s₂ Has n Elements
+  --       → ×-setoid s₁ s₂ Has m * n Elements
+  -- ×-fin fin₁ fin₂
+  --   = ↔-trans (×-preserves-↔ fin₁ fin₂) (↔-sym combine-remQuot-iso)
 ```
 
 
@@ -773,35 +798,35 @@ open import Function.Equality
   using (_⇨_)
   renaming (_⟨$⟩_ to func; cong to fcong)
 
-→-preserves-↔
-    : s₁ ↔ s₂ → s₃ ↔ s₄
-    → (s₁ ⇨ s₃) ↔ (s₂ ⇨ s₄)
-func   (to (→-preserves-↔ s t) f) = to t ∘ func f ∘ from s
-fcong  (to (→-preserves-↔ s t) f) = to-cong t ∘ fcong f ∘ from-cong s
-func   (from (→-preserves-↔ s t) f) = from t ∘ func f ∘ to s
-fcong  (from (→-preserves-↔ s t) f) = from-cong t ∘ fcong f ∘ to-cong s
-from∘to (→-preserves-↔ s t) f {x} {y} a = begin
-  from t (to t (func f (from s (to s x))))  ≈⟨ from∘to t _ ⟩
-  func f (from s (to s x))                  ≈⟨ fcong f (from∘to s x) ⟩
-  func f x                                  ≈⟨ fcong f a ⟩
-  func f y                                  ∎
-  where open A-Reasoning t
-to∘from (→-preserves-↔ s t) f {x} {y} a = begin
-  to t (from t (func f (to s (from s x))))  ≈⟨ to∘from t _ ⟩
-  func f (to s (from s x))                  ≈⟨ fcong f (to∘from s x) ⟩
-  func f x                                  ≈⟨ fcong f a ⟩
-  func f y                                  ∎
-  where open B-Reasoning t
-to-cong (→-preserves-↔ {s₁ = s₁} s t) {g} {h} f {x} {y} a = begin
-  to t (func g (from s x)) ≈⟨ to-cong t (fcong g (from-cong s a)) ⟩
-  to t (func g (from s y)) ≈⟨ to-cong t (f (refl s₁)) ⟩
-  to t (func h (from s y)) ∎
-  where open B-Reasoning t
-from-cong (→-preserves-↔ {s₂ = s₂} s t) {g} {h} f {x} {y} a = begin
-  from t (func g (to s x)) ≈⟨ from-cong t (fcong g (to-cong s a)) ⟩
-  from t (func g (to s y)) ≈⟨ from-cong t (f (refl s₂)) ⟩
-  from t (func h (to s y)) ∎
-  where open A-Reasoning t
+-- →-preserves-↔
+--     : s₁ ↔ s₂ → s₃ ↔ s₄
+--     → (s₁ ⇨ s₃) ↔ (s₂ ⇨ s₄)
+-- func   (to (→-preserves-↔ s t) f) = to t ∘ func f ∘ from s
+-- fcong  (to (→-preserves-↔ s t) f) = to-cong t ∘ fcong f ∘ from-cong s
+-- func   (from (→-preserves-↔ s t) f) = from t ∘ func f ∘ to s
+-- fcong  (from (→-preserves-↔ s t) f) = from-cong t ∘ fcong f ∘ to-cong s
+-- from∘to (→-preserves-↔ s t) f {x} {y} a = begin
+--   from t (to t (func f (from s (to s x))))  ≈⟨ from∘to t _ ⟩
+--   func f (from s (to s x))                  ≈⟨ fcong f (from∘to s x) ⟩
+--   func f x                                  ≈⟨ fcong f a ⟩
+--   func f y                                  ∎
+--   where open A-Reasoning t
+-- to∘from (→-preserves-↔ s t) f {x} {y} a = begin
+--   to t (from t (func f (to s (from s x))))  ≈⟨ to∘from t _ ⟩
+--   func f (to s (from s x))                  ≈⟨ fcong f (to∘from s x) ⟩
+--   func f x                                  ≈⟨ fcong f a ⟩
+--   func f y                                  ∎
+--   where open B-Reasoning t
+-- to-cong (→-preserves-↔ {s₁ = s₁} s t) {g} {h} f {x} {y} a = begin
+--   to t (func g (from s x)) ≈⟨ to-cong t (fcong g (from-cong s a)) ⟩
+--   to t (func g (from s y)) ≈⟨ to-cong t (f (refl s₁)) ⟩
+--   to t (func h (from s y)) ∎
+--   where open B-Reasoning t
+-- from-cong (→-preserves-↔ {s₂ = s₂} s t) {g} {h} f {x} {y} a = begin
+--   from t (func g (to s x)) ≈⟨ from-cong t (fcong g (to-cong s a)) ⟩
+--   from t (func g (to s y)) ≈⟨ from-cong t (f (refl s₂)) ⟩
+--   from t (func h (to s y)) ∎
+  -- where open A-Reasoning t
 ```
 
 Now, given a setoid over elements, we can construct a setoid over vectors where
@@ -820,10 +845,7 @@ We can prove this in three parts; first by showing that a vector of length zero
 has cardinality one:
 
 ```agda
-open Data.Nat using (_^_)
 open Sandbox-Finite
-
-open Example-Vectors using (Vec; []; _∷_)
 
 module _ where
   import Relation.Binary.PropositionalEquality as ≡
@@ -832,42 +854,42 @@ module _ where
     using ([]; _∷_; ≋-refl)
     renaming (≋-setoid to vec-setoid)
 
-  vec-fin₀ : vec-setoid s₁ 0 Has 1 Elements
-  to         vec-fin₀ []                 = zero
-  from       vec-fin₀ zero               = []
-  from∘to    vec-fin₀ []                 = []
-  to∘from    vec-fin₀ zero               = ≡.refl
-  to-cong    vec-fin₀ []                 = ≡.refl
-  from-cong  (vec-fin₀ {s₁ = s}) ≡.refl  = ≋-refl s
+  -- vec-fin₀ : vec-setoid s₁ 0 Has 1 Elements
+  -- to         vec-fin₀ []                 = zero
+  -- from       vec-fin₀ zero               = []
+  -- from∘to    vec-fin₀ []                 = []
+  -- to∘from    vec-fin₀ zero               = ≡.refl
+  -- to-cong    vec-fin₀ []                 = ≡.refl
+  -- from-cong  (vec-fin₀ {s₁ = s}) ≡.refl  = ≋-refl s
 ```
 
 Then, by showing a lemma that is there an isomorphism between `type:Vec A (suc
 n)` and `type:A × Vec A n`:
 
 ```agda
-  vec-rep
-      : vec-setoid s₁ (suc n)
-        ↔ ×-setoid s₁ (vec-setoid s₁ n)
-  to vec-rep    (x ∷ xs)                     = x , xs
-  from vec-rep  (x , xs)                     = x ∷ xs
-  from∘to       (vec-rep {s₁ = s}) (x ∷ xs)  = refl s ∷ ≋-refl s
-  to∘from       (vec-rep {s₁ = s}) (x , xs)  = refl s , ≋-refl s
-  to-cong       (vec-rep {s₁ = s}) (x ∷ xs)  = x , xs
-  from-cong     (vec-rep {s₁ = s}) (x , xs)  = x ∷ xs
+  -- vec-rep
+  --     : vec-setoid s₁ (suc n)
+  --       ↔ ×-setoid s₁ (vec-setoid s₁ n)
+  -- to vec-rep    (x ∷ xs)                     = x , xs
+  -- from vec-rep  (x , xs)                     = x ∷ xs
+  -- from∘to       (vec-rep {s₁ = s}) (x ∷ xs)  = refl s ∷ ≋-refl s
+  -- to∘from       (vec-rep {s₁ = s}) (x , xs)  = refl s , ≋-refl s
+  -- to-cong       (vec-rep {s₁ = s}) (x ∷ xs)  = x , xs
+  -- from-cong     (vec-rep {s₁ = s}) (x , xs)  = x ∷ xs
 ```
 
 We can combine these two facts into the desired proof that vectors have an
 exponential cardinality:
 
 ```agda
-  vec-fin
-    : s₁ Has m Elements
-    → vec-setoid s₁ n Has (m ^ n) Elements
-  vec-fin {n = zero}   s = vec-fin₀
-  vec-fin {n = suc n}  s
-    = ↔-trans vec-rep
-    ( ↔-trans (×-preserves-↔ s (vec-fin s))
-              (↔-sym combine-remQuot-iso))
+  -- vec-fin
+  --   : s₁ Has m Elements
+  --   → vec-setoid s₁ n Has (m ^ n) Elements
+  -- vec-fin {n = zero}   s = vec-fin₀
+  -- vec-fin {n = suc n}  s
+  --   = ↔-trans vec-rep
+  --   ( ↔-trans (×-preserves-↔ s (vec-fin s))
+  --             (↔-sym combine-remQuot-iso))
 ```
 
 And now, to tie everything together, we can show that functions themselves also
@@ -879,12 +901,12 @@ length `m`. Finally, we know the cardinality of such a vector, as shown just now
 by `def:vec-fin`.
 
 ```agda
-  →-fin : s₁ Has m Elements → s₂ Has n Elements
-        → (s₁ ⇨ s₂) Has (n ^ m) Elements
-  →-fin s t
-    = ↔-trans (→-preserves-↔ s t)
-    ( ↔-trans (↔-sym vec-iso)
-              (vec-fin ↔-refl))
+  -- →-fin : s₁ Has m Elements → s₂ Has n Elements
+  --       → (s₁ ⇨ s₂) Has (n ^ m) Elements
+  -- →-fin s t = ?
+    -- = ↔-trans (→-preserves-↔ s t)
+    -- ( ↔-trans (↔-sym vec-iso)
+    --           (vec-fin ↔-refl))
 ```
 
 
@@ -1006,7 +1028,7 @@ that fact to induce an isomorphism:
 
   open import Data.Maybe
 
-  record MemoTrie {ℓ₂ : Level} (s : Setoid c₁ ℓ₁) (B : Set ℓ₂) : Set (ℓ₁ ⊔l ℓ₂ ⊔l c₁) where
+  record MemoTrie {ℓ₂ : Level} (s : Setoid c₁ ℓ₁) (B : Set ℓ₂) : Set (ℓ₁ ⊔ ℓ₂ ⊔ c₁) where
     constructor mt
     field
       func : s .Carrier → B
