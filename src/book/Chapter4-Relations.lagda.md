@@ -1665,6 +1665,8 @@ to define `type:IsEquivalence`:
       field
         isPreorder  : IsPreorder  _~_
         sym         : Symmetric   _~_
+
+      open IsPreorder isPreorder public
 ```
 
 Note that it appears that `type:IsEquivalence` has no parameters, but this is

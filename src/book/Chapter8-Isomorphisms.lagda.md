@@ -26,7 +26,6 @@ import Chapter3-Proofs as ≡
 
 :   ```agda
 open import Chapter4-Relations
-  using (Level; lzero; _⊔_)
     ```
 
 :   ```agda
@@ -36,7 +35,7 @@ open import Chapter5-Modular-Arithmetic
 
 :   ```agda
 open import Chapter7-Structures
-  using (prop-setoid)
+  hiding (length)
     ```
 
 In this chapter we will discuss when are two *types* the same, in essence,
@@ -208,11 +207,7 @@ type error to request a value beyond the bounds of the array:
 To illustrate this function, we can show that it works as expected:
 
 ```agda
-  open import Data.Char
-  open import Relation.Binary.PropositionalEquality
-    using (_≡_)
-
-  _ : lookup ('a' ∷ 'b' ∷ 'c' ∷ []) (suc zero) ≡ 'b'
+  _ : lookup (6 ∷ 3 ∷ 5 ∷ []) (suc zero) ≡ 3
   _ = refl
 ```
 
@@ -223,7 +218,7 @@ languages, as `def:_[_]`:
   _[_] : Vec A n → Fin n → A
   _[_] = lookup
 
-  _ : ('a' ∷ 'b' ∷ 'c' ∷ []) [ suc (suc zero) ] ≡ 'c'
+  _ : (6 ∷ 3 ∷ 5 ∷ []) [ suc (suc zero) ] ≡ 5
   _ = refl
 ```
 
@@ -267,8 +262,6 @@ The other direction is slightly more subtle, and requires pattern matching on
 the size of the vector:
 
 ```agda
-  open import Function using (_∘_)
-
   fromVec′ : Vec′ A n → Vec A n
   fromVec′ {n = zero}   v = []
   fromVec′ {n = suc n}  v = v zero ∷ fromVec′ (v ∘ suc)  -- ! 1
@@ -331,9 +324,6 @@ quickly come in handy. First, we can define the type itself, as a relation
 between two setoids:
 
 ```agda
-open import Chapter7-Structures
-  using (Setoid)
-
 private variable
   c₁ c₂ c₃ c₄ ℓ₁ ℓ₂ ℓ₃ ℓ₄ : Level
 
@@ -377,12 +367,12 @@ name `module:A-Reasoning` and `module:B-Reasoning`---corresponding to the types
 `A` and `B` for the respective carriers.
 
 ```agda
-  -- module A-Reasoning where
-  --   open import Relation.Binary.Reasoning.Setoid s₁
-  --     public
-  -- module B-Reasoning where
-  --   open import Relation.Binary.Reasoning.Setoid s₂
-  --     public
+  module A-Reasoning where
+    open Preorder-Reasoning (IsEquivalence.isPreorder (Setoid.isEquivalence s₁))
+      public
+  module B-Reasoning where
+    open Preorder-Reasoning (IsEquivalence.isPreorder (Setoid.isEquivalence s₂))
+      public
 ```
 
 While `type:Iso` is a good name for the record, and especially when doing
@@ -481,12 +471,9 @@ private variable
   s₃ : Setoid c₃ ℓ₃
   s₄ : Setoid c₄ ℓ₄
 
-open import Relation.Binary using (Reflexive; Symmetric; Transitive)
-open import Function using (id; _∘_)
-
 ↔-refl : s₁ ↔ s₁
-↔-refl {s₁ = s} = ?
-  -- iso id id (λ x → refl s) (λ x → refl s) id id
+↔-refl {s₁ = s} =
+  iso id id (λ x → Setoid.refl s) (λ x → Setoid.refl s) id id
 ```
 
 Showing symmetry requires us only to change which function we're calling
@@ -508,21 +495,20 @@ module _ where
   open Iso
 
   ↔-trans : s₁ ↔ s₂ → s₂ ↔ s₃ → s₁ ↔ s₃
-  ↔-trans = ?
-  -- to    (↔-trans f g) = to g ∘ to f
-  -- from  (↔-trans f g) = from f ∘ from g
-  -- from∘to (↔-trans f g) x = begin
-  --   from f (from g (to g (to f x)))  ≈⟨ from-cong f (from∘to g _) ⟩
-  --   from f (to f x)                  ≈⟨ from∘to f x ⟩
-  --   x                                ∎
-  --   where open A-Reasoning f
-  -- to∘from (↔-trans f g) x = begin
-  --   to g (to f (from f (from g x)))  ≈⟨ to-cong g (to∘from f _) ⟩
-  --   to g (from g x)                  ≈⟨ to∘from g x ⟩
-  --   x                                ∎
-  --   where open B-Reasoning g
-  -- to-cong    (↔-trans f g) x≈y = to-cong    g (to-cong    f x≈y)
-  -- from-cong  (↔-trans f g) x≈y = from-cong  f (from-cong  g x≈y)
+  to    (↔-trans f g) = to g ∘ to f
+  from  (↔-trans f g) = from f ∘ from g
+  from∘to (↔-trans f g) x = begin
+    from f (from g (to g (to f x)))  ≈⟨ from-cong f (from∘to g _) ⟩
+    from f (to f x)                  ≈⟨ from∘to f x ⟩
+    x                                ∎
+    where open A-Reasoning f
+  to∘from (↔-trans f g) x = begin
+    to g (to f (from f (from g x)))  ≈⟨ to-cong g (to∘from f _) ⟩
+    to g (from g x)                  ≈⟨ to∘from g x ⟩
+    x                                ∎
+    where open B-Reasoning g
+  to-cong    (↔-trans f g) x≈y = to-cong    g (to-cong    f x≈y)
+  from-cong  (↔-trans f g) x≈y = from-cong  f (from-cong  g x≈y)
 ```
 
 These three proofs together show that `type:_↔_` is indeed an equivalence
@@ -530,12 +516,10 @@ relation, although we must restrict the levels on both sides to be the same in
 order for the standard machinery to agree with this fact:
 
 ```agda
-open Relation.Binary using (IsEquivalence)
-
 ↔-equiv : IsEquivalence (_↔_ {c₁ = c₁} {ℓ₁ = ℓ₁})
-IsEquivalence.refl   ↔-equiv = ↔-refl
-IsEquivalence.sym    ↔-equiv = ↔-sym
-IsEquivalence.trans  ↔-equiv = ↔-trans
+IsPreorder.refl   (IsEquivalence.isPreorder ↔-equiv) = ↔-refl
+IsPreorder.trans  (IsEquivalence.isPreorder ↔-equiv) = ↔-trans
+IsEquivalence.sym ↔-equiv = ↔-sym
 ```
 
 
@@ -605,42 +589,68 @@ the product setoid given by `def:×-preserves-↔`:
 ```agda
   open import Data.Product using (_×_; _,_; proj₁; proj₂)
   import Data.Product as ×
+  open Setoid
+  open IsEquivalence
+  open IsPreorder
 
-  open import Data.Product.Relation.Binary.Pointwise.NonDependent
-    using (×-setoid)
+--   record -×- (s₁ : Setoid c₁ ℓ₁) (s₂ : Setoid c₂ ℓ₂) : Set where
+--     field
+--       ≈-proj₁ :
+  ×-setoid : Setoid c₁ ℓ₁ → Setoid c₂ ℓ₂ → Setoid _ _
+  Carrier (×-setoid s₁ s₂) = s₁ .Carrier × s₂ .Carrier
+  _≈_ (×-setoid s₁ s₂) (a₁ , b₁) (a₂ , b₂)
+    = s₁ ._≈_ a₁ a₂
+    × s₂ ._≈_ b₁ b₂
+  refl (isPreorder (isEquivalence (×-setoid s₁ s₂)))
+    = Setoid.refl s₁ , Setoid.refl s₂
+  trans (isPreorder (isEquivalence (×-setoid s₁ s₂))) (a₁₂ , b₁₂) (a₂₃ , b₂₃)
+    = Setoid.trans s₁ a₁₂ a₂₃ , Setoid.trans s₂ b₁₂ b₂₃
+  sym (isEquivalence (×-setoid s₁ s₂)) (a , b)
+    = Setoid.sym s₁ a , Setoid.sym s₂ b
 
-  -- ×-preserves-↔ : s₁ ↔ s₂ → s₃ ↔ s₄ → ×-setoid s₁ s₃ ↔ ×-setoid s₂ s₄
-  -- to    (×-preserves-↔ s t) = ×.map (to s) (to t)
-  -- from  (×-preserves-↔ s t) = ×.map (from s) (from t)
-  -- from∘to (×-preserves-↔ s t) (x , y) =
-  --   from∘to s x , from∘to t y
-  -- to∘from (×-preserves-↔ s t) (x , y) =
-  --   to∘from s x , to∘from t y
-  -- to-cong    (×-preserves-↔ s t) = ×.map (to-cong s) (to-cong t)
-  -- from-cong  (×-preserves-↔ s t) = ×.map (from-cong s) (from-cong t)
+  ×-preserves-↔ : s₁ ↔ s₂ → s₃ ↔ s₄ → ×-setoid s₁ s₃ ↔ ×-setoid s₂ s₄
+  to    (×-preserves-↔ s t) = ×.map (to s) (to t)
+  from  (×-preserves-↔ s t) = ×.map (from s) (from t)
+  from∘to (×-preserves-↔ s t) (x , y) =
+    from∘to s x , from∘to t y
+  to∘from (×-preserves-↔ s t) (x , y) =
+    to∘from s x , to∘from t y
+  to-cong    (×-preserves-↔ s t) = ×.map (to-cong s) (to-cong t)
+  from-cong  (×-preserves-↔ s t) = ×.map (from-cong s) (from-cong t)
 ```
 
 Similarly, we can give the same treatment to `type:_⊎_`, as in
 `def:⊎-preserves-↔`:
 
 ```agda
-  open import Data.Sum.Relation.Binary.Pointwise
-    using (⊎-setoid; ⊎-refl; inj₁; inj₂; ≡⇒Pointwise-≡)
-
   open import Data.Sum using (_⊎_; inj₁; inj₂)
   import Data.Sum as +
 
-  -- ⊎-preserves-↔ : s₁ ↔ s₂ → s₃ ↔ s₄ → ⊎-setoid s₁ s₃ ↔ ⊎-setoid s₂ s₄
-  -- to         (⊎-preserves-↔ s t)           = +.map (to s) (to t)
-  -- from       (⊎-preserves-↔ s t)           = +.map (from s) (from t)
-  -- from∘to    (⊎-preserves-↔ s t) (inj₁ x)  = inj₁ (from∘to s x)
-  -- from∘to    (⊎-preserves-↔ s t) (inj₂ y)  = inj₂ (from∘to t y)
-  -- to∘from    (⊎-preserves-↔ s t) (inj₁ x)  = inj₁ (to∘from s x)
-  -- to∘from    (⊎-preserves-↔ s t) (inj₂ y)  = inj₂ (to∘from t y)
-  -- to-cong    (⊎-preserves-↔ s t) (inj₁ x)  = inj₁ (to-cong s x)
-  -- to-cong    (⊎-preserves-↔ s t) (inj₂ x)  = inj₂ (to-cong t x)
-  -- from-cong  (⊎-preserves-↔ s t) (inj₁ x)  = inj₁ (from-cong s x)
-  -- from-cong  (⊎-preserves-↔ s t) (inj₂ x)  = inj₂ (from-cong t x)
+  data ⊎-Pointwise (s₁ : Setoid c₁ ℓ₁) (s₂ : Setoid c₂ ℓ₂) : Rel (s₁ .Carrier ⊎ s₂ .Carrier) (ℓ₁ ⊔ ℓ₂) where
+    inj₁ : {x y : s₁ .Carrier} → _≈_ s₁ x y → ⊎-Pointwise s₁ s₂ (inj₁ x) (inj₁ y)
+    inj₂ : {x y : s₂ .Carrier} → _≈_ s₂ x y → ⊎-Pointwise s₁ s₂ (inj₂ x) (inj₂ y)
+
+  ⊎-setoid : Setoid c₁ ℓ₁ → Setoid c₂ ℓ₂ → Setoid _ _
+  Carrier (⊎-setoid s₁ s₂) = s₁ .Carrier ⊎ s₂ .Carrier
+  _≈_ (⊎-setoid s₁ s₂) = ⊎-Pointwise s₁ s₂
+  refl (isPreorder (isEquivalence (⊎-setoid s₁ s₂))) {inj₁ x} = inj₁ (Setoid.refl s₁)
+  refl (isPreorder (isEquivalence (⊎-setoid s₁ s₂))) {inj₂ y} = inj₂ (Setoid.refl s₂)
+  trans (isPreorder (isEquivalence (⊎-setoid s₁ s₂))) (inj₁ x=y) (inj₁ y=z) = inj₁ (trans s₁ x=y y=z)
+  trans (isPreorder (isEquivalence (⊎-setoid s₁ s₂))) (inj₂ x=y) (inj₂ y=z) = inj₂ (trans s₂ x=y y=z)
+  sym (isEquivalence (⊎-setoid s₁ s₂)) (inj₁ x) = inj₁ (sym s₁ x)
+  sym (isEquivalence (⊎-setoid s₁ s₂)) (inj₂ x) = inj₂ (sym s₂ x)
+
+  ⊎-preserves-↔ : s₁ ↔ s₂ → s₃ ↔ s₄ → ⊎-setoid s₁ s₃ ↔ ⊎-setoid s₂ s₄
+  to         (⊎-preserves-↔ s t)           = +.map (to s) (to t)
+  from       (⊎-preserves-↔ s t)           = +.map (from s) (from t)
+  from∘to    (⊎-preserves-↔ s t) (inj₁ x)  = inj₁ (from∘to s x)
+  from∘to    (⊎-preserves-↔ s t) (inj₂ y)  = inj₂ (from∘to t y)
+  to∘from    (⊎-preserves-↔ s t) (inj₁ x)  = inj₁ (to∘from s x)
+  to∘from    (⊎-preserves-↔ s t) (inj₂ y)  = inj₂ (to∘from t y)
+  to-cong    (⊎-preserves-↔ s t) (inj₁ x)  = inj₁ (to-cong s x)
+  to-cong    (⊎-preserves-↔ s t) (inj₂ x)  = inj₂ (to-cong t x)
+  from-cong  (⊎-preserves-↔ s t) (inj₁ x)  = inj₁ (from-cong s x)
+  from-cong  (⊎-preserves-↔ s t) (inj₂ x)  = inj₂ (from-cong t x)
 ```
 
 Given two finite numbers, we can combine them in either of two every-day
@@ -684,16 +694,16 @@ you of an isomorphism, and indeed, there is such an isomorphism given by
   open Data.Fin using (splitAt; join)
   open import Data.Fin.Properties
 
-  -- join-splitAt-iso
-  --     : prop-setoid (Fin (m + n))
-  --     ↔ ⊎-setoid (prop-setoid (Fin m)) (prop-setoid (Fin n))
-  -- to         join-splitAt-iso = splitAt _
-  -- from       join-splitAt-iso = join _ _
-  -- from∘to    (join-splitAt-iso {m = m}) = join-splitAt m _
-  -- to∘from    join-splitAt-iso x = ≡⇒Pointwise-≡ (splitAt-join _ _ x)
-  -- to-cong    join-splitAt-iso ≡.refl        = ⊎-refl refl refl
-  -- from-cong  join-splitAt-iso (inj₁ ≡.refl) = refl
-  -- from-cong  join-splitAt-iso (inj₂ ≡.refl) = refl
+  join-splitAt-iso
+      : prop-setoid (Fin (m + n))
+      ↔ ⊎-setoid (prop-setoid (Fin m)) (prop-setoid (Fin n))
+  to         join-splitAt-iso = splitAt _
+  from       join-splitAt-iso = join _ _
+  from∘to    (join-splitAt-iso {m = m}) = join-splitAt m _
+  to∘from    join-splitAt-iso x = ? -- ≡⇒Pointwise-≡ (splitAt-join _ _ x)
+  to-cong    join-splitAt-iso ≡.refl        = ?
+  from-cong  join-splitAt-iso (inj₁ ≡.refl) = ≡.refl
+  from-cong  join-splitAt-iso (inj₂ ≡.refl) = ≡.refl
 ```
 
 Where there is a mathematical object for coproducts, there is usually one
@@ -993,57 +1003,57 @@ that fact to induce an isomorphism:
 ```agda
   -- TODO(sandy): I think this is a bad example
 
-  data Size : Set where
-    const : ℕ → Size
-    times : Size → Size → Size
-    plus  : Size → Size → Size
-    power : Size → Size → Size
+--   data Size : Set where
+--     const : ℕ → Size
+--     times : Size → Size → Size
+--     plus  : Size → Size → Size
+--     power : Size → Size → Size
 
-  open import Data.Nat using (_+_; _*_; _^_)
+--   open import Data.Nat using (_+_; _*_; _^_)
 
-  ∣_∣ : Size → ℕ
-  ∣ const  x    ∣ = x
-  ∣ times  x y  ∣ = ∣ x  ∣ *  ∣ y ∣
-  ∣ plus   x y  ∣ = ∣ x  ∣ +  ∣ y ∣
-  ∣ power  x y  ∣ = ∣ y  ∣ ^  ∣ x ∣
+--   ∣_∣ : Size → ℕ
+--   ∣ const  x    ∣ = x
+--   ∣ times  x y  ∣ = ∣ x  ∣ *  ∣ y ∣
+--   ∣ plus   x y  ∣ = ∣ x  ∣ +  ∣ y ∣
+--   ∣ power  x y  ∣ = ∣ y  ∣ ^  ∣ x ∣
 
-  open import Data.Product using (_×_)
-  open import Data.Sum using (_⊎_)
+--   open import Data.Product using (_×_)
+--   open import Data.Sum using (_⊎_)
 
-  ⌊_⌋ : Size → Set
-  ⌊ const x    ⌋ = Fin x
-  ⌊ times x y  ⌋ = ⌊ x ⌋ ×  ⌊ y ⌋
-  ⌊ plus  x y  ⌋ = ⌊ x ⌋ ⊎  ⌊ y ⌋
-  ⌊ power x y  ⌋ = ⌊ x ⌋ →  ⌊ y ⌋
+--   ⌊_⌋ : Size → Set
+--   ⌊ const x    ⌋ = Fin x
+--   ⌊ times x y  ⌋ = ⌊ x ⌋ ×  ⌊ y ⌋
+--   ⌊ plus  x y  ⌋ = ⌊ x ⌋ ⊎  ⌊ y ⌋
+--   ⌊ power x y  ⌋ = ⌊ x ⌋ →  ⌊ y ⌋
 
-  postulate
-    size-fin : (s : Size) → prop-setoid ⌊ s ⌋ Has ∣ s ∣ Elements
+--   postulate
+--     size-fin : (s : Size) → prop-setoid ⌊ s ⌋ Has ∣ s ∣ Elements
 
-  data Trie (B : Set ℓ) : Size → Set ℓ where
-    miss : ∀ {n} → Trie B n
-    one : B → Trie B (const 1)
-    or : ∀ {m n} → Trie B m → Trie B n → Trie B (plus m n)
-    and : ∀ {m n} → Trie (Trie B n) m → Trie B (times m n)
+--   data Trie (B : Set ℓ) : Size → Set ℓ where
+--     miss : ∀ {n} → Trie B n
+--     one : B → Trie B (const 1)
+--     or : ∀ {m n} → Trie B m → Trie B n → Trie B (plus m n)
+--     and : ∀ {m n} → Trie (Trie B n) m → Trie B (times m n)
 
 
-  open import Data.Maybe
+--   open import Data.Maybe
 
-  record MemoTrie {ℓ₂ : Level} (s : Setoid c₁ ℓ₁) (B : Set ℓ₂) : Set (ℓ₁ ⊔ ℓ₂ ⊔ c₁) where
-    constructor mt
-    field
-      func : s .Carrier → B
-      size : Size
-      s-fin : s Has ∣ size ∣ Elements
-      cache : Trie B size
+--   record MemoTrie {ℓ₂ : Level} (s : Setoid c₁ ℓ₁) (B : Set ℓ₂) : Set (ℓ₁ ⊔ ℓ₂ ⊔ c₁) where
+--     constructor mt
+--     field
+--       func : s .Carrier → B
+--       size : Size
+--       s-fin : s Has ∣ size ∣ Elements
+--       cache : Trie B size
 
-    key : s ↔ prop-setoid ⌊ size ⌋
-    key = ↔-trans s-fin (↔-sym (size-fin size))
+--     key : s ↔ prop-setoid ⌊ size ⌋
+--     key = ↔-trans s-fin (↔-sym (size-fin size))
 
-  lookup : ∀ {ℓ} {B : Set ℓ} → MemoTrie s₁ B → s₁ .Carrier → B × MemoTrie s₁ B
-  lookup (mt func₁ (const x) s-fin cache) a = {! !}
-  lookup (mt func₁ (times size size₁) s-fin cache) a = {! !}
-  lookup (mt func₁ (plus size size₁) s-fin cache) a = {! !}
-  lookup (mt func₁ (power size size₁) s-fin cache) a = {! !}
+  -- lookup : ∀ {ℓ} {B : Set ℓ} → MemoTrie s₁ B → s₁ .Carrier → B × MemoTrie s₁ B
+  -- lookup (mt func₁ (const x) s-fin cache) a = {! !}
+  -- lookup (mt func₁ (times size size₁) s-fin cache) a = {! !}
+  -- lookup (mt func₁ (plus size size₁) s-fin cache) a = {! !}
+  -- lookup (mt func₁ (power size size₁) s-fin cache) a = {! !}
 ```
 
 

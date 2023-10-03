@@ -1103,6 +1103,8 @@ record Setoid (c ℓ : Level) : Set (lsuc (c ⊔ ℓ)) where
     Carrier        : Set c
     _≈_            : (x y : Carrier) → Set ℓ
     isEquivalence  : IsEquivalence _≈_
+
+  open IsEquivalence isEquivalence public
 ```
 
 Notice the three fields here, corresponding to the carrier set, a relation over
@@ -1135,12 +1137,14 @@ necessary work in a new module:
 ```agda
 module Setoid-Renaming where
   open Setoid
+    hiding (refl; trans; sym)
     renaming (isEquivalence to equiv)
     public
   open IsPreorder
     renaming (refl to refl′; trans to trans′)
     public
   open IsEquivalence
+    using ()
     renaming (isPreorder to pre; sym to sym′)
     public
 ```
@@ -1286,6 +1290,7 @@ record Monoid (c ℓ : Level) : Set (lsuc (c ⊔ ℓ)) where
     setoid : Setoid c ℓ
 
   open Setoid setoid
+    hiding (refl; sym; trans)
     public
 ```
 

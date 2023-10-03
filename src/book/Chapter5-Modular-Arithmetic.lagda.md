@@ -269,7 +269,6 @@ This is exactly the trick we will end up using to solve our problem of having
 too many `refl`s to count:
 
 ```agda
-open IsPreorder     ⦃ ... ⦄ public
 open IsEquivalence  ⦃ ... ⦄ public
 ```
 
