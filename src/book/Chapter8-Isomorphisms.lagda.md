@@ -626,19 +626,27 @@ Similarly, we can give the same treatment to `type:_⊎_`, as in
   open import Data.Sum using (_⊎_; inj₁; inj₂)
   import Data.Sum as +
 
-  data ⊎-Pointwise (s₁ : Setoid c₁ ℓ₁) (s₂ : Setoid c₂ ℓ₂) : Rel (s₁ .Carrier ⊎ s₂ .Carrier) (ℓ₁ ⊔ ℓ₂) where
-    inj₁ : {x y : s₁ .Carrier} → _≈_ s₁ x y → ⊎-Pointwise s₁ s₂ (inj₁ x) (inj₁ y)
-    inj₂ : {x y : s₂ .Carrier} → _≈_ s₂ x y → ⊎-Pointwise s₁ s₂ (inj₂ x) (inj₂ y)
+  data ⊎-Pointwise (s₁ : Setoid c₁ ℓ₁) (s₂ : Setoid c₂ ℓ₂)
+      : Rel (s₁ .Carrier ⊎ s₂ .Carrier) (ℓ₁ ⊔ ℓ₂) where
+    inj₁  : {x y : s₁ .Carrier}
+          → _≈_ s₁ x y → ⊎-Pointwise s₁ s₂ (inj₁ x) (inj₁ y)
+    inj₂  : {x y : s₂ .Carrier}
+          → _≈_ s₂ x y → ⊎-Pointwise s₁ s₂ (inj₂ x) (inj₂ y)
+
+  ⊎-equiv : IsEquivalence (⊎-Pointwise s₁ s₂)
+  refl (isPreorder (⊎-equiv {s₁ = s₁})) {inj₁ x} = inj₁ (Setoid.refl s₁)
+  refl (isPreorder (⊎-equiv {s₂ = s₂})) {inj₂ y} = inj₂ (Setoid.refl s₂)
+  trans (isPreorder (⊎-equiv {s₁ = s₁})) (inj₁ x=y) (inj₁ y=z)
+    = inj₁ (trans s₁ x=y y=z)
+  trans (isPreorder (⊎-equiv {s₂ = s₂})) (inj₂ x=y) (inj₂ y=z)
+    = inj₂ (trans s₂ x=y y=z)
+  sym (⊎-equiv {s₁ = s₁}) (inj₁ x) = inj₁ (sym s₁ x)
+  sym (⊎-equiv {s₂ = s₂}) (inj₂ x) = inj₂ (sym s₂ x)
 
   ⊎-setoid : Setoid c₁ ℓ₁ → Setoid c₂ ℓ₂ → Setoid _ _
   Carrier (⊎-setoid s₁ s₂) = s₁ .Carrier ⊎ s₂ .Carrier
   _≈_ (⊎-setoid s₁ s₂) = ⊎-Pointwise s₁ s₂
-  refl (isPreorder (isEquivalence (⊎-setoid s₁ s₂))) {inj₁ x} = inj₁ (Setoid.refl s₁)
-  refl (isPreorder (isEquivalence (⊎-setoid s₁ s₂))) {inj₂ y} = inj₂ (Setoid.refl s₂)
-  trans (isPreorder (isEquivalence (⊎-setoid s₁ s₂))) (inj₁ x=y) (inj₁ y=z) = inj₁ (trans s₁ x=y y=z)
-  trans (isPreorder (isEquivalence (⊎-setoid s₁ s₂))) (inj₂ x=y) (inj₂ y=z) = inj₂ (trans s₂ x=y y=z)
-  sym (isEquivalence (⊎-setoid s₁ s₂)) (inj₁ x) = inj₁ (sym s₁ x)
-  sym (isEquivalence (⊎-setoid s₁ s₂)) (inj₂ x) = inj₂ (sym s₂ x)
+  isEquivalence (⊎-setoid s₁ s₂) = ⊎-equiv
 
   ⊎-preserves-↔ : s₁ ↔ s₂ → s₃ ↔ s₄ → ⊎-setoid s₁ s₃ ↔ ⊎-setoid s₂ s₄
   to         (⊎-preserves-↔ s t)           = +.map (to s) (to t)
