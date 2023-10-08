@@ -14,7 +14,7 @@ Prerequisites
 
 :   ```agda
 open import Chapter2-Numbers
-  using (ℕ; zero; suc; _+_; _*_; _^_)
+  using (ℕ; zero; suc; _+_; _*_; _^_; Maybe; just; nothing)
     ```
 
 :   ```agda
@@ -622,9 +622,7 @@ the product setoid given by `def:×-preserves-↔`:
 ```agda
   open import Data.Product using (_×_; _,_; proj₁; proj₂)
   import Data.Product as ×
-  open Setoid
-  open IsEquivalence
-  open IsPreorder
+  open Setoid-Renaming
 
 --   record -×- (s₁ : Setoid c₁ ℓ₁) (s₂ : Setoid c₂ ℓ₂) : Set where
 --     field
@@ -634,11 +632,11 @@ the product setoid given by `def:×-preserves-↔`:
   _≈_ (×-setoid s₁ s₂) (a₁ , b₁) (a₂ , b₂)
     = s₁ ._≈_ a₁ a₂
     × s₂ ._≈_ b₁ b₂
-  refl (isPreorder (isEquivalence (×-setoid s₁ s₂)))
+  refl′ (pre (equiv (×-setoid s₁ s₂)))
     = Setoid.refl s₁ , Setoid.refl s₂
-  trans (isPreorder (isEquivalence (×-setoid s₁ s₂))) (a₁₂ , b₁₂) (a₂₃ , b₂₃)
+  trans′ (pre (equiv (×-setoid s₁ s₂))) (a₁₂ , b₁₂) (a₂₃ , b₂₃)
     = Setoid.trans s₁ a₁₂ a₂₃ , Setoid.trans s₂ b₁₂ b₂₃
-  sym (isEquivalence (×-setoid s₁ s₂)) (a , b)
+  sym′ (equiv (×-setoid s₁ s₂)) (a , b)
     = Setoid.sym s₁ a , Setoid.sym s₂ b
 
   ×-preserves-↔ : s₁ ↔ s₂ → s₃ ↔ s₄ → ×-setoid s₁ s₃ ↔ ×-setoid s₂ s₄
@@ -667,19 +665,19 @@ Similarly, we can give the same treatment to `type:_⊎_`, as in
           → _≈_ s₂ x y → ⊎-Pointwise s₁ s₂ (inj₂ x) (inj₂ y)
 
   ⊎-equiv : IsEquivalence (⊎-Pointwise s₁ s₂)
-  refl (isPreorder (⊎-equiv {s₁ = s₁})) {inj₁ x} = inj₁ (Setoid.refl s₁)
-  refl (isPreorder (⊎-equiv {s₂ = s₂})) {inj₂ y} = inj₂ (Setoid.refl s₂)
-  trans (isPreorder (⊎-equiv {s₁ = s₁})) (inj₁ x=y) (inj₁ y=z)
-    = inj₁ (trans s₁ x=y y=z)
-  trans (isPreorder (⊎-equiv {s₂ = s₂})) (inj₂ x=y) (inj₂ y=z)
-    = inj₂ (trans s₂ x=y y=z)
-  sym (⊎-equiv {s₁ = s₁}) (inj₁ x) = inj₁ (sym s₁ x)
-  sym (⊎-equiv {s₂ = s₂}) (inj₂ x) = inj₂ (sym s₂ x)
+  refl′ (pre (⊎-equiv {s₁ = s₁})) {inj₁ x} = inj₁ (Setoid.refl s₁)
+  refl′ (pre (⊎-equiv {s₂ = s₂})) {inj₂ y} = inj₂ (Setoid.refl s₂)
+  trans′ (pre (⊎-equiv {s₁ = s₁})) (inj₁ x=y) (inj₁ y=z)
+    = inj₁ (trans′ (pre (equiv s₁)) x=y y=z)
+  trans′ (pre (⊎-equiv {s₂ = s₂})) (inj₂ x=y) (inj₂ y=z)
+    = inj₂ (trans′ (pre (equiv s₂)) x=y y=z)
+  sym′ (⊎-equiv {s₁ = s₁}) (inj₁ x) = inj₁ (sym′ (equiv s₁) x)
+  sym′ (⊎-equiv {s₂ = s₂}) (inj₂ x) = inj₂ (sym′ (equiv s₂) x)
 
   ⊎-setoid : Setoid c₁ ℓ₁ → Setoid c₂ ℓ₂ → Setoid _ _
   Carrier (⊎-setoid s₁ s₂) = s₁ .Carrier ⊎ s₂ .Carrier
   _≈_ (⊎-setoid s₁ s₂) = ⊎-Pointwise s₁ s₂
-  isEquivalence (⊎-setoid s₁ s₂) = ⊎-equiv
+  equiv (⊎-setoid s₁ s₂) = ⊎-equiv
 
   ⊎-preserves-↔ : s₁ ↔ s₂ → s₃ ↔ s₄ → ⊎-setoid s₁ s₃ ↔ ⊎-setoid s₂ s₄
   to         (⊎-preserves-↔ s t)           = +.map (to s) (to t)
@@ -742,7 +740,7 @@ you of an isomorphism, and indeed, there is such an isomorphism given by
   from       join-splitAt-iso = join _ _
   from∘to    (join-splitAt-iso {m = m}) = join-splitAt m _
   to∘from    join-splitAt-iso x = ? -- ≡⇒Pointwise-≡ (splitAt-join _ _ x)
-  to-cong    join-splitAt-iso ≡.refl        = ?
+  to-cong    join-splitAt-iso ≡.refl        = refl′ (pre (equiv (⊎-setoid (prop-setoid (Fin _)) (prop-setoid (Fin _)))))
   from-cong  join-splitAt-iso (inj₁ ≡.refl) = ≡.refl
   from-cong  join-splitAt-iso (inj₂ ≡.refl) = ≡.refl
 ```
@@ -840,6 +838,8 @@ Thus, we need a setoid over congruent functions. Given such a thing, it's easy
 
 ```agda
 open Setoid
+open Setoid-Renaming
+  hiding (Carrier)
 
 open import Data.Product using (_,_)
 
@@ -868,12 +868,12 @@ to∘from (→-preserves-↔ s t) f {x} {y} a = begin
   where open B-Reasoning t
 to-cong (→-preserves-↔ {s₁ = s₁} s t) {g} {h} f {x} {y} a = begin
   to t (Fn.func g (from s x)) ≈⟨ to-cong t (Fn.cong g (from-cong s a)) ⟩
-  to t (Fn.func g (from s y)) ≈⟨ to-cong t (f ?) ⟩
+  to t (Fn.func g (from s y)) ≈⟨ to-cong t (f (refl′ (pre (equiv s₁)))) ⟩
   to t (Fn.func h (from s y)) ∎
   where open B-Reasoning t
 from-cong (→-preserves-↔ {s₂ = s₂} s t) {g} {h} f {x} {y} a = begin
   from t (Fn.func g (to s x)) ≈⟨ from-cong t (Fn.cong g (to-cong s a)) ⟩
-  from t (Fn.func g (to s y)) ≈⟨ from-cong t (f ?) ⟩
+  from t (Fn.func g (to s y)) ≈⟨ from-cong t (f (refl′ (pre (equiv s₂)))) ⟩
   from t (Fn.func h (to s y)) ∎
   where open A-Reasoning t
 ```
@@ -903,7 +903,7 @@ module _ where
   from∘to    vec-fin₀ []                 = []
   to∘from    vec-fin₀ zero               = ≡.refl
   to-cong    vec-fin₀ []                 = ≡.refl
-  from-cong  (vec-fin₀ {s₁ = s}) ≡.refl  = ?
+  from-cong  (vec-fin₀ {s₁ = s}) ≡.refl  = refl′ (pre (equiv (vec-setoid s 0)))
 ```
 
 Then, by showing a lemma that is there an isomorphism between `type:Vec A (suc
@@ -915,8 +915,8 @@ n)` and `type:A × Vec A n`:
         ↔ ×-setoid s₁ (vec-setoid s₁ n)
   to vec-rep    (x ∷ xs)                     = x , xs
   from vec-rep  (x , xs)                     = x ∷ xs
-  from∘to       (vec-rep {s₁ = s}) (x ∷ xs)  = refl s ∷ ? -- ≋.refl s
-  to∘from       (vec-rep {s₁ = s}) (x , xs)  = refl s , ? -- ≋.refl s
+  from∘to       (vec-rep {s₁ = s}) (x ∷ xs)  = refl s ∷ refl′ (pre (equiv (vec-setoid s _)))
+  to∘from       (vec-rep {s₁ = s}) (x , xs)  = refl s , refl′ (pre (equiv (vec-setoid s _)))
   to-cong       (vec-rep {s₁ = s}) (x ∷ xs)  = x , xs
   from-cong     (vec-rep {s₁ = s}) (x , xs)  = x ∷ xs
 ```
@@ -1034,39 +1034,110 @@ that fact to induce an isomorphism:
 ## Automatic Memoization
 
 ```agda
-  -- TODO(sandy): I think this is a bad example
+  module _ {A : Set ℓ₁} {B : Set ℓ₂} (sized : prop-setoid A Has n Elements) where
+    record MemoVec (f : A → B) : Set ℓ₂ where
+      constructor memovec
+      field
+        table : Vec (Maybe B) n
 
---   data Size : Set where
---     const : ℕ → Size
---     times : Size → Size → Size
---     plus  : Size → Size → Size
---     power : Size → Size → Size
+    open import Data.Product
 
---   open import Data.Nat using (_+_; _*_; _^_)
+    mvlookup : {f : A → B} → MemoVec f → A → MemoVec f × B
+    mvlookup {f} mv@(memovec v) a with Data.Vec.lookup v (to sized a)
+    ... | just b = mv , b
+    ... | nothing =
+      let b = f a
+       in memovec (v Data.Vec.[ to sized a ]≔ just b) , b
 
---   ∣_∣ : Size → ℕ
---   ∣ const  x    ∣ = x
---   ∣ times  x y  ∣ = ∣ x  ∣ *  ∣ y ∣
---   ∣ plus   x y  ∣ = ∣ x  ∣ +  ∣ y ∣
---   ∣ power  x y  ∣ = ∣ y  ∣ ^  ∣ x ∣
 
---   open import Data.Product using (_×_)
---   open import Data.Sum using (_⊎_)
 
---   ⌊_⌋ : Size → Set
---   ⌊ const x    ⌋ = Fin x
---   ⌊ times x y  ⌋ = ⌊ x ⌋ ×  ⌊ y ⌋
---   ⌊ plus  x y  ⌋ = ⌊ x ⌋ ⊎  ⌊ y ⌋
---   ⌊ power x y  ⌋ = ⌊ x ⌋ →  ⌊ y ⌋
+  data Size : Set where
+    num   : ℕ → Size
+    times : Size → Size → Size
+    plus  : Size → Size → Size
+    -- power : Size → Size → Size
 
---   postulate
---     size-fin : (s : Size) → prop-setoid ⌊ s ⌋ Has ∣ s ∣ Elements
+  open import Data.Nat using (_+_; _*_; _^_)
 
---   data Trie (B : Set ℓ) : Size → Set ℓ where
---     miss : ∀ {n} → Trie B n
---     one : B → Trie B (const 1)
---     or : ∀ {m n} → Trie B m → Trie B n → Trie B (plus m n)
---     and : ∀ {m n} → Trie (Trie B n) m → Trie B (times m n)
+  ∣_∣ : Size → ℕ
+  ∣ num  x      ∣ = x
+  ∣ times  x y  ∣ = ∣ x  ∣ *  ∣ y ∣
+  ∣ plus   x y  ∣ = ∣ x  ∣ +  ∣ y ∣
+  -- ∣ power  x y  ∣ = ∣ y  ∣ ^  ∣ x ∣
+
+  open import Data.Product using (_×_)
+  open import Data.Sum using (_⊎_)
+
+  ⌊_⌋ : Size → Set
+  ⌊ num x      ⌋ = Fin x
+  ⌊ times x y  ⌋ = ⌊ x ⌋ ×  ⌊ y ⌋
+  ⌊ plus  x y  ⌋ = ⌊ x ⌋ ⊎  ⌊ y ⌋
+  -- ⌊ power x y  ⌋ = ⌊ x ⌋ →  ⌊ y ⌋
+
+  postulate
+    size-fin : (s : Size) → prop-setoid ⌊ s ⌋ Has ∣ s ∣ Elements
+
+  data Trie (B : Set ℓ) : Size → Set ℓ where
+    miss : {sz : Size} → Trie B sz
+    table : Vec (Maybe B) n → Trie B (num n)
+    or : {m n : Size} → Trie B m → Trie B n → Trie B (plus m n)
+    and : {m n : Size} → Trie (Trie B n) m → Trie B (times m n)
+
+  open import Data.Vec
+  open import Data.Product
+
+  mtupdate : {B : Set ℓ} → (sz : Size) → Trie B sz → ⌊ sz ⌋ → B → Trie B sz
+  mtupdate sz miss a b
+    = table (replicate nothing [ to (size-fin sz) a ]≔ just b)
+  mtupdate _ (table t) a b = table (t [ a ]≔ just b)
+  mtupdate (plus m _) (or tr₁ tr₂) (_⊎_.inj₁ x) b
+    = or (mtupdate m tr₁ x b) tr₂
+  mtupdate (plus _ n) (or tr₁ tr₂) (_⊎_.inj₂ y) b
+    = or tr₁ (mtupdate n tr₂ y b)
+  mtupdate (times m n) (and tr) (fst , snd) b
+    = and (mtupdate m tr fst (mtupdate n miss snd b))
+
+  mtlookupimpl : {B : Set ℓ} → (sz : Size) → (f : ⌊ sz ⌋ → B) → Trie B sz → ⌊ sz ⌋ → Trie B sz × B
+  mtlookupimpl (num n) f miss a =
+    let  b = f a
+     in  table (replicate nothing [ a ]≔ just b) , b
+  mtlookupimpl (num n) f mt@(table t) a with lookup t a
+  ... | just b  = mt , b
+  ... | nothing = let  b = f a
+                   in  table (t [ a ]≔ just b) , b
+  mtlookupimpl (plus m n) f (or tr₁ tr₂) (_⊎_.inj₁ x)
+    with mtlookupimpl m (f ∘ _⊎_.inj₁) tr₁ x
+  ... | tr₁′ , b = or tr₁′ tr₂ , b
+  mtlookupimpl (plus m n) f (or tr₁ tr₂) (_⊎_.inj₂ y)
+    with mtlookupimpl n (f ∘ _⊎_.inj₂) tr₂ y
+  ... | tr₂′ , b = or tr₁ tr₂′ , b
+  mtlookupimpl (times m n) f (and trₘ) (fst , snd)
+    with mtlookupimpl m (λ ⌊m⌋ → proj₁ (mtlookupimpl n (f ∘ (⌊m⌋ ,_)) {! !} {! !})) trₘ fst
+  ... | trₘ′ , trₙ
+    with mtlookupimpl n ? trₙ snd
+  ... | trₙ′ , b = and ? , b
+
+--   implworks : {B : Set ℓ} → (sz : Size) → (f : ⌊ sz ⌋ → B) → (tr : Trie B sz) → (a : ⌊ sz ⌋) → let (tr′ , b) = mtlookupimpl sz f tr a in proj₂  (mtlookupimpl sz f tr′ a) ≡ b
+--   implworks (num n) f miss a = {! !}
+--   implworks (num n) f (table t) a with lookup t a in eq
+--   ... | just x rewrite eq = Chapter3-Proofs.refl
+--   ... | nothing with lookup (t [ a ]≔  just (f a)) a in eq
+--   ... | just x = {! !}
+--   ... | nothing = Chapter3-Proofs.refl
+--   implworks (plus m n) f (or tr tr₁) a = {! !}
+--   implworks (times m n) f (and tr) a = {! !}
+
+
+
+
+
+
+--     mvlookup : {f : A → B} → MemoVec f → A → MemoVec f × B
+--     mvlookup {f} mv@(memovec v) a with Data.Vec.lookup v (to sized a)
+--     ... | just b = mv , b
+--     ... | nothing =
+--       let b = f a
+--        in memovec (v Data.Vec.[ to sized a ]≔ just b) , b
 
 
 --   open import Data.Maybe
