@@ -1825,10 +1825,15 @@ open import Algebra
   public
 
 open import Function
-  using (id; _∘_; const)
+  using (id; _∘_; const; flip)
   public
 
 open import Data.List
   using (List; []; _∷_; _++_)
+
+
+open import Data.Maybe
+  using (_<∣>_)
+  public
 ```
 

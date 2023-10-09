@@ -739,7 +739,7 @@ you of an isomorphism, and indeed, there is such an isomorphism given by
   to         join-splitAt-iso = splitAt _
   from       join-splitAt-iso = join _ _
   from∘to    (join-splitAt-iso {m = m}) = join-splitAt m _
-  to∘from    join-splitAt-iso x = ? -- ≡⇒Pointwise-≡ (splitAt-join _ _ x)
+  to∘from    join-splitAt-iso x = {! !} -- ≡⇒Pointwise-≡ (splitAt-join _ _ x)
   to-cong    join-splitAt-iso ≡.refl        = refl′ (pre (equiv (⊎-setoid (prop-setoid (Fin _)) (prop-setoid (Fin _)))))
   from-cong  join-splitAt-iso (inj₁ ≡.refl) = ≡.refl
   from-cong  join-splitAt-iso (inj₂ ≡.refl) = ≡.refl
@@ -1078,54 +1078,192 @@ that fact to induce an isomorphism:
     size-fin : (s : Size) → prop-setoid ⌊ s ⌋ Has ∣ s ∣ Elements
 
   data Trie (B : Set ℓ) : Size → Set ℓ where
-    miss : {sz : Size} → Trie B sz
-    table : Vec (Maybe B) n → Trie B (num n)
-    or : {m n : Size} → Trie B m → Trie B n → Trie B (plus m n)
-    and : {m n : Size} → Trie (Trie B n) m → Trie B (times m n)
+    miss  : {sz : Size} → Trie B sz
+    table : {sz : Size} → Vec B ∣ sz ∣ → Trie B sz
+    or    : {m n : Size} → Trie B m → Trie B n → Trie B (plus m n)
+    and   : {m n : Size} → Trie (Trie B n) m → Trie B (times m n)
 
-  open import Data.Vec
-  open import Data.Product
+  open import Data.Vec using (lookup; tabulate; _[_]≔_)
+  open import Data.Vec.Properties
+  open import Data.Sum using (inj₁; inj₂)
 
-  mtupdate : {B : Set ℓ} → (sz : Size) → Trie B sz → ⌊ sz ⌋ → B → Trie B sz
-  mtupdate sz miss a b
-    = table (replicate nothing [ to (size-fin sz) a ]≔ just b)
-  mtupdate _ (table t) a b = table (t [ a ]≔ just b)
-  mtupdate (plus m _) (or tr₁ tr₂) (_⊎_.inj₁ x) b
-    = or (mtupdate m tr₁ x b) tr₂
-  mtupdate (plus _ n) (or tr₁ tr₂) (_⊎_.inj₂ y) b
-    = or tr₁ (mtupdate n tr₂ y b)
-  mtupdate (times m n) (and tr) (fst , snd) b
-    = and (mtupdate m tr fst (mtupdate n miss snd b))
+  data _∈_ {B : Set ℓ} : {sz : Size} → (⌊ sz ⌋ × B) → Trie B sz → Set ℓ where
+    tabled
+      : ∀ {sz ix t b}
+      → lookup t (to (size-fin sz) ix) ≡ b
+      → (ix , b) ∈ table t
+    inj₁
+      : ∀ {m n ix b} {tr₁ : Trie B m} {tr₂ : Trie B n}
+      → (ix , b) ∈ tr₁
+      → (inj₁ ix , b) ∈ or tr₁ tr₂
+    inj₂
+      : ∀ {m n ix b} {tr₁ : Trie B m} {tr₂ : Trie B n}
+      → (ix , b) ∈ tr₂
+      → (inj₂ ix , b) ∈ or tr₁ tr₂
+    both
+      : ∀ {m n ix₁ ix₂ b} {tr₁ : Trie (Trie B n) m} {tr₂ : Trie B n}
+      → (ix₂ , b) ∈ tr₂
+      → (ix₁ , tr₂) ∈ tr₁
+      → ((ix₁ , ix₂) , b) ∈ and tr₁
 
-  mtlookupimpl : {B : Set ℓ} → (sz : Size) → (f : ⌊ sz ⌋ → B) → Trie B sz → ⌊ sz ⌋ → Trie B sz × B
-  mtlookupimpl (num n) f miss a =
-    let  b = f a
-     in  table (replicate nothing [ a ]≔ just b) , b
-  mtlookupimpl (num n) f mt@(table t) a with lookup t a
-  ... | just b  = mt , b
-  ... | nothing = let  b = f a
-                   in  table (t [ a ]≔ just b) , b
-  mtlookupimpl (plus m n) f (or tr₁ tr₂) (_⊎_.inj₁ x)
-    with mtlookupimpl m (f ∘ _⊎_.inj₁) tr₁ x
-  ... | tr₁′ , b = or tr₁′ tr₂ , b
-  mtlookupimpl (plus m n) f (or tr₁ tr₂) (_⊎_.inj₂ y)
-    with mtlookupimpl n (f ∘ _⊎_.inj₂) tr₂ y
-  ... | tr₂′ , b = or tr₁ tr₂′ , b
-  mtlookupimpl (times m n) f (and trₘ) (fst , snd)
-    with mtlookupimpl m (λ ⌊m⌋ → proj₁ (mtlookupimpl n (f ∘ (⌊m⌋ ,_)) {! !} {! !})) trₘ fst
-  ... | trₘ′ , trₙ
-    with mtlookupimpl n ? trₙ snd
-  ... | trₙ′ , b = and ? , b
+  mtlookup
+    : {B : Set ℓ}
+    → (sz : Size)
+    → (tr : Trie B sz)
+    → (a : ⌊ sz ⌋)
+    → Maybe (Σ B (λ b → (a , b) ∈ tr))
+  mtlookup sz miss a = nothing
+  mtlookup sz (table x) a = just (lookup x (to (size-fin sz) a) , tabled Chapter3-Proofs.refl)
+  mtlookup (plus m n) (or tr₁ tr₂) (inj₁ x)
+    with mtlookup m tr₁ x
+  ... | nothing = nothing
+  ... | just (b , pr) = just (b , inj₁ pr)
+  mtlookup (plus m n) (or tr₁ tr₂) (inj₂ y)
+    with mtlookup n tr₂ y
+  ... | nothing = nothing
+  ... | just (b , pr) = just (b , inj₂ pr)
+  mtlookup (times m n) (and tr) (fst , snd)
+    with mtlookup m tr fst
+  ... | nothing = nothing
+  ... | just (t , mt∈tr)
+    with mtlookup n t snd
+  ... | nothing = nothing
+  ... | just (b , nb∈t) = just (b , both nb∈t mt∈tr)
 
---   implworks : {B : Set ℓ} → (sz : Size) → (f : ⌊ sz ⌋ → B) → (tr : Trie B sz) → (a : ⌊ sz ⌋) → let (tr′ , b) = mtlookupimpl sz f tr a in proj₂  (mtlookupimpl sz f tr′ a) ≡ b
---   implworks (num n) f miss a = {! !}
---   implworks (num n) f (table t) a with lookup t a in eq
---   ... | just x rewrite eq = Chapter3-Proofs.refl
---   ... | nothing with lookup (t [ a ]≔  just (f a)) a in eq
---   ... | just x = {! !}
---   ... | nothing = Chapter3-Proofs.refl
---   implworks (plus m n) f (or tr tr₁) a = {! !}
---   implworks (times m n) f (and tr) a = {! !}
+  import Data.Maybe
+  open import Data.Product using (proj₁)
+
+  -- i think this is wrong!!
+  insert
+    : {B : Set ℓ}
+    → (sz : Size)
+    → Trie B sz
+    → (a : ⌊ sz ⌋)
+    → (f : ⌊ sz ⌋ → B)
+    → Σ (Trie B sz) (λ t → (a , f a) ∈ t)
+
+  insert sz miss a f =
+    let f′ = f ∘ from (size-fin sz)
+     in table (tabulate f′) , tabled (begin
+      lookup (tabulate (λ x → f (from (size-fin sz) x))) (to (size-fin sz) a)
+    ≡⟨ lookup∘tabulate f′ (to (size-fin sz) a)  ⟩
+      f (from (size-fin sz) (to (size-fin sz) a))
+    ≡⟨ ≡.cong f ((from∘to (size-fin sz)) a) ⟩
+      f a
+    ∎)
+    where open ≡-Reasoning
+  insert sz (table x) a f = table (x [ to (size-fin sz) a ]≔ f a) , tabled
+    (begin
+      lookup (x [ to (size-fin sz) a ]≔ f a) (to (size-fin sz) a)
+    ≡⟨ lookup∘updateAt (to (size-fin sz) a) x ⟩
+      const (f a) (lookup x (to (size-fin sz) a))
+    ≡⟨⟩
+      f a
+    ∎)
+    where open ≡-Reasoning
+  insert (plus m _) (or t₁ t₂) (inj₁ x) f
+    with insert m t₁ x (f ∘ inj₁)
+  ... | t₁′ , x∈t₁ = or t₁′ t₂ , inj₁ x∈t₁
+  insert (plus _ n) (or t₁ t₂) (inj₂ y) f
+    with insert n t₂ y (f ∘ inj₂)
+  ... | t₂′ , x∈t₂ = or t₁ t₂′ , inj₂ x∈t₂
+
+  insert (times m n) (and t₁) (fst , snd) f
+    with mtlookup m t₁ fst
+  ... | nothing = ?
+  ... | just (t₂ , mt₂∈t₁)
+    with insert n t₂ snd (f ∘ (fst ,_))
+  ... | (t₂′ , nb∈t₂) with insert m t₁ fst (const t₂′)
+  ... | (t₁′ , mt₂∈t₁) = and t₁′ , both nb∈t₂ mt₂∈t₁
+
+  open import Data.Product using (_×_; proj₁; proj₂)
+
+
+  insert-ok
+    : {B : Set ℓ} {sz : Size} {tr : Trie B sz} {a a′ : ⌊ sz ⌋} {b : B} → ∀ {f}
+    → (a , b) ∈ tr
+    → a PropEq.≢ a′
+    → Data.Maybe.map proj₁ (mtlookup sz (proj₁ (insert sz tr a′ f)) a) ≡ just b
+  insert-ok {ℓ} {B₁} {sz} {tr} {a} {a′} {b} {f} pr a≢a′ =
+    begin
+      Data.Maybe.map (λ r → proj₁ r) (mtlookup sz (proj₁ (insert sz tr a′ f)) a)
+    ≡⟨⟩
+      ?
+    ≡⟨ ? ⟩
+      just b
+    ∎
+    where open ≡-Reasoning
+
+--   mtupdate : {B : Set ℓ} → (sz : Size) → Trie B sz → ⌊ sz ⌋ → B → Trie B sz
+--   mtupdate sz misds a b
+--     = table (replicate nothing [ to (size-fin sz) a ]≔ just b)
+--   mtupdate _ (table t) a b = table (t [ a ]≔ just b)
+--   mtupdate (plus m _) (or tr₁ tr₂) (_⊎_.inj₁ x) b
+--     = or (mtupdate m tr₁ x b) tr₂
+--   mtupdate (plus _ n) (or tr₁ tr₂) (_⊎_.inj₂ y) b
+--     = or tr₁ (mtupdate n tr₂ y b)
+--   mtupdate (times m n) (and tr) (fst , snd) b
+--     = and (mtupdate m tr fst (mtupdate n miss snd b))
+
+  open import Data.Bool
+
+--   mtpresent : {B : Set ℓ} → (sz : Size) → Trie B sz → ⌊ sz ⌋ → Maybe B
+--   mtpresent sz miss a = nothing
+--   mtpresent sz (table x) a = just (lookup x (to (size-fin sz) a))
+--   mtpresent (plus m n) (or t₁ t₂) (_⊎_.inj₁ x) = mtpresent m t₁ x
+--   mtpresent (plus m n) (or t₁ t₂) (_⊎_.inj₂ y) = mtpresent n t₂ y
+--   mtpresent (times m n) (and t₁) (fst , snd) with mtpresent m t₁ fst
+--   ... | just t₂ = mtpresent n t₂ snd
+--   ... | nothing = nothing
+
+
+--   mtlookupimpl : {B : Set ℓ} → (sz : Size) → (new : ⌊ sz ⌋ → B) → Trie B sz → ⌊ sz ⌋ → Trie B sz × B
+--   mtlookupimpl sz new miss a =
+--     let  b = new a
+--      in  table (tabulate (new ∘ from (size-fin sz))) , b
+--   mtlookupimpl sz _ (table x) a =
+--     table x , lookup x (to (size-fin sz) a)
+--   mtlookupimpl (plus m n) new (or t₁ t₂) (_⊎_.inj₁ x)
+--     with mtlookupimpl m (new ∘ _⊎_.inj₁) t₁ x
+--   ... | t₁′ , b = or t₁′ t₂ , b
+--   mtlookupimpl (plus m n) new (or t₁ t₂) (_⊎_.inj₂ y)
+--     with mtlookupimpl n (new ∘ _⊎_.inj₂) t₂ y
+--   ... | t₂′ , b = or t₁ t₂′ , b
+--   mtlookupimpl (times m n)  new (and t) (fst , snd)
+--     with mtlookupimpl m ? t fst
+--   ... | t′ , b = and t′ , ?
+
+
+
+  -- mtlookupimpl {B = B} sz f u miss a =
+  --   let  ix = to (size-fin sz) a
+  --        b = f a
+  --    in  PropEq.subst (λ φ → Trie B φ) ? (table (replicate nothing [ ix ]≔ just b)) , b
+  -- mtlookupimpl (num n) f u mt@(table t) a with lookup t a
+  -- ... | just b  = mt , b
+  -- ... | nothing = let  b = f a
+  --                  in  table (t [ a ]≔ just b) , b
+  -- mtlookupimpl (plus m n) f u (or tr₁ tr₂) (_⊎_.inj₁ x)
+  --   with mtlookupimpl m (f ∘ _⊎_.inj₁) ? tr₁ x
+  -- ... | tr₁′ , b = or tr₁′ tr₂ , b
+  -- mtlookupimpl (plus m n) f u (or tr₁ tr₂) (_⊎_.inj₂ y)
+  --   with mtlookupimpl n (f ∘ _⊎_.inj₂) ? tr₂ y
+  -- ... | tr₂′ , b = or tr₁ tr₂′ , b
+  -- mtlookupimpl (times m n) f u (and trₘ) (fst , snd)
+  --   = ?
+
+  -- ... | trₘ′ , trₙ
+  --   with mtlookupimpl n ? trₙ snd
+
+-- --   implworks : {B : Set ℓ} → (sz : Size) → (f : ⌊ sz ⌋ → B) → (tr : Trie B sz) → (a : ⌊ sz ⌋) → let (tr′ , b) = mtlookupimpl sz f tr a in proj₂  (mtlookupimpl sz f tr′ a) ≡ b
+-- --   implworks (num n) f miss a = {! !}
+-- --   implworks (num n) f (table t) a with lookup t a in eq
+-- --   ... | just x rewrite eq = Chapter3-Proofs.refl
+-- --   ... | nothing with lookup (t [ a ]≔  just (f a)) a in eq
+-- --   ... | just x = {! !}
+-- --   ... | nothing = Chapter3-Proofs.refl
+-- --   implworks (plus m n) f (or tr tr₁) a = {! !}
+-- --   implworks (times m n) f (and tr) a = {! !}
 
 
 
