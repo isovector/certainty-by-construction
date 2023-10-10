@@ -1131,6 +1131,7 @@ that fact to induce an isomorphism:
   ... | just (b , nb∈t) = just (b , both nb∈t mt∈tr)
 
   import Data.Maybe
+  open import Data.Maybe using (maybe)
   open import Data.Product using (proj₁)
     renaming (map to ×map)
 
@@ -1148,29 +1149,25 @@ that fact to induce an isomorphism:
             lookup t′ ix ≡⟨ lookup∘updateAt ix t ⟩
             just b  ∎)
     where open ≡-Reasoning
-  insert (or t₁ t₂) (inj₁ x) b
-    = ×map (flip or t₂) inj₁ (insert t₁ x b)
-  insert (or t₁ t₂) (inj₂ y) b
-    = ×map (or t₁) inj₂ (insert t₂ y b)
+  insert (or t₁ t₂) (inj₁ x) b = ×map (flip or t₂)  inj₁ (insert t₁ x b)
+  insert (or t₁ t₂) (inj₂ y) b = ×map (or t₁)       inj₂ (insert t₂ y b)
   insert (and t₁) (fst , snd) b
-    with mtlookup t₁ fst
-  ... | nothing = ?
-  ... | just (t₂ , mt₂∈t₁)
-    with insert t₂ snd b
-  ... | (t₂′ , nb∈t₂) with insert t₁ fst t₂′
-  ... | (t₁′ , mt₂∈t₁) = and t₁′ , both nb∈t₂ mt₂∈t₁
+    =
+    let (t₂′ , nb∈t₂) = insert (maybe proj₁ miss (mtlookup t₁ fst)) snd b
+     in ×map and (both nb∈t₂) (insert t₁ fst t₂′)
 
   open import Data.Product using (_×_; proj₁; proj₂)
 
   postulate
     transp : {A B : Set ℓ} → (iso : prop-setoid A ↔ prop-setoid B) → {x y : A} → x PropEq.≢ y → to iso x PropEq.≢ to iso y
+    pair-neq : {A B : Set ℓ} → {x z : A} {y w : B} → (x , y) PropEq.≢ (z , w) → (x PropEq.≢ z) ⊎ (y PropEq.≢ w)
 
   insert-stable
-    : {B : Set ℓ} {sz : Size} {tr : Trie B sz} {a a′ : ⌊ sz ⌋} {b b′ : B}
+    : {B : Set ℓ} {sz : Size} {tr : Trie B sz} (a a′ : ⌊ sz ⌋) {b b′ : B}
     → (a , b) ∈ tr
     → a PropEq.≢ a′
     → (a , b) ∈ proj₁ (insert tr a′ b′)
-  insert-stable {sz = sz} {table t} {a} {a′} {b} {b′} (tabled x) a≢a′ = tabled
+  insert-stable {sz = sz} {table t} a a′ {b} {b′} (tabled x) a≢a′ = tabled
     ( begin
       lookup (t [ to (size-fin sz) a′ ]≔ just b′) (to (size-fin sz) a)
     ≡⟨ lookup∘update′ (transp (size-fin sz) a≢a′) t _ ⟩
@@ -1180,15 +1177,17 @@ that fact to induce an isomorphism:
     ∎
     )
     where open ≡-Reasoning
-  insert-stable {a = inj₁ _} {inj₁ _} (inj₁ pr) a≢a′
-    = inj₁ (insert-stable pr λ { x → a≢a′ (≡.cong inj₁ x) })
-  insert-stable {a = inj₁ _} {inj₂ _} (inj₁ pr) a≢a′
-    = inj₁ pr
-  insert-stable {a = inj₂ _} {inj₂ _} (inj₂ pr) a≢a′
-    = inj₂ (insert-stable pr λ { x → a≢a′ (≡.cong inj₂ x) })
-  insert-stable {a = inj₂ _} {inj₁ _} (inj₂ pr) a≢a′
-    = inj₂ pr
-  insert-stable {sz = .(times _ _)} {.(and _)} {.(_ , _)} {a′} {b} {b′} (both pr pr₁) a≢a′ = {! !}
+  insert-stable (inj₁ a) (inj₁ a′) (inj₁ pr) a≢a′ = inj₁ (insert-stable a a′ pr (a≢a′ ∘ ≡.cong inj₁))
+  insert-stable (inj₁ a) (inj₂ a′) (inj₁ pr) a≢a′ = inj₁ pr
+  insert-stable (inj₂ a) (inj₂ a′) (inj₂ pr) a≢a′ = inj₂ (insert-stable a a′ pr (a≢a′ ∘ ≡.cong inj₂))
+  insert-stable (inj₂ a) (inj₁ a′) (inj₂ pr) a≢a′ = inj₂ pr
+  insert-stable {B = B} {sz = times m n} {and tr₁} (a₁ , a₂) (a₁′ , a₂′) (both {tr₂ = tr₂} pr pr₁) a≢a′
+    = let z = maybe {B = λ _ → Trie B n} proj₁ (miss {B = B} {sz = n}) (mtlookup tr₁ a₁′)
+          kk = insert-stable a₂ a₂′ pr ?
+       in {! both kk pr₁ !}
+  -- ... | inj₂ y = {! !}
+  -- ... | inj₁ x with insert-stable a₁ _ {tr₂} {?} pr₁ x
+  -- ... | z = {! !}
 
 ```
 
