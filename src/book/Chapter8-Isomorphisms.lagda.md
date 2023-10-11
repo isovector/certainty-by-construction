@@ -1083,111 +1083,137 @@ that fact to induce an isomorphism:
     or    : {m n : Size} → Trie B m → Trie B n → Trie B (plus m n)
     and   : {m n : Size} → Trie (Trie B n) m → Trie B (times m n)
 
-  open import Data.Vec using (lookup; tabulate; _[_]≔_; replicate)
-  open import Data.Vec.Properties
-  open import Data.Sum using (inj₁; inj₂)
+-- module Trie where
 
-  data _∈_ {B : Set ℓ} : {sz : Size} → (⌊ sz ⌋ × B) → Trie B sz → Set ℓ where
-    tabled
-      : ∀ {sz ix t b}
-      → lookup t (to (size-fin sz) ix) ≡ just b
-      → (ix , b) ∈ table t
-    inj₁
-      : ∀ {m n ix b} {tr₁ : Trie B m} {tr₂ : Trie B n}
-      → (ix , b) ∈ tr₁
-      → (inj₁ ix , b) ∈ or tr₁ tr₂
-    inj₂
-      : ∀ {m n ix b} {tr₁ : Trie B m} {tr₂ : Trie B n}
-      → (ix , b) ∈ tr₂
-      → (inj₂ ix , b) ∈ or tr₁ tr₂
-    both
-      : ∀ {m n ix₁ ix₂ b} {tr₁ : Trie (Trie B n) m} {tr₂ : Trie B n}
-      → (ix₂ , b) ∈ tr₂
-      → (ix₁ , tr₂) ∈ tr₁
-      → ((ix₁ , ix₂) , b) ∈ and tr₁
+--   data Trie (B : Set ℓ) : Size → Set ℓ where
+--     miss  : {sz : Size} → Trie B sz
+--     table : {sz : Size} → Vec B ∣ sz ∣ → Trie B sz
+--     or    : {m n : Size} → Trie B m → Trie B n → Trie B (plus m n)
+--     and   : {m n : Size} → Trie (Trie B n) m → Trie B (times m n)
+
+--   private variable
+--     sz m n : Size
+--     X : Set ℓ
+--     tr₁ : Trie X m
+--     tr₂ : Trie X n
+--     b : X
+--     ix ix₁ ix₂ : X
 
 
-  open import Data.Maybe using (map)
-  open import Data.Product using (map₂)
+--   data _∈_ {B : Set ℓ}
+--       : {sz : Size}
+--       → ⌊ sz ⌋ × B
+--       → Trie B sz
+--       → Set ℓ
+--       where
+--     tabled
+--       : ∀ {t}
+--       → lookup t (to (size-fin sz) ix) ≡ b
+--       → (ix , b) ∈ table t
+--     inj₁
+--       : (ix , b) ∈ tr₁
+--       → (inj₁ ix , b) ∈ or tr₁ tr₂
+--     inj₂
+--       : (ix , b) ∈ tr₂
+--       → (inj₂ ix , b) ∈ or tr₁ tr₂
+--     both
+--       : (ix₂ , b)   ∈ tr₂
+--       → (ix₁ , tr₂) ∈ tr₁
+--       → ((ix₁ , ix₂) , b) ∈ and tr₁
 
-  mtlookup
-    : {B : Set ℓ} {sz : Size}
-    → (tr : Trie B sz)
-    → (a : ⌊ sz ⌋)
-    → Maybe (Σ B (λ b → (a , b) ∈ tr))
-  mtlookup miss a = nothing
-  mtlookup {sz = sz} (table x) a
-    with lookup x (to (size-fin sz) a) in eq
-  ... | just b = just (b , tabled eq)
-  ... | nothing = nothing
-  mtlookup (or tr₁ tr₂) (inj₁ x) = map (map₂ inj₁) (mtlookup tr₁ x)
-  mtlookup (or tr₁ tr₂) (inj₂ y) = map (map₂ inj₂) (mtlookup tr₂ y)
-  mtlookup (and tr) (fst , snd)
-    with mtlookup tr fst
-  ... | nothing = nothing
-  ... | just (t , mt∈tr)
-    with mtlookup t snd
-  ... | nothing = nothing
-  ... | just (b , nb∈t) = just (b , both nb∈t mt∈tr)
+--   theb : ∀ {B : Set ℓ} {sz : Size} {t : Trie B sz} {a : ⌊ sz ⌋} {b : B} → (a , b) ∈ t → B
+--   theb {b = b} _ = b
 
-  import Data.Maybe
-  open import Data.Maybe using (maybe)
-  open import Data.Product using (proj₁)
-    renaming (map to ×map)
+--   open import Data.Maybe
+--   open import Relation.Nullary.Decidable.Core using (map′)
+--   open import Data.Vec.Properties
 
-  insert
-    : {B : Set ℓ} {sz : Size}
-    → Trie B sz
-    → (a : ⌊ sz ⌋) → (b : B)
-    → Σ (Trie B sz) (λ t → (a , b) ∈ t)
-  insert miss a b = insert (table (replicate nothing)) a b
-  insert {sz = sz} (table t) a b
-    = let ix = to (size-fin sz) a
-          t′ = t [ ix ]≔ just b
-       in table t′
-        , tabled (begin
-            lookup t′ ix ≡⟨ lookup∘updateAt ix t ⟩
-            just b  ∎)
-    where open ≡-Reasoning
-  insert (or t₁ t₂) (inj₁ x) b = ×map (flip or t₂)  inj₁ (insert t₁ x b)
-  insert (or t₁ t₂) (inj₂ y) b = ×map (or t₁)       inj₂ (insert t₂ y b)
-  insert (and t₁) (fst , snd) b
-    =
-    let (t₂′ , nb∈t₂) = insert (maybe proj₁ miss (mtlookup t₁ fst)) snd b
-     in ×map and (both nb∈t₂) (insert t₁ fst t₂′)
+--   same
+--     : {B : Set ℓ} {sz : Size} {t : Trie B sz}
+--     → {a : ⌊ sz ⌋} {b₁ b₂ : B}
+--     → (a , b₁) ∈ t
+--     → (a , b₂) ∈ t
+--     → b₁ ≡ b₂
+--   same (tabled x) (tabled y)
+--     rewrite x = y
+--   same (inj₁ p₁) (inj₁ p₂) = same p₁ p₂
+--   same (inj₂ p₁) (inj₂ p₂) = same p₁ p₂
+--   same (both p₁ p₃) (both p₂ p₄)
+--     rewrite same p₃ p₄ = same p₁ p₂
 
-  open import Data.Product using (_×_; proj₁; proj₂)
+--   mtlookup
+--     : {B : Set ℓ} {sz : Size}
+--     → (tr : Trie B sz)
+--     → (a : ⌊ sz ⌋)
+--     → Dec (Σ B (λ b → (a , b) ∈ tr))
+--   mtlookup miss a = no λ ()
+--   mtlookup {sz = sz} (table x) a
+--     = yes (lookup x (to (size-fin sz) a) , tabled refl)
+--   mtlookup (or tr₁ tr₂) (inj₁ x)
+--     = map′ (map₂ inj₁) (λ { (b , inj₁ p) → b , p }) (mtlookup tr₁ x)
+--   mtlookup (or tr₁ tr₂) (inj₂ y)
+--     = map′ (map₂ inj₂) (λ { (b , inj₂ p) → b , p }) (mtlookup tr₂ y)
+--   mtlookup (and tr) (fst , snd)
+--     with mtlookup tr fst
+--   ... | no not-in = no λ { (fst , both snd snd₁) → not-in (_ , snd₁) }
+--   ... | yes (t , mt∈tr) =
+--     map′
+--       (map₂ λ nb∈t → both nb∈t mt∈tr)
+--       (λ { (b , both tr′ mb∈tr′)
+--         → b
+--         , subst (λ φ → _ ∈ φ) (same mb∈tr′ mt∈tr) tr′ })
+--       (mtlookup t snd)
 
-  postulate
-    transp : {A B : Set ℓ} → (iso : prop-setoid A ↔ prop-setoid B) → {x y : A} → x PropEq.≢ y → to iso x PropEq.≢ to iso y
-    pair-neq : {A B : Set ℓ} → {x z : A} {y w : B} → (x , y) PropEq.≢ (z , w) → (x PropEq.≢ z) ⊎ (y PropEq.≢ w)
+--   undec : {P : Set ℓ₁} {R : Set ℓ₂} → (P → R) → (¬ P → R) → Dec P → R
+--   undec to ¬to = [ to , ¬to ] ∘ fromDec
 
-  insert-stable
-    : {B : Set ℓ} {sz : Size} {tr : Trie B sz} (a a′ : ⌊ sz ⌋) {b b′ : B}
-    → (a , b) ∈ tr
-    → a PropEq.≢ a′
-    → (a , b) ∈ proj₁ (insert tr a′ b′)
-  insert-stable {sz = sz} {table t} a a′ {b} {b′} (tabled x) a≢a′ = tabled
-    ( begin
-      lookup (t [ to (size-fin sz) a′ ]≔ just b′) (to (size-fin sz) a)
-    ≡⟨ lookup∘update′ (transp (size-fin sz) a≢a′) t _ ⟩
-      lookup t (to (size-fin sz) a)
-    ≡⟨ x ⟩
-      just b
-    ∎
-    )
-    where open ≡-Reasoning
-  insert-stable (inj₁ a) (inj₁ a′) (inj₁ pr) a≢a′ = inj₁ (insert-stable a a′ pr (a≢a′ ∘ ≡.cong inj₁))
-  insert-stable (inj₁ a) (inj₂ a′) (inj₁ pr) a≢a′ = inj₁ pr
-  insert-stable (inj₂ a) (inj₂ a′) (inj₂ pr) a≢a′ = inj₂ (insert-stable a a′ pr (a≢a′ ∘ ≡.cong inj₂))
-  insert-stable (inj₂ a) (inj₁ a′) (inj₂ pr) a≢a′ = inj₂ pr
-  insert-stable {B = B} {sz = times m n} {and tr₁} (a₁ , a₂) (a₁′ , a₂′) (both {tr₂ = tr₂} pr pr₁) a≢a′
-    = let z = maybe {B = λ _ → Trie B n} proj₁ (miss {B = B} {sz = n}) (mtlookup tr₁ a₁′)
-          kk = insert-stable a₂ a₂′ pr ?
-       in {! both kk pr₁ !}
-  -- ... | inj₂ y = {! !}
-  -- ... | inj₁ x with insert-stable a₁ _ {tr₂} {?} pr₁ x
-  -- ... | z = {! !}
+--   insert
+--     : {B : Set ℓ} {sz : Size}
+--     → Trie B sz
+--     → (a : ⌊ sz ⌋) → (f : ⌊ sz ⌋ → B)
+--     → Σ (Trie B sz) (λ t → (a , f a) ∈ t)
+--   insert {sz = sz} miss a f =
+--     let s   = size-fin sz
+--         f′  = f ∘ from s in
+--     table (tabulate f′) , tabled (begin
+--       lookup (tabulate f′) (to s a)  ≡⟨ lookup∘tabulate f′ _ ⟩
+--       f (from s (to s a))            ≡⟨ cong f (from∘to s a) ⟩
+--       f a                            ∎
+--     )
+--     where open ≡-Reasoning
+--   insert {sz = sz} (table t) a f =
+--     let ix = to (size-fin sz) a in
+--     table (t [ ix ]≔ f a) , tabled (lookup∘updateAt ix t)
+--   insert (or tr₁ tr₂) (inj₁ x) f
+--     = ×map (flip or tr₂) inj₁ (insert tr₁ x (f ∘ inj₁))
+--   insert (or tr₁ tr₂) (inj₂ y) f
+--     = ×map (or tr₁) inj₂ (insert tr₂ y (f ∘ inj₂))
+--   insert {sz = times m n} (and tr₁) (x , y) f
+--     with insert
+--           (undec proj₁ (const miss) (mtlookup tr₁ x))
+--           y
+--           (f ∘ (x ,_))
+--   ... | (tr₂ , fxy∈tr₂)
+--       = ×map and (both fxy∈tr₂) (insert tr₁ x (const tr₂))
+
+-- record MemoTrie {A : Set ℓ₁} {B : Set ℓ₂} (f : A → B) : Set (ℓ₁ ⊔ ℓ₂) where
+--   field
+--     factoring : Size
+--     a-fin : prop-setoid A Has ∣ factoring ∣ Elements
+--     trie : Trie.Trie B factoring
+
+--   postulate a↔sz : Iso (prop-setoid A) (prop-setoid ⌊ factoring ⌋)
+
+-- open MemoTrie
+
+-- get : ∀ {A : Set ℓ₁} {B : Set ℓ₂} {f : A → B} → MemoTrie f → A → MemoTrie f × B
+-- get {f = f} mt a
+--   with Trie.mtlookup (trie mt) (to (a↔sz mt) a)
+-- ... | yes (b , _) = mt , b
+-- ... | no _
+--   with Trie.insert (trie mt) (to (a↔sz mt) a) (f ∘ from (a↔sz mt))
+-- ... | tr′ , b∈tr′ = record { MemoTrie mt ; trie = tr′ } , Trie.theb b∈tr′
+
 
 ```
 
