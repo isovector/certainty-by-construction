@@ -140,6 +140,9 @@ module Trie where
   theb : ∀ {B : Set ℓ} {sz : Size} {t : Trie B sz} {a : ⌊ sz ⌋} {b : B} → (a , b) ∈ t → B
   theb {b = b} _ = b
 
+  thet : ∀ {B : Set ℓ} {sz : Size} {t : Trie B sz} {a : ⌊ sz ⌋} {b : B} → (a , b) ∈ t → Trie B sz
+  thet {t = t} _ = t
+
   same
     : {B : Set ℓ} {sz : Size} {t : Trie B sz}
     → {a : ⌊ sz ⌋} {b₁ b₂ : B}
@@ -208,36 +211,77 @@ module Trie where
   ... | (tr₂ , fxy∈tr₂)
       = ×map and (both fxy∈tr₂) (insert tr₁ x (const tr₂))
 
-  insert-ok
+  open import Data.Empty
+
+  insert-injective
     : {B : Set ℓ} {sz : Size}
     → {t : Trie B sz}
-    → {a a′ : ⌊ sz ⌋} → {f : ⌊ sz ⌋ → B}
+    → {a a′ : ⌊ sz ⌋} {f : ⌊ sz ⌋ → B} {b : B}
     → a ≢ a′
-    → (a , f a) ∈ t
-    → (a , f a) ∈ proj₁ (insert t a′ f)
-  insert-ok {sz = sz} {t = table t} {a} {a′} {f} a≢a′ (tabled a∈t) = tabled (
-    let
-      ixa = to (size-fin sz) a
-      ixa′ = to (size-fin sz) a′
-    in
-    begin
-      lookup (t [ ixa′ ]≔ f a′) (to (size-fin sz) a)
-    ≡⟨ lookup∘updateAt′ ixa ixa′ (a≢a′ ∘ {! !}) t ⟩
-      lookup t (to (size-fin sz) a)
-    ≡⟨ a∈t ⟩
-      f a
-    ∎
+    → (a , b) ∈ proj₁ (insert t a′ f)
+    → (a , b) ∈ t
+  insert-injective {sz = sz} {miss} {a} {a′} a≢a′ (tabled x) = {! !}
+  insert-injective {sz = sz} {table t} {a} {a′} {f = f} {b = b} a≢a′ (tabled x) = tabled
+    ( let
+        ixa = to (size-fin sz) a
+        ixa′ = to (size-fin sz) a′
+      in begin
+      lookup t ixa                   ≡⟨ sym (lookup∘updateAt′ ixa ixa′ (a≢a′ ∘ ?) t) ⟩
+      lookup (t [ ixa′ ]≔ f a′) ixa  ≡⟨ x ⟩
+      b                              ∎
     )
     where open ≡-Reasoning
-  insert-ok {t = or _ _} {inj₁ _} {inj₁ x} a≢a′ (inj₁ a∈t) =
-    inj₁ (insert-ok (a≢a′ ∘ cong inj₁) a∈t)
-  insert-ok {t = or _ _} {inj₁ _} {inj₂ y} a≢a′ (inj₁ a∈t) =
-    inj₁ a∈t
-  insert-ok {t = or _ _} {inj₂ _} {inj₁ x} a≢a′ (inj₂ a∈t) =
-    inj₂ a∈t
-  insert-ok {t = or _ _} {inj₂ _} {inj₂ y} a≢a′ (inj₂ a∈t) =
-    inj₂ (insert-ok (a≢a′ ∘ cong inj₂) a∈t)
-  insert-ok {t = and t} {fst , snd} {fst₁ , snd₁} a≢a′ (both a∈t a∈t₁) = {! !}
+  insert-injective {t = or t t₁} a≢a′ x₁ = {! !}
+  insert-injective {t = and t} {a = x₁ , y₁} {x₂ , y₂} {b = b} a≢a′ (both yb∈t₁ xt₁∈t)
+    with ⌊⌋dec x₁ x₂ | ⌊⌋dec y₁ y₂
+  ... | no not-in | _ = both yb∈t₁ (insert-injective not-in xt₁∈t)
+  ... | yes refl | yes refl = ⊥-elim (a≢a′ refl)
+  ... | yes refl | no not-in = both {! !} {! !}
+
+--   insert-stable
+--     : {B : Set ℓ} {sz : Size}
+--     → {t : Trie B sz}
+--     → {a a′ : ⌊ sz ⌋} {f : ⌊ sz ⌋ → B} {b : B}
+--     → a ≢ a′
+--     → (a , b) ∈ t
+--     → (a , b) ∈ proj₁ (insert t a′ f)
+--   insert-stable {sz = sz} {t = table t} {a} {a′} {f} {b} a≢a′ (tabled a∈t) = tabled (
+--     let
+--       ixa = to (size-fin sz) a
+--       ixa′ = to (size-fin sz) a′
+--     in begin
+--     lookup (t [ ixa′ ]≔ f a′) (to (size-fin sz) a)  ≡⟨ lookup∘updateAt′ ixa ixa′ (a≢a′ ∘ {! !}) t ⟩
+--     lookup t (to (size-fin sz) a)                   ≡⟨ a∈t ⟩
+--     b                                             ∎)
+--     where open ≡-Reasoning
+--   insert-stable {t = or _ _} {inj₁ _} {inj₁ x} a≢a′ (inj₁ a∈t) =
+--     inj₁ (insert-stable (a≢a′ ∘ cong inj₁) a∈t)
+--   insert-stable {t = or _ _} {inj₁ _} {inj₂ y} a≢a′ (inj₁ a∈t) =
+--     inj₁ a∈t
+--   insert-stable {t = or _ _} {inj₂ _} {inj₁ x} a≢a′ (inj₂ a∈t) =
+--     inj₂ a∈t
+--   insert-stable {t = or _ _} {inj₂ _} {inj₂ y} a≢a′ (inj₂ a∈t) =
+--     inj₂ (insert-stable (a≢a′ ∘ cong inj₂) a∈t)
+--   insert-stable {t = and t} {fst , snd} {fst₁ , snd₁} a≢a′ (both {tr₂ = tr₂} xb∈t₂ at₂∈t)
+--     with ⌊⌋dec fst fst₁ | ⌊⌋dec snd snd₁
+--   -- the place we're inserting it doesn't change the output
+--   ... | no p1 | _ = both xb∈t₂ (insert-stable p1 at₂∈t)
+--   -- contradictory evidence
+--   ... | yes refl | yes refl = ⊥-elim (a≢a′ refl)
+--   -- need to do a sub-insert
+--   ... | yes refl | no p2
+--   -- expand the telescope on insert
+--     with mtlookup t fst in eq
+--   -- impossible; lookup failed but we know it succeeded
+--   ... | no zz = ⊥-elim (zz (-, at₂∈t))
+--   -- otherwise
+--   ... | yes zz
+--     with insert-stable p2 xb∈t₂
+--   ... | z
+--         = let tt = thet z
+--                   in both z {! proj₂ (insert t fst (const tt)) !}
+
+
 
 
 record MemoTrie {A : Set ℓ₁} {B : Set ℓ₂} (f : A → B) : Set (ℓ₁ ⊔ ℓ₂) where
@@ -281,7 +325,10 @@ get {f = f} mt a
 
                 -- if not, we can show it was already in there
                 ; (no a≢a′) →
-                    let eq′ = sym (cong proj₁ eq) in {! !}
+                    actually-in mt a′ b
+                      (Trie.insert-injective
+                          (a≢a′ ∘ ?)
+                          (subst (_ Trie.∈_) (cong proj₁ (sym eq)) a′b∈tr′))
                 }
         }
   } , Trie.theb b∈tr′
