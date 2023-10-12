@@ -4,21 +4,24 @@ open import Data.Nat using (ℕ; _+_; _*_)
 
 data Size : Set where
   num   : ℕ → Size
-  times : Size → Size → Size
   plus  : Size → Size → Size
+  times : Size → Size → Size
 
 ∣_∣ : Size → ℕ
 ∣ num  x      ∣ = x
-∣ times  x y  ∣ = ∣ x  ∣ *  ∣ y ∣
 ∣ plus   x y  ∣ = ∣ x  ∣ +  ∣ y ∣
+∣ times  x y  ∣ = ∣ x  ∣ *  ∣ y ∣
 
+open import Function using (case_of_)
+open import Data.Nat using (ℕ; zero; suc)
 open import Data.Fin
 open import Data.Product
   renaming (map to ×map)
 open import Data.Sum hiding (map; map₂)
 
 open import Relation.Binary
-open import Level
+open import Agda.Primitive
+  using (Level; lsuc; _⊔_)
 
 private variable
   c₁ c₂ c ℓ ℓ₁ ℓ₂ : Level
@@ -72,7 +75,7 @@ s Has cardinality Elements = Iso s (prop-setoid (Fin cardinality))
 postulate
   size-fin : (s : Size) → prop-setoid ⌊ s ⌋ Has ∣ s ∣ Elements
 
-open import Data.Vec using (Vec; lookup; tabulate; _[_]≔_; replicate)
+open import Data.Vec using (Vec; lookup; tabulate; _[_]≔_; replicate; _[_]=_)
 open import Relation.Nullary
 open import Relation.Unary hiding (⌊_⌋; _∈_)
 
@@ -99,251 +102,98 @@ open import Data.Sum.Properties
 open import Data.Maybe
 open import Data.Vec.Properties
 
-module Trie where
+data Trie (B : Set ℓ) : Size → Set ℓ where
+  miss  : {sz : Size} → Trie B sz
+  table : {n : ℕ} → Vec B n → Trie B (num n)
+  or    : {m n : Size} → Trie B m → Trie B n → Trie B (plus m n)
+  and   : {m n : Size} → Trie (Trie B n) m → Trie B (times m n)
 
-  data Trie (B : Set ℓ) : Size → Set ℓ where
-    miss  : {sz : Size} → Trie B sz
-    table : {sz : Size} → Vec B ∣ sz ∣ → Trie B sz
-    or    : {m n : Size} → Trie B m → Trie B n → Trie B (plus m n)
-    and   : {m n : Size} → Trie (Trie B n) m → Trie B (times m n)
+mutual
+  data Memoizes {B : Set ℓ} : {sz : Size} → (f : ⌊ sz ⌋ → B) → Trie B sz → Set ℓ where
+    miss : ∀ {sz} {f : ⌊ sz ⌋ → B} → Memoizes f miss
+    table : ∀ {n} {f : ⌊ num n ⌋ → B} → Memoizes f (table (tabulate f))
+    or : ∀ {m n t₁ t₂} {f : ⌊ plus m n ⌋ → B}
+      → Memoizes (f ∘ inj₁) t₁
+      → Memoizes (f ∘ inj₂) t₂
+      → Memoizes f (or t₁ t₂)
+    and : ∀ {m n} {f : ⌊ times m n ⌋ → B} {t}
+        → (f2 : (ix : ⌊ m ⌋) → Σ (Trie B n) (Memoizes (f ∘ (ix ,_))))
+        → t ≡ proj₁ (to-trie {f = f} f2)
+        → Memoizes f (and t)
 
-  private variable
-    sz m n : Size
-    X : Set ℓ
-    tr₁ : Trie X m
-    tr₂ : Trie X n
-    b : X
-    ix ix₁ ix₂ : X
+  to-trie
+      : {B : Set ℓ} {m n : Size}
+      → {f : ⌊ times m n ⌋ → B}
+      → (f2 : (ix : ⌊ m ⌋) → Σ (Trie B n) (Memoizes (f ∘ (ix ,_))))
+      → Σ (Trie (Trie B n) m) (Memoizes (proj₁ ∘ f2))
+  to-trie {m = num x} f2 = -, table
+  to-trie {m = plus m m₁} f2
+    with to-trie (f2 ∘ inj₁) | to-trie (f2 ∘ inj₂)
+  ... | t₁ , mt₁ | t₂ , mt₂ = -, or mt₁ mt₂
+  to-trie {m = times m m₁} f2 = -, and (λ i → to-trie λ j → f2 (i , j)) refl
+
+get
+  : {B : Set ℓ} (sz : Size) {f : ⌊ sz ⌋ → B} {t : Trie B sz}
+  → Memoizes f t
+  → (a : ⌊ sz ⌋)
+  → B × Σ (Trie B sz) (Memoizes f)
+get (num x) miss a =
+  let t = _
+   in lookup t a , table t , table
+get (plus m n) miss (inj₁ x)
+  with get m miss x
+... | b , fst , snd = b , or fst miss , or snd miss
+get (plus m n) miss (inj₂ y)
+  with get n miss y
+... | b , fst , snd = b , or miss fst , or miss snd
+get (times m n) {f} miss (x , y)
+  with get n { f = f ∘ (x ,_) } miss y
+... | b , subtr , subtr-memo
+  with get m { f = const subtr } miss x
+... | b2 , tr , tr-memo
+    = b , -, and (λ { ix → case ⌊⌋dec ix x of λ
+                            { (yes refl) → -, subtr-memo
+                            ; (no z) → -, miss
+                            }
+                    }) refl
+get .(num _) {t = table t} table a = lookup t a , table t , table
+get (plus m n) (or l r) (inj₁ x)
+  with get m l x
+... | b , fst , snd = b , or fst _ , or snd r
+get (plus m n) (or l r) (inj₂ y)
+  with get n r y
+... | b , fst , snd = b , or _ fst , or l snd
+get (times m n) (and mts _) (x , y)
+  with mts x
+... | _ , subtrmem
+  with get n subtrmem y
+... | b , z , y = b , -, and (λ { ix → case ⌊⌋dec ix x of λ
+                                    { (yes refl) → -, subtrmem
+                                    ; (no z) → mts ix
+                                    } }) refl
 
 
-  data _∈_ {B : Set ℓ}
-      : {sz : Size}
-      → ⌊ sz ⌋ × B
-      → Trie B sz
-      → Set ℓ
-      where
-    tabled
-      : ∀ {t}
-      → lookup t (to (size-fin sz) ix) ≡ b
-      → (ix , b) ∈ table t
-    inj₁
-      : (ix , b) ∈ tr₁
-      → (inj₁ ix , b) ∈ or tr₁ tr₂
-    inj₂
-      : (ix , b) ∈ tr₂
-      → (inj₂ ix , b) ∈ or tr₁ tr₂
-    both
-      : (ix₂ , b)   ∈ tr₂
-      → (ix₁ , tr₂) ∈ tr₁
-      → ((ix₁ , ix₂) , b) ∈ and tr₁
-
-  theb : ∀ {B : Set ℓ} {sz : Size} {t : Trie B sz} {a : ⌊ sz ⌋} {b : B} → (a , b) ∈ t → B
-  theb {b = b} _ = b
-
-  thet : ∀ {B : Set ℓ} {sz : Size} {t : Trie B sz} {a : ⌊ sz ⌋} {b : B} → (a , b) ∈ t → Trie B sz
-  thet {t = t} _ = t
-
-  same
-    : {B : Set ℓ} {sz : Size} {t : Trie B sz}
-    → {a : ⌊ sz ⌋} {b₁ b₂ : B}
-    → (a , b₁) ∈ t
-    → (a , b₂) ∈ t
-    → b₁ ≡ b₂
-  same (tabled x) (tabled y)
-    rewrite x = y
-  same (inj₁ p₁) (inj₁ p₂) = same p₁ p₂
-  same (inj₂ p₁) (inj₂ p₂) = same p₁ p₂
-  same (both p₁ p₃) (both p₂ p₄)
-    rewrite same p₃ p₄ = same p₁ p₂
-
-  mtlookup
-    : {B : Set ℓ} {sz : Size}
-    → (tr : Trie B sz)
-    → (a : ⌊ sz ⌋)
-    → Dec (Σ B (λ b → (a , b) ∈ tr))
-  mtlookup miss a = no λ ()
-  mtlookup {sz = sz} (table x) a
-    = yes (lookup x (to (size-fin sz) a) , tabled refl)
-  mtlookup (or tr₁ tr₂) (inj₁ x)
-    = map′ (map₂ inj₁) (λ { (b , inj₁ p) → b , p }) (mtlookup tr₁ x)
-  mtlookup (or tr₁ tr₂) (inj₂ y)
-    = map′ (map₂ inj₂) (λ { (b , inj₂ p) → b , p }) (mtlookup tr₂ y)
-  mtlookup (and tr) (fst , snd)
-    with mtlookup tr fst
-  ... | no not-in = no λ { (fst , both snd snd₁) → not-in (_ , snd₁) }
-  ... | yes (t , mt∈tr) =
-    map′
-      (map₂ λ nb∈t → both nb∈t mt∈tr)
-      (λ { (b , both tr′ mb∈tr′)
-        → b
-        , subst (λ φ → _ ∈ φ) (same mb∈tr′ mt∈tr) tr′ })
-      (mtlookup t snd)
-
-  undec : {P : Set ℓ₁} {R : Set ℓ₂} → (P → R) → (¬ P → R) → Dec P → R
-  undec to ¬to = [ to , ¬to ] ∘ fromDec
-
-  insert
-    : {B : Set ℓ} {sz : Size}
-    → Trie B sz
-    → (a : ⌊ sz ⌋) → (f : ⌊ sz ⌋ → B)
-    → Σ (Trie B sz) (λ t → (a , f a) ∈ t)
-  insert {sz = sz} miss a f =
-    let s   = size-fin sz
-        f′  = f ∘ from s in
-    table (tabulate f′) , tabled (begin
-      lookup (tabulate f′) (to s a)  ≡⟨ lookup∘tabulate f′ _ ⟩
-      f (from s (to s a))            ≡⟨ cong f (from∘to s a) ⟩
-      f a                            ∎
-    )
-    where open ≡-Reasoning
-  insert {sz = sz} (table t) a f =
-    let ix = to (size-fin sz) a in
-    table (t [ ix ]≔ f a) , tabled (lookup∘updateAt ix t)
-  insert (or tr₁ tr₂) (inj₁ x) f
-    = ×map (flip or tr₂) inj₁ (insert tr₁ x (f ∘ inj₁))
-  insert (or tr₁ tr₂) (inj₂ y) f
-    = ×map (or tr₁) inj₂ (insert tr₂ y (f ∘ inj₂))
-  insert {sz = times m n} (and tr₁) (x , y) f
-    with insert
-          (undec proj₁ (const miss) (mtlookup tr₁ x))
-          y
-          (f ∘ (x ,_))
-  ... | (tr₂ , fxy∈tr₂)
-      = ×map and (both fxy∈tr₂) (insert tr₁ x (const tr₂))
-
-  open import Data.Empty
-
-  insert-injective
-    : {B : Set ℓ} {sz : Size}
-    → {t : Trie B sz}
-    → {a a′ : ⌊ sz ⌋} {f : ⌊ sz ⌋ → B} {b : B}
-    → a ≢ a′
-    → (a , b) ∈ proj₁ (insert t a′ f)
-    → (a , b) ∈ t
-  insert-injective {sz = sz} {miss} {a} {a′} a≢a′ (tabled x) = {! !}
-  insert-injective {sz = sz} {table t} {a} {a′} {f = f} {b = b} a≢a′ (tabled x) = tabled
-    ( let
-        ixa = to (size-fin sz) a
-        ixa′ = to (size-fin sz) a′
-      in begin
-      lookup t ixa                   ≡⟨ sym (lookup∘updateAt′ ixa ixa′ (a≢a′ ∘ ?) t) ⟩
-      lookup (t [ ixa′ ]≔ f a′) ixa  ≡⟨ x ⟩
-      b                              ∎
-    )
-    where open ≡-Reasoning
-  insert-injective {t = or t t₁} a≢a′ x₁ = {! !}
-  insert-injective {t = and t} {a = x₁ , y₁} {x₂ , y₂} {b = b} a≢a′ (both yb∈t₁ xt₁∈t)
-    with ⌊⌋dec x₁ x₂ | ⌊⌋dec y₁ y₂
-  ... | no not-in | _ = both yb∈t₁ (insert-injective not-in xt₁∈t)
-  ... | yes refl | yes refl = ⊥-elim (a≢a′ refl)
-  ... | yes refl | no not-in = both {! !} {! !}
-
---   insert-stable
---     : {B : Set ℓ} {sz : Size}
---     → {t : Trie B sz}
---     → {a a′ : ⌊ sz ⌋} {f : ⌊ sz ⌋ → B} {b : B}
---     → a ≢ a′
---     → (a , b) ∈ t
---     → (a , b) ∈ proj₁ (insert t a′ f)
---   insert-stable {sz = sz} {t = table t} {a} {a′} {f} {b} a≢a′ (tabled a∈t) = tabled (
---     let
---       ixa = to (size-fin sz) a
---       ixa′ = to (size-fin sz) a′
---     in begin
---     lookup (t [ ixa′ ]≔ f a′) (to (size-fin sz) a)  ≡⟨ lookup∘updateAt′ ixa ixa′ (a≢a′ ∘ {! !}) t ⟩
---     lookup t (to (size-fin sz) a)                   ≡⟨ a∈t ⟩
---     b                                             ∎)
---     where open ≡-Reasoning
---   insert-stable {t = or _ _} {inj₁ _} {inj₁ x} a≢a′ (inj₁ a∈t) =
---     inj₁ (insert-stable (a≢a′ ∘ cong inj₁) a∈t)
---   insert-stable {t = or _ _} {inj₁ _} {inj₂ y} a≢a′ (inj₁ a∈t) =
---     inj₁ a∈t
---   insert-stable {t = or _ _} {inj₂ _} {inj₁ x} a≢a′ (inj₂ a∈t) =
---     inj₂ a∈t
---   insert-stable {t = or _ _} {inj₂ _} {inj₂ y} a≢a′ (inj₂ a∈t) =
---     inj₂ (insert-stable (a≢a′ ∘ cong inj₂) a∈t)
---   insert-stable {t = and t} {fst , snd} {fst₁ , snd₁} a≢a′ (both {tr₂ = tr₂} xb∈t₂ at₂∈t)
---     with ⌊⌋dec fst fst₁ | ⌊⌋dec snd snd₁
---   -- the place we're inserting it doesn't change the output
---   ... | no p1 | _ = both xb∈t₂ (insert-stable p1 at₂∈t)
---   -- contradictory evidence
---   ... | yes refl | yes refl = ⊥-elim (a≢a′ refl)
---   -- need to do a sub-insert
---   ... | yes refl | no p2
---   -- expand the telescope on insert
---     with mtlookup t fst in eq
---   -- impossible; lookup failed but we know it succeeded
---   ... | no zz = ⊥-elim (zz (-, at₂∈t))
---   -- otherwise
---   ... | yes zz
---     with insert-stable p2 xb∈t₂
---   ... | z
---         = let tt = thet z
---                   in both z {! proj₂ (insert t fst (const tt)) !}
+get-is-fn : ∀ (sz : Size) {B : Set ℓ₂} {t} {f : ⌊ sz ⌋  → B} → (mt : Memoizes f t) → proj₁ ∘ get sz mt ≗ f
+get-is-fn (num x₁) {f = f} miss x = lookup∘tabulate f x
+get-is-fn (plus m n) miss (inj₁ x) = get-is-fn m miss x
+get-is-fn (plus m n) miss (inj₂ y) = get-is-fn n miss y
+get-is-fn (times sz sz₁) miss (fst , snd) = get-is-fn sz₁ miss snd
+get-is-fn .(num _) {f = f} table x = lookup∘tabulate f x
+get-is-fn .(plus _ _) (or mt mt₁) (inj₁ x) = get-is-fn _ mt x
+get-is-fn .(plus _ _) (or mt mt₁) (inj₂ y) = get-is-fn _ mt₁ y
+get-is-fn .(times _ _) (and mts _) (fst , snd) = get-is-fn _ (proj₂ (mts fst)) snd
 
 
 
+tsize : Size
+tsize = times (num 2) (plus (num 1) (num 1))
 
-record MemoTrie {A : Set ℓ₁} {B : Set ℓ₂} (f : A → B) : Set (ℓ₁ ⊔ ℓ₂) where
-  field
-    factoring : Size
-    a-fin : prop-setoid A Has ∣ factoring ∣ Elements
-    trie : Trie.Trie B factoring
-
-  a↔sz : Iso (prop-setoid A) (prop-setoid ⌊ factoring ⌋)
-  a↔sz = ↔-trans a-fin (↔-sym (size-fin factoring))
-
-  field
-    actually-in : ∀ a b → (a , b) Trie.∈ trie → b ≡ f (from a↔sz a)
+tfun : ⌊ tsize ⌋ → ℕ
+tfun (Fin.zero , inj₁ x) = 1
+tfun (Fin.zero , inj₂ y) = 2
+tfun (Fin.suc Fin.zero , inj₁ x) = 3
+tfun (Fin.suc Fin.zero , inj₂ y) = 4
 
 
-open MemoTrie
-open Function using (case_of_)
-
-
-get : ∀ {A : Set ℓ₁} {B : Set ℓ₂} {f : A → B} → MemoTrie f → A → MemoTrie f × B
-get {f = f} mt a
-  with Trie.mtlookup (trie mt) (to (a↔sz mt) a)
-... | yes (b , _) = mt , b
-... | no not-in
-  with Trie.insert (trie mt) (to (a↔sz mt) a) (f ∘ from (a↔sz mt)) in eq
-... | tr′ , b∈tr′ = record
-  { MemoTrie mt
-  ; trie = tr′
-  ; actually-in =
-      -- whats the proof here?
-      -- we want to show it wasn't already in here
-      -- and then extend the env with this
-      λ { a′ b a′b∈tr′ →
-          -- check if the index is the one we just inserted
-          let a≟a′ = ⌊⌋dec (to (a↔sz mt) a) a′
-           in case a≟a′ of λ
-                -- if yes, we can show we just inserted it
-                { (yes a≡a′) →
-                     Trie.same (subst (λ φ → (φ , b) Trie.∈ _) (sym a≡a′) a′b∈tr′)
-                               (subst (λ φ → (_ , f (from (a↔sz mt) φ)) Trie.∈ tr′) a≡a′ b∈tr′)
-
-                -- if not, we can show it was already in there
-                ; (no a≢a′) →
-                    actually-in mt a′ b
-                      (Trie.insert-injective
-                          (a≢a′ ∘ ?)
-                          (subst (_ Trie.∈_) (cong proj₁ (sym eq)) a′b∈tr′))
-                }
-        }
-  } , Trie.theb b∈tr′
-
-get-is-fn : ∀ {A : Set ℓ₁} {B : Set ℓ₂} {f : A → B} → (mt : MemoTrie f) → proj₂ ∘ get mt ≗ f
-get-is-fn {f = f} mt a
-  with Trie.mtlookup (trie mt) (to (a↔sz mt) a)
-... | yes (b , pr) = begin
-  b                                    ≡⟨  actually-in mt _ _ pr  ⟩
-  f (from (a↔sz mt) (to (a↔sz mt) a))  ≡⟨ cong f (from∘to (a↔sz mt) a) ⟩
-  f a                                  ∎
-  where open ≡-Reasoning
-
-... | no not-in
-  with Trie.insert (trie mt) (to (a↔sz mt) a) (f ∘ from (a↔sz mt))
-... | tr′ , b∈tr′ = cong f (from∘to (a↔sz mt) a)
-
-
+test : Σ ℕ (λ x → Σ (Trie ℕ (times (num 2) (plus (num 1) (num 1)))) (Memoizes tfun))
+test = get tsize (miss {f = tfun}) (Fin.suc Fin.zero , inj₁ zero)
