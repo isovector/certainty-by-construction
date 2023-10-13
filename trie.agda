@@ -13,73 +13,28 @@ data Size : Set where
 ∣ times  x y  ∣ = ∣ x  ∣ *  ∣ y ∣
 
 open import Function using (case_of_)
-open import Data.Nat using (ℕ; zero; suc)
-open import Data.Fin hiding (_+_)
+open import Data.Fin using (Fin; _≟_; zero)
 open import Data.Product
-  renaming (map to ×map)
-open import Data.Sum hiding (map; map₂)
+open import Data.Sum
 
-open import Relation.Binary
 open import Agda.Primitive
   using (Level; lsuc; _⊔_)
 
 private variable
   c₁ c₂ c ℓ ℓ₁ ℓ₂ : Level
 
-record Iso
-      (s₁ : Setoid c₁ ℓ₁)
-      (s₂ : Setoid c₂ ℓ₂)
-      : Set (c₁ ⊔ c₂ ⊔ ℓ₁ ⊔ ℓ₂) where
-  constructor iso
-
-  open Setoid s₁ using ()
-      renaming (Carrier to A; _≈_ to _≈₁_)
-      public
-  open Setoid s₂ using ()
-      renaming (Carrier to B; _≈_ to _≈₂_)
-      public
-
-  field
-    to   : A → B
-    from : B → A
-    from∘to  : (x : A) → from (to x) ≈₁ x
-    to∘from  : (x : B) → to (from x) ≈₂ x
-    to-cong    : {x y : A} → x ≈₁ y → to x ≈₂ to y
-    from-cong  : {x y : B} → x ≈₂ y → from x ≈₁ from y
-
-open Iso
-
-private variable
-  c₃ ℓ₃ : Level
-  s₁ : Setoid c₁ ℓ₁
-  s₂ : Setoid c₂ ℓ₂
-  s₃ : Setoid c₃ ℓ₃
-
-postulate
-  ↔-sym : Iso s₁ s₂ → Iso s₂ s₁
-  ↔-trans : Iso s₁ s₂ → Iso s₂ s₃ → Iso s₁ s₃
-
-
 open import Relation.Binary.PropositionalEquality
-  renaming (setoid to prop-setoid)
-  hiding ([_])
-
-_Has_Elements : Setoid c₁ ℓ₁ → ℕ → Set (c₁ ⊔ ℓ₁)
-s Has cardinality Elements = Iso s (prop-setoid (Fin cardinality))
 
 ⌊_⌋ : Size → Set
 ⌊ num x      ⌋ = Fin x
 ⌊ times x y  ⌋ = ⌊ x ⌋ ×  ⌊ y ⌋
 ⌊ plus  x y  ⌋ = ⌊ x ⌋ ⊎  ⌊ y ⌋
 
-postulate
-  size-fin : (s : Size) → prop-setoid ⌊ s ⌋ Has ∣ s ∣ Elements
-
-open import Data.Vec using (Vec; lookup; tabulate; _[_]≔_; replicate)
+open import Data.Vec using (Vec; lookup; tabulate)
 open import Relation.Nullary
 open import Relation.Unary hiding (⌊_⌋; _∈_)
 
-open import Function using (flip; _∘_; const; id)
+open import Function using (_∘_; const)
 open import Relation.Nullary.Decidable.Core using (map′)
 open import Data.Sum.Properties
 
@@ -99,15 +54,13 @@ open import Data.Sum.Properties
   = map′ (cong inj₂) inj₂-injective (⌊⌋dec y₁ y₂)
 
 
-open import Data.Maybe
-open import Data.Vec.Properties
+open import Data.Vec.Properties using (lookup∘tabulate)
 
 data Trie (B : Set ℓ) : Size → Set ℓ where
   miss  : {sz : Size} → Trie B sz
   table : {n : ℕ} → Vec B n → Trie B (num n)
   or    : {m n : Size} → Trie B m → Trie B n → Trie B (plus m n)
   and   : {m n : Size} → Trie (Trie B n) m → Trie B (times m n)
-
 
 mutual
   data Memoizes {B : Set ℓ} : {sz : Size} → (f : ⌊ sz ⌋ → B) → Trie B sz → Set ℓ where
@@ -135,6 +88,20 @@ mutual
   ... | t₁ , mt₁ | t₂ , mt₂ = -, or mt₁ mt₂
   to-trie {m = times m m₁} f2 = -, and (λ i → to-trie λ j → f2 (i , j)) refl
 
+
+subget-is-memo
+  : ∀ {B : Set ℓ} {m n} {f : ⌊ times m n ⌋ → B} {fst : Trie B n}
+  → (x : ⌊ m ⌋)
+  → Memoizes (f ∘ (x ,_)) fst
+  → ((ix : ⌊ m ⌋) → Σ (Trie B n) (Memoizes (f ∘ (ix ,_))))
+  → Σ (Trie B (times m n)) (Memoizes f)
+subget-is-memo x subtrmem mts = -, and (λ ix →
+  case ⌊⌋dec ix x of λ
+    { (yes refl) → -, subtrmem
+    ; (no z) → mts ix
+    }
+  ) refl
+
 get
   : {B : Set ℓ} (sz : Size) {f : ⌊ sz ⌋ → B} {t : Trie B sz}
   → Memoizes f t
@@ -154,11 +121,7 @@ get (times m n) {f} miss (x , y)
 ... | b , subtr , subtr-memo
   with get m { f = const subtr } miss x
 ... | b2 , tr , tr-memo
-    = b , -, and (λ { ix → case ⌊⌋dec ix x of λ
-                            { (yes refl) → -, subtr-memo
-                            ; (no z) → -, miss
-                            }
-                    }) refl
+    = b , subget-is-memo x subtr-memo λ { ix → -, miss }
 get .(num _) {t = table t} table a = lookup t a , table t , table
 get (plus m n) (or l r) (inj₁ x)
   with get m l x
@@ -169,12 +132,7 @@ get (plus m n) (or l r) (inj₂ y)
 get (times m n) (and mts _) (x , y) with mts x
 ... | _ , subtrmem
   with get n subtrmem y
-... | b , _ , _
-    = b , -, and (λ ix → case ⌊⌋dec ix x of λ
-                            { (yes refl) → -, subtrmem
-                            ; (no z) → mts ix
-                            }
-                 ) refl
+... | b , _ , _ = b , subget-is-memo x subtrmem mts
 
 
 get-is-fn : ∀ {sz : Size} {ℓ₂} {B : Set ℓ₂} {t} {f : ⌊ sz ⌋  → B} → (mt : Memoizes f t) → proj₁ ∘ get sz mt ≗ f
