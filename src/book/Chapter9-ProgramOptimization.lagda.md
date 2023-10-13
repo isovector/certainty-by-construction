@@ -249,7 +249,8 @@ module _ {A : Set} (sz : Size) (sized : prop-setoid A Has ∣ sz ∣ Elements) (
 
 --test2 : proj₁ (proj₂ test) ≡ and (table (miss Vec.∷ or (table (3 Vec.∷ Vec.[])) miss Vec.∷ Vec.[]))
 --test2 = refl
---```
+
+```
 
 
 
