@@ -1822,6 +1822,10 @@ open import Algebra
   using (Op₂)
   public
 
+open import Relation.Binary.PropositionalEquality
+  using (_≗_)
+  public
+
 open import Function
   using (id; _∘_; const; flip)
   public
