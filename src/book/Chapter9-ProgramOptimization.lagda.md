@@ -41,45 +41,78 @@ open import Chapter6-Decidability
 
 :   ```agda
 open import Chapter7-Structures
-  using (_∘_; const; _≗_; prop-setoid; Setoid)
+  using (id; _∘_; const; _≗_; prop-setoid; Setoid)
     ```
 
 :   ```agda
 open import Chapter8-Isomorphisms
-  using (Iso; _↔_; ↔-refl; ↔-sym; ↔-trans; ⊎-fin; ⊎-setoid; ×-fin; ×-setoid; Vec; []; _∷_; lookup; Fin; zero; suc; _⊎_; inj₁; inj₂; _Has_Elements)
+  using (Iso; _↔_; ↔-refl; ↔-sym; ↔-trans; ⊎-fin; ⊎-setoid; fin-iso; ×-fin; ×-setoid; Vec; []; _∷_; lookup; Fin; zero; suc; _⊎_; inj₁; inj₂; _Has_Elements)
     ```
 
 ```agda
-data Size : Set where
-  num   : ℕ → Size
-  plus  : Size → Size → Size
-  times : Size → Size → Size
+data Shape : Set where
+  num   : ℕ → Shape
+  plus  : Shape → Shape → Shape
+  times : Shape → Shape → Shape
 
-∣_∣ : Size → ℕ
+∣_∣ : Shape → ℕ
 ∣ num  x      ∣ = x
 ∣ plus   x y  ∣ = ∣ x  ∣ +  ∣ y ∣
 ∣ times  x y  ∣ = ∣ x  ∣ *  ∣ y ∣
 
 
-⌊_⌋ : Size → Set
-⌊ num x      ⌋ = Fin x
-⌊ times x y  ⌋ = ⌊ x ⌋ ×  ⌊ y ⌋
-⌊ plus  x y  ⌋ = ⌊ x ⌋ ⊎  ⌊ y ⌋
+Ix : Shape → Set
+Ix (num n)      = Fin n
+Ix (times m n)  = Ix m × Ix n
+Ix (plus  m n)  = Ix m ⊎ Ix n
 
-Ix : Size → Set
-Ix = ⌊_⌋
-
-⌊⌋-setoid : Size → Setoid _ _
-⌊⌋-setoid (num x) = prop-setoid (Fin x)
-⌊⌋-setoid (plus m n) = ⊎-setoid (⌊⌋-setoid m) (⌊⌋-setoid n)
-⌊⌋-setoid (times m n) = ×-setoid (⌊⌋-setoid m) (⌊⌋-setoid n)
-
-size-fin : (sz : Size) → ⌊⌋-setoid sz Has ∣ sz ∣ Elements
-size-fin (num x) = ↔-refl
-size-fin (plus m n) = ⊎-fin (size-fin m) (size-fin n)
-size-fin (times m n) = ×-fin (size-fin m) (size-fin n)
-
+open import Relation.Nullary.Decidable.Core
+  using (map′)
 open import Data.Fin using (_≟_)
+open import Data.Sum.Properties
+  using (inj₁-injective; inj₂-injective)
+
+Ix-dec : {sh : Shape} → (ix₁ ix₂ : Ix sh) → Dec (ix₁ ≡ ix₂)
+Ix-dec {num _} ix₁ ix₂ = ix₁ ≟ ix₂
+Ix-dec {times _ _} (a₁ , b₁) (a₂ , b₂)
+  with Ix-dec a₁ a₂ | Ix-dec b₁ b₂
+... | yes refl | yes refl = yes refl
+... | yes refl | no not-eq = no (not-eq ∘ cong proj₂)
+... | no not-eq | yes refl = no (not-eq ∘ cong proj₁)
+... | no not-eq | no _ = no (not-eq ∘ cong proj₁)
+Ix-dec {plus _ _} (inj₁ x₁) (inj₁ x₂)
+  = map′ (cong inj₁) inj₁-injective (Ix-dec x₁ x₂)
+Ix-dec {plus _ _} (inj₁ x₁) (inj₂ y₂) = no λ ()
+Ix-dec {plus _ _} (inj₂ y₁) (inj₁ x₂) = no λ ()
+Ix-dec {plus _ _} (inj₂ y₁) (inj₂ y₂)
+  = map′ (cong inj₂) inj₂-injective (Ix-dec y₁ y₂)
+
+open Iso
+  using (to; from; from∘to; to∘from; to-cong; from-cong)
+
+⊎-prop-homo : {ℓ : Level} {A B : Set ℓ} → ⊎-setoid (prop-setoid A) (prop-setoid B) ↔ prop-setoid (A ⊎ B)
+to ⊎-prop-homo = id
+from ⊎-prop-homo = id
+from∘to ⊎-prop-homo (inj₁ x) = inj₁ refl
+from∘to ⊎-prop-homo (inj₂ y) = inj₂ refl
+to∘from ⊎-prop-homo _ = refl
+to-cong ⊎-prop-homo (inj₁ refl) = refl
+to-cong ⊎-prop-homo (inj₂ refl) = refl
+from-cong ⊎-prop-homo {inj₁ x} refl = inj₁ refl
+from-cong ⊎-prop-homo {inj₂ y} refl = inj₂ refl
+
+×-prop-homo : {ℓ : Level} {A B : Set ℓ} → ×-setoid (prop-setoid A) (prop-setoid B) ↔ prop-setoid (A × B)
+to ×-prop-homo = id
+from ×-prop-homo = id
+from∘to ×-prop-homo _ = refl , refl
+to∘from ×-prop-homo _ = refl
+to-cong ×-prop-homo (refl , refl) = refl
+from-cong ×-prop-homo refl = refl , refl
+
+shape-fin : (sh : Shape) → prop-setoid (Ix sh) Has ∣ sh ∣ Elements
+shape-fin (num x) = ↔-refl
+shape-fin (plus m n) = ↔-trans (↔-sym ⊎-prop-homo) (⊎-fin (shape-fin m) (shape-fin n))
+shape-fin (times m n) = ↔-trans (↔-sym ×-prop-homo) (×-fin (shape-fin m) (shape-fin n))
 
 private variable
   ℓ ℓ₁ ℓ₂ : Level
@@ -100,47 +133,27 @@ lookup∘tabulate
 lookup∘tabulate f zero    = refl
 lookup∘tabulate f (suc i) = lookup∘tabulate (f ∘ suc) i
 
-open import Relation.Nullary.Decidable.Core
-  using (map′)
-open import Data.Sum.Properties
-  using (inj₁-injective; inj₂-injective)
 
-⌊⌋dec : {sz : Size} → (ix₁ ix₂ : ⌊ sz ⌋) → Dec (ix₁ ≡ ix₂)
-⌊⌋dec {num _} ix₁ ix₂ = ix₁ ≟ ix₂
-⌊⌋dec {times _ _} (a₁ , b₁) (a₂ , b₂)
-  with ⌊⌋dec a₁ a₂ | ⌊⌋dec b₁ b₂
-... | yes refl | yes refl = yes refl
-... | yes refl | no not-eq = no (not-eq ∘ cong proj₂)
-... | no not-eq | yes refl = no (not-eq ∘ cong proj₁)
-... | no not-eq | no _ = no (not-eq ∘ cong proj₁)
-⌊⌋dec {plus _ _} (inj₁ x₁) (inj₁ x₂)
-  = map′ (cong inj₁) inj₁-injective (⌊⌋dec x₁ x₂)
-⌊⌋dec {plus _ _} (inj₁ x₁) (inj₂ y₂) = no λ ()
-⌊⌋dec {plus _ _} (inj₂ y₁) (inj₁ x₂) = no λ ()
-⌊⌋dec {plus _ _} (inj₂ y₁) (inj₂ y₂)
-  = map′ (cong inj₂) inj₂-injective (⌊⌋dec y₁ y₂)
-
-
-data Trie (B : Set ℓ) : Size → Set ℓ where
-  miss  : {sz : Size} → Trie B sz
+data Trie (B : Set ℓ) : Shape → Set ℓ where
+  miss  : {sh : Shape} → Trie B sh
   table : {n : ℕ} → Vec B n → Trie B (num n)
-  or    : {m n : Size} → Trie B m → Trie B n → Trie B (plus m n)
-  and   : {m n : Size} → Trie (Trie B n) m → Trie B (times m n)
+  or    : {m n : Shape} → Trie B m → Trie B n → Trie B (plus m n)
+  and   : {m n : Shape} → Trie (Trie B n) m → Trie B (times m n)
 
 
 private variable
   B : Set ℓ
-  sz m n : Size
+  sh m n : Shape
   t₁ : Trie B m
   t₂ : Trie B n
-  f : Ix sz → B
+  f : Ix sh → B
 
 mutual
-  MemoTrie : {B : Set ℓ} {sz : Size} → (Ix sz → B) → Set _
-  MemoTrie {B = B} {sz = sz}  f = Σ (Trie B sz) (Memoizes f)
+  MemoTrie : {B : Set ℓ} {sh : Shape} → (Ix sh → B) → Set _
+  MemoTrie {B = B} {sh = sh}  f = Σ (Trie B sh) (Memoizes f)
 
-  data Memoizes {B : Set ℓ} : {sz : Size} → (f : Ix sz → B) → Trie B sz → Set ℓ where
-    miss : {f : Ix sz → B}
+  data Memoizes {B : Set ℓ} : {sh : Shape} → (f : Ix sh → B) → Trie B sh → Set ℓ where
+    miss : {f : Ix sh → B}
          → Memoizes f miss
     table : {n : ℕ} {f : Ix (num n) → B}
           → Memoizes f (table (tabulate f))
@@ -155,7 +168,7 @@ mutual
         → Memoizes f (and t)
 
   to-trie
-      : {m n : Size}
+      : {m n : Shape}
       → {f : Ix (times m n) → B}
       → (f2 : (ix : Ix m) → Σ (Trie B n) (Memoizes (f ∘ (ix ,_))))
       → MemoTrie (proj₁ ∘ f2)
@@ -173,57 +186,57 @@ subget-is-memo
   → ((ix : Ix m) → MemoTrie (f ∘ (ix ,_)))
   → MemoTrie f
 subget-is-memo x subtrmem mts = -, and (λ ix →
-  case ⌊⌋dec ix x of λ
+  case Ix-dec ix x of λ
     { (yes refl) → -, subtrmem
     ; (no z) → mts ix
     }
   ) refl
 
 get′
-  : {t : Trie B sz}
+  : {t : Trie B sh}
   → Memoizes f t
-  → Ix sz
+  → Ix sh
   → B × MemoTrie f
-get′ {sz = num x} miss a =
+get′ {sh = num x} miss a =
   let t = _
    in lookup t a , table t , table
-get′ {sz = plus m n} miss (inj₁ x)
+get′ {sh = plus m n} miss (inj₁ x)
   with get′ miss x
 ... | b , fst , snd = b , or fst miss , or snd miss
-get′ {sz = plus m n} miss (inj₂ y)
+get′ {sh = plus m n} miss (inj₂ y)
   with get′ miss y
 ... | b , fst , snd = b , or miss fst , or miss snd
-get′ {sz = times m n} {f = f} miss (x , y)
+get′ {sh = times m n} {f = f} miss (x , y)
   with get′ { f = f ∘ (x ,_) } miss y
 ... | b , subtr , subtr-memo
   with get′ { f = const subtr } miss x
 ... | b2 , tr , tr-memo
     = b , subget-is-memo x subtr-memo λ { ix → -, miss }
-get′ {sz = num _} {t = table t} table a = lookup t a , table t , table
-get′ {sz = plus m n} (or l r) (inj₁ x)
+get′ {sh = num _} {t = table t} table a = lookup t a , table t , table
+get′ {sh = plus m n} (or l r) (inj₁ x)
   with get′ l x
 ... | b , fst , snd = b , or fst _ , or snd r
-get′ {sz = plus m n} (or l r) (inj₂ y)
+get′ {sh = plus m n} (or l r) (inj₂ y)
   with get′ r y
 ... | b , fst , snd = b , or _ fst , or l snd
-get′ {sz = times m n} (and mts _) (x , y) with mts x
+get′ {sh = times m n} (and mts _) (x , y) with mts x
 ... | _ , subtrmem
   with get′ subtrmem y
 ... | b , _ , _ = b , subget-is-memo x subtrmem mts
 
-get-is-fn : ∀ {sz : Size} {t} {f : Ix sz → B} → (mt : Memoizes f t) → proj₁ ∘ get′ mt ≗ f
-get-is-fn {sz = num _}     miss x = lookup∘tabulate _ x
-get-is-fn {sz = plus _ _}  miss (inj₁ x) = get-is-fn miss x
-get-is-fn {sz = plus _ _}  miss (inj₂ y) = get-is-fn miss y
-get-is-fn {sz = times _ _} miss (fst , snd) = get-is-fn miss snd
-get-is-fn {sz = num _}     table x = lookup∘tabulate _ x
-get-is-fn {sz = plus _ _}  (or mt mt₁) (inj₁ x) = get-is-fn mt x
-get-is-fn {sz = plus _ _}  (or mt mt₁) (inj₂ y) = get-is-fn mt₁ y
-get-is-fn {sz = times _ _} (and mts _) (fst , snd) = get-is-fn (proj₂ (mts fst)) snd
+get-is-fn : ∀ {sh : Shape} {t} {f : Ix sh → B} → (mt : Memoizes f t) → proj₁ ∘ get′ mt ≗ f
+get-is-fn {sh = num _}     miss x = lookup∘tabulate _ x
+get-is-fn {sh = plus _ _}  miss (inj₁ x) = get-is-fn miss x
+get-is-fn {sh = plus _ _}  miss (inj₂ y) = get-is-fn miss y
+get-is-fn {sh = times _ _} miss (fst , snd) = get-is-fn miss snd
+get-is-fn {sh = num _}     table x = lookup∘tabulate _ x
+get-is-fn {sh = plus _ _}  (or mt mt₁) (inj₁ x) = get-is-fn mt x
+get-is-fn {sh = plus _ _}  (or mt mt₁) (inj₂ y) = get-is-fn mt₁ y
+get-is-fn {sh = times _ _} (and mts _) (fst , snd) = get-is-fn (proj₂ (mts fst)) snd
 
-module _ {A : Set} (sz : Size) (sized : prop-setoid A Has ∣ sz ∣ Elements) (f : A → B) where
-  postulate
-    A↔Ix : prop-setoid A ↔ prop-setoid (Ix sz)
+module _ {A : Set} (sh : Shape) (sized : prop-setoid A Has ∣ sh ∣ Elements) (f : A → B) where
+  A↔Ix : prop-setoid A ↔ prop-setoid (Ix sh)
+  A↔Ix = fin-iso sized (shape-fin sh)
 
   f′ = f ∘ Iso.from (A↔Ix)
 
@@ -234,7 +247,7 @@ module _ {A : Set} (sz : Size) (sized : prop-setoid A Has ∣ sz ∣ Elements) (
 ----
 
 
---tsize : Size
+--tsize : Shape
 --tsize = times (num 2) (plus (num 1) (num 1))
 
 --tfun : ⌊ tsize ⌋ → ℕ
