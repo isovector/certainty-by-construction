@@ -19,9 +19,7 @@ open import Chapter2-Numbers
 
 :   ```agda
 open import Chapter3-Proofs
-  hiding (refl; sym; trans)
--- TODO(sandy): do this in the proofs chapter!
-import Chapter3-Proofs as ≡
+  renaming (module PropEq to ≡)
     ```
 
 :   ```agda
@@ -467,7 +465,7 @@ automatically fall out from computation.
       → vec-setoid (prop-setoid A) n
       ↔ (prop-setoid (Fin n) ⇒ prop-setoid A)
   Fn.func (to vec-iso x) = lookup x
-  Fn.cong (to vec-iso x) = cong (lookup x)
+  Fn.cong (to vec-iso x) = ≡.cong (lookup x)
   from vec-iso = fromVec′ ∘ Fn.func
   from∘to (vec-iso {A = A}) x
     rewrite fromVec′∘toVec′ x = refl′ (pre (vec-equiv (prop-setoid A)))
@@ -477,9 +475,9 @@ automatically fall out from computation.
   from-cong (vec-iso {n = suc n}) {x} {y} f
     = f refl
     ∷ from-cong (vec-iso {n = n})
-        { fn (Fn.func x ∘ suc) (Fn.cong x ∘ cong suc) }
-        { fn (Fn.func y ∘ suc) (Fn.cong y ∘ cong suc) }
-        (f ∘ cong suc)
+        { fn (Fn.func x ∘ suc) (Fn.cong x ∘ ≡.cong suc) }
+        { fn (Fn.func y ∘ suc) (Fn.cong y ∘ ≡.cong suc) }
+        (f ∘ ≡.cong suc)
 ```
 
 In order to show the `def:lemma`, we must prove that every element in
@@ -795,7 +793,7 @@ products, as in `def:combine-remQuot-iso`:
   from     combine-remQuot-iso (fst , snd)  = combine fst snd
   from∘to  (combine-remQuot-iso {m = m}) x  = combine-remQuot {m} _ x
   to∘from  combine-remQuot-iso (x , y) with remQuot-combine x y
-  ... | p = cong proj₁ p , cong proj₂ p
+  ... | p = ≡.cong proj₁ p , ≡.cong proj₂ p
   to-cong    combine-remQuot-iso ≡.refl           = ≡.refl , ≡.refl
   from-cong  combine-remQuot-iso (≡.refl , ≡.refl)  = ≡.refl
 ```

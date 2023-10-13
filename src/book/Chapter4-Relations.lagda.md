@@ -26,7 +26,6 @@ open import Chapter2-Numbers
 
 :   ```agda
 open import Chapter3-Proofs
-  using (_≡_; cong)
     ```
 
 In the last chapter, we thoroughly investigated the notion of doing proof work
@@ -319,7 +318,7 @@ As an example, we can give our earlier example again---typing `∃` as
 
 ```agda
   ∃n,n+1≡5 : Σ ℕ (λ n → n + 1 ≡ 5)
-  ∃n,n+1≡5 = 4 , refl
+  ∃n,n+1≡5 = 4 , PropEq.refl
 ```
 
 In the type of `def:∃n,n+1≡5`, we give two arguments to `type:Σ`, the first
@@ -835,14 +834,14 @@ the level of types. This machinery is called `def:subst`, short for
 
 ```agda
   open Chapter3-Proofs
-    using (refl; +-identityʳ)
+    using (+-identityʳ)
 
   subst
       : {x y : A}
       → (P : A → Set ℓ)  -- ! 1
       → x ≡ y
       → P x → P y
-  subst _ refl px = px
+  subst _ PropEq.refl px = px
 ```
 
 You can think of `def:subst` as a type-level `def:cong`, as it serves the same
@@ -1051,9 +1050,6 @@ natural type:
 
 ```agda
 module Definition-LessThanOrEqualTo where
-  open Chapter3-Proofs
-    using (refl)
-
   data _≤_ : Rel ℕ lzero where
     z≤n : {n : ℕ} → zero ≤ n
     s≤s : {m n : ℕ} → m ≤ n → suc m ≤ suc n
@@ -1212,10 +1208,6 @@ An easy solution is to give qualified identifiers for the particular things we'd
 like. We can give the alias `module:PropEq` to `module:Chapter3-Proof`
 (the module where we first defined `ctor:refl` and `def:trans`) by way of the
 following syntax:
-
-```agda
-  module PropEq = Chapter3-Proofs
-```
 
 which now gives us unambiguous access to `ctor:PropEq.refl` and
 `def:PropEq.trans`:
@@ -1604,7 +1596,7 @@ straightforward:
   ≤-antisym : {m n : ℕ} → m ≤ n → n ≤ m → m ≡ n
   ≤-antisym z≤n z≤n = PropEq.refl
   ≤-antisym (s≤s m≤n) (s≤s n≤m) =
-    cong suc (≤-antisym m≤n n≤m)
+    PropEq.cong suc (≤-antisym m≤n n≤m)
 ```
 
 In addition, we can generalize this type to something more reusable, like we did

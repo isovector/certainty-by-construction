@@ -32,7 +32,7 @@ open import Chapter2-Numbers
 
 :   ```agda
 open import Chapter3-Proofs
-  hiding (refl; sym; trans)
+open PropEq using (cong)
     ```
 
 :   ```agda
@@ -66,8 +66,7 @@ arguments themselves, and the tools for controlling the search.
 
 ```agda
 module Playground-Instances where
-  open Chapter3-Proofs
-    using (refl)
+  open PropEq
 ```
 
 As the name suggests, instance arguments are special arguments to functions that
@@ -104,14 +103,14 @@ type is `type:ℕ`, it will return that:
 
 ```agda
   _ : default ≡ 0
-  _ = refl
+  _ = PropEq.refl
 ```
 
 Likewise for `type:Bool`:
 
 ```agda
   _ : default ≡ false
-  _ = refl
+  _ = PropEq.refl
 ```
 
 Agda truly is looking into all of the `keyword:instance` blocks to look these

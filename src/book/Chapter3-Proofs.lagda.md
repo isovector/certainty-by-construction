@@ -2446,8 +2446,13 @@ Solution
 
 ```agda
 open import Relation.Binary.PropositionalEquality
-  using (_≡_; refl; cong; sym; trans; module ≡-Reasoning)
+  using (_≡_; module ≡-Reasoning)
   public
+
+module PropEq where
+  open Relation.Binary.PropositionalEquality
+    using (refl; cong; sym; trans)
+    public
 
 open import Data.Bool
   using (if_then_else_)
@@ -2474,8 +2479,7 @@ open import Data.Nat.Properties
          ; +-assoc      ; *-assoc
          ; +-comm       ; *-comm
          ; ^-identityʳ
-         ; ≤-refl       ; ≤-trans
-         ; +-suc        ;  suc-injective
+         ; +-suc         ;  suc-injective
          ; *-distribˡ-+  ; *-distribʳ-+
          )
   public

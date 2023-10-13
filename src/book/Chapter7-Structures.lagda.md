@@ -22,9 +22,7 @@ open import Chapter2-Numbers
 
 :   ```agda
 open import Chapter3-Proofs
-  hiding (refl; sym; trans; cong)
--- TODO(sandy): do this in the proofs chapter!
-import Chapter3-Proofs as ≡
+  renaming (module PropEq to ≡)
     ```
 
 :   ```agda
