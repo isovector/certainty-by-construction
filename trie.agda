@@ -14,7 +14,7 @@ data Size : Set where
 
 open import Function using (case_of_)
 open import Data.Nat using (ℕ; zero; suc)
-open import Data.Fin
+open import Data.Fin hiding (_+_)
 open import Data.Product
   renaming (map to ×map)
 open import Data.Sum hiding (map; map₂)
@@ -75,7 +75,7 @@ s Has cardinality Elements = Iso s (prop-setoid (Fin cardinality))
 postulate
   size-fin : (s : Size) → prop-setoid ⌊ s ⌋ Has ∣ s ∣ Elements
 
-open import Data.Vec using (Vec; lookup; tabulate; _[_]≔_; replicate; _[_]=_)
+open import Data.Vec using (Vec; lookup; tabulate; _[_]≔_; replicate)
 open import Relation.Nullary
 open import Relation.Unary hiding (⌊_⌋; _∈_)
 
@@ -108,10 +108,13 @@ data Trie (B : Set ℓ) : Size → Set ℓ where
   or    : {m n : Size} → Trie B m → Trie B n → Trie B (plus m n)
   and   : {m n : Size} → Trie (Trie B n) m → Trie B (times m n)
 
+
 mutual
   data Memoizes {B : Set ℓ} : {sz : Size} → (f : ⌊ sz ⌋ → B) → Trie B sz → Set ℓ where
-    miss : ∀ {sz} {f : ⌊ sz ⌋ → B} → Memoizes f miss
-    table : ∀ {n} {f : ⌊ num n ⌋ → B} → Memoizes f (table (tabulate f))
+    miss : ∀ {sz} {f : ⌊ sz ⌋ → B}
+         → Memoizes f miss
+    table : ∀ {n} {f : ⌊ num n ⌋ → B}
+          → Memoizes f (table (tabulate f))
     or : ∀ {m n t₁ t₂} {f : ⌊ plus m n ⌋ → B}
       → Memoizes (f ∘ inj₁) t₁
       → Memoizes (f ∘ inj₂) t₂
@@ -163,26 +166,29 @@ get (plus m n) (or l r) (inj₁ x)
 get (plus m n) (or l r) (inj₂ y)
   with get n r y
 ... | b , fst , snd = b , or _ fst , or l snd
-get (times m n) (and mts _) (x , y)
-  with mts x
+get (times m n) (and mts _) (x , y) with mts x
 ... | _ , subtrmem
   with get n subtrmem y
-... | b , z , y = b , -, and (λ { ix → case ⌊⌋dec ix x of λ
-                                    { (yes refl) → -, subtrmem
-                                    ; (no z) → mts ix
-                                    } }) refl
+... | b , _ , _
+    = b , -, and (λ ix → case ⌊⌋dec ix x of λ
+                            { (yes refl) → -, subtrmem
+                            ; (no z) → mts ix
+                            }
+                 ) refl
 
 
-get-is-fn : ∀ (sz : Size) {B : Set ℓ₂} {t} {f : ⌊ sz ⌋  → B} → (mt : Memoizes f t) → proj₁ ∘ get sz mt ≗ f
-get-is-fn (num x₁) {f = f} miss x = lookup∘tabulate f x
-get-is-fn (plus m n) miss (inj₁ x) = get-is-fn m miss x
-get-is-fn (plus m n) miss (inj₂ y) = get-is-fn n miss y
-get-is-fn (times sz sz₁) miss (fst , snd) = get-is-fn sz₁ miss snd
-get-is-fn .(num _) {f = f} table x = lookup∘tabulate f x
-get-is-fn .(plus _ _) (or mt mt₁) (inj₁ x) = get-is-fn _ mt x
-get-is-fn .(plus _ _) (or mt mt₁) (inj₂ y) = get-is-fn _ mt₁ y
-get-is-fn .(times _ _) (and mts _) (fst , snd) = get-is-fn _ (proj₂ (mts fst)) snd
+get-is-fn : ∀ {sz : Size} {ℓ₂} {B : Set ℓ₂} {t} {f : ⌊ sz ⌋  → B} → (mt : Memoizes f t) → proj₁ ∘ get sz mt ≗ f
+get-is-fn {num _}     miss x = lookup∘tabulate _ x
+get-is-fn {plus _ _}  miss (inj₁ x) = get-is-fn miss x
+get-is-fn {plus _ _}  miss (inj₂ y) = get-is-fn miss y
+get-is-fn {times _ _} miss (fst , snd) = get-is-fn miss snd
+get-is-fn {num _}     table x = lookup∘tabulate _ x
+get-is-fn {plus _ _}  (or mt mt₁) (inj₁ x) = get-is-fn mt x
+get-is-fn {plus _ _}  (or mt mt₁) (inj₂ y) = get-is-fn mt₁ y
+get-is-fn {times _ _} (and mts _) (fst , snd) = get-is-fn (proj₂ (mts fst)) snd
 
+
+--
 
 
 tsize : Size
@@ -197,3 +203,7 @@ tfun (Fin.suc Fin.zero , inj₂ y) = 4
 
 test : Σ ℕ (λ x → Σ (Trie ℕ (times (num 2) (plus (num 1) (num 1)))) (Memoizes tfun))
 test = get tsize (miss {f = tfun}) (Fin.suc Fin.zero , inj₁ zero)
+
+test2 : proj₁ (proj₂ test) ≡ and (table (miss Vec.∷ or (table (3 Vec.∷ Vec.[])) miss Vec.∷ Vec.[]))
+test2 = refl
+
