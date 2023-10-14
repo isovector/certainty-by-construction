@@ -1197,16 +1197,16 @@ module _ where
     open import Data.Sum using (_⊎_; inj₁; inj₂)
 
     data ⊎-Pointwise : Rel (Carrier₁ ⊎ Carrier₂) (ℓ₁ ⊔ ℓ₂) where
-      inj₁  : {x y : Carrier₁} → x ≈₁ y → ⊎-Pointwise (inj₁ x) (inj₁ y)
-      inj₂  : {x y : Carrier₂} → x ≈₂ y → ⊎-Pointwise (inj₂ x) (inj₂ y)
+      inj₁  : {x y : Carrier₁} → x ≈₁  y → ⊎-Pointwise (inj₁ x) (inj₁ y)
+      inj₂  : {x y : Carrier₂} → x ≈₂  y → ⊎-Pointwise (inj₂ x) (inj₂ y)
 
     ⊎-equiv : IsEquivalence ⊎-Pointwise
-    refl′   (pre ⊎-equiv) {inj₁ x} = inj₁ refl
-    refl′   (pre ⊎-equiv) {inj₂ y} = inj₂ refl
-    trans′  (pre ⊎-equiv) (inj₁ x=y) (inj₁ y=z) = inj₁ (trans x=y y=z)
-    trans′  (pre ⊎-equiv) (inj₂ x=y) (inj₂ y=z) = inj₂ (trans x=y y=z)
-    sym′    ⊎-equiv (inj₁ x) = inj₁ (sym x)
-    sym′    ⊎-equiv (inj₂ x) = inj₂ (sym x)
+    refl′   (pre ⊎-equiv) {inj₁  x} = inj₁ refl
+    refl′   (pre ⊎-equiv) {inj₂  y} = inj₂ refl
+    trans′  (pre ⊎-equiv) (inj₁  x=y) (inj₁  y=z) = inj₁  (trans x=y y=z)
+    trans′  (pre ⊎-equiv) (inj₂  x=y) (inj₂  y=z) = inj₂  (trans x=y y=z)
+    sym′    ⊎-equiv (inj₁  x) = inj₁  (sym x)
+    sym′    ⊎-equiv (inj₂  x) = inj₂  (sym x)
 
     ⊎-setoid : Setoid (c₁ ⊔ c₂) (ℓ₁ ⊔ ℓ₂)
     Carrier  ⊎-setoid = s₁ .Carrier ⊎ s₂ .Carrier
@@ -1252,14 +1252,6 @@ those which are congruent. So we can't yet define this setoid, we must first
 define a type corresponding to congruent functions between our two carrier sets:
 
 ```agda
-  record Fn {a b : Level} (From : Setoid a ℓ₁) (To : Setoid b ℓ₂)
-        : Set (a ⊔ b ⊔ ℓ₁ ⊔ ℓ₂) where
-    constructor fn
-    field
-      func  : From .Carrier → To .Carrier
-      cong  : {x y : From .Carrier}
-            → From  ._≈_  x         y
-            → To    ._≈_  (func x)  (func y)
 ```
 
 The type `type:Fn` now encodes functions between the carriers of `A` and `B`,
@@ -1284,16 +1276,22 @@ relation is a proof that everything does in fact hold:
 
 ```agda
   module _ {a b : Level} (s₁ : Setoid a ℓ₁) (s₂ : Setoid b ℓ₂) where
+    open Setoid s₁  renaming (Carrier to From;  _≈_ to _≈₁_)
+    open Setoid s₂  renaming (Carrier to To;    _≈_ to _≈₂_)
+
+    record Fn : Set (a ⊔ b ⊔ ℓ₁ ⊔ ℓ₂) where
+      constructor fn
+      field
+        func  : From → To
+        cong  : {x y : From}
+              → x ≈₁ y
+              → func x ≈₂ func y
+
     open Fn
 
-    open Setoid s₁ renaming (Carrier to From; _≈_ to _≈₁_)
-    open Setoid s₂ renaming (_≈_ to _≈₂_)
-
     fun-ext : Setoid _ _
-    Carrier fun-ext = Fn s₁ s₂
-    _≈_ fun-ext f g  = {x y : From}
-                 → x ≈₁ y
-                 → f .func x ≈₂ g .func y
+    Carrier fun-ext = Fn
+    _≈_ fun-ext f g = {x y : From} → x ≈₁ y → f .func x ≈₂ g .func y
     refl′   (pre (equiv fun-ext)) {f} x=y = f .cong x=y
     trans′  (pre (equiv fun-ext)) ij jk x=y
       = trans′  (pre (equiv s₂))
@@ -1302,7 +1300,7 @@ relation is a proof that everything does in fact hold:
     sym′ (equiv fun-ext) ij x=y
       = sym′ (equiv s₂) (ij (sym′ (equiv s₁) x=y))
 
-  _⇒_ = fun-ext
+    _⇒_ = fun-ext
 ```
 
 Welcome to the godawful world of *setoid hell,* where the burden of the
@@ -1321,7 +1319,7 @@ now unwind the stack and return there, seeing how setoids can help (and hinder)
 the problems we ran into previously.
 
 
-## Pointwise
+## The Pointwise Monoid
 
 The catchphrase of setoids is "always parameterize equality," so returning to
 our example of monoids, we must put a `type:Setoid` inside of our `type:Monoid`
@@ -1515,8 +1513,8 @@ module _ (m₁ : Monoid c₁ ℓ₁) (m₂ : Monoid c₂ ℓ₂) where
     _ = m₁
     _ = m₂
 
-  X = m₁ .Monoid.Carrier
-  Y = m₂ .Monoid.Carrier
+  From = m₁  .Monoid.Carrier
+  To   = m₂  .Monoid.Carrier
 ```
 
 we are ready to give a definition `type:MonHom`, witnessing the fact that some
@@ -1524,12 +1522,12 @@ function `f : X → Y` is a homomorphism. The only potential gotcha here is, as
 always when dealing with setoids, a proof of congruence:
 
 ```agda
-  record MonHom (f : X → Y)
+  record MonHom (f : From → To)
         : Set (c₁ ⊔ c₂ ⊔ ℓ₁ ⊔ ℓ₂) where
     field
       preserves-ε  : f ε ≈ ε
-      preserves-∙  : (a b : X) → f (a ∙ b) ≈ f a ∙ f b
-      f-cong       : {a b : X} → a ≈ b → f a ≈ f b
+      preserves-∙  : (a b : From) → f (a ∙ b) ≈ f a ∙ f b
+      f-cong       : {a b : From} → a ≈ b → f a ≈ f b
 -- FIX
 ```
 

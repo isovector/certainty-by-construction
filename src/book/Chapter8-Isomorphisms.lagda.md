@@ -427,14 +427,17 @@ automatically fall out from computation.
     isEquivalence (vec-setoid n) = vec-equiv
 
   instance
-    setoid→preorder : {c ℓ : Level} → ⦃ s : Setoid c ℓ ⦄ → IsPreorder (s .Setoid._≈_)
-    setoid→preorder ⦃ s ⦄ = IsEquivalence.isPreorder (Setoid.isEquivalence s)
-
     vec-setoid-inst : {c ℓ : Level} → {n : ℕ} → ⦃ s : Setoid c ℓ ⦄ → Setoid c ℓ
     vec-setoid-inst {n = n} ⦃ s ⦄ = vec-setoid s n
 
     prop-setoid-inst : {c : Level} {A : Set c} → Setoid c c
     prop-setoid-inst {A = A} = prop-setoid A
+
+    vec-preorder-inst : {c ℓ : Level} → {n : ℕ} → ⦃ s : Setoid c ℓ ⦄ → IsPreorder (Vec-Pointwise s n)
+    vec-preorder-inst ⦃ s ⦄ = IsEquivalence.isPreorder (vec-equiv s)
+
+    vec-equiv-inst : {c ℓ : Level} → {n : ℕ} → ⦃ s : Setoid c ℓ ⦄ → IsEquivalence (Vec-Pointwise s n)
+    vec-equiv-inst ⦃ s ⦄ = vec-equiv s
 
   open Setoid-Renaming
     hiding (Carrier)
@@ -447,7 +450,7 @@ automatically fall out from computation.
 
   -- TODO(sandy): true of any setoid
   ≡→pointwise : ∀ {ℓ} {A : Set ℓ} {xs ys} → xs ≡ ys → Vec-Pointwise (prop-setoid A) n xs ys
-  ≡→pointwise x rewrite x = refl′ (pre (vec-equiv (prop-setoid _)))
+  ≡→pointwise x rewrite x = refl
 
 
   vec-iso
@@ -461,7 +464,7 @@ automatically fall out from computation.
     rewrite fromVec′∘toVec′ x = refl′ (pre (vec-equiv (prop-setoid A)))
   to∘from vec-iso x {n} ≡.refl = toVec′∘fromVec′ (Fn.func x) n
   to-cong vec-iso x ≡.refl rewrite pointwise→≡ x = refl
-  from-cong (vec-iso {n = zero}) {x} {y} f = refl′ (pre (vec-equiv (prop-setoid _)))
+  from-cong (vec-iso {n = zero}) {x} {y} f = refl
   from-cong (vec-iso {n = suc n}) {x} {y} f
     = f refl
     ∷ from-cong (vec-iso {n = n})
@@ -573,14 +576,14 @@ can show that `type:Bool` has two inhabitants:
   bool-fin : prop-setoid Bool Has 2 Elements
   to         bool-fin false       = zero
   to         bool-fin true        = suc zero
-  from       bool-fin zero        = false
-  from       bool-fin (suc zero)  = true
+  from       bool-fin zero        = _
+  from       bool-fin (suc zero)  = _
   from∘to    bool-fin false       = refl
   from∘to    bool-fin true        = refl
   to∘from    bool-fin zero        = refl
   to∘from    bool-fin (suc zero)  = refl
-  to-cong    bool-fin ≡.refl        = refl
-  from-cong  bool-fin ≡.refl        = refl
+  to-cong    bool-fin ≡.refl      = refl
+  from-cong  bool-fin ≡.refl      = refl
 ```
 
 While we don't need an isomorphism to convince ourselves that `type:Bool` does
@@ -634,16 +637,16 @@ Similarly, we can give the same treatment to `type:_⊎_`, as in
       : s₁ ↔ s₂
       → s₃ ↔ s₄
       → ⊎-setoid s₁ s₃ ↔ ⊎-setoid s₂ s₄
-  to         (⊎-preserves-↔ s t)           = +.map (to s) (to t)
-  from       (⊎-preserves-↔ s t)           = +.map (from s) (from t)
-  from∘to    (⊎-preserves-↔ s t) (inj₁ x)  = inj₁ (from∘to s x)
-  from∘to    (⊎-preserves-↔ s t) (inj₂ y)  = inj₂ (from∘to t y)
-  to∘from    (⊎-preserves-↔ s t) (inj₁ x)  = inj₁ (to∘from s x)
-  to∘from    (⊎-preserves-↔ s t) (inj₂ y)  = inj₂ (to∘from t y)
-  to-cong    (⊎-preserves-↔ s t) (inj₁ x)  = inj₁ (to-cong s x)
-  to-cong    (⊎-preserves-↔ s t) (inj₂ x)  = inj₂ (to-cong t x)
-  from-cong  (⊎-preserves-↔ s t) (inj₁ x)  = inj₁ (from-cong s x)
-  from-cong  (⊎-preserves-↔ s t) (inj₂ x)  = inj₂ (from-cong t x)
+  to         (⊎-preserves-↔ s t)           = +.map (to s)    (to t)
+  from       (⊎-preserves-↔ s t)           = +.map (from s)  (from t)
+  from∘to    (⊎-preserves-↔ s t) (inj₁ x)  = inj₁  (from∘to s x)
+  from∘to    (⊎-preserves-↔ s t) (inj₂ y)  = inj₂  (from∘to t y)
+  to∘from    (⊎-preserves-↔ s t) (inj₁ x)  = inj₁  (to∘from s x)
+  to∘from    (⊎-preserves-↔ s t) (inj₂ y)  = inj₂  (to∘from t y)
+  to-cong    (⊎-preserves-↔ s t) (inj₁ x)  = inj₁  (to-cong s x)
+  to-cong    (⊎-preserves-↔ s t) (inj₂ x)  = inj₂  (to-cong t x)
+  from-cong  (⊎-preserves-↔ s t) (inj₁ x)  = inj₁  (from-cong s x)
+  from-cong  (⊎-preserves-↔ s t) (inj₂ x)  = inj₂  (from-cong t x)
 
 
   ⊎-prop-homo
@@ -709,8 +712,8 @@ you of an isomorphism, and indeed, there is such an isomorphism given by
   from       join-splitAt-iso = join _ _
   from∘to    (join-splitAt-iso {m = m})  = join-splitAt m _
   to∘from    join-splitAt-iso x          = splitAt-join _ _ x
-  to-cong    join-splitAt-iso ≡.refl = ≡.refl
-  from-cong  join-splitAt-iso ≡.refl = ≡.refl
+  to-cong    join-splitAt-iso ≡.refl = refl
+  from-cong  join-splitAt-iso ≡.refl = refl
 ```
 
 Where there is a mathematical object for coproducts, there is usually one
@@ -762,8 +765,8 @@ products, as in `def:combine-remQuot-iso`:
   from       ×-prop-homo = id
   from∘to    ×-prop-homo _ = refl , refl
   to∘from    ×-prop-homo _ = refl
-  to-cong    ×-prop-homo (≡.refl , ≡.refl) = refl
-  from-cong  ×-prop-homo ≡.refl = refl , refl
+  to-cong    ×-prop-homo (≡.refl , ≡.refl)  = refl
+  from-cong  ×-prop-homo ≡.refl             = refl , refl
 
   combine-remQuot-iso
       : prop-setoid (Fin (m * n))
@@ -771,9 +774,9 @@ products, as in `def:combine-remQuot-iso`:
   to         combine-remQuot-iso = remQuot _
   from       combine-remQuot-iso (fst , snd)  = combine fst snd
   from∘to    (combine-remQuot-iso {m = m}) x  = combine-remQuot {m} _ x
-  to∘from    combine-remQuot-iso (x , y) = remQuot-combine x y
-  to-cong    combine-remQuot-iso ≡.refl = ≡.refl
-  from-cong  combine-remQuot-iso ≡.refl = ≡.refl
+  to∘from    combine-remQuot-iso (x , y)  = remQuot-combine x y
+  to-cong    combine-remQuot-iso ≡.refl   = refl
+  from-cong  combine-remQuot-iso ≡.refl   = refl
 ```
 
 At long last, we are now ready to show that coproducts add the cardinalities of
@@ -818,6 +821,7 @@ Thus, we need a setoid over congruent functions. Given such a thing, it's easy
 
 ```agda
 open Setoid
+  hiding (refl; sym; trans)
 open Setoid-Renaming
   hiding (Carrier)
 
@@ -848,14 +852,14 @@ to∘from (→-preserves-↔ s t) f {x} {y} a = begin
   where open B-Reasoning t
 to-cong (→-preserves-↔ {s₁ = s₁} s t) {g} {h} f {x} {y} a = begin
   to t (Fn.func g (from s x)) ≈⟨ to-cong t (Fn.cong g (from-cong s a)) ⟩
-  to t (Fn.func g (from s y)) ≈⟨ to-cong t (f (refl′ (pre (equiv s₁)))) ⟩
+  to t (Fn.func g (from s y)) ≈⟨ to-cong t (f (refl′ (isPreorder s₁))) ⟩
   to t (Fn.func h (from s y)) ∎
   where open B-Reasoning t
 from-cong (→-preserves-↔ {s₂ = s₂} s t) {g} {h} f {x} {y} a = begin
   from t (Fn.func g (to s x)) ≈⟨ from-cong t (Fn.cong g (to-cong s a)) ⟩
-  from t (Fn.func g (to s y)) ≈⟨ from-cong t (f (refl′ (pre (equiv s₂)))) ⟩
+  from t (Fn.func g (to s y)) ≈⟨ from-cong t (f (refl′ (isPreorder s₂))) ⟩
   from t (Fn.func h (to s y)) ∎
-  where open A-Reasoning t
+  where open A-Reasoning t hiding (refl)
 ```
 
 Now, given a setoid over elements, we can construct a setoid over vectors where
@@ -876,31 +880,32 @@ has cardinality one:
 ```agda
 open Sandbox-Finite
 
-module _ where
+module _ {s₁ : Setoid c₁ ℓ₁} where
+  private instance
+    _ = s₁
+    _ = s₁ .isPreorder
+    _ = s₁ .isEquivalence
+
   vec-fin₀ : vec-setoid s₁ 0 Has 1 Elements
   to         vec-fin₀ []    = zero
   from       vec-fin₀ zero  = []
   from∘to    vec-fin₀ []    = []
-  to∘from    vec-fin₀ zero  = ≡.refl
-  to-cong    vec-fin₀ []    = ≡.refl
-  from-cong  (vec-fin₀ {s₁ = s}) ≡.refl  = refl′ (pre (equiv (vec-setoid s 0)))
+  to∘from    vec-fin₀ zero  = refl
+  to-cong    vec-fin₀ []    = refl
+  from-cong  vec-fin₀ ≡.refl  = refl
 ```
 
 Then, by showing a lemma that is there an isomorphism between `type:Vec A (suc
 n)` and `type:A × Vec A n`:
 
 ```agda
-  vec-rep
-      :  vec-setoid s₁ (suc n)
-         ↔ ×-setoid s₁ (vec-setoid s₁ n)
-  to vec-rep    (x ∷ xs)                     = x , xs
-  from vec-rep  (x , xs)                     = x ∷ xs
-  from∘to       (vec-rep {s₁ = s}) (x ∷ xs)
-    = refl s ∷ refl′ (pre (equiv (vec-setoid s _)))
-  to∘from       (vec-rep {s₁ = s}) (x , xs)
-    = refl s , refl′ (pre (equiv (vec-setoid s _)))
-  to-cong       (vec-rep {s₁ = s}) (x ∷ xs)  = x , xs
-  from-cong     (vec-rep {s₁ = s}) (x , xs)  = x ∷ xs
+  vec-rep : vec-setoid s₁ (suc n) ↔ ×-setoid s₁ (vec-setoid s₁ n)
+  to vec-rep    (x ∷  xs) = x ,  xs
+  from vec-rep  (x ,  xs) = x ∷  xs
+  from∘to       (vec-rep) (x ∷  xs) = refl ∷  refl
+  to∘from       (vec-rep) (x ,  xs) = refl ,  refl
+  to-cong       (vec-rep) (x ∷  xs) = x ,  xs
+  from-cong     (vec-rep) (x ,  xs) = x ∷  xs
 ```
 
 We can combine these two facts into the desired proof that vectors have an
@@ -927,12 +932,12 @@ length `m`. Finally, we know the cardinality of such a vector, as shown just now
 by `def:vec-fin`.
 
 ```agda
-  →-fin : s₁ Has m Elements → s₂ Has n Elements
-        → (s₁ ⇒ s₂) Has (n ^ m) Elements
-  →-fin s t
-    = ↔-trans (→-preserves-↔ s t)
-    ( ↔-trans (↔-sym vec-iso)
-              (vec-fin ↔-refl))
+→-fin : s₁ Has m Elements → s₂ Has n Elements
+      → (s₁ ⇒ s₂) Has (n ^ m) Elements
+→-fin s t
+  = ↔-trans (→-preserves-↔ s t)
+  ( ↔-trans (↔-sym vec-iso)
+            (vec-fin ↔-refl))
 ```
 
 
