@@ -627,6 +627,8 @@ Similarly, we can give the same treatment to `type:_⊎_`, as in
 `def:⊎-preserves-↔`:
 
 ```agda
+  import Data.Sum as +
+  open import Data.Sum using (_⊎_; inj₁; inj₂)
 
   ⊎-preserves-↔
       : s₁ ↔ s₂

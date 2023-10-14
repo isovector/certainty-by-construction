@@ -109,12 +109,12 @@ open import Chapter6-Decidability
 
 :   ```agda
 open import Chapter7-Structures
-  using (id; _∘_; const; _≗_; prop-setoid; Setoid)
+  using (id; _∘_; const; _≗_; prop-setoid; Setoid; ⊎-setoid; ×-setoid)
     ```
 
 :   ```agda
 open import Chapter8-Isomorphisms
-  using (Iso; _↔_; ↔-refl; ↔-sym; ↔-trans; ⊎-fin; ⊎-setoid; fin-iso; ×-fin; ×-setoid; Vec; []; _∷_; lookup; Fin; zero; suc; _⊎_; inj₁; inj₂; _Has_Elements)
+  using (Iso; _↔_; ↔-refl; ↔-sym; ↔-trans; ⊎-fin; fin-iso; ×-fin; Vec; []; _∷_; lookup; Fin; zero; suc; _⊎_; inj₁; inj₂; _Has_Elements; ⊎-prop-homo; ×-prop-homo)
     ```
 
 ```agda
