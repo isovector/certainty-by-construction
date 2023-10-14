@@ -612,21 +612,6 @@ the product setoid given by `def:×-preserves-↔`:
   import Data.Product as ×
   open Setoid-Renaming
 
---   record -×- (s₁ : Setoid c₁ ℓ₁) (s₂ : Setoid c₂ ℓ₂) : Set where
---     field
---       ≈-proj₁ :
-  ×-setoid : Setoid c₁ ℓ₁ → Setoid c₂ ℓ₂ → Setoid _ _
-  Carrier (×-setoid s₁ s₂) = s₁ .Carrier × s₂ .Carrier
-  _≈_ (×-setoid s₁ s₂) (a₁ , b₁) (a₂ , b₂)
-    = s₁ ._≈_ a₁ a₂
-    × s₂ ._≈_ b₁ b₂
-  refl′ (pre (equiv (×-setoid s₁ s₂)))
-    = Setoid.refl s₁ , Setoid.refl s₂
-  trans′ (pre (equiv (×-setoid s₁ s₂))) (a₁₂ , b₁₂) (a₂₃ , b₂₃)
-    = Setoid.trans s₁ a₁₂ a₂₃ , Setoid.trans s₂ b₁₂ b₂₃
-  sym′ (equiv (×-setoid s₁ s₂)) (a , b)
-    = Setoid.sym s₁ a , Setoid.sym s₂ b
-
   ×-preserves-↔ : s₁ ↔ s₂ → s₃ ↔ s₄ → ×-setoid s₁ s₃ ↔ ×-setoid s₂ s₄
   to    (×-preserves-↔ s t) = ×.map (to s) (to t)
   from  (×-preserves-↔ s t) = ×.map (from s) (from t)
@@ -642,30 +627,6 @@ Similarly, we can give the same treatment to `type:_⊎_`, as in
 `def:⊎-preserves-↔`:
 
 ```agda
-  open import Data.Sum using (_⊎_; inj₁; inj₂)
-  import Data.Sum as +
-
-  data ⊎-Pointwise (s₁ : Setoid c₁ ℓ₁) (s₂ : Setoid c₂ ℓ₂)
-      : Rel (s₁ .Carrier ⊎ s₂ .Carrier) (ℓ₁ ⊔ ℓ₂) where
-    inj₁  : {x y : s₁ .Carrier}
-          → _≈_ s₁ x y → ⊎-Pointwise s₁ s₂ (inj₁ x) (inj₁ y)
-    inj₂  : {x y : s₂ .Carrier}
-          → _≈_ s₂ x y → ⊎-Pointwise s₁ s₂ (inj₂ x) (inj₂ y)
-
-  ⊎-equiv : IsEquivalence (⊎-Pointwise s₁ s₂)
-  refl′ (pre (⊎-equiv {s₁ = s₁})) {inj₁ x} = inj₁ (Setoid.refl s₁)
-  refl′ (pre (⊎-equiv {s₂ = s₂})) {inj₂ y} = inj₂ (Setoid.refl s₂)
-  trans′ (pre (⊎-equiv {s₁ = s₁})) (inj₁ x=y) (inj₁ y=z)
-    = inj₁ (trans′ (pre (equiv s₁)) x=y y=z)
-  trans′ (pre (⊎-equiv {s₂ = s₂})) (inj₂ x=y) (inj₂ y=z)
-    = inj₂ (trans′ (pre (equiv s₂)) x=y y=z)
-  sym′ (⊎-equiv {s₁ = s₁}) (inj₁ x) = inj₁ (sym′ (equiv s₁) x)
-  sym′ (⊎-equiv {s₂ = s₂}) (inj₂ x) = inj₂ (sym′ (equiv s₂) x)
-
-  ⊎-setoid : Setoid c₁ ℓ₁ → Setoid c₂ ℓ₂ → Setoid _ _
-  Carrier (⊎-setoid s₁ s₂) = s₁ .Carrier ⊎ s₂ .Carrier
-  _≈_ (⊎-setoid s₁ s₂) = ⊎-Pointwise s₁ s₂
-  equiv (⊎-setoid s₁ s₂) = ⊎-equiv
 
   ⊎-preserves-↔
       : s₁ ↔ s₂

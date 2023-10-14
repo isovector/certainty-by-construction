@@ -1139,6 +1139,7 @@ module Setoid-Renaming where
     renaming (isEquivalence to equiv)
     public
   open IsPreorder
+    using ()
     renaming (refl to refl′; trans to trans′)
     public
   open IsEquivalence
@@ -1159,12 +1160,58 @@ setoid, as in `def:prop-setoid`:
 module _ where
   open Setoid-Renaming
 
-  prop-setoid : Set ℓ → Setoid _ _
+  prop-setoid : Set ℓ → Setoid ℓ ℓ
   Carrier (prop-setoid A)  = A
   _≈_     (prop-setoid A)  = _≡_
   refl′   (pre (equiv (prop-setoid A))) = refl
   trans′  (pre (equiv (prop-setoid A))) = trans
   sym′    (equiv (prop-setoid A)) = sym
+```
+
+-- TODO(sandy): write about warming up with some easier setoids
+
+```agda
+  private variable
+    c c₁ c₂ : Level
+
+  module _ (s₁ : Setoid c₁ ℓ₁) (s₂ : Setoid c₂ ℓ₂) where
+    private instance
+      s₁-equiv = equiv s₁
+      s₂-equiv = equiv s₂
+
+    private
+      Carrier₁ = s₁ .Carrier
+      Carrier₂ = s₂ .Carrier
+      _≈₁_ = s₁ ._≈_
+      _≈₂_ = s₂ ._≈_
+
+    ×-setoid : Setoid _ _
+    Carrier ×-setoid = s₁ .Carrier × s₂ .Carrier
+    _≈_ ×-setoid (a₁ , b₁) (a₂ , b₂) = (a₁ ≈₁ a₂) × (b₁ ≈₂ b₂)
+    refl′  (pre (equiv ×-setoid)) = refl , refl
+    trans′ (pre (equiv ×-setoid)) (a₁₂ , b₁₂) (a₂₃ , b₂₃)
+      = trans a₁₂ a₂₃ , trans b₁₂ b₂₃
+    sym′ (equiv ×-setoid) (a , b) = sym a , sym b
+
+
+    open import Data.Sum using (_⊎_; inj₁; inj₂)
+
+    data ⊎-Pointwise : Rel (Carrier₁ ⊎ Carrier₂) (ℓ₁ ⊔ ℓ₂) where
+      inj₁  : {x y : Carrier₁} → x ≈₁ y → ⊎-Pointwise (inj₁ x) (inj₁ y)
+      inj₂  : {x y : Carrier₂} → x ≈₂ y → ⊎-Pointwise (inj₂ x) (inj₂ y)
+
+    ⊎-equiv : IsEquivalence ⊎-Pointwise
+    refl′   (pre ⊎-equiv) {inj₁ x} = inj₁ refl
+    refl′   (pre ⊎-equiv) {inj₂ y} = inj₂ refl
+    trans′  (pre ⊎-equiv) (inj₁ x=y) (inj₁ y=z) = inj₁ (trans x=y y=z)
+    trans′  (pre ⊎-equiv) (inj₂ x=y) (inj₂ y=z) = inj₂ (trans x=y y=z)
+    sym′    ⊎-equiv (inj₁ x) = inj₁ (sym x)
+    sym′    ⊎-equiv (inj₂ x) = inj₂ (sym x)
+
+    ⊎-setoid : Setoid (c₁ ⊔ c₂) (ℓ₁ ⊔ ℓ₂)
+    Carrier  ⊎-setoid = s₁ .Carrier ⊎ s₂ .Carrier
+    _≈_      ⊎-setoid = ⊎-Pointwise
+    equiv    ⊎-setoid = ⊎-equiv
 ```
 
 Furthermore, we can build a setoid corresponding to function extensionality:
