@@ -10,6 +10,74 @@ Hidden
 module Chapter9-ProgramOptimization where
 ```
 
+While counting cardinalities is fun and all, it can be easy to miss the forest
+for the trees. Why might J. Random Hacker care about isomorphisms? Perhaps the
+most salient application of theory I have ever seen is the use of isomorphism to
+*automatically improve* an algorithms runtime by an asymptotic factor.
+
+How can such a thing be possible? The answer lies in the observation that while
+meaning is preserved by isomorphism, computational properties are not. Most
+obviously, several algorithms for sorting lists have been famously studied. Each
+of these algorithms has type `Vec A n → Vec A n` (and are thus isomorphic to one
+another via `def:↔-refl`.) But as we know, bubble sort performs significantly
+worse than merge sort does. It is the exploitation of exactly this sort of
+observation that we can use to automatically improve our algorithms.
+
+At a high level, the goal is to find an alternative representation of our
+function as some other type---some other type which has more desirable
+computational properties. As an illustration, every cache layer ever put in
+front of a computation is an unprincipled attempt towards this end. The common
+dynamic programming approach of memoizing partial results in an
+appropriately-sized array is another example.
+
+But caching of results is not the only possible way we can exploit an
+isomorphism over a function. The somewhat-esoteric *trie* data structure is
+commonly used for filtering big lists of strings (known, for obvious reasons, as
+a dictionary) by a prefix. The idea behind tries is to break each word in the
+list into a linked list of its characters, each pointing at the next, and then
+to merge each of these linked lists into one big tree structure. The root node
+then has one child for every possible starting letter in the set of words.
+Moving to any particular branch necessarily filters away all of the words which
+*don't* start with that letter. We can treat our new node as the root, and
+recurse---this time, the node has children only for the possible *second*
+letters of words in the dictionary that begin with the prefix of nodes you've
+already traversed.
+
+It's a clever encoding scheme that allows for an incremental refinement of a
+dictionary, and this incremental refinement is exactly the sort of computational
+property we're looking to exploit in our isomorphisms out of functions. When you
+step back and think about the characteristic function of the trie, you see that
+really all it is answering is the question "does this string exist in the
+dictionary?"---or, put another way, it is any function of type `String → Bool`.
+
+Exploiting isomorphisms is an excellent way of coming up with clever data
+structures like tries, without the necessity that oneself be clever in the first
+place. It's a great hack for convincing colleagues of your keen
+computer-science mind. And the canonical isomorphisms given by a types'
+cardinalities is an excellent means of exploring which isomorphisms actually
+exist in order to exploit.
+
+As a silly example, let's consider functions out of `type:Bool` and into some
+arbitrary type `A`. We therefore know that such a thing has cardinality equal to
+the cardinality of `A` squared. Using the notation $\abs{A}$ to mean "the
+cardinality of `A`", we know that these functions have cardinality $\abs{A}^2$.
+But from school arithmetic, such a thing is also equal to
+$\abs{A}\times\abs{A}$---which doesn't take much imagination to interpret as a
+pair.
+
+And this isn't surprising when we stop to think about it; we can replace any
+function `Bool → A` with `A × A` because we only need to store two `A`s---the
+one resulting from `ctor:false`, and the other which comes from `ctor:true`.
+There are no other `type:Bool`s to which we can apply the function, and thus
+there are no other `A`s that can be produced.
+
+Of course, this is a silly example. I did warn you. But it serves to illustrate
+an important point, that through these isomorphisms we can transport the
+entirety of our knowledge about discrete mathematics into the realm of
+programming. In fact, if we know that two natural numbers are equal, we can use
+that fact to induce an isomorphism:
+
+
 Prerequisites
 
 :   ```agda
@@ -89,25 +157,6 @@ Ix-dec {plus _ _} (inj₂ y₁) (inj₂ y₂)
 
 open Iso
   using (to; from; from∘to; to∘from; to-cong; from-cong)
-
-⊎-prop-homo : {ℓ : Level} {A B : Set ℓ} → ⊎-setoid (prop-setoid A) (prop-setoid B) ↔ prop-setoid (A ⊎ B)
-to ⊎-prop-homo = id
-from ⊎-prop-homo = id
-from∘to ⊎-prop-homo (inj₁ x) = inj₁ refl
-from∘to ⊎-prop-homo (inj₂ y) = inj₂ refl
-to∘from ⊎-prop-homo _ = refl
-to-cong ⊎-prop-homo (inj₁ refl) = refl
-to-cong ⊎-prop-homo (inj₂ refl) = refl
-from-cong ⊎-prop-homo {inj₁ x} refl = inj₁ refl
-from-cong ⊎-prop-homo {inj₂ y} refl = inj₂ refl
-
-×-prop-homo : {ℓ : Level} {A B : Set ℓ} → ×-setoid (prop-setoid A) (prop-setoid B) ↔ prop-setoid (A × B)
-to ×-prop-homo = id
-from ×-prop-homo = id
-from∘to ×-prop-homo _ = refl , refl
-to∘from ×-prop-homo _ = refl
-to-cong ×-prop-homo (refl , refl) = refl
-from-cong ×-prop-homo refl = refl , refl
 
 shape-fin : (sh : Shape) → prop-setoid (Ix sh) Has ∣ sh ∣ Elements
 shape-fin (num x) = ↔-refl
@@ -247,8 +296,8 @@ module _ {A : Set} (sh : Shape) (sized : prop-setoid A Has ∣ sh ∣ Elements) 
 ----
 
 
---tsize : Shape
---tsize = times (num 2) (plus (num 1) (num 1))
+tsize : Shape
+tsize = times (num 2) (plus (num 1) (num 1))
 
 --tfun : ⌊ tsize ⌋ → ℕ
 --tfun (Fin.zero , inj₁ x) = 1

@@ -205,20 +205,10 @@ type error to request a value beyond the bounds of the array:
 To illustrate this function, we can show that it works as expected:
 
 ```agda
-  _ : lookup (6 ∷ 3 ∷ 5 ∷ []) (suc zero) ≡ 3
+  _ : lookup (6 ∷ 3 ∷ 5 ∷ []) (suc (suc zero)) ≡ 5
   _ = refl
 ```
 
-As a quick note, `def:lookup` is known in more traditional, ALGOL-like
-languages, as `def:_[_]`:
-
-```agda
-  _[_] : Vec A n → Fin n → A
-  _[_] = lookup
-
-  _ : (6 ∷ 3 ∷ 5 ∷ []) [ suc (suc zero) ] ≡ 5
-  _ = refl
-```
 
 ## Characteristic Functions
 
@@ -677,7 +667,10 @@ Similarly, we can give the same treatment to `type:_⊎_`, as in
   _≈_ (⊎-setoid s₁ s₂) = ⊎-Pointwise s₁ s₂
   equiv (⊎-setoid s₁ s₂) = ⊎-equiv
 
-  ⊎-preserves-↔ : s₁ ↔ s₂ → s₃ ↔ s₄ → ⊎-setoid s₁ s₃ ↔ ⊎-setoid s₂ s₄
+  ⊎-preserves-↔
+      : s₁ ↔ s₂
+      → s₃ ↔ s₄
+      → ⊎-setoid s₁ s₃ ↔ ⊎-setoid s₂ s₄
   to         (⊎-preserves-↔ s t)           = +.map (to s) (to t)
   from       (⊎-preserves-↔ s t)           = +.map (from s) (from t)
   from∘to    (⊎-preserves-↔ s t) (inj₁ x)  = inj₁ (from∘to s x)
@@ -688,6 +681,21 @@ Similarly, we can give the same treatment to `type:_⊎_`, as in
   to-cong    (⊎-preserves-↔ s t) (inj₂ x)  = inj₂ (to-cong t x)
   from-cong  (⊎-preserves-↔ s t) (inj₁ x)  = inj₁ (from-cong s x)
   from-cong  (⊎-preserves-↔ s t) (inj₂ x)  = inj₂ (from-cong t x)
+
+
+  ⊎-prop-homo
+      :  {A : Set ℓ₁} {B : Set ℓ₂}
+      →  ⊎-setoid (prop-setoid A) (prop-setoid B)
+         ↔ prop-setoid (A ⊎ B)
+  to        ⊎-prop-homo = id
+  from      ⊎-prop-homo = id
+  from∘to   ⊎-prop-homo (inj₁ x)  = inj₁ refl
+  from∘to   ⊎-prop-homo (inj₂ y)  = inj₂ refl
+  to∘from   ⊎-prop-homo _ = refl
+  to-cong   ⊎-prop-homo (inj₁ ≡.refl)  = refl
+  to-cong   ⊎-prop-homo (inj₂ ≡.refl)  = refl
+  from-cong ⊎-prop-homo {inj₁ x} ≡.refl  = inj₁ refl
+  from-cong ⊎-prop-homo {inj₂ y} ≡.refl  = inj₂ refl
 ```
 
 Given two finite numbers, we can combine them in either of two every-day
@@ -733,14 +741,13 @@ you of an isomorphism, and indeed, there is such an isomorphism given by
 
   join-splitAt-iso
       : prop-setoid (Fin (m + n))
-      ↔ ⊎-setoid (prop-setoid (Fin m)) (prop-setoid (Fin n))
+      ↔ prop-setoid (Fin m ⊎ Fin n)
   to         join-splitAt-iso = splitAt _
   from       join-splitAt-iso = join _ _
-  from∘to    (join-splitAt-iso {m = m}) = join-splitAt m _
-  to∘from    join-splitAt-iso x = {! !} -- ≡⇒Pointwise-≡ (splitAt-join _ _ x)
-  to-cong    join-splitAt-iso ≡.refl        = refl′ (pre (equiv (⊎-setoid (prop-setoid (Fin _)) (prop-setoid (Fin _)))))
-  from-cong  join-splitAt-iso (inj₁ ≡.refl) = ≡.refl
-  from-cong  join-splitAt-iso (inj₂ ≡.refl) = ≡.refl
+  from∘to    (join-splitAt-iso {m = m})  = join-splitAt m _
+  to∘from    join-splitAt-iso x          = splitAt-join _ _ x
+  to-cong    join-splitAt-iso ≡.refl = ≡.refl
+  from-cong  join-splitAt-iso ≡.refl = ≡.refl
 ```
 
 Where there is a mathematical object for coproducts, there is usually one
@@ -768,8 +775,6 @@ and its inverse via the awkwardly named `def:remQuot (short for
 "remainder/quotient")
 
 ```agda
-    open import Data.Nat.Properties
-
     remQuot : (n : ℕ) → Fin (m * n) → Fin m × Fin n
     remQuot {m = suc m} n x with splitAt n x
     ... | inj₁ l = zero , l
@@ -786,16 +791,26 @@ products, as in `def:combine-remQuot-iso`:
 ```agda
   open import Data.Fin using (combine; remQuot)
 
+  ×-prop-homo
+      :  {A : Set ℓ₁} {B : Set ℓ₂}
+      →  ×-setoid (prop-setoid A) (prop-setoid B)
+         ↔ prop-setoid (A × B)
+  to         ×-prop-homo = id
+  from       ×-prop-homo = id
+  from∘to    ×-prop-homo _ = refl , refl
+  to∘from    ×-prop-homo _ = refl
+  to-cong    ×-prop-homo (≡.refl , ≡.refl) = refl
+  from-cong  ×-prop-homo ≡.refl = refl , refl
+
   combine-remQuot-iso
       : prop-setoid (Fin (m * n))
-      ↔ ×-setoid (prop-setoid (Fin m)) (prop-setoid (Fin n))
-  to       combine-remQuot-iso              = remQuot _
-  from     combine-remQuot-iso (fst , snd)  = combine fst snd
-  from∘to  (combine-remQuot-iso {m = m}) x  = combine-remQuot {m} _ x
-  to∘from  combine-remQuot-iso (x , y) with remQuot-combine x y
-  ... | p = ≡.cong proj₁ p , ≡.cong proj₂ p
-  to-cong    combine-remQuot-iso ≡.refl           = ≡.refl , ≡.refl
-  from-cong  combine-remQuot-iso (≡.refl , ≡.refl)  = ≡.refl
+      ↔ (prop-setoid (Fin m × Fin n))
+  to         combine-remQuot-iso = remQuot _
+  from       combine-remQuot-iso (fst , snd)  = combine fst snd
+  from∘to    (combine-remQuot-iso {m = m}) x  = combine-remQuot {m} _ x
+  to∘from    combine-remQuot-iso (x , y) = remQuot-combine x y
+  to-cong    combine-remQuot-iso ≡.refl = ≡.refl
+  from-cong  combine-remQuot-iso ≡.refl = ≡.refl
 ```
 
 At long last, we are now ready to show that coproducts add the cardinalities of
@@ -806,7 +821,9 @@ their injections. The trick is to map both finite isomorphisms across the
   ⊎-fin : s₁ Has m Elements → s₂ Has n Elements
         → ⊎-setoid s₁ s₂ Has m + n Elements
   ⊎-fin fin₁ fin₂
-    = ↔-trans (⊎-preserves-↔ fin₁ fin₂) (↔-sym join-splitAt-iso)
+    = ↔-trans  (⊎-preserves-↔ fin₁ fin₂)
+    ( ↔-trans  ⊎-prop-homo
+               (↔-sym join-splitAt-iso))
 ```
 
 We can do a similar trick to show that `type:_×_` multiplies the cardinalities
@@ -817,7 +834,9 @@ of its projections, albeit invoking `def:×-preserves-↔` and
   ×-fin : s₁ Has m Elements → s₂ Has n Elements
         → ×-setoid s₁ s₂ Has m * n Elements
   ×-fin fin₁ fin₂
-    = ↔-trans (×-preserves-↔ fin₁ fin₂) (↔-sym combine-remQuot-iso)
+    = ↔-trans  (×-preserves-↔ fin₁ fin₂)
+    ( ↔-trans  ×-prop-homo
+               (↔-sym combine-remQuot-iso))
 ```
 
 
@@ -848,9 +867,9 @@ open import Function.Equality
 →-preserves-↔
     : s₁ ↔ s₂ → s₃ ↔ s₄
     → (s₁ ⇒ s₃) ↔ (s₂ ⇒ s₄)
-Fn.func   (to (→-preserves-↔ s t) f) = to t ∘ Fn.func f ∘ from s
-Fn.cong  (to (→-preserves-↔ s t) f) = to-cong t ∘ Fn.cong f ∘ from-cong s
-Fn.func   (from (→-preserves-↔ s t) f) = from t ∘ Fn.func f ∘ to s
+Fn.func  (to (→-preserves-↔ s t) f) = to t       ∘ Fn.func f ∘ from s
+Fn.cong  (to (→-preserves-↔ s t) f) = to-cong t  ∘ Fn.cong f ∘ from-cong s
+Fn.func  (from (→-preserves-↔ s t) f) = from t ∘ Fn.func f ∘ to s
 Fn.cong  (from (→-preserves-↔ s t) f) = from-cong t ∘ Fn.cong f ∘ to-cong s
 from∘to (→-preserves-↔ s t) f {x} {y} a = begin
   from t (to t (Fn.func f (from s (to s x))))  ≈⟨ from∘to t _ ⟩
@@ -896,11 +915,11 @@ open Sandbox-Finite
 
 module _ where
   vec-fin₀ : vec-setoid s₁ 0 Has 1 Elements
-  to         vec-fin₀ []                 = zero
-  from       vec-fin₀ zero               = []
-  from∘to    vec-fin₀ []                 = []
-  to∘from    vec-fin₀ zero               = ≡.refl
-  to-cong    vec-fin₀ []                 = ≡.refl
+  to         vec-fin₀ []    = zero
+  from       vec-fin₀ zero  = []
+  from∘to    vec-fin₀ []    = []
+  to∘from    vec-fin₀ zero  = ≡.refl
+  to-cong    vec-fin₀ []    = ≡.refl
   from-cong  (vec-fin₀ {s₁ = s}) ≡.refl  = refl′ (pre (equiv (vec-setoid s 0)))
 ```
 
@@ -909,12 +928,14 @@ n)` and `type:A × Vec A n`:
 
 ```agda
   vec-rep
-      : vec-setoid s₁ (suc n)
-        ↔ ×-setoid s₁ (vec-setoid s₁ n)
+      :  vec-setoid s₁ (suc n)
+         ↔ ×-setoid s₁ (vec-setoid s₁ n)
   to vec-rep    (x ∷ xs)                     = x , xs
   from vec-rep  (x , xs)                     = x ∷ xs
-  from∘to       (vec-rep {s₁ = s}) (x ∷ xs)  = refl s ∷ refl′ (pre (equiv (vec-setoid s _)))
-  to∘from       (vec-rep {s₁ = s}) (x , xs)  = refl s , refl′ (pre (equiv (vec-setoid s _)))
+  from∘to       (vec-rep {s₁ = s}) (x ∷ xs)
+    = refl s ∷ refl′ (pre (equiv (vec-setoid s _)))
+  to∘from       (vec-rep {s₁ = s}) (x , xs)
+    = refl s , refl′ (pre (equiv (vec-setoid s _)))
   to-cong       (vec-rep {s₁ = s}) (x ∷ xs)  = x , xs
   from-cong     (vec-rep {s₁ = s}) (x , xs)  = x ∷ xs
 ```
@@ -928,9 +949,10 @@ exponential cardinality:
     → vec-setoid s₁ n Has (m ^ n) Elements
   vec-fin {n = zero}   s = vec-fin₀
   vec-fin {n = suc n}  s
-    = ↔-trans vec-rep
-    ( ↔-trans (×-preserves-↔ s (vec-fin s))
-              (↔-sym combine-remQuot-iso))
+    = ↔-trans  vec-rep
+    ( ↔-trans  (×-preserves-↔ s (vec-fin s))
+    ( ↔-trans  ×-prop-homo
+               (↔-sym combine-remQuot-iso)))
 ```
 
 And now, to tie everything together, we can show that functions themselves also
@@ -949,76 +971,6 @@ by `def:vec-fin`.
     ( ↔-trans (↔-sym vec-iso)
               (vec-fin ↔-refl))
 ```
-
-
-## Isomorphisms for Program Optimization
-
-While counting cardinalities is fun and all, it can be easy to miss the forest
-for the trees. Why might J. Random Hacker care about isomorphisms? Perhaps the
-most salient application of theory I have ever seen is the use of isomorphism to
-*automatically improve* an algorithms runtime by an asymptotic factor.
-
-How can such a thing be possible? The answer lies in the observation that while
-meaning is preserved by isomorphism, computational properties are not. Most
-obviously, several algorithms for sorting lists have been famously studied. Each
-of these algorithms has type `Vec A n → Vec A n` (and are thus isomorphic to one
-another via `def:↔-refl`.) But as we know, bubble sort performs significantly
-worse than merge sort does. It is the exploitation of exactly this sort of
-observation that we can use to automatically improve our algorithms.
-
-At a high level, the goal is to find an alternative representation of our
-function as some other type---some other type which has more desirable
-computational properties. As an illustration, every cache layer ever put in
-front of a computation is an unprincipled attempt towards this end. The common
-dynamic programming approach of memoizing partial results in an
-appropriately-sized array is another example.
-
-But caching of results is not the only possible way we can exploit an
-isomorphism over a function. The somewhat-esoteric *trie* data structure is
-commonly used for filtering big lists of strings (known, for obvious reasons, as
-a dictionary) by a prefix. The idea behind tries is to break each word in the
-list into a linked list of its characters, each pointing at the next, and then
-to merge each of these linked lists into one big tree structure. The root node
-then has one child for every possible starting letter in the set of words.
-Moving to any particular branch necessarily filters away all of the words which
-*don't* start with that letter. We can treat our new node as the root, and
-recurse---this time, the node has children only for the possible *second*
-letters of words in the dictionary that begin with the prefix of nodes you've
-already traversed.
-
-It's a clever encoding scheme that allows for an incremental refinement of a
-dictionary, and this incremental refinement is exactly the sort of computational
-property we're looking to exploit in our isomorphisms out of functions. When you
-step back and think about the characteristic function of the trie, you see that
-really all it is answering is the question "does this string exist in the
-dictionary?"---or, put another way, it is any function of type `String → Bool`.
-
-Exploiting isomorphisms is an excellent way of coming up with clever data
-structures like tries, without the necessity that oneself be clever in the first
-place. It's a great hack for convincing colleagues of your keen
-computer-science mind. And the canonical isomorphisms given by a types'
-cardinalities is an excellent means of exploring which isomorphisms actually
-exist in order to exploit.
-
-As a silly example, let's consider functions out of `type:Bool` and into some
-arbitrary type `A`. We therefore know that such a thing has cardinality equal to
-the cardinality of `A` squared. Using the notation $\abs{A}$ to mean "the
-cardinality of `A`", we know that these functions have cardinality $\abs{A}^2$.
-But from school arithmetic, such a thing is also equal to
-$\abs{A}\times\abs{A}$---which doesn't take much imagination to interpret as a
-pair.
-
-And this isn't surprising when we stop to think about it; we can replace any
-function `Bool → A` with `A × A` because we only need to store two `A`s---the
-one resulting from `ctor:false`, and the other which comes from `ctor:true`.
-There are no other `type:Bool`s to which we can apply the function, and thus
-there are no other `A`s that can be produced.
-
-Of course, this is a silly example. I did warn you. But it serves to illustrate
-an important point, that through these isomorphisms we can transport the
-entirety of our knowledge about discrete mathematics into the realm of
-programming. In fact, if we know that two natural numbers are equal, we can use
-that fact to induce an isomorphism:
 
 
 ## Wrapping Up
