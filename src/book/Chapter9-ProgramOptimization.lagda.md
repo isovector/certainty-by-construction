@@ -19,7 +19,7 @@ How can such a thing be possible? The answer lies in the observation that while
 meaning is preserved by isomorphism, computational properties are not. Most
 obviously, several algorithms for sorting lists have been famously studied. Each
 of these algorithms has type `Vec A n → Vec A n` (and are thus isomorphic to one
-another via `def:↔-refl`.) But as we know, bubble sort performs significantly
+another via `def:≅-refl`.) But as we know, bubble sort performs significantly
 worse than merge sort does. It is the exploitation of exactly this sort of
 observation that we can use to automatically improve our algorithms.
 
@@ -114,7 +114,7 @@ open import Chapter7-Structures
 
 :   ```agda
 open import Chapter8-Isomorphisms
-  using (Iso; _↔_; ↔-refl; ↔-sym; ↔-trans; ⊎-fin; fin-iso; ×-fin; Vec; []; _∷_; lookup; Fin; zero; suc; _⊎_; inj₁; inj₂; _Has_Elements; ⊎-prop-homo; ×-prop-homo)
+  using (Iso; _≅_; ≅-refl; ≅-sym; ≅-trans; ⊎-fin; fin-iso; ×-fin; Vec; []; _∷_; lookup; Fin; zero; suc; _⊎_; inj₁; inj₂; _Has_Elements; ⊎-prop-homo; ×-prop-homo)
     ```
 
 ```agda
@@ -159,9 +159,9 @@ open Iso
   using (to; from; from∘to; to∘from; to-cong; from-cong)
 
 shape-fin : (sh : Shape) → prop-setoid (Ix sh) Has ∣ sh ∣ Elements
-shape-fin (num x) = ↔-refl
-shape-fin (plus m n) = ↔-trans (↔-sym ⊎-prop-homo) (⊎-fin (shape-fin m) (shape-fin n))
-shape-fin (times m n) = ↔-trans (↔-sym ×-prop-homo) (×-fin (shape-fin m) (shape-fin n))
+shape-fin (num x) = ≅-refl
+shape-fin (plus m n) = ≅-trans (≅-sym ⊎-prop-homo) (⊎-fin (shape-fin m) (shape-fin n))
+shape-fin (times m n) = ≅-trans (≅-sym ×-prop-homo) (×-fin (shape-fin m) (shape-fin n))
 
 private variable
   ℓ ℓ₁ ℓ₂ : Level
@@ -284,13 +284,13 @@ get-is-fn {sh = plus _ _}  (or mt mt₁) (inj₂ y) = get-is-fn mt₁ y
 get-is-fn {sh = times _ _} (and mts _) (fst , snd) = get-is-fn (proj₂ (mts fst)) snd
 
 module _ {A : Set} (sh : Shape) (sized : prop-setoid A Has ∣ sh ∣ Elements) (f : A → B) where
-  A↔Ix : prop-setoid A ↔ prop-setoid (Ix sh)
-  A↔Ix = fin-iso sized (shape-fin sh)
+  A≅Ix : prop-setoid A ≅ prop-setoid (Ix sh)
+  A≅Ix = fin-iso sized (shape-fin sh)
 
-  f′ = f ∘ Iso.from (A↔Ix)
+  f′ = f ∘ Iso.from (A≅Ix)
 
   get : MemoTrie f′ → A → B × MemoTrie f′
-  get (_ , memo) = get′ memo ∘ (Iso.to A↔Ix)
+  get (_ , memo) = get′ memo ∘ (Iso.to A≅Ix)
 
 
 ----
