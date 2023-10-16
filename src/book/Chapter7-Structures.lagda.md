@@ -1166,6 +1166,11 @@ module _ where
   refl′   (pre (equiv (prop-setoid A))) = refl
   trans′  (pre (equiv (prop-setoid A))) = trans
   sym′    (equiv (prop-setoid A)) = sym
+
+
+  instance
+    prop-setoid-inst : {c : Level} {A : Set c} → Setoid c c
+    prop-setoid-inst {A = A} = prop-setoid A
 ```
 
 -- TODO(sandy): write about warming up with some easier setoids

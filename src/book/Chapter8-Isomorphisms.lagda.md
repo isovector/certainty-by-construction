@@ -1,6 +1,5 @@
 # Isomorphisms
 
-
 Hidden
 
 :   ```agda
@@ -473,60 +472,8 @@ automatically fall out from computation.
 
 
 ```agda
-  module _ (s : Setoid c₁ ℓ₁) where
-    open Setoid s
-
-    data Vec-Pointwise
-        : (n : ℕ) → Rel (Vec Carrier n) ℓ₁ where
-      []   :  Vec-Pointwise zero [] []
-      _∷_  :  {n : ℕ} {x y : Carrier}
-              {xs ys : Vec (Carrier) n}
-           →  x ≈ y
-           →  Vec-Pointwise n xs ys
-           →  Vec-Pointwise (suc n) (x ∷ xs) (y ∷ ys)
-
-    open Setoid-Renaming
-      hiding (Carrier)
-
-    vec-equiv : IsEquivalence (Vec-Pointwise n)
-    refl′ (pre vec-equiv) {[]} = []
-    refl′ (pre vec-equiv) {x ∷ xs} = refl s ∷ refl vec-equiv
-    trans′ (pre vec-equiv) [] [] = []
-    trans′ (pre vec-equiv) (xy ∷ xys) (yz ∷ yzs)
-      = trans s xy yz ∷ trans vec-equiv xys yzs
-    sym′ vec-equiv [] = []
-    sym′ vec-equiv (x ∷ xs) = sym s x ∷ sym vec-equiv xs
-
-    vec-setoid : ℕ → Setoid _ _
-    Carrier (vec-setoid n) = Vec Carrier n
-    _≈_ (vec-setoid n) = Vec-Pointwise n
-    isEquivalence (vec-setoid n) = vec-equiv
-
-  instance
-    vec-setoid-inst : {c ℓ : Level} → {n : ℕ} → ⦃ s : Setoid c ℓ ⦄ → Setoid c ℓ
-    vec-setoid-inst {n = n} ⦃ s ⦄ = vec-setoid s n
-
-    prop-setoid-inst : {c : Level} {A : Set c} → Setoid c c
-    prop-setoid-inst {A = A} = prop-setoid A
-
-    vec-preorder-inst : {c ℓ : Level} → {n : ℕ} → ⦃ s : Setoid c ℓ ⦄ → IsPreorder (Vec-Pointwise s n)
-    vec-preorder-inst ⦃ s ⦄ = IsEquivalence.isPreorder (vec-equiv s)
-
-    vec-equiv-inst : {c ℓ : Level} → {n : ℕ} → ⦃ s : Setoid c ℓ ⦄ → IsEquivalence (Vec-Pointwise s n)
-    vec-equiv-inst ⦃ s ⦄ = vec-equiv s
-
   open Setoid-Renaming
     hiding (Carrier)
-
-
-  pointwise→≡ : ∀ {ℓ} {A : Set ℓ} {xs ys} → Vec-Pointwise (prop-setoid A) n xs ys → xs ≡ ys
-  pointwise→≡ [] = refl
-  pointwise→≡ (≡.refl ∷ xs)
-    rewrite pointwise→≡ xs = refl
-
-  -- TODO(sandy): true of any setoid
-  ≡→pointwise : ∀ {ℓ} {A : Set ℓ} {xs ys} → xs ≡ ys → Vec-Pointwise (prop-setoid A) n xs ys
-  ≡→pointwise x rewrite x = refl
 
   suc-me
     : {A : Set ℓ}
@@ -901,9 +848,7 @@ Thus, we need a setoid over congruent functions. Given such a thing, it's easy
 
 ```agda
 open Setoid
-  hiding (refl; sym; trans)
-open Setoid-Renaming
-  hiding (Carrier)
+  hiding (refl; sym; trans; Carrier; _≈_)
 
 open import Data.Product using (_,_)
 
@@ -932,12 +877,12 @@ to∘from (→-preserves-≅ s t) f {x} {y} a = begin
   where open B-Reasoning t
 to-cong (→-preserves-≅ {s₁ = s₁} s t) {g} {h} f {x} {y} a = begin
   to t (Fn.func g (from s x)) ≈⟨ to-cong t (Fn.cong g (from-cong s a)) ⟩
-  to t (Fn.func g (from s y)) ≈⟨ to-cong t (f (refl′ (isPreorder s₁))) ⟩
+  to t (Fn.func g (from s y)) ≈⟨ to-cong t (f (refl ⦃ isEquivalence s₁ ⦄)) ⟩
   to t (Fn.func h (from s y)) ∎
-  where open B-Reasoning t
+  where open B-Reasoning t hiding (refl)
 from-cong (→-preserves-≅ {s₂ = s₂} s t) {g} {h} f {x} {y} a = begin
   from t (Fn.func g (to s x)) ≈⟨ from-cong t (Fn.cong g (to-cong s a)) ⟩
-  from t (Fn.func g (to s y)) ≈⟨ from-cong t (f (refl′ (isPreorder s₂))) ⟩
+  from t (Fn.func g (to s y)) ≈⟨ from-cong t (f (refl ⦃ isEquivalence s₂ ⦄)) ⟩
   from t (Fn.func h (to s y)) ∎
   where open A-Reasoning t hiding (refl)
 ```
@@ -958,6 +903,63 @@ We can prove this in three parts; first by showing that a vector of length zero
 has cardinality one:
 
 ```agda
+module _ (s : Setoid c₁ ℓ₁) where
+  open Setoid s
+
+  data Vec-Pointwise
+      : (n : ℕ) → Rel (Vec Carrier n) ℓ₁ where
+    []   :  Vec-Pointwise zero [] []
+    _∷_  :  {n : ℕ} {x y : Carrier}
+            {xs ys : Vec (Carrier) n}
+          →  x ≈ y
+          →  Vec-Pointwise n xs ys
+          →  Vec-Pointwise (suc n) (x ∷ xs) (y ∷ ys)
+
+  open Setoid-Renaming
+    hiding (Carrier)
+
+  vec-equiv : IsEquivalence (Vec-Pointwise n)
+  refl′ (pre vec-equiv) {[]} = []
+  refl′ (pre vec-equiv) {x ∷ xs} = refl s ∷ refl vec-equiv
+  trans′ (pre vec-equiv) [] [] = []
+  trans′ (pre vec-equiv) (xy ∷ xys) (yz ∷ yzs)
+    = trans s xy yz ∷ trans vec-equiv xys yzs
+  sym′ vec-equiv [] = []
+  sym′ vec-equiv (x ∷ xs) = sym s x ∷ sym vec-equiv xs
+
+  vec-setoid : ℕ → Setoid _ _
+  Carrier (vec-setoid n) = Vec Carrier n
+  _≈_ (vec-setoid n) = Vec-Pointwise n
+  isEquivalence (vec-setoid n) = vec-equiv
+
+instance
+  vec-setoid-inst
+    : {c ℓ : Level} {n : ℕ}
+    → ⦃ s : Setoid c ℓ ⦄
+    → Setoid c ℓ
+  vec-setoid-inst {n = n} ⦃ s ⦄ = vec-setoid s n
+
+  vec-equiv-inst
+    : {c ℓ : Level} {n : ℕ}
+    → ⦃ s : Setoid c ℓ ⦄
+    → IsEquivalence (Vec-Pointwise s n)
+  vec-equiv-inst ⦃ s ⦄ = vec-equiv s
+
+vec-prop-homo
+  : {A : Set ℓ}
+  → prop-setoid (Vec A n) ≅ vec-setoid (prop-setoid A) n
+to vec-prop-homo v = v
+from vec-prop-homo v = v
+from∘to vec-prop-homo x = ≡.refl
+to∘from vec-prop-homo [] = []
+to∘from vec-prop-homo (_ ∷ _) = refl ∷ refl
+to-cong vec-prop-homo ≡.refl = refl
+from-cong (vec-prop-homo) [] = ≡.refl
+from-cong vec-prop-homo (≡.refl ∷ as)
+  rewrite from-cong vec-prop-homo as
+    = refl
+
+
 open Sandbox-Finite
 
 module _ {s₁ : Setoid c₁ ℓ₁} where
@@ -1017,7 +1019,7 @@ by `def:vec-fin`.
 →-fin s t
   = ≅-trans (→-preserves-≅ s t)
   ( ≅-trans (≅-sym vec-iso)
-   (≅-trans ?
+   (≅-trans vec-prop-homo
             (vec-fin ≅-refl)))
 ```
 
