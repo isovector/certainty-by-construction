@@ -12,12 +12,12 @@ module Chapter8-Isomorphisms where
 ```
 
 
-As we near the end of this book, we turn our focus now to our final theoretical
-topic: *isomorphisms*---the question of when two types are equivalent. In
-essence, then, we will find ourselves looking for a suitable notation of
-equality over types themselves. Rather surprisingly, this is not moot exercise
-in learning obscure and arcane trivia, as the theory gives rise to some
-incredibly powerful programming techniques.
+As we near the end of this book, we now turn our focus towards our final
+theoretical topic: *isomorphisms*---the question of when two types are
+equivalent. In essence, then, we will find ourselves looking for a suitable
+notation of equality over types themselves. Rather surprisingly, this is not
+moot exercise in learning obscure and arcane trivia, as the theory gives rise to
+some incredibly powerful programming techniques.
 
 Like many notions of equality we have studied thus far, isomorphisms do not
 preserve *everything* between two types. Of particular interest to us, is that
@@ -181,21 +181,30 @@ open import Data.Fin
   using (Fin; zero; suc)
 ```
 
-## Finites for Vector Lookup
 
-Functional programming usually eschews arrays, because they are *non-inductive*
-(that is, not built from smaller copies of themselves) data structures. Instead,
-we prefer to use linked lists, which are equivalently good, up to some
-definition of equivalence that pays no attention to matters of performance on
-a traditional Von Neumann architecture computer. However, that notion of
-equivalence *does* include notions of program correctness and composition of
-reasoning.
+## Vectors and Finite Bounds
 
-Vectors are a version of linked lists whose type is annotated with the number of
-elements in the list. Thus, vectors are an excellent stand-in for arrays when
-considered as contiguous blocks of memory which must be allocated somewhere. The
-definition of a vector is straightforward---every time you stick an element in,
-we increase its length type index:
+You are likely familiar with arrays as a data structure for storing a constant
+number of elements. Arrays are characterized by random access to their elements,
+and being contiguously laid-out in memory.
+
+Already this definition should raise some alarm bells. Discussion of memory
+placement is something we should be fundamentally disinterested in; it's an
+arbitrary property of the computing machines we happen to have today, but it's
+not of any real importance to what computation *actually is.* Worse, arrays are
+non-inductive, in that we can't easily built a larger one out of a smaller one,
+because the continuous-memory condition means we will probably need to
+reallocate and copy the contents.
+
+Instead, we turn our attention to a related, but significantly-better-behaved
+notion: the *vector.* Vector are data structures for storing a constant number
+of elements, which, importantly, and unlike arrays, are inductive. Their
+inductivity means vectors play nicely in a mathematical setting, and, when kept
+at a constant size, provide an excellent model for arrays in contemporary
+hardware.
+
+The definition of a vector is completely, straightforward---every time you stick
+an element in, just  increase its length:
 
 ```agda
 private variable
@@ -209,20 +218,19 @@ module Definition-Vectors where
   infixr 5 _∷_
 ```
 
-As usual, rather than defining this type ourselves, we will use the equivalent
-definition from the standard library:
+Of course, rather than define this type ourselves, we will take it from the
+standard library:
 
 ```agda
 open import Data.Vec
   using (Vec; []; _∷_)
-
-module Example-Vectors where
 ```
-
-Now, given a vector, we can easily extract its length, simply by taking the
-index and returning it:
+The `type:ℕ` index of `type:Vec` thus stores the length of the vector, which is
+to say, the number of elements inside of it. Therefore, we can "compute" the
+length of a vector just by taking its index and returning it:
 
 ```agda
+module Example-Vectors where
   private variable
     A : Set ℓ
 
@@ -230,15 +238,15 @@ index and returning it:
   length {n = n} _ = n
 ```
 
-However, most relevant to our previous discussion about the finite numbers, we
-can use a `type:Fin` to extract a single element from the vector. By indexing
-the `type:Vec` and the `type:Fin` by the same `n`, we can ensure that it's a
-type error to request a value beyond the bounds of the array:
+More interestingly however is that we can give a precise type to looking up an
+element by using a `type:Fin` as the index type. By indexing the `type:Vec` and
+the `type:Fin` by the same `n`, we can ensure that it's a type error to request
+a value beyond the bounds of the array:
 
 ```agda
   lookup : Vec A n → Fin n → A
-  lookup (a ∷ as) zero      = a
-  lookup (a ∷ as) (suc ix)  = lookup as ix
+  lookup (a  ∷ _)   zero      = a
+  lookup (_  ∷ as)  (suc ix)  = lookup as ix
 ```
 
 To illustrate this function, we can show that it works as expected:
@@ -247,6 +255,11 @@ To illustrate this function, we can show that it works as expected:
   _ : lookup (6 ∷ 3 ∷ 5 ∷ []) (suc (suc zero)) ≡ 5
   _ = refl
 ```
+
+We are almost ready to discuss isomorphisms, but first we must come up with a
+different representation for vectors, in order to subsequently show that the two
+notions are in fact "the same." To that end, we now turn our attention to
+characteristic functions.
 
 
 ## Characteristic Functions
@@ -261,8 +274,19 @@ information in `type:Vec` as there is in this alternative definition of
   Vec′ A n = Fin n → A
 ```
 
-Given this definition, we have alternative implementations of `def:length′` and
-`def:lookup′`:
+Given this definition, we can give alternative implementations of the vector
+constructors:
+
+```agda
+  []′ : Vec′ A 0
+  []′ ()
+
+  _∷′_ : A → Vec′ A n → Vec′ A (suc n)
+  (a ∷′ v) zero      = a
+  (a ∷′ v) (suc ix)  = v ix
+```
+
+and also alternative definitions of the vector eliminators:
 
 ```agda
   length′ : Vec′ A n → ℕ
@@ -273,12 +297,11 @@ Given this definition, we have alternative implementations of `def:length′` an
 ```
 
 Despite these definitions, you are probably not yet convinced that `type:Vec`
-and `type:Vec′` are equivalent, and will remain so until I have put forth a
-convincing proof. This is good skepticism, and the sort of thing we'd like to
-foster. Nevertheless, I can present a proof that these two definitions of
-vectors are equivalent---namely, by giving a function which transform one
-type to the other, and a second function which goes the other direction. Going
-the one way is easy, it's just `def:lookup`:
+and `type:Vec′` are equivalent, and will remain dubious until I have put forth a
+convincing proof. This is good skepticism. Nevertheless, I can present a proof
+that these two definitions of vectors are equivalent---namely, by giving a
+function which transform one type to the other, and a second function which goes
+the other direction. Going the one way is easy; it's just `def:lookup`:
 
 ```agda
   toVec′ : Vec A n → Vec′ A n
@@ -296,19 +319,27 @@ the size of the vector:
 
 You'll notice at [1](Ann), we must stick a call to `ctor:suc` in before we
 invoke `v`. This is a common idiom when doing induction with data structures
-represented as functions, which we will briefly discuss in the next section.
--- TODO(sandy): add a section ref. For the time being, it suffices to note that
-in effect, this composition automatically adds one to any index that is looked
-up in `v`---in essence, chopping off the 0th element, since it can no longer be
-referenced.
+represented as functions; the general rule is that the domain of functions works
+"backwards." If you make the argument bigger---like we're doing here---the
+resulting image of the function is *smaller.*[^profunctor] For the time being,
+it suffices to note that in effect, this composition automatically adds one to
+any index that is looked up in `v`---in essence, chopping off the 0th element,
+since it can no longer be referenced.
+
+[^profunctor]: If this idea seems strange to you, you can quickly gain some
+  intuition by fooling around with a graphing calculator. And if you're
+  interested in why exactly functions behave this way, the relevant research
+  keyword is that functions are *contravariant* in their domain.
 
 To complete our proof, we must finally show that `def:fromVec′` and `def:toVec′`
 are *inverses* of one another. That is, for any given vector, we should be able
-to go to and fro(m), ending up exactly where we started. If we can do so for
-every possible `type:Vec` and every possible `type:Vec′`, we have shown that
-every vector can be encoded as either type, and thus that they are both equally
-good representations of vectors. When we are working with `type:Vec` directly,
-it suffices to show propositional equality:
+to go to and fro(m)---ending up exactly where we started. If we can do so for
+every possible `type:Vec` and every possible `type:Vec′`, we will have shown
+that every vector can be encoded as either type, and thus that they are both
+equally good representations of vectors.
+
+When we are working with `type:Vec` directly, it suffices to show propositional
+equality:
 
 ```agda
   fromVec′∘toVec′ : (v : Vec A n) → fromVec′ (toVec′ v) ≡ v
@@ -317,14 +348,15 @@ it suffices to show propositional equality:
     rewrite fromVec′∘toVec′ v = refl
 ```
 
-The other direction is slightly harder, since we do not have propositional
-equality for function types. Instead, we can show the extensional equality of
-the two `type:Vec′`s---that they store the same value at every possible index:
+Recall that we do not have a notion of propositional equality for functions.
+While we could reach immediately for a setoid, for our purposes we can instead
+show functional extensionality of the vectors-represented-as-functions---proving
+that the two representations store the same value at every index:
 
 ```agda
   toVec′∘fromVec′
-      : (v : Vec′ A n) → (ix : Fin n)
-      → toVec′ (fromVec′ v) ix ≡ v ix
+      : (v : Vec′ A n)
+      → toVec′ (fromVec′ v) ≗ v
   toVec′∘fromVec′ v zero      = refl
   toVec′∘fromVec′ v (suc ix)  = toVec′∘fromVec′ (v ∘ suc) (ix)
 ```
@@ -335,9 +367,8 @@ types. Because `type:Vec′` is just the type of `def:lookup` curried with the
 vector you'd like to look at, we say that `def:lookup` is the *characteristic
 function.*
 
-As we will see later in this chapter, the existence of a characteristic function
-(in this sense) is exactly what defines the concept of "data structure" in the
-first place.
+As we will see, the existence of a characteristic function (in this sense) is
+exactly what defines the concept of "data structure" in the first place.
 
 
 ## Isomorphisms
