@@ -460,27 +460,27 @@ module _ where
   open import Function using (_∘_)
 ```
 
-we are now ready to show `def:vec-iso`, which states there is an isomorphism
-between the `type:vec-setoid` over `type:Vec` and the function setoid `type:_⇨_`
-over `type:Vec′`. This proof is mostly trivial, since we've already done the
-heavy lifting. However, showing `field:from-cong` takes some effort (and a
-lemma, defined immediately after in a `keyword:where` block) since it doesn't
-automatically fall out from computation.
-
--- TODO(sandy): setoids chapter should discuss vec-setoid and the pointwise
--- helpers
-
+We are now ready to show `def:vec-iso`, which formalizes our argument earlier
+that there is an isomorphism between `type:Vec` and their characteristic
+function `def:lookup`. Recall that isomorphisms are defined over setoids, which
+means we must lift `def:lookup` into the `type:_⇒_` setoid. The proof is mostly
+trivial, since we've already done all the heavy lifting. However, we will first
+need one lemma, which applies a function over a `type:Fn` (which, recall, is the
+notion of equivalence for the `type:_⇒_` setoid.) While we could generalize the
+type further, the following will be sufficient for our needs:
 
 ```agda
-  open Setoid-Renaming
-    hiding (Carrier)
+  Fn-map
+    : {A : Set ℓ₁} {B : Set ℓ₂} {C : Set ℓ₃}
+    → (f : A → B)
+    → Fn (prop-setoid B) (prop-setoid C)
+    → Fn (prop-setoid A) (prop-setoid C)
+  Fn-map f x = fn (Fn.func x ∘ f) (Fn.cong x ∘ ≡.cong f)
+```
 
-  suc-me
-    : {A : Set ℓ}
-    → Fn (prop-setoid (Fin (suc n))) (prop-setoid A)
-    → Fn (prop-setoid (Fin n)) (prop-setoid A)
-  suc-me x = fn (Fn.func x ∘ suc) (Fn.cong x ∘ ≡.cong suc)
+And finally, we can show `def:vec-iso`:
 
+```agda
   vec-iso
       : {A : Set c₁}
       → prop-setoid (Vec A n)
@@ -494,15 +494,12 @@ automatically fall out from computation.
   to∘from vec-iso v {ix} ≡.refl = toVec′∘fromVec′ (Fn.func v) ix
   to-cong vec-iso ≡.refl ≡.refl = refl
   from-cong (vec-iso {n = zero}) _ = refl
-  from-cong (vec-iso {n = suc n} {A = A}) {v₁} {v₂} vi≡vj
+  from-cong (vec-iso {n = suc n}) {v₁} {v₂} vi≡vj
     rewrite vi≡vj {x = zero} refl
-    rewrite from-cong vec-iso {suc-me v₁} {suc-me v₂} (vi≡vj ∘ ≡.cong suc)
+    rewrite from-cong  vec-iso {Fn-map suc v₁} {Fn-map suc v₂}
+                       (vi≡vj ∘ ≡.cong suc)
       = refl
 ```
-
-In order to show the `def:lemma`, we must prove that every element in
-`def:fromVec′` of `x` is equal to every element of the same on `y`. This is done
-via induction on `n`, and proceeds methodically:
 
 With our first taste of isomorphism, we are now ready to investigate them more
 thoroughly and learn about their properties.
