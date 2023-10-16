@@ -486,13 +486,19 @@ Finally, we can show `def:vec-iso`:
   from-cong (vec-iso {n = zero}) _ = refl
   from-cong (vec-iso {n = suc n}) {v₁} {v₂} vi≡vj
     rewrite vi≡vj {x = zero} refl
-    rewrite from-cong  vec-iso {Fn-map suc v₁} {Fn-map suc v₂}
+    rewrite from-cong  vec-iso {Fn-map suc v₁} {Fn-map suc v₂}  -- ! 1
                        (vi≡vj ∘ ≡.cong suc)
       = refl
 ```
 
-With our first taste of isomorphism, we are now ready to investigate them more
-thoroughly and learn about their properties.
+The complications at [1](Ann) requiring `def:Fn-map` are due to us needing to
+show the congruence of two *completely different* functions when doing the
+recursive case in `field:from-cong`. In essence, we must chop off the head of
+both vector-as-a-functions, and unfortunately, Agda isn't smart enough to
+determine this on its own.
+
+Having successfully shown `def:vec-iso`, and thus gotten our first taste of an
+isomorphism, we are now ready to investigate them more thoroughly.
 
 
 ## Isomorphisms Form an Equivalence Relation
@@ -956,11 +962,11 @@ module _ {s₁ : Setoid c₁ ℓ₁} where
     _ = s₁ .isEquivalence
 
   vec-fin₀ : vec-setoid s₁ 0 Has 1 Elements
-  to         vec-fin₀ []    = zero
-  from       vec-fin₀ zero  = []
-  from∘to    vec-fin₀ []    = []
-  to∘from    vec-fin₀ zero  = refl
-  to-cong    vec-fin₀ []    = refl
+  to         vec-fin₀ []      = zero
+  from       vec-fin₀ zero    = []
+  from∘to    vec-fin₀ []      = []
+  to∘from    vec-fin₀ zero    = refl
+  to-cong    vec-fin₀ []      = refl
   from-cong  vec-fin₀ ≡.refl  = refl
 ```
 
