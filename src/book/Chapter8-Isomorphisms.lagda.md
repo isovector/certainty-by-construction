@@ -163,10 +163,9 @@ but Agda instead insists that such a thing is not allowed:
 when checking that the expression zero has type Fin 0
 ```
 
-Therefore, we can conclude that `type:Fin` behaves as we'd like.
-
-Of course, we can always opt to forget the index, transforming a `type:Fin` into
-a `type:ℕ` in the process:
+Therefore, we can conclude that `type:Fin` behaves as we'd like. Of course, we
+can always opt to forget the index, transforming a `type:Fin` into a `type:ℕ` in
+the process:
 
 ```agda
   toℕ : {n : ℕ} → Fin n → ℕ
