@@ -1,5 +1,6 @@
 # Isomorphisms
 
+
 Hidden
 
 :   ```agda
@@ -9,6 +10,45 @@ Hidden
 ```agda
 module Chapter8-Isomorphisms where
 ```
+
+
+As we near the end of this book, we turn our focus now to our final theoretical
+topic: *isomorphisms*---the question of when two types are equivalent. In
+essence, then, we will find ourselves looking for a suitable notation of
+equality over types themselves. Rather surprisingly, this is not moot exercise
+in learning obscure and arcane trivia, as the theory gives rise to some
+incredibly powerful programming techniques.
+
+Like many notions of equality we have studied thus far, isomorphisms do not
+preserve *everything* between two types. Of particular interest to us, is that
+isomorphic types usually have dramatically different computational
+behavior---and the knowledgeable practitioner can exploit this differential. In
+this chapter, we will focus on the theory, saving its real-world usage as a case
+study for our final chapter. There we will wield our newfound powers to
+dramatically simplify the problem of dynamic programming, in essence, acquiring
+learning how to improve algorithmic asymptotics for free.
+
+Isomorphisms are *everywhere* in programming, whether we're aware of them or
+not. Usually they're completely invisible until you learn where to look.
+The existence of an isomorphism is what we're grasping for when we serialize a
+data structure to disk, and read it back again later, expecting to get the same
+thing back. There is an implicit isomorphism we unwittingly invoke when we
+multiply matrices to do 3D graphics programming---in that we forget there is a
+difference between operations in 3D space and the inscrutable arrays of numbers
+we use to encode them.
+
+Before you learn to look for them, isomorphisms just feel like harmless
+equivocation between two different things that feel the same. Functions on a
+computer *are* just pointers to a series of instructions, aren't they? Numbers
+*are* just their binary representations, right? As we have seen throughout this
+book, numbers at least *are* much more than their binary representations.
+
+In all of these cases, we are mentally invoking the idea that these two
+disparate things are similar enough that it's safe to think of one as the other.
+Usually this equivalence is much less sound than we'd like, and is the source of
+nearly all non-trivial software bugs. Problems arise when our mental model of a
+system doesn't correspond exactly with the system itself.
+
 
 Prerequisites
 
@@ -34,70 +74,68 @@ open import Chapter5-Modular-Arithmetic
 :   ```agda
 open import Chapter7-Structures
   hiding (length)
+-- FIX
     ```
-
-In this chapter we will discuss when are two *types* the same, in essence,
-looking for a suitable notion of equality for types themselves. Surprisingly,
-this is not merely an exercise in learning obscure facts---the theory here gives
-rise to some incredibly powerful techniques in programming, like automatic
-asymptotic-improvement for many classes of algorithms. In order to motivate the
-techniques involved, we will first discuss the countability of a type, develop a
-robust mechanism for operating with equal type, and finally explore applications
-of these techniques.
 
 
 ## Finite Numbers
 
 Although we have spent an eternity discussing different sorts of numbers, we
-have one final variety to define and work though. These are the *finite
-numbers,* which, unlike the infinity of the natural numbers, are bounded in the
-largest number they can represent. Finite numbers are all around us, from the 64
-bit integers (of which the biggest representable number is
-18446744073709551615), to the numbers we should be using to index arrays---after
-all, the safest way to avoid a bounds check at runtime is to ensure the number
-you're trying to index against is guaranteed to be less than the length of the
-array in question.
+will need one final flavor---the *finite numbers.*  These, unlike the infinity
+of the naturals, are bounded in the largest number they can represent.
 
-Contrasting the 64 bit integer use-case against the array bounds use-case is
+Finite numbers are all around us. The sixty four wires inside of your computer
+use voltages to encode numbers, and no matter how hard you `ctor:suc`, you're
+eventually going to run out of encodable numbers on your hardware. A sixty-fifth
+wire won't come along out of nowhere just because you need it! Of course, we can
+simulate bigger numbers by working on them in chunks, but at any one time, the
+biggest number a computer can ever work with is $2^{64}-1$.
+
+Unwittingly, we (conceptually) use finite numbers when we index arrays. The
+array has a length, and it's illegal to lookup something in the array using a
+number bigger than that length. Different languages have different solutions to
+this problem, but the most elegant one is to prevent it from happening in the
+first place---that is, to use a type more precise than simply `type:ℕ`.
+
+Contrasting the 64 bit integer case against the array bounds case is
 informative, in that in the latter, we might not know exactly what the biggest
 representable number should be. Rather than doing the usual thing and defining
-completely different types for `Word8`, `Word16`, `Word32`, etc., we can instead
-make a single type constructor for all finite numbers, indexed by how many
-distinct numbers it can represent. We'll call this type `type:Fin`, and would
-like the property that `type:Fin 2` has exactly two values, while `type:Fin 13`
-has 13. By picking absurdly large values of `n`, we can use `type:Fin n` to
-represent the machine words, and instead by using `n` in a dependent way, we can
-ensure it matches the length of an array. We will look at examples of both of
-these use cases in a moment, but first we must define the type.
+completely different types for 8-bit numbers, and 16-bit numbers, and so on, we
+can instead make a single type for *all* finite numbers, indexed by how many
+distinct numbers it can represent.
+
+We'll call this type `type:Fin`, and would like the property that `type:Fin 2`
+has exactly two values, while `type:Fin 13` has 13. By picking absurdly large
+values of `n`, we can use `type:Fin n` to represent the machine words, and
+instead by using `n` in a dependent way, we can ensure it matches the length of
+an array. We will look at examples of both of these use cases in a moment, but
+first we must define the type.
 
 ```agda
-private variable
-  m n : ℕ
-
-
 module Definition-Fin where
   data Fin : ℕ → Set where
-    zero  : Fin (ℕ.suc n)
-    suc   : Fin n → Fin (ℕ.suc n)  -- ! 1
+    zero  : {n : ℕ} → Fin (ℕ.suc n)
+    suc   : {n : ℕ} → Fin n → Fin (ℕ.suc n)
 ```
 
 `type:Fin`, like `type:ℕ`, is a unary encoding of the natural numbers, but you
-will notice that each of its constructors produces a `type:Fin` indexed by a
+will notice that each of its constructors now produces a `type:Fin` indexed by a
 `ctor:ℕ.suc`. Agda technically doesn't require use to use a fully qualified
-`ctor:ℕ.suc` here, instead we could simply use `ctor:suc`, but it helps to
-differentiate against the `type:Fin`-valued `ctor:suc` defined at [1](Ann).
+`ctor:ℕ.suc` here, but it helps to visually differentiate which `ctor:suc` comes
+from `type:Fin` and which from `ℕ`.
 
 Because each data constructor is indexed by `ctor:ℕ.suc`, there is simply no way
-to build a `type:Fin 0`, which is consistent with our desideratum that `type:Fin
-n` have $n$ distinct values. Every time we invoke `ctor:suc`, however, we lose
-some "capacity" in the index, until we are eventually *forced* to use
-`ctor:zero`. Because every time we use `ctor:suc`, we lose a `ctor:ℕ.suc` in the
-index, we are allowed to call `ctor:suc` exactly $n - 1$ times before we are
-required to call `ctor:zero`. And it is exactly this `ctor:zero` which explains
-the discrepancy between the $n - 1$ potential calls to `ctor:suc` and the $n$
-values that `type:Fin n` is promised to have. It's just like how the biggest
-number we can store in a byte is 255, even though there are 256 values in a
-byte---we just have to remember to count zero!
+to build a `type:Fin 0`---consistent with our desideratum that `type:Fin n` have
+$n$ distinct values. Note that every time we invoke `ctor:suc`, we must give a
+*smaller* `type:Fin` as an argument. In essence, this means give up some of our
+finite "capacity". Eventually, the innermost argument will have type `type:Fin
+1`, for which the only constructor is `ctor:zero`.
+
+It is exactly this `ctor:zero` which explains the discrepancy between the $n -
+1$ potential calls to `ctor:suc` and the $n$ values that `type:Fin n` is
+promised to have. It's just like how the biggest number we can store in a byte
+is 255, even though there are 256 values in a byte---we just have to remember to
+count `ctor:zero`!
 
 To illustrate that this all works, we can give the five values of `Fin 5`:
 
@@ -118,29 +156,30 @@ In an attempt to continue the pattern, we can try:
     5f = suc (suc (suc (suc (suc zero))))
 ```
 
-but Agda instead insists that this is not allowed:
+but Agda instead insists that such a thing is not allowed:
 
 ```info
 (ℕ.suc _n_37) != ℕ.zero of type ℕ
 when checking that the expression zero has type Fin 0
 ```
 
-Therefore, we can conclude that `type:Fin` behaves as we'd like it to.
+Therefore, we can conclude that `type:Fin` behaves as we'd like.
 
-Of course, we can always forget the index, and transform a `type:Fin` into a
-`type:ℕ`:
+Of course, we can always opt to forget the index, transforming a `type:Fin` into
+a `type:ℕ` in the process:
 
 ```agda
-  toℕ : Fin n → ℕ
+  toℕ : {n : ℕ} → Fin n → ℕ
   toℕ zero     = ℕ.zero
   toℕ (suc x)  = ℕ.suc (toℕ x)
 ```
 
-Rather than using our own definition for the remainder of this chapter, we will
-instead import an equivalently-defined version from the standard library:
+As usual, rather than giving our own definition for `type:Fin`, we will instead
+import it from the standard library:
 
 ```agda
-open import Data.Fin using (Fin; zero; suc)
+open import Data.Fin
+  using (Fin; zero; suc)
 ```
 
 ## Finites for Vector Lookup
@@ -162,6 +201,7 @@ we increase its length type index:
 ```agda
 private variable
   ℓ : Level
+  m n : ℕ
 
 module Definition-Vectors where
   data Vec (A : Set ℓ) : ℕ → Set ℓ where
