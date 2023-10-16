@@ -429,11 +429,11 @@ name `module:A-Reasoning` and `module:B-Reasoning`---corresponding to the types
 
 ```agda
   module A-Reasoning where
-    open Preorder-Reasoning (IsEquivalence.isPreorder (Setoid.isEquivalence s₁))
+    open Preorder-Reasoning (Setoid.isPreorder s₁)
       public
 
   module B-Reasoning where
-    open Preorder-Reasoning (IsEquivalence.isPreorder (Setoid.isEquivalence s₂))
+    open Preorder-Reasoning (Setoid.isPreorder s₂)
       public
 ```
 
@@ -444,32 +444,22 @@ concept. Therefore, we will define a binary operator for `type:Iso`: `def:_≅_`
 
 ```agda
 _≅_ = Iso
-```
-
-Before we go on to say too much more about isomorphisms, we can first show that
-`type:Vec` and `type:Vec′` are indeed isomorphic to one another. After a little
-import wrangling:
-
-```agda
-
 open Iso
-
-module _ where
-  open Example-Vectors
-
-  open import Function using (_∘_)
 ```
 
-We are now ready to show `def:vec-iso`, which formalizes our argument earlier
-that there is an isomorphism between `type:Vec` and their characteristic
-function `def:lookup`. Recall that isomorphisms are defined over setoids, which
-means we must lift `def:lookup` into the `type:_⇒_` setoid. The proof is mostly
-trivial, since we've already done all the heavy lifting. However, we will first
-need one lemma, which applies a function over a `type:Fn` (which, recall, is the
-notion of equivalence for the `type:_⇒_` setoid.) While we could generalize the
-type further, the following will be sufficient for our needs:
+Before we go on to say too much more about isomorphisms, we can first build
+`def:vec-iso`, which formalizes our argument earlier that there is indeed an
+isomorphism between `type:Vec` and its characteristic function `def:lookup`.
+
+Recall that isomorphisms are defined over setoids, which means we must lift
+`def:lookup` into the `type:_⇒_` setoid. The proof is mostly trivial, since
+we've already done all the heavy lifting. However, we will first need one lemma,
+which applies a function over a `type:Fn` (which, recall, is the notion of
+equivalence for the `type:_⇒_` setoid.) While we could generalize the type
+further, the following will be sufficient for our needs:
 
 ```agda
+module _ where
   Fn-map
     : {A : Set ℓ₁} {B : Set ℓ₂} {C : Set ℓ₃}
     → (f : A → B)
@@ -478,9 +468,11 @@ type further, the following will be sufficient for our needs:
   Fn-map f x = fn (Fn.func x ∘ f) (Fn.cong x ∘ ≡.cong f)
 ```
 
-And finally, we can show `def:vec-iso`:
+Finally, we can show `def:vec-iso`:
 
 ```agda
+  open Example-Vectors
+
   vec-iso
       : {A : Set c₁}
       → prop-setoid (Vec A n)
@@ -488,11 +480,9 @@ And finally, we can show `def:vec-iso`:
   Fn.func (to vec-iso v) = lookup v
   Fn.cong (to vec-iso v) = ≡.cong (lookup v)
   from vec-iso = fromVec′ ∘ Fn.func
-  from∘to vec-iso v
-    rewrite fromVec′∘toVec′ v
-      = refl
-  to∘from vec-iso v {ix} ≡.refl = toVec′∘fromVec′ (Fn.func v) ix
-  to-cong vec-iso ≡.refl ≡.refl = refl
+  from∘to vec-iso v rewrite fromVec′∘toVec′ v = refl
+  to∘from vec-iso v {ix}  ≡.refl = toVec′∘fromVec′ (Fn.func v) ix
+  to-cong vec-iso ≡.refl  ≡.refl = refl
   from-cong (vec-iso {n = zero}) _ = refl
   from-cong (vec-iso {n = suc n}) {v₁} {v₂} vi≡vj
     rewrite vi≡vj {x = zero} refl
