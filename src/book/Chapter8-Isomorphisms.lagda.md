@@ -52,6 +52,11 @@ system doesn't correspond exactly with the system itself.
 Prerequisites
 
 :   ```agda
+open import Chapter1-Agda
+  using (Bool; true; false; _×_)
+    ```
+
+:   ```agda
 open import Chapter2-Numbers
   using (ℕ; zero; suc; _+_; _*_; _^_; Maybe; just; nothing)
     ```
@@ -503,10 +508,11 @@ isomorphism, we are now ready to investigate them more thoroughly.
 
 ## Isomorphisms Form an Equivalence Relation
 
-I have been implicitly claiming that isomorphism is a good notion of equality
-for types. We will now justify that, by showing that isomorphisms do indeed form
-an equivalence relation. Reflexivity is trivial, because we need to map a type
-to itself in both directions:
+Thus far, I have been claiming that isomorphism is a good notion of equality
+between types, but without any real evidence to back it up. We will now prove
+just that, by showing isomorphisms do indeed form an equivalence
+relation---which recall, is the "interface" of equality. First, we will need a
+slew of setoids in scope:
 
 ```agda
 private variable
@@ -514,25 +520,32 @@ private variable
   s₂ : Setoid c₂ ℓ₂
   s₃ : Setoid c₃ ℓ₃
   s₄ : Setoid c₄ ℓ₄
+```
 
+Showing reflexivity is trivial; we need only map the carrier of a setoid to
+itself:
+
+```agda
 ≅-refl : s₁ ≅ s₁
 ≅-refl {s₁ = s} =
   iso id id (λ x → Setoid.refl s) (λ x → Setoid.refl s) id id
 ```
 
-Showing symmetry requires us only to change which function we're calling
-`field:to` and which we're calling `field:from`:
+Symmetry is not much harder, in that it requires us only to rename which
+function we're calling `field:to` and which we're calling `field:from`. Writing
+it all out is a bit of a pain, but there is no conceptual difficulty:
 
 ```agda
 ≅-sym : s₁ ≅ s₂ → s₂ ≅ s₁
-≅-sym (iso to from from∘to to∘from to-cong from-cong)
-  = iso from to to∘from from∘to from-cong to-cong
+≅-sym (iso  f₁  f₂  id₁  id₂  cong₁  cong₂)
+     = iso  f₂  f₁  id₂  id₁  cong₂  cong₁
 ```
 
-Transitivity is more work than the other two cases, but it's not much harder
-conceptually. The trick is merely to compose the two `field:to` fields together,
-and the two `field:from` together, and then find the right invocation of the
-laws to show that these new compositions are also lawful.
+Showing transitivity is more work than the other two cases, but again, there
+isn't any challenge conceptually. The trick is merely to compose the two
+`field:to` fields together, and the two `field:from` together, and then find the
+right invocation of the laws to show that these new compositions are also
+lawful.
 
 ```agda
 module _ where
@@ -555,9 +568,9 @@ module _ where
   from-cong  (≅-trans f g) x≈y = from-cong  f (from-cong  g x≈y)
 ```
 
-These three proofs together show that `type:_≅_` is indeed an equivalence
-relation, although we must restrict the levels on both sides to be the same in
-order for the standard machinery to agree with this fact:
+Together, these three proofs show that `type:_≅_` does indeed form an
+equivalence relation. Unfortunately, the standard machinery doesn't allow our
+levels to vary on either side of the equivalence, so we must unify them:
 
 ```agda
 ≅-equiv : IsEquivalence (_≅_ {c₁ = c₁} {ℓ₁ = ℓ₁})
@@ -566,37 +579,52 @@ IsPreorder.trans  (IsEquivalence.isPreorder ≅-equiv) = ≅-trans
 IsEquivalence.sym ≅-equiv = ≅-sym
 ```
 
+This restriction on the levels of our isomorphisms means that `type:≅-equiv`
+will rarely be of use to us for doing equational reasoning. Nevertheless,
+having shown that isomorphisms do indeed form an equivalence relation should
+make us feel much better about treating them as the right choice for equality
+between types.
+
 
 ## Finite Types
 
-One of the most immediate things we can do with isomorphisms is to enumerate the
-number of inhabitants of types. Types for which this is possible are known as
-*finite* types, because they have a finite number of inhabitants.
+Now that we have a suitable definition for, and motivation behind, isomorphisms,
+let's explore some circumstances by which they arise. One particularly fruitful
+way to think about isomorphisms is that they correspond to a relabeling of each
+of the elements, renaming elements in one of the carriers to names from the
+other. When exactly can we do this? Whenever there are the same number of
+elements in both types!
 
-We can show a type is finite by giving an isomorphism into `type:Fin`. The index
-on `type:Fin` is called the *cardinality* of the type, and we will give a mixfix
-definition for finite types by way of `type:_Has_Elements`:
+In fact, we can use this idea to *define* the notion of finite types---that is,
+types with a finite number of elements---by showing an isomorphism *into*
+`type:Fin`. By using some cute syntax, we can define `type:_Has_Elements`, which
+we will use to say `s₁` `type:Has` `n` `type:Elements` to prove there are
+exactly `n` distinguished elements in the setoid `s₁`.
 
 ```agda
-open import Data.Fin using (Fin; zero; suc)
-
 module Sandbox-Finite where
   _Has_Elements : Setoid c₁ ℓ₁ → ℕ → Set (c₁ ⊔ ℓ₁)
   s Has cardinality Elements = s ≅ prop-setoid (Fin cardinality)
 ```
 
-As a simple (although admittedly tedious) example of `type:_Has_Elements`, we
-can show that `type:Bool` has two inhabitants:
+We therefore know by definition (and reflexivity) that `bind:n:Fin n` has `n`
+elements:
 
 ```agda
-  open import Data.Bool using (Bool; true; false)
-  open Iso
+  fin-fin : {n : ℕ} → prop-setoid (Fin n) Has n Elements
+  fin-fin = ≅-refl
+```
 
+Furthermore, we know that `type:Bool` has two elements, the proof of which is
+surprisingly tedious:
+
+```agda
+  open Iso
 
   bool-fin : prop-setoid Bool Has 2 Elements
   to         bool-fin false       = zero
   to         bool-fin true        = suc zero
-  from       bool-fin zero        = _
+  from       bool-fin zero        = _  -- ! 1
   from       bool-fin (suc zero)  = _
   from∘to    bool-fin false       = refl
   from∘to    bool-fin true        = refl
@@ -606,14 +634,18 @@ can show that `type:Bool` has two inhabitants:
   from-cong  bool-fin ≡.refl      = refl
 ```
 
+Notice that at [1](Ann), we have opted to let Agda infer the inverse function.
+It's able to do so because it knows that `field:from∘to` is `def:refl`, and
+therefore the result of `field:from` is already fully determined.
+
 While we don't need an isomorphism to convince ourselves that `type:Bool` does
-indeed have two elements, the machinery is in fact useful. One immediate
+indeed have two elements, the machinery is actually useful. One immediate
 corollary of `type:_Has_Elements` is any two types with the same cardinality
 must necessarily be isomorphic to one another:
 
 ```agda
   fin-iso : s₁ Has n Elements → s₂ Has n Elements → s₁ ≅ s₂
-  fin-iso i₁ i₂ = ≅-trans i₁ (≅-sym i₂)
+  fin-iso s₁ s₂ = ≅-trans s₁ (≅-sym s₂)
 ```
 
 In fact, it is exactly this treatment as finite types that gives product and
@@ -631,7 +663,6 @@ as it was. Thus, given two isomorphisms, we can construct an isomorphism between
 the product setoid given by `def:×-preserves-≅`:
 
 ```agda
-  open import Data.Product using (_×_; _,_; proj₁; proj₂)
   import Data.Product as ×
   open Setoid-Renaming
 
@@ -842,12 +873,6 @@ Thus, we need a setoid over congruent functions. Given such a thing, it's easy
 ```agda
 open Setoid
   hiding (refl; sym; trans; Carrier; _≈_)
-
-open import Data.Product using (_,_)
-
-open import Function.Equality
-  using (_⇨_)
-  renaming (_⟨$⟩_ to func; cong to fcong)
 
 →-preserves-≅
     : s₁ ≅ s₂ → s₃ ≅ s₄
