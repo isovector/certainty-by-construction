@@ -506,7 +506,7 @@ Having successfully shown `def:vec-iso`, and thus gotten our first taste of an
 isomorphism, we are now ready to investigate them more thoroughly.
 
 
-## Isomorphisms Form an Equivalence Relation
+## Equivalence on Isomorphisms
 
 Thus far, I have been claiming that isomorphism is a good notion of equality
 between types, but without any real evidence to back it up. We will now prove
@@ -598,13 +598,22 @@ elements in both types!
 In fact, we can use this idea to *define* the notion of finite types---that is,
 types with a finite number of elements---by showing an isomorphism *into*
 `type:Fin`. By using some cute syntax, we can define `type:_Has_Elements`, which
-we will use to say `s₁` `type:Has` `n` `type:Elements` to prove there are
-exactly `n` distinguished elements in the setoid `s₁`.
+we will use to say `s` `type:Has` `n` `type:Elements` to prove there are
+exactly `n` distinguished elements in the setoid `s`. Incidentally, this number
+of distinguished elements is also known as the *cardinality* of the
+type[^quotient].
+
+[^quotient]: Technically, the number of the elements in the type, *quotiented by
+  the setoid,* but we will play a little fast and loose with the terminology for
+  ease of reading.
 
 ```agda
 module Sandbox-Finite where
   _Has_Elements : Setoid c₁ ℓ₁ → ℕ → Set (c₁ ⊔ ℓ₁)
-  s Has cardinality Elements = s ≅ prop-setoid (Fin cardinality)
+  s Has cardinality Elements =
+    s ≅ prop-setoid (Fin cardinality)
+
+  -- FIX
 ```
 
 We therefore know by definition (and reflexivity) that `bind:n:Fin n` has `n`
@@ -644,9 +653,17 @@ corollary of `type:_Has_Elements` is any two types with the same cardinality
 must necessarily be isomorphic to one another:
 
 ```agda
-  fin-iso : s₁ Has n Elements → s₂ Has n Elements → s₁ ≅ s₂
+  fin-iso
+    : s₁  Has n Elements
+    → s₂  Has n Elements
+    → s₁ ≅ s₂
   fin-iso s₁ s₂ = ≅-trans s₁ (≅-sym s₂)
 ```
+
+
+## Products are Products, Sums are Sums
+
+
 
 In fact, it is exactly this treatment as finite types that gives product and
 sum types their respective names. Product types have cardinality equal
@@ -666,7 +683,10 @@ the product setoid given by `def:×-preserves-≅`:
   import Data.Product as ×
   open Setoid-Renaming
 
-  ×-preserves-≅ : s₁ ≅ s₂ → s₃ ≅ s₄ → ×-setoid s₁ s₃ ≅ ×-setoid s₂ s₄
+  ×-preserves-≅
+    : s₁ ≅ s₂
+    → s₃ ≅ s₄
+    → ×-setoid s₁ s₃ ≅ ×-setoid s₂ s₄
   to    (×-preserves-≅ s t) = ×.map (to s) (to t)
   from  (×-preserves-≅ s t) = ×.map (from s) (from t)
   from∘to (×-preserves-≅ s t) (x , y) =
@@ -675,6 +695,19 @@ the product setoid given by `def:×-preserves-≅`:
     to∘from s x , to∘from t y
   to-cong    (×-preserves-≅ s t) = ×.map (to-cong s) (to-cong t)
   from-cong  (×-preserves-≅ s t) = ×.map (from-cong s) (from-cong t)
+```
+
+```agda
+  ×-prop-homo
+      :  {A : Set ℓ₁} {B : Set ℓ₂}
+      →  ×-setoid (prop-setoid A) (prop-setoid B)
+         ≅ prop-setoid (A × B)
+  to         ×-prop-homo = id
+  from       ×-prop-homo = id
+  from∘to    ×-prop-homo _ = refl , refl
+  to∘from    ×-prop-homo _ = refl
+  to-cong    ×-prop-homo (≡.refl , ≡.refl)  = refl
+  from-cong  ×-prop-homo ≡.refl             = refl , refl
 ```
 
 Similarly, we can give the same treatment to `type:_⊎_`, as in
@@ -698,21 +731,22 @@ Similarly, we can give the same treatment to `type:_⊎_`, as in
   to-cong    (⊎-preserves-≅ s t) (inj₂ x)  = inj₂  (to-cong t x)
   from-cong  (⊎-preserves-≅ s t) (inj₁ x)  = inj₁  (from-cong s x)
   from-cong  (⊎-preserves-≅ s t) (inj₂ x)  = inj₂  (from-cong t x)
+```
 
-
+```agda
   ⊎-prop-homo
       :  {A : Set ℓ₁} {B : Set ℓ₂}
       →  ⊎-setoid (prop-setoid A) (prop-setoid B)
          ≅ prop-setoid (A ⊎ B)
   to        ⊎-prop-homo = id
   from      ⊎-prop-homo = id
-  from∘to   ⊎-prop-homo (inj₁ x)  = inj₁ refl
-  from∘to   ⊎-prop-homo (inj₂ y)  = inj₂ refl
   to∘from   ⊎-prop-homo _ = refl
-  to-cong   ⊎-prop-homo (inj₁ ≡.refl)  = refl
-  to-cong   ⊎-prop-homo (inj₂ ≡.refl)  = refl
-  from-cong ⊎-prop-homo {inj₁ x} ≡.refl  = inj₁ refl
-  from-cong ⊎-prop-homo {inj₂ y} ≡.refl  = inj₂ refl
+  from∘to   ⊎-prop-homo (inj₁  x) = inj₁  refl
+  from∘to   ⊎-prop-homo (inj₂  y) = inj₂  refl
+  to-cong   ⊎-prop-homo (inj₁  ≡.refl)     = refl
+  to-cong   ⊎-prop-homo (inj₂  ≡.refl)     = refl
+  from-cong ⊎-prop-homo {inj₁  x} ≡.refl   = inj₁ refl
+  from-cong ⊎-prop-homo {inj₂  y} ≡.refl   = inj₂ refl
 ```
 
 Given two finite numbers, we can combine them in either of two every-day
@@ -807,17 +841,6 @@ products, as in `def:combine-remQuot-iso`:
 
 ```agda
   open import Data.Fin using (combine; remQuot)
-
-  ×-prop-homo
-      :  {A : Set ℓ₁} {B : Set ℓ₂}
-      →  ×-setoid (prop-setoid A) (prop-setoid B)
-         ≅ prop-setoid (A × B)
-  to         ×-prop-homo = id
-  from       ×-prop-homo = id
-  from∘to    ×-prop-homo _ = refl , refl
-  to∘from    ×-prop-homo _ = refl
-  to-cong    ×-prop-homo (≡.refl , ≡.refl)  = refl
-  from-cong  ×-prop-homo ≡.refl             = refl , refl
 
   combine-remQuot-iso
       : prop-setoid (Fin (m * n))
