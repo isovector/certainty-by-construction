@@ -17,6 +17,7 @@ $for(classoption)$
 $endfor$
 ]{book}
 \usepackage{amsmath,amssymb}
+\usepackage{marvosym}
 \usepackage{marginnote}
 \usepackage{lmodern}
 $if(linestretch)$
@@ -300,6 +301,13 @@ $endif$
 
 \usepackage{fancyhdr}
 \usepackage{fontspec}
+
+% \makeatletter
+% \renewcommand\normalsize{\@setfontsize\normalsize{14pt}{16pt}}
+% \normalsize
+% \makeatother
+
+
 \usepackage{newunicodechar}
 \usepackage[Latin,Greek]{ucharclasses}
 \usepackage{tikz}
@@ -322,23 +330,26 @@ $endif$
 \newunicodechar{⨄}{\iosevka{}⨄}
 \newunicodechar{𝔸}{\iosevka{}𝔸}
 \newunicodechar{≡}{\iosevka{}≡}
+\newunicodechar{∨}{\iosevka{}∨}
+\newunicodechar{ʳ}{\iosevka{}ʳ}
 \allsectionsfont{\impact}
 
 \newfontfamily{\substitutefont}[Scale=MatchLowercase]{Noto Sans}
 
 \usepackage[tikz]{bclogo}
 
-\newtcblisting{AgdaInfo}{ breakable, enhanced%
-                        , colframe=blue!30!black, title={Info Window}%
-                        , boxed title style={sharp corners}, left=3mm, sharp corners%
-                        , attach boxed title to top left={yshift*=-\tcboxedtitleheight}%
-                        , listing options={columns=fullflexible, breaklines=true, keepspaces=true}%
-                        , verbatim%
-                        , listing only%
-                        }
+% \newtcblisting{AgdaInfo}{ breakable, enhanced%
+%                         , colframe=blue!30!black, title={Info Window}%
+%                         , boxed title style={sharp corners}, left=3mm, sharp corners%
+%                         , attach boxed title to top left={yshift*=-\tcboxedtitleheight}%
+%                         , listing options={columns=fullflexible, breaklines=true, keepspaces=true}%
+%                         , listing only%
+%                         }
 
-% \newenvironment{AgdaInfo}{\smallskip\begin{bclogo}[arrondi=0.5,logo=\bcloupe,barre=snake,tailleOndu=1.5,noborder=true,couleurBarre=gray]{\quad Response}}{\end{bclogo}}
+% \newenvironment{AgdaInfo}{\smallskip\begin{bclogo}[arrondi=0.5,logo={\LARGE\Info},barre=none,tailleOndu=1.5,noborder=true,couleurBarre=gray]{\impact{Info Window}}}{\end{bclogo}}
 
+\newenvironment{AgdaInfo}{\begin{tcolorbox}[breakable, left=2.5mm, right=3mm, top=3.5mm, bottom=0mm,
+skin=enhancedmiddle, colframe=white, title={\color{black}\Info\quad{}\impact{INFO WINDOW}}]\color{black}}{\end{tcolorbox}}
 
 
 \newfontfamily{\impact}{SofiaSansCondensed-Medium}
@@ -519,7 +530,7 @@ $endfor$
 
 \raggedright
 
-{\Small
+{\small
 Cofree Press
 
 \quad
@@ -547,7 +558,7 @@ Version 0.2.1 / 2023-09-28
 
 \null\vfill
 \begin{center}
-{\large For Erin Jackes,} \\
+{\large To Erin Jackes,} \\
 {\small who knows much about equality}
 \end{center}
 \vfill
@@ -560,8 +571,8 @@ Version 0.2.1 / 2023-09-28
 \thispagestyle{empty}
 
 \clearpage
-\newcommand{\dedicationname}{Dedication}
-\pdfbookmark{\dedicationname}{dedication}
+\newcommand{\quotename}{Quote}
+\pdfbookmark{\quotename}{quote}
 \thispagestyle{empty}
 \null\vfill
 

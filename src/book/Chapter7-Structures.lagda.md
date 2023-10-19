@@ -1693,7 +1693,7 @@ than taking the length of the concatenation. And it is *precisely* the existence
 of the `def:length-hom` monoid homomorphism that ensures these two algorithms
 compute the same result:
 
-[^in-reality]: At least, on real computers.
+[^in-reality]: At least, on real computers, for small enough numbers.
 
 ```agda
 open import Data.List using (List; []; _∷_; _++_)
