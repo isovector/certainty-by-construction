@@ -754,10 +754,9 @@ To illustrate how this type works, we can build a binary tree as follows:
 corresponding to this tree:
 
 
--- TODO(sandy): fix me when this module is done
-``{design=code/Languages/Tree.hs label="\AgdaFunction{tree}"}
+```{design=code/Languages/Tree.hs label="\AgdaFunction{tree}"}
 asRose $ "4" [ "0" [ "0" ["", ""], "2" ["", ""]] , "6" ["", ""]]
-``
+```
 
 where the little points are each an instance of the `ctor:empty` constructor.
 

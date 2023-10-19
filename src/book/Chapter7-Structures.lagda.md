@@ -193,9 +193,6 @@ that monoids generalize multiplication. And indeed, there is a monoid over
 `def:ℕ`, literally using `def:_*_` as the multiplication and 1 as the unit:
 
 ```agda
-  -- TODO(sandy): Maybe just import the chapter qualified at the beginning, and
-  -- import these definitions as needed.
-
   *-1 : IsMonoid _*_ 1
   assoc      *-1 = *-assoc
   identityˡ  *-1 = *-identityˡ

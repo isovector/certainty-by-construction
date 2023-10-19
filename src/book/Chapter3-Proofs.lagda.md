@@ -1617,11 +1617,6 @@ to *why exactly* we're claiming each step of the proof follows. In order to make
 room for these justifications, we will use *Bird notation,* which attaches them
 to the equals sign:
 
-> TODO(sandy): Rewrite this and other cases of it, and the Agda example, with
-> our ^-identityʳ one used above so I don't need to introduce the new lemmas
-> before having proven them.
-
-
 $$
 \begin{aligned}
 & (a + b) \times c \\
@@ -1634,9 +1629,9 @@ $$
 \end{aligned}
 $$
 
-This is the syntax we will emulate in Agda. Doing so is a little finicky and
-deserves some thought. To wet your whistle, however, after this section is
-complete we will be able to structure the above proof in Agda as:
+This is the syntax we will emulate in Agda, although doing so is a little
+finicky and will require much thought. To pique your interested, after this
+section is complete we will be able to structure the above proof in Agda as:
 
 
 Hidden
@@ -1659,17 +1654,17 @@ Hidden
 
 
 
-Begin with a new module.
+We will begin with a new module:
 
 ```agda
   module ≡-Reasoning where
 ```
 
-The idea here is that we will make a series of right-associative syntax
-operators, in the style of our tick marks in the previous section. This syntax
-must eventually be terminated, analogously to how `def:∣_` had to be terminated
-by `def:□`. In this case, we will terminate our syntax using `ctor:refl`, that
-is, showing we've proven what we set out to.
+The idea behind building this custom syntax is that we will make a series of
+right-associative syntax operators, in the style of our tick marks in the
+previous section. This syntax must eventually be terminated, analogously to how
+`def:∣_` had to be terminated by `def:□`. In this case, we will terminate our
+syntax using `ctor:refl`, that is, showing we've proven what we set out to.
 
 You'll often see a formal proof ended with a black square (`∎`, input as
 [qed](AgdaMode)), called a *tombstone* marker. Since proofs already end with
