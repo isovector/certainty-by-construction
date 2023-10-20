@@ -552,8 +552,8 @@ module _ where
   open Iso
 
   ≅-trans : s₁ ≅ s₂ → s₂ ≅ s₃ → s₁ ≅ s₃
-  to    (≅-trans f g) = to g ∘ to f
-  from  (≅-trans f g) = from f ∘ from g
+  to    (≅-trans f g) = to    g ∘ to    f
+  from  (≅-trans f g) = from  f ∘ from  g
   from∘to (≅-trans f g) x = begin
     from f (from g (to g (to f x)))  ≈⟨ from-cong f (from∘to g _) ⟩
     from f (to f x)                  ≈⟨ from∘to f x ⟩
@@ -584,6 +584,25 @@ will rarely be of use to us for doing equational reasoning. Nevertheless,
 having shown that isomorphisms do indeed form an equivalence relation should
 make us feel much better about treating them as the right choice for equality
 between types.
+
+Finally, it will often come in handy to be able to construct an isomorphism out
+of theorems we've already proven. For this, we can use `def:≅-prop` which merely
+wraps up a pair of propositionally-inverse functions.
+
+```agda
+≅-prop
+    : {A : Set ℓ₁} {B : Set ℓ₂}
+    → (f : A → B) → (g : B → A)
+    → f ∘ g ≗ id
+    → g ∘ f ≗ id
+    → prop-setoid A ≅ prop-setoid B
+to         (≅-prop f g f∘g=id g∘f=id) = f
+from       (≅-prop f g f∘g=id g∘f=id) = g
+from∘to    (≅-prop f g f∘g=id g∘f=id) = g∘f=id
+to∘from    (≅-prop f g f∘g=id g∘f=id) = f∘g=id
+to-cong    (≅-prop f g f∘g=id g∘f=id) = ≡.cong f
+from-cong  (≅-prop f g f∘g=id g∘f=id) = ≡.cong g
+```
 
 
 ## Finite Types
@@ -624,8 +643,9 @@ elements:
   fin-fin = ≅-refl
 ```
 
-Furthermore, we know that `type:Bool` has two elements, the proof of which is
-surprisingly tedious:
+Let's try a (slightly) less trivial example, and show that `type:Bool` has
+exactly two elements. Rather surprisingly, this is significantly more tedious
+than we might expect:
 
 ```agda
   open Iso
@@ -648,9 +668,9 @@ It's able to do so because it knows that `field:from∘to` is `def:refl`, and
 therefore the result of `field:from` is already fully determined.
 
 While we don't need an isomorphism to convince ourselves that `type:Bool` does
-indeed have two elements, the machinery is actually useful. One immediate
-corollary of `type:_Has_Elements` is any two types with the same cardinality
-must necessarily be isomorphic to one another:
+indeed have two elements, this machinery already holds water, and we can use it
+to do real work. An immediate corollary of `type:_Has_Elements` is any two types
+with the same cardinality must necessarily be isomorphic to one another:
 
 ```agda
   fin-iso
@@ -661,7 +681,210 @@ must necessarily be isomorphic to one another:
 ```
 
 
-## Products are Products, Sums are Sums
+## Algebraic Data Types
+
+As exciting as it is to show that there are *definitely* two booleans, one
+can't help but feel a bit underwhelmed by the difficulty of the process. Are we
+doomed to write giant isomorphisms for every type we care about? Is there
+nothing more compositional that we can instead reach for? Indeed, many types can
+be automatically disassembled into more compositional pieces.
+
+If we forget about dependent types for the time being, the types we can build
+are known as the *algebraic data types,* and correspond closely with types that
+we care about as data (as opposed to types we care about as proofs.) The idea is
+that we can decompose any algebraic data type, and rebuild it out of some
+combination of `type:⊤`, `type:⊥`, `type:_⊎_` and `type:_×_`.
+
+We haven't yet discussed `type:⊤`---pronounced "unit type"---because it's
+neither a particularly value-ful nor valuable type, having only one inhabitant,
+`ctor:tt`. The definition of `type:⊤` ([top](AgdaMode)) looks like this:
+
+```agda
+  module ⊤-Definition where
+    record ⊤ : Set where
+      constructor tt
+
+  open import Data.Unit
+    using (⊤; tt)
+```
+
+The unit type doesn't come into play much in Agda, but is more useful in
+languages that permit side effects. A function which returns `type:⊤` is
+therefore one which you are invoking *solely* for its side effects. Compared to
+the expressivity of types we have become familiar with in Agda, such a dearth of
+information is a hard world to return to. Nevertheless, we will find a use for
+`type:⊤` in Agda momentarily.
+
+Recall the definition of `type:Bool`:
+
+
+```agda
+  data Bool⅋ : Set where
+    false  : Bool⅋
+    true   : Bool⅋
+```
+
+How can we decompose this definition into a generic representation by way of
+some combination of our algebraic data constructors, `type:⊤`, `type:⊥`,
+`type:_⊎_` and `type:_×_`? Notice that `ctor:false` and `ctor:true` contain no
+information, they are only arbitrary labels for two distinct elements of type
+`type:Bool`. What's important is that we can create them *ex nihilo*---that is
+to say, without needing to give any arguments to build them---and that we have a
+*choice* between the two.
+
+Whenever we have a choice between two types, we can model it with `type:_⊎_`.
+And what's our choice between? It's between two constructors with no information
+whatsoever, which is exactly the property that `type:⊤` also satisfies.
+Therefore, we should be able to find an isomorphism between `type:Bool` and
+`type:⊤ ⊎ ⊤`.
+
+```agda
+  open import Data.Sum using (_⊎_; inj₁; inj₂)
+```
+
+Exercise (Easy)
+
+: Show the isomorphism between `type:Bool` and `type:⊤ ⊎ ⊤`.
+
+
+Solution
+
+:       ```agda
+  generic-bool : prop-setoid Bool ≅ prop-setoid (⊤ ⊎ ⊤)
+  to        generic-bool false  = inj₁  tt
+  to        generic-bool true   = inj₂  tt
+  from      generic-bool (inj₁  tt) = false
+  from      generic-bool (inj₂  tt) = true
+  from∘to   generic-bool false  = refl
+  from∘to   generic-bool true   = refl
+  to∘from   generic-bool (inj₁  tt) = refl
+  to∘from   generic-bool (inj₂  tt) = refl
+  to-cong   generic-bool ≡.refl = refl
+  from-cong generic-bool ≡.refl = refl
+        ```
+
+Of course, it feels like we've traded needing to write an annoying isomorphism
+into `expr:Fin 2` with an annoying isomorphism into `type:⊤ ⊎ ⊤`, but this is
+not quite right. Importantly, isomorphisms between types and their generic
+representations are canonical, and languages with good support for polytypic
+programming can often synthesize these canonical isomorphisms on your behalf.
+While Agda does have support for polytypic programming, its interface at time of
+writing leaves much to be desired, and so nobody has actually implemented this
+feature, although nothing but elbow grease is lacking.
+
+Nevertheless, it's important to understand the generic representations of
+algebraic data types. Even if the language you're working it can't synthesize
+machinery to convert between the type and its generic representation, you can
+always choose to work directly on the generic side if you'd like to write
+programs that are polymorphic on the *shape* of types.
+
+For our next trick, we will show the equivalence of a `keyword:data` constructor
+which takes parameters, and a record of those same fields. Consider two
+definitions of a `type:Ratio`:
+
+```agda
+  data Ratio⅋ : Set where
+    mkRatio : (numerator : ℕ) → (denominator : ℕ) → Ratio⅋
+```
+
+and
+
+```agda
+  record Ratio : Set where
+    constructor mkRatio
+    field
+      numerator    : ℕ
+      denominator  : ℕ
+```
+
+Surely you will agree that these two types are equivalent. Therefore, we do not
+need to consider the case of `keyword:data` constructors with parameters
+separately from the problem of how can we give a generic representation for
+records. As you might expect, all we need to do is combine each field by means
+of `type:_×_`. And thus, the generic representation of `type:Ratio` is `type:ℕ
+× ℕ`.
+
+Exercise (Easy)
+
+: Show the isomorphism between `type:Ratio` and `type:ℕ × ℕ`.
+
+
+Solution
+
+:       ```agda
+  generic-ratio : prop-setoid Ratio ≅ prop-setoid (ℕ × ℕ)
+  to        generic-ratio (mkRatio n d)  = n , d
+  from      generic-ratio (n , d)        = mkRatio n d
+  from∘to   generic-ratio (mkRatio n d)  = refl
+  to∘from   generic-ratio (n , d)        = refl
+  to-cong   generic-ratio ≡.refl         = refl
+  from-cong generic-ratio ≡.refl         = refl
+        ```
+
+And there you have it! All non-dependent types you can define for yourself can
+be decomposed into some combination of `type:⊤`, `type:⊥`, `type:_⊎_`, and
+`type:_×_`. If your type was defined via `keyword:data`, use `type:_⊎_` to
+differentiate between its constructors, and treat each constructor as if it were
+a record. For records, conjoin each field with `type:_×_`.
+
+You might be wondering why `type:⊥` is in this list, and it's because nothing
+prevents you from defining a type with no constructors, in which case the only
+isomorphism you can give is to `type:⊥`.
+
+
+Exercise (Easy)
+
+: Recall the definition of `type:List`:
+
+:   ```agda
+  data List⅋ (A : Set ℓ) : Set ℓ where
+    []   : List⅋ A
+    _∷_  : A → List⅋ A → List⅋ A
+  -- FIX
+    ```
+
+:   Show an isomorphism between `bind:A:List A` and `bind:A:⊤ ⊎ (A × List A)`
+
+
+Solution
+
+:     ```agda
+  generic-list
+    : {A : Set ℓ} → prop-setoid (List A) ≅ prop-setoid (⊤ ⊎ (A × List A))
+  to         generic-list []        = inj₁  tt
+  to         generic-list (x ∷ xs)  = inj₂  (x , xs)
+  from       generic-list (inj₁  x)          = []
+  from       generic-list (inj₂  (x , xs))   = x ∷ xs
+  from∘to    generic-list []         = refl
+  from∘to    generic-list (x ∷ xs)   = refl
+  to∘from    generic-list (inj₁  x)  = refl
+  to∘from    generic-list (inj₂  x)  = refl
+  to-cong    generic-list ≡.refl     = refl
+  from-cong  generic-list ≡.refl     = refl
+      ```
+
+As you can see from this example, the isomorphism between an algebraic data type
+and its generic representation is completely automatic and entirely
+uninteresting. Therefore, it's a great candidate for code generation, and we are
+justified in our decision to not think much more about how exactly to get our
+hands on these generic representations.
+
+In the next section we will give `type:_Has_Elements` implementations for each
+of the generic type constructors, through which we can automatically get the
+same for any algebraic type we care about.
+
+
+## The Algebra of Algebraic Data Types
+
+```agda
+  ⊤-fin : prop-setoid ⊤ Has 1 Elements
+  to        ⊤-fin _     = zero
+  from      ⊤-fin _     = tt
+  from∘to   ⊤-fin _     = refl
+  to∘from   ⊤-fin zero  = refl
+  to-cong   ⊤-fin _     = refl
+  from-cong ⊤-fin _     = refl
+```
 
 
 
@@ -680,6 +903,7 @@ as it was. Thus, given two isomorphisms, we can construct an isomorphism between
 the product setoid given by `def:×-preserves-≅`:
 
 ```agda
+  open import Data.Sum using (_⊎_)
   import Data.Product as ×
   open Setoid-Renaming
 
@@ -708,6 +932,20 @@ the product setoid given by `def:×-preserves-≅`:
   to∘from    ×-prop-homo _ = refl
   to-cong    ×-prop-homo (≡.refl , ≡.refl)  = refl
   from-cong  ×-prop-homo ≡.refl             = refl , refl
+
+
+  ×-⊤-monoid : Monoid _ _
+  Setoid-Renaming.Carrier (Monoid.setoid ×-⊤-monoid) = Set
+  Setoid-Renaming._≈_ (Monoid.setoid ×-⊤-monoid) x y = prop-setoid x ≅ prop-setoid y
+  refl′ (pre (equiv (Monoid.setoid ×-⊤-monoid))) = ≅-refl
+  trans′ (pre (equiv (Monoid.setoid ×-⊤-monoid))) = ≅-trans
+  sym′ (equiv (Monoid.setoid ×-⊤-monoid)) = ≅-sym
+  Monoid._∙_ ×-⊤-monoid = _×_
+  Monoid.ε ×-⊤-monoid = ⊤
+  Monoid.assoc ×-⊤-monoid x y z = ≅-prop ×.assocʳ′ ×.assocˡ′ refl refl
+  Monoid.identityˡ ×-⊤-monoid x = ≅-prop ×.proj₂ (tt ,_) refl refl
+  Monoid.identityʳ ×-⊤-monoid x = ≅-prop ×.proj₁ (_, tt) refl refl
+  Monoid.∙-cong ×-⊤-monoid {x = x} {y} {z} {w} h k = ≅-trans (≅-sym ×-prop-homo) (≅-trans (×-preserves-≅ h k) ×-prop-homo)
 ```
 
 Similarly, we can give the same treatment to `type:_⊎_`, as in
@@ -754,7 +992,7 @@ familiar ways. The first, familiar to anyone who has ever counted on their
 fingers, is to consider one `type:Fin` the continuation of the other. For
 example, even though our hands only have five fingers a piece, we can still
 count to ten by enumerating one to five on our left hand, and then six to ten on
-our right. By generalizing our number of fingers, and interpretting which hand
+our right. By generalizing our number of fingers, and interpreting which hand
 as a sum type, we can show this "reinterpretation" of a sum of two `type:Fin`s
 via `def:join`.
 

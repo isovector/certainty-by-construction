@@ -1735,6 +1735,7 @@ open import Relation.Binary
 
 open import Relation.Binary.PropositionalEquality
   using (subst)
+  public
 
 open import Data.Nat
   using (_≤_; z≤n; s≤s; _<_)

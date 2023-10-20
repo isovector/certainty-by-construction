@@ -1879,7 +1879,7 @@ open import Function
 
 open import Data.List
   using (List; []; _∷_; _++_)
-
+  public
 
 open import Data.Maybe
   using (_<∣>_)
