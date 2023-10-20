@@ -76,6 +76,11 @@ open import Chapter5-Modular-Arithmetic
     ```
 
 :   ```agda
+open import Chapter6-Decidability
+  using (⊥)
+    ```
+
+:   ```agda
 open import Chapter7-Structures
   hiding (length)
 -- FIX
@@ -903,7 +908,6 @@ as it was. Thus, given two isomorphisms, we can construct an isomorphism between
 the product setoid given by `def:×-preserves-≅`:
 
 ```agda
-  open import Data.Sum using (_⊎_)
   import Data.Product as ×
   open Setoid-Renaming
 
@@ -985,6 +989,24 @@ Similarly, we can give the same treatment to `type:_⊎_`, as in
   to-cong   ⊎-prop-homo (inj₂  ≡.refl)     = refl
   from-cong ⊎-prop-homo {inj₁  x} ≡.refl   = inj₁ refl
   from-cong ⊎-prop-homo {inj₂  y} ≡.refl   = inj₂ refl
+
+  ⊎-⊥-monoid : Monoid _ _
+  Setoid-Renaming.Carrier (Monoid.setoid ⊎-⊥-monoid) = Set
+  Setoid-Renaming._≈_ (Monoid.setoid ⊎-⊥-monoid) x y = prop-setoid x ≅ prop-setoid y
+  refl′ (pre (equiv (Monoid.setoid ⊎-⊥-monoid))) = ≅-refl
+  trans′ (pre (equiv (Monoid.setoid ⊎-⊥-monoid))) = ≅-trans
+  sym′ (equiv (Monoid.setoid ⊎-⊥-monoid)) = ≅-sym
+  Monoid._∙_ ⊎-⊥-monoid = _⊎_
+  Monoid.ε ⊎-⊥-monoid = ⊥
+  Monoid.assoc ⊎-⊥-monoid x y z = ≅-prop +.assocʳ +.assocˡ (λ { (inj₁ x) → refl
+                                                              ; (inj₂ (inj₁ x)) → refl
+                                                              ; (inj₂ (inj₂ y)) → refl })
+                                                           λ { (inj₁ (inj₁ x)) → refl
+                                                             ; (inj₁ (inj₂ y)) → refl
+                                                             ; (inj₂ y) → refl }
+  Monoid.identityˡ ⊎-⊥-monoid x = ≅-prop (λ { (inj₂ y) → y }) inj₂ (λ { x₁ → refl }) λ { (inj₂ y) → refl }
+  Monoid.identityʳ ⊎-⊥-monoid x = ≅-prop (λ { (inj₁ y) → y }) inj₁ (λ { x₁ → refl }) λ { (inj₁ y) → refl }
+  Monoid.∙-cong ⊎-⊥-monoid {x = x} {y} {z} {w} h k = ≅-trans (≅-sym ⊎-prop-homo) (≅-trans (⊎-preserves-≅ h k) ⊎-prop-homo)
 ```
 
 Given two finite numbers, we can combine them in either of two every-day
