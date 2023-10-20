@@ -53,7 +53,7 @@ Prerequisites
 
 :   ```agda
 open import Chapter1-Agda
-  using (Bool; true; false; _×_; uncurry)
+  using (Bool; true; false; _×_; proj₁; proj₂; uncurry)
     ```
 
 :   ```agda
@@ -1000,25 +1000,34 @@ and then again show a homomorphism between `def:⊎-setoid` and `def:prop-setoid
   from-cong ⊎-prop-homo {inj₂  y} ≡.refl   = inj₂ refl
 ```
 
+And now, onto the interesting part.
+
 Given two finite numbers, we can combine them in either of two every-day
 familiar ways. The first, familiar to anyone who has ever counted on their
 fingers, is to consider one `type:Fin` the continuation of the other. For
-example, even though our hands only have five fingers a piece, we can still
+example, even though our hands only have five fingers apiece, we can still
 count to ten by enumerating one to five on our left hand, and then six to ten on
-our right. By generalizing our number of fingers, and interpreting which hand
-as a sum type, we can show this "reinterpretation" of a sum of two `type:Fin`s
-via `def:join`.
+our right. The idea here is that if you have counted all the way to your right
+hand, you must have made it at least to six.
+
+By generalizing our number of fingers, and interpreting our choice of hands as a
+sum type, we can show this "reinterpretation" of a sum of two `type:Fin`s via
+`def:join`.
 
 ```agda
+  -- TODO(sandy): can we move these into fin?
   open Data.Fin using (inject+; raise)
 
-  module Join-SplitAt where
+  module Definition-Join-SplitAt where
     join : Fin m ⊎ Fin n → Fin (m + n)
     join {n = n} (inj₁ x) = inject+ n x
     join {m = m} (inj₂ y) = raise m y
 ```
 
-Of course, we can undo this transformation as well, via `def:splitAt`:
+Of course, we can undo this transformation as well, by subtracting our number of
+fingers on the first hand from our total count. If we still have some leftover
+capacity, we must be in the second `type:Fin`, otherwise we were in the first.
+This logic is given via `def:splitAt`:
 
 ```agda
     splitAt : ∀ m → Fin (m + n) → Fin m ⊎ Fin n
@@ -1027,25 +1036,30 @@ Of course, we can undo this transformation as well, via `def:splitAt`:
     splitAt (suc m)  (suc x)  = ⊎.map₁ suc (splitAt m x)
 ```
 
+As usual, we can import these definitions from the standard library:
+
+```agda
+  open Data.Fin using (splitAt; join)
+```
+
 These two functions, `def:join` and `def:splitAt`, are in fact inverses of one
-another, although we leave the proof as an exercise to the reader. If the reader
-cannot be bothered and would like simply to move on, they can find the relevant
-proofs under `module:Data.Fin.Properties` as `def:join-splitAt` and
-`def:splitAt-join`.
+another, although we leave the proofs as exercises to the reader.
+
+```agda
+  join-splitAt
+    : (m n : ℕ) → (i : Fin (m + n)) → join m n (splitAt m i) ≡ i
+  join-splitAt = exercise-for-the-reader
+
+  splitAt-join
+    : (m n : ℕ) → (i : Fin m ⊎ Fin n) → splitAt m (join m n i) ≡ i
+  splitAt-join = exercise-for-the-reader
+```
 
 The "there and back again" nature of `def:join` and `def:splitAt` should remind
 you of an isomorphism, and indeed, there is such an isomorphism given by
 `def:join-splitAt-iso`:
 
 ```agda
-  open Data.Fin using (splitAt; join)
-
-  join-splitAt : (m n : ℕ) → (i : Fin (m + n)) → join m n (splitAt m i) ≡ i
-  join-splitAt = exercise-for-the-reader
-
-  splitAt-join : (m n : ℕ) → (i : Fin m ⊎ Fin n) → splitAt m (join m n i) ≡ i
-  splitAt-join = exercise-for-the-reader
-
   join-splitAt-iso
       : prop-setoid (Fin (m + n))
       ≅ prop-setoid (Fin m ⊎ Fin n)
@@ -1057,13 +1071,27 @@ you of an isomorphism, and indeed, there is such an isomorphism given by
   from-cong  join-splitAt-iso ≡.refl = refl
 ```
 
+At long last, we are now ready to show that coproducts add the cardinalities of
+their injections. The trick is to map both finite isomorphisms across the
+`type:_⊎_`, and then invoke `def:join-splitAt-iso`, as in the following:
+
+```agda
+  ⊎-fin : s₁  Has m Elements
+        → s₂  Has n Elements
+        → ⊎-setoid s₁ s₂ Has m + n Elements
+  ⊎-fin fin₁ fin₂
+    = ≅-trans  (⊎-preserves-≅ fin₁ fin₂)
+    ( ≅-trans  ⊎-prop-homo
+               (≅-sym join-splitAt-iso))
+  -- FIX
+```
+
 Where there is a mathematical object for coproducts, there is usually one
 lurking just around the corner describing an analogous idea for products. Here
-is no exception; we do indeed have an analogous construction for products, and
-one no less familiar. Recall that in our everyday arabic numerals, we have
-exactly ten unique digits, ranging from 0 to 9. These ten possibilities are
-easily modeled by an application of `type:Fin`, and allow us to denote ten
-different values.
+is no exception; we do indeed have an analogous construction, and it's one just
+as familiar. Recall that in our everyday Arabic numerals, we have exactly ten
+unique digits, ranging from 0 to 9. These ten possibilities are easily modeled
+by an application of `expr:Fin 10`, and allow us to denote ten different values.
 
 But observe what happens when we put two of these digits beside one another---we
 are now able to range between the numbers 00 and 99, of which there are one
@@ -1072,7 +1100,7 @@ to see the theoretical underpinning as to why our positional numbering system
 works. We can show this reinpretation via `def:combine`:
 
 ```agda
-  module Combine-RemQuot where
+  module Definition-Combine-RemQuot where
     combine : Fin m → Fin n → Fin (m * n)
     combine          zero     y = inject+ _ y
     combine {n = n}  (suc x)  y = raise n (combine x y)
@@ -1088,52 +1116,39 @@ and its inverse via the awkwardly named `def:remQuot` (short for
     ... | inj₂ r = ×.map₁ suc (remQuot {m} n r)
 ```
 
-Again, showing that these are in fact inverses of one another is left as an
-exercise as the reader. Again again, the necessary proofs can be found in
-`module:Data.Fin.Properties` under the obvious names should the reader be
-disinterested in improving their proof skills. Armed with everything, we can
-indeed show an isomorphism between a product of `def:Fin`s and a `def:Fin` of
-products, as in `def:combine-remQuot-iso`:
+Again, these definitions are available in the standard library, and *again
+again,* showing that these are in fact inverses of one another is left as an
+exercise as the reader.
 
 ```agda
   open import Data.Fin using (combine; remQuot)
 
   combine-remQuot
-    : {n : ℕ}
-    → (k : ℕ)
+    : {n : ℕ} → (k : ℕ)
     → (i : Fin (n * k))
     → uncurry combine (remQuot {n} k i) ≡ i
   combine-remQuot = exercise-for-the-reader
 
   remQuot-combine
     : {n k : ℕ}
-    → (x : Fin n)
-    → (y : Fin k)
+    → (x : Fin n) → (y : Fin k)
     → remQuot k (combine x y) ≡ (x , y)
   remQuot-combine = exercise-for-the-reader
+```
 
+Armed with everything, we can indeed show an isomorphism between a product of
+`def:Fin`s and a `def:Fin` of products, as in `def:combine-remQuot-iso`:
+
+```agda
   combine-remQuot-iso
       : prop-setoid (Fin (m * n))
       ≅ (prop-setoid (Fin m × Fin n))
-  to         combine-remQuot-iso = remQuot _
-  from       combine-remQuot-iso (fst , snd)  = combine fst snd
-  from∘to    (combine-remQuot-iso {m = m}) x  = combine-remQuot {m} _ x
-  to∘from    combine-remQuot-iso (x , y)  = remQuot-combine x y
-  to-cong    combine-remQuot-iso ≡.refl   = refl
-  from-cong  combine-remQuot-iso ≡.refl   = refl
-```
-
-At long last, we are now ready to show that coproducts add the cardinalities of
-their injections. The trick is to map both finite isomorphisms across the
-`type:_⊎_`, and then invoke `def:join-splitAt-iso`, as in the following:
-
-```agda
-  ⊎-fin : s₁ Has m Elements → s₂ Has n Elements
-        → ⊎-setoid s₁ s₂ Has m + n Elements
-  ⊎-fin fin₁ fin₂
-    = ≅-trans  (⊎-preserves-≅ fin₁ fin₂)
-    ( ≅-trans  ⊎-prop-homo
-               (≅-sym join-splitAt-iso))
+  to    combine-remQuot-iso             = remQuot _
+  from  combine-remQuot-iso (fst , snd) = combine fst snd
+  from∘to  (combine-remQuot-iso {m = m}) x  = combine-remQuot {m} _ x
+  to∘from  combine-remQuot-iso (x , y)      = remQuot-combine x y
+  to-cong    combine-remQuot-iso ≡.refl = refl
+  from-cong  combine-remQuot-iso ≡.refl = refl
 ```
 
 We can do a similar trick to show that `type:_×_` multiplies the cardinalities
@@ -1149,41 +1164,83 @@ of its projections, albeit invoking `def:×-preserves-≅` and
                (≅-sym combine-remQuot-iso))
 ```
 
+And there you have it; `def:⊎-fin` and `def:×-fin` prove that sum and product
+types add and multiply the inhabitants of their respective arguments. We have
+therefore shown the algebraic power of algebraic data types!
 
-## Monoids On Sets
+
+## Monoids on Types
+
+The attentive reader will have noticed above that, when we were discussing the
+generic representations of algebraic data types, we didn't satisfactorily
+motivate why exactly the constructors `ctor:false` and `ctor:true` should map to
+`type:⊤`. Why indeed? Our recipe was to use `type:_⊎_` to differentiate
+constructors, and then to use `type:_×_` to separate each argument of the
+constructor. So where exactly does `def:⊤` come from?
+
+Whenever you encounter a mysterious element in cases like these, which doesn't
+seem to fit the pattern, but gets the right answer nevertheless, you should be
+on high alert that there is perhaps a monoid lurking in the vicinity. In a
+delicious example of how crushingly reusable mathematics is, we can show that
+there is a monoid over `type:_×_` with identity `type:⊤`.
+
+Recall that in order to produce a monoid, we must first give a setoid which
+describes how equalities behave in that monoid , and here is no exception. Since
+isomorphisms are the correct notion of equality over types, we must therefore
+make a setoid for isomorphisms:
+
+```agda
+  ips-setoid : Setoid _ _
+  Carrier ips-setoid = Set
+  _≈_     ips-setoid x y = prop-setoid x ≅ prop-setoid y
+  refl′   (pre (equiv ips-setoid))  = ≅-refl
+  trans′  (pre (equiv ips-setoid))  = ≅-trans
+  sym′    (equiv ips-setoid)        = ≅-sym
+```
+
+The mysterious name `def:ips-setoid` here is a nod to the fact that this is an
+*i*somorphism over *p*ropositional *s*etoids. After a few helper functions to
+deal with associativity on our behalf:
+
+```agda
+  assocʳ′  : {A : Set ℓ₁} {B : Set ℓ₂} {C : Set ℓ₃}
+           → (A × B) × C → A × (B × C)
+  assocʳ′ ((a , b) , c) = a , (b , c)
+
+  assocˡ′  : {A : Set ℓ₁} {B : Set ℓ₂} {C : Set ℓ₃}
+           → A × (B × C) → (A × B) × C
+  assocˡ′ (a , (b , c)) = (a , b) , c
+```
+
+we are now prepared to show `def:×-⊤-monoid`:
 
 ```agda
   open Monoid
-  ips-setoid : Setoid _ _
-  Carrier ips-setoid = Set
-  _≈_ ips-setoid x y = prop-setoid x ≅ prop-setoid y
-  refl′ (pre (equiv ips-setoid)) = ≅-refl
-  trans′ (pre (equiv ips-setoid)) = ≅-trans
-  sym′ (equiv ips-setoid) = ≅-sym
 
   ×-⊤-monoid : Monoid _ _
-  setoid ×-⊤-monoid = ips-setoid
-  _∙_ ×-⊤-monoid = _×_
-  ε ×-⊤-monoid = ⊤
-  assoc ×-⊤-monoid x y z = ≅-prop ×.assocʳ′ ×.assocˡ′ refl refl
-  identityˡ ×-⊤-monoid x = ≅-prop ×.proj₂ (tt ,_) refl refl
-  identityʳ ×-⊤-monoid x = ≅-prop ×.proj₁ (_, tt) refl refl
-  ∙-cong ×-⊤-monoid h k = ≅-trans (≅-sym ×-prop-homo) (≅-trans (×-preserves-≅ h k) ×-prop-homo)
-
-  ⊎-⊥-monoid : Monoid _ _
-  setoid ⊎-⊥-monoid = ips-setoid
-  _∙_ ⊎-⊥-monoid = _⊎_
-  ε ⊎-⊥-monoid = ⊥
-  assoc ⊎-⊥-monoid x y z = ≅-prop ⊎.assocʳ ⊎.assocˡ (λ { (inj₁ x) → refl
-                                                       ; (inj₂ (inj₁ x)) → refl
-                                                       ; (inj₂ (inj₂ y)) → refl })
-                                                    λ { (inj₁ (inj₁ x)) → refl
-                                                      ; (inj₁ (inj₂ y)) → refl
-                                                      ; (inj₂ y) → refl }
-  identityˡ ⊎-⊥-monoid x = ≅-prop (λ { (inj₂ y) → y }) inj₂ (λ { x₁ → refl }) λ { (inj₂ y) → refl }
-  identityʳ ⊎-⊥-monoid x = ≅-prop (λ { (inj₁ y) → y }) inj₁ (λ { x₁ → refl }) λ { (inj₁ y) → refl }
-  ∙-cong ⊎-⊥-monoid {x = x} {y} {z} {w} h k = ≅-trans (≅-sym ⊎-prop-homo) (≅-trans (⊎-preserves-≅ h k) ⊎-prop-homo)
+  setoid  ×-⊤-monoid = ips-setoid
+  _∙_     ×-⊤-monoid = _×_
+  ε       ×-⊤-monoid = ⊤
+  assoc   ×-⊤-monoid x y z  = ≅-prop assocʳ′ assocˡ′ refl refl
+  identityˡ  ×-⊤-monoid x   = ≅-prop proj₂ (tt ,_) refl refl
+  identityʳ  ×-⊤-monoid x   = ≅-prop proj₁ (_, tt) refl refl
+  ∙-cong     ×-⊤-monoid h k
+    = ≅-trans  (≅-sym ×-prop-homo)
+    ( ≅-trans  (×-preserves-≅ h k)
+               ×-prop-homo)
 ```
+
+Take a moment to stop and take in the view from up here, on top of our towering
+mountain of abstraction. Not only is our `type:Monoid` machinery completely
+reusable at the level of types themselves, but it's defined in terms of a setoid
+whose equivalence relation is itself an isomorphism, *also* constructed out of
+setoids. And we did all of this just to motivate a passing construction that
+nobody in their right mind would have doubted in the first place! Mathematics is
+truly marvelous.
+
+The assidious reader is encouraged to find an analogous monoid for `type:_⊎_`,
+which helps motivate another seeming-discrepancy in our algorithm for finding
+generic representations of types.
 
 
 ## Functions as Exponents {#sec:exponents}
@@ -1192,46 +1249,55 @@ In a non-dependent world, we have three interesting type formers---products,
 coproducts, and functions. Having looked already at the first two, we now turn
 our attention to the cardinalities of functions.
 
-First, we note that there exists a more interesting setoid over functions than
-the `def:≗-setoid` that we have been considering thus far. We need a setoid over
-functions which preserves all equalities in the domain into the codomain. This
-is a property we have seen already a thousand times, it's known as congruence.
-Thus, we need a setoid over congruent functions. Given such a thing, it's easy
-(though rather verbose) to show that it preserves isomorphisms:
+The recipe to get there is the same; we will first show that
+`def:⇒-preserves-≅`, and then exploit some inconspicuous theorems we've proven
+already in order to get a handle on a function type's inhabitants. In order to
+show setoid preservation, we're going to want to fix two setoids which occur in
+the domain of our function:
 
 ```agda
-open Setoid
-  hiding (refl; sym; trans; Carrier; _≈_)
+open Setoid using (isEquivalence)
+open Fn using (func; cong)
 
-→-preserves-≅
-    : s₁ ≅ s₂ → s₃ ≅ s₄
-    → (s₁ ⇒ s₃) ≅ (s₂ ⇒ s₄)
-Fn.func  (to (→-preserves-≅ s t) f) = to t       ∘ Fn.func f ∘ from s
-Fn.cong  (to (→-preserves-≅ s t) f) = to-cong t  ∘ Fn.cong f ∘ from-cong s
-Fn.func  (from (→-preserves-≅ s t) f) = from t ∘ Fn.func f ∘ to s
-Fn.cong  (from (→-preserves-≅ s t) f) = from-cong t ∘ Fn.cong f ∘ to-cong s
-from∘to (→-preserves-≅ s t) f {x} {y} a = begin
-  from t (to t (Fn.func f (from s (to s x))))  ≈⟨ from∘to t _ ⟩
-  Fn.func f (from s (to s x))                  ≈⟨ Fn.cong f (from∘to s x) ⟩
-  Fn.func f x                                  ≈⟨ Fn.cong f a ⟩
-  Fn.func f y                                  ∎
-  where open A-Reasoning t
-to∘from (→-preserves-≅ s t) f {x} {y} a = begin
-  to t (from t (Fn.func f (to s (from s x))))  ≈⟨ to∘from t _ ⟩
-  Fn.func f (to s (from s x))                  ≈⟨ Fn.cong f (to∘from s x) ⟩
-  Fn.func f x                                  ≈⟨ Fn.cong f a ⟩
-  Fn.func f y                                  ∎
-  where open B-Reasoning t
-to-cong (→-preserves-≅ {s₁ = s₁} s t) {g} {h} f {x} {y} a = begin
-  to t (Fn.func g (from s x)) ≈⟨ to-cong t (Fn.cong g (from-cong s a)) ⟩
-  to t (Fn.func g (from s y)) ≈⟨ to-cong t (f (refl ⦃ isEquivalence s₁ ⦄)) ⟩
-  to t (Fn.func h (from s y)) ∎
-  where open B-Reasoning t hiding (refl)
-from-cong (→-preserves-≅ {s₂ = s₂} s t) {g} {h} f {x} {y} a = begin
-  from t (Fn.func g (to s x)) ≈⟨ from-cong t (Fn.cong g (to-cong s a)) ⟩
-  from t (Fn.func g (to s y)) ≈⟨ from-cong t (f (refl ⦃ isEquivalence s₂ ⦄)) ⟩
-  from t (Fn.func h (to s y)) ∎
-  where open A-Reasoning t hiding (refl)
+module _ {s₁ : Setoid c₁ ℓ₁} {s₂ : Setoid c₂ ℓ₂} where
+```
+
+```agda
+  private instance
+    _ = isEquivalence s₁
+    _ = isEquivalence s₂
+
+  ⇒-preserves-≅
+      : s₁ ≅ s₂ → s₃ ≅ s₄
+      → (s₁ ⇒ s₃) ≅ (s₂ ⇒ s₄)
+  to (⇒-preserves-≅ s t) (fn f cong)
+    = fn  (to t       ∘ f     ∘ from s)
+          (to-cong t  ∘ cong  ∘ from-cong s)
+  from (⇒-preserves-≅ s t) (fn f cong)
+    = fn  (from t       ∘ f     ∘ to s)
+          (from-cong t  ∘ cong  ∘ to-cong s)
+  from∘to (⇒-preserves-≅ s t) (fn f cong) {x} {y} a = begin
+    from t (to t (f (from s (to s x))))  ≈⟨ from∘to t _ ⟩
+    f (from s (to s x))                  ≈⟨ cong (from∘to s x) ⟩
+    f x                                  ≈⟨ cong a ⟩
+    f y                                  ∎
+    where open A-Reasoning t
+  to∘from (⇒-preserves-≅ s t) (fn f cong) {x} {y} a = begin
+    to t (from t (f (to s (from s x))))  ≈⟨ to∘from t _ ⟩
+    f (to s (from s x))                  ≈⟨ cong (to∘from s x) ⟩
+    f x                                  ≈⟨ cong a ⟩
+    f y                                  ∎
+    where open B-Reasoning t
+  to-cong (⇒-preserves-≅  s t) {g} {h} f {x} {y} a = begin
+    to t (func g (from s x)) ≈⟨ to-cong t (cong g (from-cong s a)) ⟩
+    to t (func g (from s y)) ≈⟨ to-cong t (f refl) ⟩
+    to t (func h (from s y)) ∎
+    where open B-Reasoning t hiding (refl)
+  from-cong (⇒-preserves-≅  s t) {g} {h} f {x} {y} a = begin
+    from t (func g (to s x)) ≈⟨ from-cong t (cong g (to-cong s a)) ⟩
+    from t (func g (to s y)) ≈⟨ from-cong t (f refl) ⟩
+    from t (func h (to s y)) ∎
+    where open A-Reasoning t hiding (refl)
 ```
 
 Now, given a setoid over elements, we can construct a setoid over vectors where
@@ -1312,7 +1378,6 @@ open Sandbox-Finite
 module _ {s₁ : Setoid c₁ ℓ₁} where
   private instance
     _ = s₁
-    _ = s₁ .isPreorder
     _ = s₁ .isEquivalence
 
   vec-fin₀ : vec-setoid s₁ 0 Has 1 Elements
@@ -1354,7 +1419,7 @@ exponential cardinality:
 
 And now, to tie everything together, we can show that functions themselves also
 have an exponential cardinality. This is a straightforward application of
-`def:→-preserves-≅`, `def:vec-iso` and `vec-fin`. In essence, we transform our
+`def:⇒-preserves-≅`, `def:vec-iso` and `vec-fin`. In essence, we transform our
 function `A → B` into a function `Fin m → Fin n`, and then use the
 characteristic function of vectors to reinterpret that function as a vector of
 length `m`. Finally, we know the cardinality of such a vector, as shown just now
@@ -1364,7 +1429,7 @@ by `def:vec-fin`.
 →-fin : s₁ Has m Elements → s₂ Has n Elements
       → (s₁ ⇒ s₂) Has (n ^ m) Elements
 →-fin s t
-  = ≅-trans (→-preserves-≅ s t)
+  = ≅-trans (⇒-preserves-≅ s t)
   ( ≅-trans (≅-sym vec-iso)
    (≅-trans vec-prop-homo
             (vec-fin ≅-refl)))
