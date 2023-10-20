@@ -53,7 +53,7 @@ Prerequisites
 
 :   ```agda
 open import Chapter1-Agda
-  using (Bool; true; false; _×_)
+  using (Bool; true; false; _×_; uncurry)
     ```
 
 :   ```agda
@@ -83,9 +83,15 @@ open import Chapter6-Decidability
 :   ```agda
 open import Chapter7-Structures
   hiding (length)
--- FIX
     ```
 
+Hidden
+
+:   ```agda
+postulate
+  exercise-for-the-reader : {ℓ : Level} {A : Set ℓ} → A
+-- FIX
+    ```
 
 ## Finite Numbers
 
@@ -853,9 +859,10 @@ Exercise (Easy)
 
 Solution
 
-:     ```agda
-  generic-list
-    : {A : Set ℓ} → prop-setoid (List A) ≅ prop-setoid (⊤ ⊎ (A × List A))
+:       ```agda
+  generic-list  : {A : Set ℓ}
+                → prop-setoid (List A)
+                ≅ prop-setoid (⊤ ⊎ (A × List A))
   to         generic-list []        = inj₁  tt
   to         generic-list (x ∷ xs)  = inj₂  (x , xs)
   from       generic-list (inj₁  x)          = []
@@ -866,7 +873,8 @@ Solution
   to∘from    generic-list (inj₂  x)  = refl
   to-cong    generic-list ≡.refl     = refl
   from-cong  generic-list ≡.refl     = refl
-      ```
+        ```
+
 
 As you can see from this example, the isomorphism between an algebraic data type
 and its generic representation is completely automatic and entirely
@@ -990,7 +998,6 @@ and then again show a homomorphism between `def:⊎-setoid` and `def:prop-setoid
   to-cong   ⊎-prop-homo (inj₂  ≡.refl)     = refl
   from-cong ⊎-prop-homo {inj₁  x} ≡.refl   = inj₁ refl
   from-cong ⊎-prop-homo {inj₂  y} ≡.refl   = inj₂ refl
-
 ```
 
 Given two finite numbers, we can combine them in either of two every-day
@@ -1032,7 +1039,12 @@ you of an isomorphism, and indeed, there is such an isomorphism given by
 
 ```agda
   open Data.Fin using (splitAt; join)
-  open import Data.Fin.Properties using (join-splitAt; splitAt-join; combine-remQuot; remQuot-combine)
+
+  join-splitAt : (m n : ℕ) → (i : Fin (m + n)) → join m n (splitAt m i) ≡ i
+  join-splitAt = exercise-for-the-reader
+
+  splitAt-join : (m n : ℕ) → (i : Fin m ⊎ Fin n) → splitAt m (join m n i) ≡ i
+  splitAt-join = exercise-for-the-reader
 
   join-splitAt-iso
       : prop-setoid (Fin (m + n))
@@ -1066,7 +1078,7 @@ works. We can show this reinpretation via `def:combine`:
     combine {n = n}  (suc x)  y = raise n (combine x y)
 ```
 
-and its inverse via the awkwardly named `def:remQuot (short for
+and its inverse via the awkwardly named `def:remQuot` (short for
 "remainder/quotient")
 
 ```agda
@@ -1085,6 +1097,20 @@ products, as in `def:combine-remQuot-iso`:
 
 ```agda
   open import Data.Fin using (combine; remQuot)
+
+  combine-remQuot
+    : {n : ℕ}
+    → (k : ℕ)
+    → (i : Fin (n * k))
+    → uncurry combine (remQuot {n} k i) ≡ i
+  combine-remQuot = exercise-for-the-reader
+
+  remQuot-combine
+    : {n k : ℕ}
+    → (x : Fin n)
+    → (y : Fin k)
+    → remQuot k (combine x y) ≡ (x , y)
+  remQuot-combine = exercise-for-the-reader
 
   combine-remQuot-iso
       : prop-setoid (Fin (m * n))
