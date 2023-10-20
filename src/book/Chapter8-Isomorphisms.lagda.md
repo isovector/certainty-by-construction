@@ -881,7 +881,23 @@ same for any algebraic type we care about.
 
 ## The Algebra of Algebraic Data Types
 
+The name "algebraic data types" is rather apt, in that there is indeed an
+algebra over these types. It's not a particularly exciting algebra, in that all
+it does is count the number of inhabitants of each type. But as we will see, not
+only is the collection well named, so too is each of the types.
+
+Let's first bash out the easy cases, namely that `type:⊥` has zero elements, and
+that the unit type `type:⊤` has one. *Unit* type. *One* element. Get it?
+
 ```agda
+  ⊥-fin : prop-setoid ⊥ Has 0 Elements
+  to        ⊥-fin ()
+  from      ⊥-fin ()
+  from∘to   ⊥-fin ()
+  to∘from   ⊥-fin ()
+  to-cong   ⊥-fin ≡.refl = refl
+  from-cong ⊥-fin ≡.refl = refl
+
   ⊤-fin : prop-setoid ⊤ Has 1 Elements
   to        ⊤-fin _     = zero
   from      ⊤-fin _     = tt
@@ -891,21 +907,15 @@ same for any algebraic type we care about.
   from-cong ⊤-fin _     = refl
 ```
 
+Showing the isomorphisms into `type:Fin` for `type:_×_` and `type:_⊎_` are a
+little harder, but it's only because we'd like to make the definitions more
+general than being over `def:prop-setoid`.
 
-
-In fact, it is exactly this treatment as finite types that gives product and
-sum types their respective names. Product types have cardinality equal
-to the product of the cardinalities of their projection types, while sum types
-*add* their constituent cardinalities. Proving these facts requires a few
-lemmas, which are interesting in their own right, and thus we will dawdle on our
-way to the main result.
-
-
-First, we will show that products and coproducts preserve isomorphisms. That is,
-we can map isomorphisms component-wise over products and coproducts in the
-obvious way---just apply the transformation on one side, while leaving the other
-as it was. Thus, given two isomorphisms, we can construct an isomorphism between
-the product setoid given by `def:×-preserves-≅`:
+As a first step, we will show that products and coproducts preserve
+isomorphisms. That is, we can map isomorphisms component-wise over products and
+coproducts in the obvious way---just apply the transformation on one side, while
+leaving the other as it was. Thus, given two isomorphisms, we can construct an
+isomorphism between the product setoid given by `def:×-preserves-≅`:
 
 ```agda
   import Data.Product as ×
@@ -915,15 +925,18 @@ the product setoid given by `def:×-preserves-≅`:
     : s₁ ≅ s₂
     → s₃ ≅ s₄
     → ×-setoid s₁ s₃ ≅ ×-setoid s₂ s₄
-  to    (×-preserves-≅ s t) = ×.map (to s) (to t)
-  from  (×-preserves-≅ s t) = ×.map (from s) (from t)
-  from∘to (×-preserves-≅ s t) (x , y) =
-    from∘to s x , from∘to t y
-  to∘from (×-preserves-≅ s t) (x , y) =
-    to∘from s x , to∘from t y
-  to-cong    (×-preserves-≅ s t) = ×.map (to-cong s) (to-cong t)
-  from-cong  (×-preserves-≅ s t) = ×.map (from-cong s) (from-cong t)
+  to    (×-preserves-≅ s t) = ×.map (to s)    (to t)
+  from  (×-preserves-≅ s t) = ×.map (from s)  (from t)
+  from∘to (×-preserves-≅ s t) (x , y) = from∘to s x , from∘to t y
+  to∘from (×-preserves-≅ s t) (x , y) = to∘from s x , to∘from t y
+  to-cong    (×-preserves-≅ s t) = ×.map (to-cong s)    (to-cong t)
+  from-cong  (×-preserves-≅ s t) = ×.map (from-cong s)  (from-cong t)
 ```
+
+In order to get back to the land of `def:prop-setoid`s, we can show a further
+isomorphism, which is that a pair setoid of types is equivalent to a
+propositional of pairs. That is to say, we *homomorphism* between `def:×-setoid`
+and `def:prop-setoid`, as shown by `def:×-prop-homo`:
 
 ```agda
   ×-prop-homo
@@ -934,37 +947,23 @@ the product setoid given by `def:×-preserves-≅`:
   from       ×-prop-homo = id
   from∘to    ×-prop-homo _ = refl , refl
   to∘from    ×-prop-homo _ = refl
-  to-cong    ×-prop-homo (≡.refl , ≡.refl)  = refl
-  from-cong  ×-prop-homo ≡.refl             = refl , refl
-
-
-  ×-⊤-monoid : Monoid _ _
-  Setoid-Renaming.Carrier (Monoid.setoid ×-⊤-monoid) = Set
-  Setoid-Renaming._≈_ (Monoid.setoid ×-⊤-monoid) x y = prop-setoid x ≅ prop-setoid y
-  refl′ (pre (equiv (Monoid.setoid ×-⊤-monoid))) = ≅-refl
-  trans′ (pre (equiv (Monoid.setoid ×-⊤-monoid))) = ≅-trans
-  sym′ (equiv (Monoid.setoid ×-⊤-monoid)) = ≅-sym
-  Monoid._∙_ ×-⊤-monoid = _×_
-  Monoid.ε ×-⊤-monoid = ⊤
-  Monoid.assoc ×-⊤-monoid x y z = ≅-prop ×.assocʳ′ ×.assocˡ′ refl refl
-  Monoid.identityˡ ×-⊤-monoid x = ≅-prop ×.proj₂ (tt ,_) refl refl
-  Monoid.identityʳ ×-⊤-monoid x = ≅-prop ×.proj₁ (_, tt) refl refl
-  Monoid.∙-cong ×-⊤-monoid {x = x} {y} {z} {w} h k = ≅-trans (≅-sym ×-prop-homo) (≅-trans (×-preserves-≅ h k) ×-prop-homo)
+  to-cong    ×-prop-homo (≡.refl , ≡.refl) = refl
+  from-cong  ×-prop-homo ≡.refl = refl , refl
 ```
 
 Similarly, we can give the same treatment to `type:_⊎_`, as in
 `def:⊎-preserves-≅`:
 
 ```agda
-  import Data.Sum as +
+  import Data.Sum as ⊎
   open import Data.Sum using (_⊎_; inj₁; inj₂)
 
   ⊎-preserves-≅
       : s₁ ≅ s₂
       → s₃ ≅ s₄
       → ⊎-setoid s₁ s₃ ≅ ⊎-setoid s₂ s₄
-  to         (⊎-preserves-≅ s t)           = +.map (to s)    (to t)
-  from       (⊎-preserves-≅ s t)           = +.map (from s)  (from t)
+  to         (⊎-preserves-≅ s t)           = ⊎.map (to s)    (to t)
+  from       (⊎-preserves-≅ s t)           = ⊎.map (from s)  (from t)
   from∘to    (⊎-preserves-≅ s t) (inj₁ x)  = inj₁  (from∘to s x)
   from∘to    (⊎-preserves-≅ s t) (inj₂ y)  = inj₂  (from∘to t y)
   to∘from    (⊎-preserves-≅ s t) (inj₁ x)  = inj₁  (to∘from s x)
@@ -974,6 +973,8 @@ Similarly, we can give the same treatment to `type:_⊎_`, as in
   from-cong  (⊎-preserves-≅ s t) (inj₁ x)  = inj₁  (from-cong s x)
   from-cong  (⊎-preserves-≅ s t) (inj₂ x)  = inj₂  (from-cong t x)
 ```
+
+and then again show a homomorphism between `def:⊎-setoid` and `def:prop-setoid`:
 
 ```agda
   ⊎-prop-homo
@@ -990,23 +991,6 @@ Similarly, we can give the same treatment to `type:_⊎_`, as in
   from-cong ⊎-prop-homo {inj₁  x} ≡.refl   = inj₁ refl
   from-cong ⊎-prop-homo {inj₂  y} ≡.refl   = inj₂ refl
 
-  ⊎-⊥-monoid : Monoid _ _
-  Setoid-Renaming.Carrier (Monoid.setoid ⊎-⊥-monoid) = Set
-  Setoid-Renaming._≈_ (Monoid.setoid ⊎-⊥-monoid) x y = prop-setoid x ≅ prop-setoid y
-  refl′ (pre (equiv (Monoid.setoid ⊎-⊥-monoid))) = ≅-refl
-  trans′ (pre (equiv (Monoid.setoid ⊎-⊥-monoid))) = ≅-trans
-  sym′ (equiv (Monoid.setoid ⊎-⊥-monoid)) = ≅-sym
-  Monoid._∙_ ⊎-⊥-monoid = _⊎_
-  Monoid.ε ⊎-⊥-monoid = ⊥
-  Monoid.assoc ⊎-⊥-monoid x y z = ≅-prop +.assocʳ +.assocˡ (λ { (inj₁ x) → refl
-                                                              ; (inj₂ (inj₁ x)) → refl
-                                                              ; (inj₂ (inj₂ y)) → refl })
-                                                           λ { (inj₁ (inj₁ x)) → refl
-                                                             ; (inj₁ (inj₂ y)) → refl
-                                                             ; (inj₂ y) → refl }
-  Monoid.identityˡ ⊎-⊥-monoid x = ≅-prop (λ { (inj₂ y) → y }) inj₂ (λ { x₁ → refl }) λ { (inj₂ y) → refl }
-  Monoid.identityʳ ⊎-⊥-monoid x = ≅-prop (λ { (inj₁ y) → y }) inj₁ (λ { x₁ → refl }) λ { (inj₁ y) → refl }
-  Monoid.∙-cong ⊎-⊥-monoid {x = x} {y} {z} {w} h k = ≅-trans (≅-sym ⊎-prop-homo) (≅-trans (⊎-preserves-≅ h k) ⊎-prop-homo)
 ```
 
 Given two finite numbers, we can combine them in either of two every-day
@@ -1033,7 +1017,7 @@ Of course, we can undo this transformation as well, via `def:splitAt`:
     splitAt : ∀ m → Fin (m + n) → Fin m ⊎ Fin n
     splitAt zero     x        = inj₂ x
     splitAt (suc m)  zero     = inj₁ zero
-    splitAt (suc m)  (suc x)  = +.map₁ suc (splitAt m x)
+    splitAt (suc m)  (suc x)  = ⊎.map₁ suc (splitAt m x)
 ```
 
 These two functions, `def:join` and `def:splitAt`, are in fact inverses of one
@@ -1048,7 +1032,7 @@ you of an isomorphism, and indeed, there is such an isomorphism given by
 
 ```agda
   open Data.Fin using (splitAt; join)
-  open import Data.Fin.Properties
+  open import Data.Fin.Properties using (join-splitAt; splitAt-join; combine-remQuot; remQuot-combine)
 
   join-splitAt-iso
       : prop-setoid (Fin (m + n))
@@ -1137,6 +1121,42 @@ of its projections, albeit invoking `def:×-preserves-≅` and
     = ≅-trans  (×-preserves-≅ fin₁ fin₂)
     ( ≅-trans  ×-prop-homo
                (≅-sym combine-remQuot-iso))
+```
+
+
+## Monoids On Sets
+
+```agda
+  open Monoid
+  ips-setoid : Setoid _ _
+  Carrier ips-setoid = Set
+  _≈_ ips-setoid x y = prop-setoid x ≅ prop-setoid y
+  refl′ (pre (equiv ips-setoid)) = ≅-refl
+  trans′ (pre (equiv ips-setoid)) = ≅-trans
+  sym′ (equiv ips-setoid) = ≅-sym
+
+  ×-⊤-monoid : Monoid _ _
+  setoid ×-⊤-monoid = ips-setoid
+  _∙_ ×-⊤-monoid = _×_
+  ε ×-⊤-monoid = ⊤
+  assoc ×-⊤-monoid x y z = ≅-prop ×.assocʳ′ ×.assocˡ′ refl refl
+  identityˡ ×-⊤-monoid x = ≅-prop ×.proj₂ (tt ,_) refl refl
+  identityʳ ×-⊤-monoid x = ≅-prop ×.proj₁ (_, tt) refl refl
+  ∙-cong ×-⊤-monoid h k = ≅-trans (≅-sym ×-prop-homo) (≅-trans (×-preserves-≅ h k) ×-prop-homo)
+
+  ⊎-⊥-monoid : Monoid _ _
+  setoid ⊎-⊥-monoid = ips-setoid
+  _∙_ ⊎-⊥-monoid = _⊎_
+  ε ⊎-⊥-monoid = ⊥
+  assoc ⊎-⊥-monoid x y z = ≅-prop ⊎.assocʳ ⊎.assocˡ (λ { (inj₁ x) → refl
+                                                       ; (inj₂ (inj₁ x)) → refl
+                                                       ; (inj₂ (inj₂ y)) → refl })
+                                                    λ { (inj₁ (inj₁ x)) → refl
+                                                      ; (inj₁ (inj₂ y)) → refl
+                                                      ; (inj₂ y) → refl }
+  identityˡ ⊎-⊥-monoid x = ≅-prop (λ { (inj₂ y) → y }) inj₂ (λ { x₁ → refl }) λ { (inj₂ y) → refl }
+  identityʳ ⊎-⊥-monoid x = ≅-prop (λ { (inj₁ y) → y }) inj₁ (λ { x₁ → refl }) λ { (inj₁ y) → refl }
+  ∙-cong ⊎-⊥-monoid {x = x} {y} {z} {w} h k = ≅-trans (≅-sym ⊎-prop-homo) (≅-trans (⊎-preserves-≅ h k) ⊎-prop-homo)
 ```
 
 
