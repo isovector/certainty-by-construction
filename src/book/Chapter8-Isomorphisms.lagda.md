@@ -1313,6 +1313,7 @@ Finally, we must show congruence, which also comes "already paid for:"
     from t (func g (to s y)) ≈⟨ from-cong t (f refl) ⟩
     from t (func h (to s y)) ∎
     where open A-Reasoning t hiding (refl)
+  -- FIX
 ```
 
 The next step we took for `type:_×_` and `type:_⊎_` was to show their respective
@@ -1321,13 +1322,16 @@ thing here, such a thing isn't possible. After all, it was the lack of
 functions' having meaningful propositional equalities that motivated us to look
 into setoids in @sec:setoids.
 
-Now, given a setoid over elements, we can construct a setoid over vectors where
-the elements are considered pointwise. That is, two vectors are equal only when
-each of their elements are equal. Under such a setoid, it's easy to see that if
-the vector has length $n$ and the element-wise setoid has cardinality $k$, the
-cardinality of the possible vectors is $k^n$. Why is this? Because each of the
-$n$ elements can be one of $k$ distinct possibilities. Combinatorially
-therefore, we have the following:
+What other tools do we have for working with the `type:_⇒_` setoid? If you think
+back to the beginning of this chapter, you'll recall `def:vec-iso`, which gives
+an isomorphism between `bind:n A:Vec A n` and their characteristic function
+`bind:n A:Fin n → A`. We can therefore us `def:⇒-preserves-≅` and `def:vec-iso`
+to finagle a function into a vector, and so all we are left with is to show that
+this vector has the right number of elements. What number is that, exactly?
+
+It's easier to see the cardinality of a `bind:n A:Vec A n`, compared to a
+function. The `type:Vec` is `n` instantiations of `A`, meaning that if `A` has
+`k` inhabitants, the `type:Vec` thus has
 
 $$
 \underbrace{k \times k \times \cdots \times k}_{\text{$n$ times}} = k^n
@@ -1338,13 +1342,18 @@ has cardinality one:
 
 ```agda
 open Sandbox-Finite
+
+vec-fin₀ : {A : Set ℓ} → prop-setoid (Vec A 0) Has 1 Elements
+to         vec-fin₀ []      = zero
+from       vec-fin₀ zero    = []
+from∘to    vec-fin₀ []      = refl
+to∘from    vec-fin₀ zero    = refl
+to-cong    vec-fin₀ ≡.refl  = refl
+from-cong  vec-fin₀ ≡.refl  = refl
 ```
 
-Then, by showing a lemma that is there an isomorphism between `type:Vec A (suc
-n)` and `type:A × Vec A n`:
-
-We can combine these two facts into the desired proof that vectors have an
-exponential cardinality:
+Next, we will use our generic isomorphism to convert a `bind:n A:Vec A (suc n)`
+into a `bind:n a:A × Vec A n`:
 
 ```agda
 vec-rep
@@ -1357,15 +1366,12 @@ from∘to   vec-rep (x ∷  xs)  = refl
 to∘from   vec-rep (x ,  xs)  = refl
 to-cong   vec-rep ≡.refl     = refl
 from-cong vec-rep ≡.refl     = refl
+```
 
-vec-fin₀ : {A : Set ℓ} → prop-setoid (Vec A 0) Has 1 Elements
-to         vec-fin₀ []      = zero
-from       vec-fin₀ zero    = []
-from∘to    vec-fin₀ []      = refl
-to∘from    vec-fin₀ zero    = refl
-to-cong    vec-fin₀ ≡.refl  = refl
-from-cong  vec-fin₀ ≡.refl  = refl
+And then we can combine these two facts into the desired proof that vectors have
+an exponential cardinality:
 
+```agda
 vec-fin : prop-setoid (Vec (Fin n) m) Has (n ^ m) Elements
 vec-fin {m = zero} = vec-fin₀
 vec-fin {m = suc m}
@@ -1374,15 +1380,16 @@ vec-fin {m = suc m}
   ( ≅-trans  (×-preserves-≅ ≅-refl vec-fin)
   ( ≅-trans  ×-prop-homo
              (≅-sym combine-remQuot-iso))))
+-- FIX
 ```
 
-And now, to tie everything together, we can show that functions themselves also
+To tie everything together, we can show that functions themselves also
 have an exponential cardinality. This is a straightforward application of
 `def:⇒-preserves-≅`, `def:vec-iso` and `vec-fin`. In essence, we transform our
-function `A → B` into a function `Fin m → Fin n`, and then use the
-characteristic function of vectors to reinterpret that function as a vector of
-length `m`. Finally, we know the cardinality of such a vector, as shown just now
-by `def:vec-fin`.
+function `bind:A B:A → B` into a function `bind:m n:Fin m → Fin n`, and then use
+the characteristic function of vectors to reinterpret that function as a vector
+of length `m`. Finally, we know the cardinality of such a vector, as shown just
+now by `def:vec-fin`:
 
 ```agda
 ⇒-fin : s₁ Has m Elements → s₂ Has n Elements
@@ -1393,6 +1400,8 @@ by `def:vec-fin`.
               vec-fin)
 ```
 
+-- TODO(sandy): prose
+
 
 ## Wrapping Up
 
@@ -1401,15 +1410,21 @@ open import Data.Vec
   using (Vec; []; _∷_; lookup)
   public
 
+open import Data.Product
+  using (assocʳ′; assocˡ′)
+  public
+
 -- TODO(sandy): write about me!
 open import Data.Sum
   using (_⊎_; inj₁; inj₂)
   public
 
 open import Data.Fin
-  using (Fin; zero; suc; toℕ)
+  using (Fin; zero; suc; toℕ; join; splitAt; combine; remQuot)
   public
 
-open Sandbox-Finite public
+open Sandbox-Finite
+  hiding (assocʳ′; assocˡ′)
+  public
 ```
 
