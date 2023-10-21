@@ -1252,21 +1252,24 @@ our attention to the cardinalities of functions.
 The recipe to get there is the same; we will first show that
 `def:⇒-preserves-≅`, and then exploit some inconspicuous theorems we've proven
 already in order to get a handle on a function type's inhabitants. In order to
-show setoid preservation, we're going to want to fix two setoids which occur in
-the domain of our function:
+show setoid preservation, we're going to want to fix the two setoids which occur
+in the domain of our function---which is really just an excuse to get some
+`def:IsEquivalence` instances in scope:
 
 ```agda
 open Setoid using (isEquivalence)
 open Fn using (func; cong)
 
 module _ {s₁ : Setoid c₁ ℓ₁} {s₂ : Setoid c₂ ℓ₂} where
-```
-
-```agda
   private instance
     _ = isEquivalence s₁
     _ = isEquivalence s₂
+```
 
+This definition is sufficiently gnarly that we can split up its fields into
+pairs; first, `field:to` and `field:from`:
+
+```agda
   ⇒-preserves-≅
       : s₁ ≅ s₂ → s₃ ≅ s₄
       → (s₁ ⇒ s₃) ≅ (s₂ ⇒ s₄)
@@ -1276,6 +1279,13 @@ module _ {s₁ : Setoid c₁ ℓ₁} {s₂ : Setoid c₂ ℓ₂} where
   from (⇒-preserves-≅ s t) (fn f cong)
     = fn  (from t       ∘ f     ∘ to s)
           (from-cong t  ∘ cong  ∘ to-cong s)
+```
+
+The hardest part of showing these functions are inverses of one another is
+remembering which side of the setoid is `module:A-Reasoning` and which is
+`module:B-Reasoning`:
+
+```agda
   from∘to (⇒-preserves-≅ s t) (fn f cong) {x} {y} a = begin
     from t (to t (f (from s (to s x))))  ≈⟨ from∘to t _ ⟩
     f (from s (to s x))                  ≈⟨ cong (from∘to s x) ⟩
@@ -1288,6 +1298,11 @@ module _ {s₁ : Setoid c₁ ℓ₁} {s₂ : Setoid c₂ ℓ₂} where
     f x                                  ≈⟨ cong a ⟩
     f y                                  ∎
     where open B-Reasoning t
+```
+
+Finally, we must show congruence, which also comes "already paid for:"
+
+```agda
   to-cong (⇒-preserves-≅  s t) {g} {h} f {x} {y} a = begin
     to t (func g (from s x)) ≈⟨ to-cong t (cong g (from-cong s a)) ⟩
     to t (func g (from s y)) ≈⟨ to-cong t (f refl) ⟩
@@ -1299,6 +1314,12 @@ module _ {s₁ : Setoid c₁ ℓ₁} {s₂ : Setoid c₂ ℓ₂} where
     from t (func h (to s y)) ∎
     where open A-Reasoning t hiding (refl)
 ```
+
+The next step we took for `type:_×_` and `type:_⊎_` was to show their respective
+homomorphisms with `def:prop-setoid`. While it would be desirable to do the same
+thing here, such a thing isn't possible. After all, it was the lack of
+functions' having meaningful propositional equalities that motivated us to look
+into setoids in @sec:setoids.
 
 Now, given a setoid over elements, we can construct a setoid over vectors where
 the elements are considered pointwise. That is, two vectors are equal only when
@@ -1316,105 +1337,43 @@ We can prove this in three parts; first by showing that a vector of length zero
 has cardinality one:
 
 ```agda
-module _ (s : Setoid c₁ ℓ₁) where
-  open Setoid s
-
-  data Vec-Pointwise
-      : (n : ℕ) → Rel (Vec Carrier n) ℓ₁ where
-    []   :  Vec-Pointwise zero [] []
-    _∷_  :  {n : ℕ} {x y : Carrier}
-            {xs ys : Vec (Carrier) n}
-          →  x ≈ y
-          →  Vec-Pointwise n xs ys
-          →  Vec-Pointwise (suc n) (x ∷ xs) (y ∷ ys)
-
-  open Setoid-Renaming
-    hiding (Carrier)
-
-  vec-equiv : IsEquivalence (Vec-Pointwise n)
-  refl′ (pre vec-equiv) {[]} = []
-  refl′ (pre vec-equiv) {x ∷ xs} = refl s ∷ refl vec-equiv
-  trans′ (pre vec-equiv) [] [] = []
-  trans′ (pre vec-equiv) (xy ∷ xys) (yz ∷ yzs)
-    = trans s xy yz ∷ trans vec-equiv xys yzs
-  sym′ vec-equiv [] = []
-  sym′ vec-equiv (x ∷ xs) = sym s x ∷ sym vec-equiv xs
-
-  vec-setoid : ℕ → Setoid _ _
-  Carrier (vec-setoid n) = Vec Carrier n
-  _≈_ (vec-setoid n) = Vec-Pointwise n
-  isEquivalence (vec-setoid n) = vec-equiv
-
-instance
-  vec-setoid-inst
-    : {c ℓ : Level} {n : ℕ}
-    → ⦃ s : Setoid c ℓ ⦄
-    → Setoid c ℓ
-  vec-setoid-inst {n = n} ⦃ s ⦄ = vec-setoid s n
-
-  vec-equiv-inst
-    : {c ℓ : Level} {n : ℕ}
-    → ⦃ s : Setoid c ℓ ⦄
-    → IsEquivalence (Vec-Pointwise s n)
-  vec-equiv-inst ⦃ s ⦄ = vec-equiv s
-
-vec-prop-homo
-  : {A : Set ℓ}
-  → prop-setoid (Vec A n) ≅ vec-setoid (prop-setoid A) n
-to vec-prop-homo v = v
-from vec-prop-homo v = v
-from∘to vec-prop-homo x = ≡.refl
-to∘from vec-prop-homo [] = []
-to∘from vec-prop-homo (_ ∷ _) = refl ∷ refl
-to-cong vec-prop-homo ≡.refl = refl
-from-cong (vec-prop-homo) [] = ≡.refl
-from-cong vec-prop-homo (≡.refl ∷ as)
-  rewrite from-cong vec-prop-homo as
-    = refl
-
-
 open Sandbox-Finite
-
-module _ {s₁ : Setoid c₁ ℓ₁} where
-  private instance
-    _ = s₁
-    _ = s₁ .isEquivalence
-
-  vec-fin₀ : vec-setoid s₁ 0 Has 1 Elements
-  to         vec-fin₀ []      = zero
-  from       vec-fin₀ zero    = []
-  from∘to    vec-fin₀ []      = []
-  to∘from    vec-fin₀ zero    = refl
-  to-cong    vec-fin₀ []      = refl
-  from-cong  vec-fin₀ ≡.refl  = refl
 ```
 
 Then, by showing a lemma that is there an isomorphism between `type:Vec A (suc
 n)` and `type:A × Vec A n`:
 
-```agda
-  vec-rep : vec-setoid s₁ (suc n) ≅ ×-setoid s₁ (vec-setoid s₁ n)
-  to vec-rep    (x ∷  xs) = x ,  xs
-  from vec-rep  (x ,  xs) = x ∷  xs
-  from∘to       (vec-rep) (x ∷  xs) = refl ∷  refl
-  to∘from       (vec-rep) (x ,  xs) = refl ,  refl
-  to-cong       (vec-rep) (x ∷  xs) = x ,  xs
-  from-cong     (vec-rep) (x ,  xs) = x ∷  xs
-```
-
 We can combine these two facts into the desired proof that vectors have an
 exponential cardinality:
 
 ```agda
-  vec-fin
-    : s₁ Has m Elements
-    → vec-setoid s₁ n Has (m ^ n) Elements
-  vec-fin {n = zero}   s = vec-fin₀
-  vec-fin {n = suc n}  s
-    = ≅-trans  vec-rep
-    ( ≅-trans  (×-preserves-≅ s (vec-fin s))
-    ( ≅-trans  ×-prop-homo
-               (≅-sym combine-remQuot-iso)))
+vec-rep
+  : {A : Set ℓ}
+  → prop-setoid (Vec A (suc n))
+  ≅ prop-setoid (A × Vec A n)
+to        vec-rep (x ∷  xs)  = x ,  xs
+from      vec-rep (x ,  xs)  = x ∷  xs
+from∘to   vec-rep (x ∷  xs)  = refl
+to∘from   vec-rep (x ,  xs)  = refl
+to-cong   vec-rep ≡.refl     = refl
+from-cong vec-rep ≡.refl     = refl
+
+vec-fin₀ : {A : Set ℓ} → prop-setoid (Vec A 0) Has 1 Elements
+to         vec-fin₀ []      = zero
+from       vec-fin₀ zero    = []
+from∘to    vec-fin₀ []      = refl
+to∘from    vec-fin₀ zero    = refl
+to-cong    vec-fin₀ ≡.refl  = refl
+from-cong  vec-fin₀ ≡.refl  = refl
+
+vec-fin : prop-setoid (Vec (Fin n) m) Has (n ^ m) Elements
+vec-fin {m = zero} = vec-fin₀
+vec-fin {m = suc m}
+  = ≅-trans  vec-rep
+  ( ≅-trans  (≅-sym ×-prop-homo)
+  ( ≅-trans  (×-preserves-≅ ≅-refl vec-fin)
+  ( ≅-trans  ×-prop-homo
+             (≅-sym combine-remQuot-iso))))
 ```
 
 And now, to tie everything together, we can show that functions themselves also
@@ -1426,13 +1385,12 @@ length `m`. Finally, we know the cardinality of such a vector, as shown just now
 by `def:vec-fin`.
 
 ```agda
-→-fin : s₁ Has m Elements → s₂ Has n Elements
+⇒-fin : s₁ Has m Elements → s₂ Has n Elements
       → (s₁ ⇒ s₂) Has (n ^ m) Elements
-→-fin s t
-  = ≅-trans (⇒-preserves-≅ s t)
-  ( ≅-trans (≅-sym vec-iso)
-   (≅-trans vec-prop-homo
-            (vec-fin ≅-refl)))
+⇒-fin s t
+  =  ≅-trans  (⇒-preserves-≅ s t)
+  (  ≅-trans  (≅-sym vec-iso)
+              vec-fin)
 ```
 
 

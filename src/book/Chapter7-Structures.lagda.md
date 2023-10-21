@@ -1078,7 +1078,7 @@ next section we will instead explore a different---and much, much
 worse---solution to the problem.
 
 
-## Setoid Hell
+## Setoid Hell {#sec:setoids}
 
 An alternative to postulating function extensionality is to parameterize
 *everything* by "what exactly do we mean by equality?" This approach is
