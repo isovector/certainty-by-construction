@@ -10,93 +10,16 @@ Hidden
 module Chapter9-ProgramOptimization where
 ```
 
-While counting cardinalities is fun and all, it can be easy to miss the forest
-for the trees. Why might J. Random Hacker care about isomorphisms? Perhaps the
-most salient application of theory I have ever seen is the use of isomorphism to
-*automatically improve* an algorithms runtime by an asymptotic factor.
+The purpose of theory is not satisfying idle curiosities; instead it is to make
+short work of otherwise difficult problems. In this final chapter, we will turn
+our gaze towards a difficult problem in computing---dynamic programming---and
+see how our new theoretical understanding completely eliminates the challenges.
+Since dynamic programming often improves algorithmic complexity asymptotically,
+solving it is therefore equivalent to program optimization, and doing it
+automatically demonstrates a total understanding of the problem space.
 
-~~~~ {design=code/Languages/Tree.hs label="8"}
-Table   8
-~~~~
-
-~~~~ {design=code/Languages/Tree.hs label="8 × 1"}
-And 8  (Table     1)
-~~~~
-
-~~~~ {design=code/Languages/Tree.hs label="4 + 2 × 2"}
-Or   (Table 4) (And 2 (Table 2))
-~~~~
-
-~~~~ {design=code/Languages/Tree.hs label="2 × 2 × 2"}
-And   2 (And 2 (Table 2))
-~~~~
-
-~~~~ {design=code/Languages/Tree.hs label="(2 + 4) + 2"}
-Or   (Or (Table 2) (Table 4)) (Table 2)
-~~~~
-
-How can such a thing be possible? The answer lies in the observation that while
-meaning is preserved by isomorphism, computational properties are not. Most
-obviously, several algorithms for sorting lists have been famously studied. Each
-of these algorithms has type `Vec A n → Vec A n` (and are thus isomorphic to one
-another via `def:≅-refl`.) But as we know, bubble sort performs significantly
-worse than merge sort does. It is the exploitation of exactly this sort of
-observation that we can use to automatically improve our algorithms.
-
-At a high level, the goal is to find an alternative representation of our
-function as some other type---some other type which has more desirable
-computational properties. As an illustration, every cache layer ever put in
-front of a computation is an unprincipled attempt towards this end. The common
-dynamic programming approach of memoizing partial results in an
-appropriately-sized array is another example.
-
-But caching of results is not the only possible way we can exploit an
-isomorphism over a function. The somewhat-esoteric *trie* data structure is
-commonly used for filtering big lists of strings (known, for obvious reasons, as
-a dictionary) by a prefix. The idea behind tries is to break each word in the
-list into a linked list of its characters, each pointing at the next, and then
-to merge each of these linked lists into one big tree structure. The root node
-then has one child for every possible starting letter in the set of words.
-Moving to any particular branch necessarily filters away all of the words which
-*don't* start with that letter. We can treat our new node as the root, and
-recurse---this time, the node has children only for the possible *second*
-letters of words in the dictionary that begin with the prefix of nodes you've
-already traversed.
-
-It's a clever encoding scheme that allows for an incremental refinement of a
-dictionary, and this incremental refinement is exactly the sort of computational
-property we're looking to exploit in our isomorphisms out of functions. When you
-step back and think about the characteristic function of the trie, you see that
-really all it is answering is the question "does this string exist in the
-dictionary?"---or, put another way, it is any function of type `String → Bool`.
-
-Exploiting isomorphisms is an excellent way of coming up with clever data
-structures like tries, without the necessity that oneself be clever in the first
-place. It's a great hack for convincing colleagues of your keen
-computer-science mind. And the canonical isomorphisms given by a types'
-cardinalities is an excellent means of exploring which isomorphisms actually
-exist in order to exploit.
-
-As a silly example, let's consider functions out of `type:Bool` and into some
-arbitrary type `A`. We therefore know that such a thing has cardinality equal to
-the cardinality of `A` squared. Using the notation $\abs{A}$ to mean "the
-cardinality of `A`", we know that these functions have cardinality $\abs{A}^2$.
-But from school arithmetic, such a thing is also equal to
-$\abs{A}\times\abs{A}$---which doesn't take much imagination to interpret as a
-pair.
-
-And this isn't surprising when we stop to think about it; we can replace any
-function `Bool → A` with `A × A` because we only need to store two `A`s---the
-one resulting from `ctor:false`, and the other which comes from `ctor:true`.
-There are no other `type:Bool`s to which we can apply the function, and thus
-there are no other `A`s that can be produced.
-
-Of course, this is a silly example. I did warn you. But it serves to illustrate
-an important point, that through these isomorphisms we can transport the
-entirety of our knowledge about discrete mathematics into the realm of
-programming. In fact, if we know that two natural numbers are equal, we can use
-that fact to induce an isomorphism:
-
+As is fitting for a capstone, this chapter has a great number of dependencies in
+concepts:
 
 Prerequisites
 
@@ -138,6 +61,80 @@ open import Chapter8-Isomorphisms
         ; Vec; []; _∷_; lookup; Fin; zero; suc; _⊎_; inj₁; inj₂
         ; _Has_Elements; ⊎-prop-homo; ×-prop-homo)
     ```
+
+
+## Why Can This Be Done?
+
+Computing is a practical means to an end. One of the greatest tragedies in our
+field is the muddled thinking that arises from conflating "what do we want to do"
+from "how should we do it." But confusion exists only in our minds, and never in
+reality. Because dynamic programming is an often-confusing solution to a class
+of problems, we will likely learn more by studying the class of problems than we
+will the offered solution.
+
+Dynamic programming is helpful for problems with a great deal of overlapping
+subproblems. This notion of subproblems arises from the algorithmic concept of
+*divide and conquer,* which you will note is also muddled thinking---it too
+confuses the question with a means of answering it.
+
+At the end of the day, all computing reduces down to sampling functions at
+finitely many points. Seen through this lens, dynamic programming is a technique
+which makes functions less expensive to repeatedly sample, by caching their
+results somewhere convenient.
+
+This is the true nature of dynamic programming---as a technique, it is nothing
+more than thinking about problems inductively, and memoizing that induction. By
+virtue of being the sort of person who would read this book, you are clearly
+already capable of thinking compositionally, and so all we have left is to
+tackle the problem of memoization.
+
+Why should we expect to be able to make progress on this problem? As seen in
+@sec:exponents, we proved an isomorphism between functions on finite domains and
+vectors. Indeed, it is exactly this vector which is most-often used as a caching
+data structure when doing dynamic programming by hand. Figuring out exactly how
+to index such a structure is often less clear and requires much fiddling in the
+absence of explicit isomorphisms.
+
+Note however that an effective memoization strategy is dependent on the problem.
+This "one big vector" isn't necessarily always the best choice. If you know that
+you need to sample the entire function space, you might as well just sample the
+whole function into a table. But if sampling the function is sufficiently
+expensive and you have no guarantee you'll need all of its image, you might
+prefer to memoize the function at only those points necessary.
+
+For functions with large input spaces, it would be quite wasteful to allocate a
+table large enough to memoize the whole function, and proceed to only cache a
+handful of points in it. Therefore, we conclude that different memoization
+strategies must result in different caching data structures. And in fact, this
+class of memoization strategies grows *fast*---corresponding to every possible
+way of splitting the input space into contiguous chunks. Some examples of
+different memoization strategies for a function with 8 points are visualized in
+@fig:t8, @fig:t8by1, @fig:2x2x2, and @fig:complex, to give you a taste of how
+these data structures could look.
+
+There is no one-size-fits-all memoization strategy, so our eventual solution to
+this problem must be polymorphic over all possible strategies.
+
+~~~~ {design=code/Languages/Tree.hs label="Table of Values. The filled squares represent places to cache results." #fig:t8}
+Table 8
+~~~~
+
+~~~~ {design=code/Languages/Tree.hs label="Table of Pointers to Values" #fig:t8by1}
+And 8 (Table 1)
+~~~~
+
+~~~~ {design=code/Languages/Tree.hs label="Binary Tree" #fig:2x2x2}
+Or (Or (Or (Table 1) (Table 1)) (Or (Table 1) (Table 1))) (Or (Or (Table 1) (Table 1)) (Or (Table 1) (Table 1)))
+~~~~
+
+~~~~ {design=code/Languages/Tree.hs label="Something More Complicated" #fig:complex}
+Or (Or (Table 3) (And 2 (Table 1))) (And 3 (Table 1))
+~~~~
+
+It certainly feels like we have our work cut out for us, doesn't it? Thankfully,
+the task is less monumental than it seems. The hardest part is simply organizing
+the problem, and our theory will guide us the rest of the way.
+
 
 ```agda
 data Shape : Set where
