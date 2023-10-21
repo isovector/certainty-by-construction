@@ -114,7 +114,9 @@ open import Chapter7-Structures
 
 :   ```agda
 open import Chapter8-Isomorphisms
-  using (Iso; _≅_; ≅-refl; ≅-sym; ≅-trans; ⊎-fin; fin-iso; ×-fin; Vec; []; _∷_; lookup; Fin; zero; suc; _⊎_; inj₁; inj₂; _Has_Elements; ⊎-prop-homo; ×-prop-homo)
+  using ( Iso; _≅_; ≅-refl; ≅-sym; ≅-trans; ⊎-fin; fin-iso; ×-fin
+        ; Vec; []; _∷_; lookup; Fin; zero; suc; _⊎_; inj₁; inj₂
+        ; _Has_Elements; ⊎-prop-homo; ×-prop-homo)
     ```
 
 ```agda
@@ -159,9 +161,11 @@ open Iso
   using (to; from; from∘to; to∘from; to-cong; from-cong)
 
 shape-fin : (sh : Shape) → prop-setoid (Ix sh) Has ∣ sh ∣ Elements
-shape-fin (num x) = ≅-refl
-shape-fin (plus m n) = ≅-trans (≅-sym ⊎-prop-homo) (⊎-fin (shape-fin m) (shape-fin n))
-shape-fin (times m n) = ≅-trans (≅-sym ×-prop-homo) (×-fin (shape-fin m) (shape-fin n))
+shape-fin (num x)      = ≅-refl
+shape-fin (plus m n)   = ≅-trans  (≅-sym ⊎-prop-homo)
+                                  (⊎-fin (shape-fin m) (shape-fin n))
+shape-fin (times m n)  = ≅-trans  (≅-sym ×-prop-homo)
+                                  (×-fin (shape-fin m) (shape-fin n))
 
 private variable
   ℓ ℓ₁ ℓ₂ : Level
@@ -199,9 +203,12 @@ private variable
 
 mutual
   MemoTrie : {B : Set ℓ} {sh : Shape} → (Ix sh → B) → Set _
-  MemoTrie {B = B} {sh = sh}  f = Σ (Trie B sh) (Memoizes f)
+  MemoTrie {B = B} {sh = sh} f = Σ (Trie B sh) (Memoizes f)
 
-  data Memoizes {B : Set ℓ} : {sh : Shape} → (f : Ix sh → B) → Trie B sh → Set ℓ where
+  data Memoizes {B : Set ℓ}  : {sh : Shape}
+                             → (f : Ix sh → B)
+                             → Trie B sh
+                             → Set ℓ where
     miss : {f : Ix sh → B}
          → Memoizes f miss
     table : {n : ℕ} {f : Ix (num n) → B}
@@ -273,15 +280,18 @@ get′ {sh = times m n} (and mts _) (x , y) with mts x
   with get′ subtrmem y
 ... | b , _ , _ = b , subget-is-memo x subtrmem mts
 
-get-is-fn : ∀ {sh : Shape} {t} {f : Ix sh → B} → (mt : Memoizes f t) → proj₁ ∘ get′ mt ≗ f
-get-is-fn {sh = num _}     miss x = lookup∘tabulate _ x
-get-is-fn {sh = plus _ _}  miss (inj₁ x) = get-is-fn miss x
-get-is-fn {sh = plus _ _}  miss (inj₂ y) = get-is-fn miss y
-get-is-fn {sh = times _ _} miss (fst , snd) = get-is-fn miss snd
-get-is-fn {sh = num _}     table x = lookup∘tabulate _ x
-get-is-fn {sh = plus _ _}  (or mt mt₁) (inj₁ x) = get-is-fn mt x
-get-is-fn {sh = plus _ _}  (or mt mt₁) (inj₂ y) = get-is-fn mt₁ y
-get-is-fn {sh = times _ _} (and mts _) (fst , snd) = get-is-fn (proj₂ (mts fst)) snd
+get′-is-fn
+    : {sh : Shape} {t : Trie B sh} {f : Ix sh → B}
+    → (mt : Memoizes f t)
+    → proj₁ ∘ get′ mt ≗ f
+get′-is-fn {sh = num _}     miss x         = lookup∘tabulate _ x
+get′-is-fn {sh = plus _ _}  miss (inj₁ x)  = get′-is-fn miss x
+get′-is-fn {sh = plus _ _}  miss (inj₂ y)  = get′-is-fn miss y
+get′-is-fn {sh = times _ _} miss (x , y)   = get′-is-fn miss y
+get′-is-fn {sh = num _}     table x        = lookup∘tabulate _ x
+get′-is-fn {sh = plus _ _}  (or mt mt₁) (inj₁ x)  = get′-is-fn mt x
+get′-is-fn {sh = plus _ _}  (or mt mt₁) (inj₂ y)  = get′-is-fn mt₁ y
+get′-is-fn {sh = times _ _} (and mts _) (x , y)   = get′-is-fn (proj₂ (mts x)) y
 
 module _ {A : Set} (sh : Shape) (sized : prop-setoid A Has ∣ sh ∣ Elements) (f : A → B) where
   A≅Ix : prop-setoid A ≅ prop-setoid (Ix sh)
