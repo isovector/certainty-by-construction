@@ -45,6 +45,9 @@ leaf a = Split a Empty Empty
 data Rose a = Pure a | Rose [Rose a]
   deriving stock (Eq, Ord, Show, Functor, Generic, Generic1, Foldable, Traversable)
 
+data Trie = Table Int | Or Trie Trie | And Int Trie
+  deriving stock (Eq, Ord, Show)
+
 data LRose a = LPure a | LRose a [LRose a]
   deriving stock (Eq, Ord, Show, Functor, Generic, Generic1, Foldable, Traversable)
 

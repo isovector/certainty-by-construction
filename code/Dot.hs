@@ -4,7 +4,7 @@ import Control.Monad.State
 import Control.Monad.Writer
 import Data.Maybe (fromMaybe)
 import Data.Bool (bool)
-import Data.List (group)
+import Data.List (group, intercalate)
 import Data.Char (isAlphaNum)
 import System.Process (callProcess)
 import Data.Foldable (for_, foldrM, toList)
@@ -29,6 +29,22 @@ instance Show (DotM a) where
 instance ToDot Ctor where
   toDot (Ctor s) = ctorNode s
   toDot (FakeCtor s) = newNode s
+
+instance ToDot Trie where
+  toDot (Table 1) = shapedNode "square" "&#9632;"
+  toDot (Table n) = tableNode $ show n : replicate n "&#9632;"
+  toDot (Or t1 t2) = do
+    me <- shapedNode "circle" ""
+    n1 <- toDot t1
+    n2 <- toDot t2
+    addEdge me n1
+    addEdge me n2
+    pure me
+  toDot (And n t) = do
+    me <- tableNode $ show n : replicate n " "
+    ns <- replicateM n $ toDot t
+    for_ (zip [1 .. n] ns) $ \(ix, n) -> addEdge (SubNode me ix) n
+    pure me
 
 compile :: String -> Schema -> DotM Node
 compile lbl = cluster (Just lbl) . toDot . Beside . go
@@ -169,6 +185,7 @@ preamble =
   , "bgcolor=\"transparent\";"
   , "compound=true;"
   , "newrank=true;"
+  , "splines=polyline;"
   ]
 
 runDotM :: DotM a -> String
@@ -189,14 +206,13 @@ instance ToDot (DotM Node) where
   toDot = id
 
 
-newtype Node = Node
-  { unNode :: Int
-  }
+data Node = Node Int | SubNode Node Int
   deriving stock (Eq, Ord, Show)
 
 
 nodeName :: Node -> String
-nodeName = ('n' :) . show . unNode
+nodeName (Node n) = ('n' :) $ show n
+nodeName (SubNode n f) = nodeName n ++ ":f" ++ show f
 
 
 fresh :: DotM Int
@@ -205,6 +221,15 @@ fresh = get <* modify' (+ 1)
 newNode :: String -> DotM Node
 newNode "" = shapedNode "point" ""
 newNode label = shapedNode "oval" label
+
+
+tableNode :: [String] -> DotM Node
+tableNode cols = do
+  n <- fmap Node get
+  modify' (+ 1)
+  let label = intercalate "|" $ zipWith (\ix l -> mconcat ["<f", show ix, "> ", l]) [0..] cols
+  tell $ pure $ nodeName n <> "[shape=\"record\";label=" ++ show label ++ "]"
+  pure n
 
 ctorNode :: String -> DotM Node
 ctorNode = shapedNode "invhouse"
