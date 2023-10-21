@@ -15,6 +15,26 @@ for the trees. Why might J. Random Hacker care about isomorphisms? Perhaps the
 most salient application of theory I have ever seen is the use of isomorphism to
 *automatically improve* an algorithms runtime by an asymptotic factor.
 
+~~~~ {design=code/Languages/Tree.hs label="8"}
+Table   8
+~~~~
+
+~~~~ {design=code/Languages/Tree.hs label="8 × 1"}
+And 8  (Table     1)
+~~~~
+
+~~~~ {design=code/Languages/Tree.hs label="4 + 2 × 2"}
+Or   (Table 4) (And 2 (Table 2))
+~~~~
+
+~~~~ {design=code/Languages/Tree.hs label="2 × 2 × 2"}
+And   2 (And 2 (Table 2))
+~~~~
+
+~~~~ {design=code/Languages/Tree.hs label="(2 + 4) + 2"}
+Or   (Or (Table 2) (Table 4)) (Table 2)
+~~~~
+
 How can such a thing be possible? The answer lies in the observation that while
 meaning is preserved by isomorphism, computational properties are not. Most
 obviously, several algorithms for sorting lists have been famously studied. Each
