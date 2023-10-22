@@ -47,7 +47,7 @@ open import Chapter4-Relations
 
 :   ```agda
 open import Chapter6-Decidability
-  using (Dec; yes; no)
+  using (Dec; yes; no; map-dec)
     ```
 
 :   ```agda
@@ -292,11 +292,7 @@ shape-fin (inside m n)  = ≅-trans  (≅-sym ×-prop-homo)
 ```
 
 ```agda
-open import Relation.Nullary.Decidable.Core
-  using (map′)
 open import Data.Fin using (_≟_)
-open import Data.Sum.Properties
-  using (inj₁-injective; inj₂-injective)
 
 
 open Iso using (to; from; from∘to)
@@ -304,7 +300,7 @@ open Iso using (to; from; from∘to)
 Ix-dec : {sh : Shape} → (ix₁ ix₂ : Ix sh) → Dec (ix₁ ≡ ix₂)
 Ix-dec {sh = sh} ix₁ ix₂
   = let s = shape-fin sh
-    in  map′
+    in  map-dec
           (λ toix₁=toix₂ → begin
             ix₁                ≡⟨ sym (from∘to s ix₁) ⟩
             from s (to s ix₁)  ≡⟨ cong (from s) toix₁=toix₂ ⟩

@@ -715,6 +715,19 @@ and give a more "semantically-inclined" type to our old function:
 ```
 
 
+## Transforming Decisions
+
+-- TODO(sandy): write about me
+
+```agda
+  map-dec  : {ℓ₁ ℓ₂ : Level} {P : Set ℓ₁} {Q : Set ℓ₂}
+          → (P → Q)  → (Q → P)
+          → Dec P    → Dec Q
+  map-dec to from (yes  p)   = yes  (to p)
+  map-dec to from (no   ¬p)  = no   (λ q → ¬p (from q))
+```
+
+
 ## Binary Trees {#sec:bintrees}
 
 Perhaps you are tired of always working with numbers. After all, isn't this
@@ -1877,6 +1890,10 @@ open import Relation.Unary
 
 open import Relation.Nullary
   using (Dec; yes; no; ¬_)
+  public
+
+open import Relation.Nullary.Decidable
+  renaming (map′ to map-dec)
   public
 
 open import Data.Nat.Properties
