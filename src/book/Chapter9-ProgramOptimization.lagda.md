@@ -167,7 +167,7 @@ illustrated in @fig:t8; note that the filled squares represent places to cache
 results.
 
 ~~~~ {design=code/Languages/Tree.hs label="The trie described by `expr:num 8`" #fig:t8}
-asTrie $ Table 8 Box
+asTrie $ Table 8 0
 ~~~~
 
 The semantics of the trie built by `ctor:num` is that if any value in the table
@@ -178,7 +178,7 @@ us per-table caching. At the other end of the spectrum, we can get *per-element*
 caching semantics by nesting one table inside of another, as in @fig:t8by1.
 
 ~~~~ {design=code/Languages/Tree.hs label="The trie described by `expr:inside (num 8) (num 1)`" #fig:t8by1}
-asTrie $ And $ Table 8 $ Table 1 Box
+asTrie $ And $ Table 8 $ Table 1 0
 ~~~~
 
 The `ctor:inside` constructor allows us to compose caches; in the case of
@@ -201,7 +201,7 @@ bintrie (suc n)  = beside (bintrie n) (bintrie n)
 The result of this is is illustrated in @fig:2x2x2:
 
 ~~~~ {design=code/Languages/Tree.hs label="The trie described by `expr:bintrie 3`" #fig:2x2x2}
-asTrie $ let two = Or (Table 1 Box) (Table 1 Box) in Or (Or two two) (Or two two)
+asTrie $ let two = Or (Table 1 0) (Table 1 0) in Or (Or two two) (Or two two)
 ~~~~
 
 Of course, nothing says we can't go off the rails and define arbitrarily weird
@@ -217,7 +217,7 @@ weird = beside  (beside  (num 3)
 which is illustrated in @fig:weird.
 
 ~~~~ {design=code/Languages/Tree.hs label="The trie described by `def:weird`" #fig:weird}
-asTrie $ Or (Or (Table 3 Box) (And (Table 2 (Table 1 Box)))) (And (Table 3 (Table 1 Box)))
+asTrie $ Or (Or (Table 3 0) (And (Table 2 (Table 1 0)))) (And (Table 3 (Table 1 0)))
 ~~~~
 
 Hopefully you agree that the tries describable by `type:Shape` are indeed rich
@@ -505,8 +505,8 @@ _ = bothM (bothM tableM emptyM)
                    })
 ```
 
-if we invoke [AgdaSolve](AgdCmd) in the hole, which recall, fills in values that
-Agda can infer on our behalf, Agda will fill in the hole with:
+if we invoke [AgdaSolve](AgdaCmd) in the hole, which recall, fills in values that
+can be unambiguously inferred, Agda will replace the hole with:
 
 
 Hidden
@@ -525,6 +525,9 @@ _ : Memoizes (dummy weird)
                            ∷ []))))
 ```
 
+which we can visualize as in @fig:amazing, where `∙` corresponds to an
+`ctor:empty` trie.
+
 
 Hidden
 
@@ -535,6 +538,10 @@ _ = bothM (bothM tableM emptyM)
                    ; (suc (suc zero))  → -, emptyM
                    })
                       ```
+
+~~~~ {design=code/Languages/Tree.hs label="A memoized `type:Trie`, synthesized by Agda" #fig:amazing}
+asTrie $ Or (Or (Tabled [0, 1, 2]) Null) (And (Tabled [Null, Tabled [6], Null]))
+~~~~
 
 
 In an incredible show, Agda managed to find the memoized `type:Trie`
