@@ -25,3 +25,6 @@ asRose = id
 asNRose :: LRose Int -> LRose Int
 asNRose = id
 
+asTrie :: Trie Metavar -> Trie Metavar
+asTrie = id
+

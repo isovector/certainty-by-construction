@@ -45,13 +45,13 @@ leaf a = Split a Empty Empty
 data Rose a = Pure a | Rose [Rose a]
   deriving stock (Eq, Ord, Show, Functor, Generic, Generic1, Foldable, Traversable)
 
-data Trie = Table Int | Or Trie Trie | And Int Trie
-  deriving stock (Eq, Ord, Show)
+data Trie a = Table Int a | Or (Trie a) (Trie a) | And (Trie (Trie a))
+  deriving stock (Eq, Ord, Show, Functor, Generic, Generic1, Foldable, Traversable)
 
 data LRose a = LPure a | LRose a [LRose a]
   deriving stock (Eq, Ord, Show, Functor, Generic, Generic1, Foldable, Traversable)
 
-data Metavar = Club | Diamond | Spade | Heart
+data Metavar = Club | Diamond | Spade | Heart | Box
   deriving stock (Eq, Ord, Generic)
 
 instance Show Metavar where
@@ -59,6 +59,7 @@ instance Show Metavar where
   show Diamond = "&diams;"
   show Spade = "&spades;"
   show Heart = "&hearts;"
+  show Box = "&#9632;"
 
 data Var a = Var | Txt String | Lit a
   deriving stock (Eq, Ord, Show, Functor)

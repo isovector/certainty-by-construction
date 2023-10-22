@@ -30,9 +30,9 @@ instance ToDot Ctor where
   toDot (Ctor s) = ctorNode s
   toDot (FakeCtor s) = newNode s
 
-instance ToDot Trie where
-  toDot (Table 1) = shapedNode "square" "&#9632;"
-  toDot (Table n) = tableNode $ show n : replicate n "&#9632;"
+instance {-# OVERLAPPING #-} ToDot (Trie Metavar) where
+  toDot (Table 1 _) = shapedNode "square" "&#9632;"
+  toDot (Table n _) = tableNode $ show n : replicate n "&#9632;"
   toDot (Or t1 t2) = do
     me <- shapedNode "circle" ""
     n1 <- toDot t1
@@ -40,11 +40,23 @@ instance ToDot Trie where
     addEdge me n1
     addEdge me n2
     pure me
-  toDot (And n t) = do
+  toDot (And t) = toDot t
+
+instance ToDot a => ToDot (Trie a) where
+  toDot (Table 1 t) = toDot t
+  toDot (Table n t) = do
     me <- tableNode $ show n : replicate n " "
     ns <- replicateM n $ toDot t
     for_ (zip [1 .. n] ns) $ \(ix, n) -> addEdge (SubNode me ix) n
     pure me
+  toDot (Or t1 t2) = do
+    me <- shapedNode "circle" ""
+    n1 <- toDot t1
+    n2 <- toDot t2
+    addEdge me n1
+    addEdge me n2
+    pure me
+  toDot (And t) = toDot t
 
 compile :: String -> Schema -> DotM Node
 compile lbl = cluster (Just lbl) . toDot . Beside . go
@@ -176,7 +188,7 @@ instance Show a => ToDot (Focused a) where
   toDot (Unfocused a) = newNode $ show a
 
 instance ToDot Metavar where
-  toDot = newNode . show
+  toDot = shapedNode "square" . show
 
 
 preamble :: [String]
