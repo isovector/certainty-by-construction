@@ -291,10 +291,12 @@ shape-fin (inside m n)  = ≅-trans  (≅-sym ×-prop-homo)
                                    (×-fin (shape-fin m) (shape-fin n))
 ```
 
+We will also require decidability of propositional equality over two indices,
+which we could write by hand, but will instead get by transporting across
+`def:shape-fin` and using our decidable equality over `type:Fin`.
+
 ```agda
 open import Data.Fin using (_≟_)
-
-
 open Iso using (to; from; from∘to)
 
 Ix-dec : {sh : Shape} → (ix₁ ix₂ : Ix sh) → Dec (ix₁ ≡ ix₂)
@@ -309,15 +311,30 @@ Ix-dec {sh = sh} ix₁ ix₂
           (cong (to s))
           (to s ix₁ ≟ to s ix₂)
   where open ≡-Reasoning
+```
 
+We'll need a few other miscellaneous helper functions and proofs as well. First,
+often we can infer the first argument of a `type:Σ` type, in which case we can
+omit it using `def:-,_`:
 
--,_ : {A : Set ℓ₁} → {a : A} → {B : A → Set ℓ₂} → B a → Σ A B
+```agda
+-,_ : {A : Set ℓ₁} {a : A} {B : A → Set ℓ₂} → B a → Σ A B
 -,_ {a = a} b = a , b
+```
 
+Also, given a function out of `type:Fin`, we can use it to build a `type:Vec`,
+as in `def:tabulate`:
+
+```agda
 tabulate : {n : ℕ} {A : Set ℓ} → (Fin n → A) → Vec A n
 tabulate {n = zero}   f = []
 tabulate {n = suc n}  f = f zero ∷ tabulate (f ∘ suc)
+```
 
+Finally, we know that calling `def:lookup` on `def:tabulate` is the same as
+sampling the function we used to build the table:
+
+```agda
 lookup∘tabulate
   : {n : ℕ} {A : Set ℓ}
   → (f : Fin n → A)
@@ -325,48 +342,113 @@ lookup∘tabulate
   → lookup (tabulate f) i ≡ f i
 lookup∘tabulate f zero    = refl
 lookup∘tabulate f (suc i) = lookup∘tabulate (f ∘ suc) i
+```
 
 
+## Memoizing Functions
 
+An obvious way to go about implementing our memoizing tries is to jump into just
+that, the implementation, and prove separately that the implementation is
+correct. But take it from someone who went down that path and got stumped for a
+week, doing so is much less trivial than it seems. Not only did I manage to get
+the implementation wrong at first, proving the fixed version correct is also a
+huge ordeal.
+
+Better than jumping in immediately is to take a moment and think about what
+exactly a memoized trie looks like. Having done that work, we will then
+immortalize this thinking in a new type, which indexes a `type:Trie`, proving
+that trie does indeed memoize the particular function. Only after all of this
+work is done will we jump into implementation, using our types to guarantee
+correctness *by construction.*
+
+First, we'll need some variables in scope:
+
+```agda
 private variable
   B : Set ℓ
   sh m n : Shape
   t₁ : Trie B m
   t₂ : Trie B n
   f : Ix sh → B
+```
 
+We now have three definitions that need to be defined simultaneously, which we
+can do by way of Agda's `keyword:mutual` keyword. Mutual blocks introduce a new
+scope in which definitions can refer to one another, without the top-down
+order that Agda usually enforces. We'll define it momentarily, but for the time
+being, assume that we have a data type `type:Memoizes` `f` `tr` which proves
+that trie `tr` is filled only with values produced by function `f`. Then, a
+`def:MemoTrie` is a `type:Trie` alongside with a proof that it does indeed
+memoize a function:
+
+```agda
 mutual
-  MemoTrie : {B : Set ℓ} {sh : Shape} → (Ix sh → B) → Set _
+  MemoTrie : {B : Set ℓ} {sh : Shape} → (Ix sh → B) → Set ℓ
   MemoTrie {B = B} {sh = sh} f = Σ (Trie B sh) (Memoizes f)
+```
 
+Getting the definition of `type:Memoizes` right is rather finicky, so we will
+proceed by case. First, its type:
+
+```agda
   data Memoizes {B : Set ℓ}  : {sh : Shape}
                              → (f : Ix sh → B)
                              → Trie B sh
                              → Set ℓ where
-    empty : {f : Ix sh → B}
-         → Memoizes f empty
-    table : {n : ℕ} {f : Ix (num n) → B}
-          → Memoizes f (table (tabulate f))
-    both : {f : Ix (beside m n) → B}
+```
+
+Of particular interest here is the sheer number of indices we have for
+`type:Memoizes`. We might expect that `sh` and `f` could be *parameters*
+instead of indices, but each constructor of `type:Memoizes` makes different
+demands of the shape, on which the function is dependent.
+
+For our first case, we note that an `ctor:empty` trie is vacuously memoized, for
+any function at all---as witnessed by the `ctor:emptyM` (for "memoized")
+constructor:
+
+```agda
+    emptyM : {f : Ix sh → B} → Memoizes f empty
+```
+
+A `ctor:table` trie is memoized if the vector it contains was built via
+`def:tabulate`:
+
+```agda
+    tableM : {n : ℕ} {f : Ix (num n) → B} → Memoizes f (table (tabulate f))
+```
+
+We can show that a `ctor:both` trie is correctly memoized if its constituent
+tries split the function space in half, memoizing the `ctor:inj₁` and
+`ctor:inj₂` halves, respectively:
+
+```agda
+    bothM : {f : Ix (beside m n) → B}
       → Memoizes (f ∘ inj₁) t₁
       → Memoizes (f ∘ inj₂) t₂
       → Memoizes f (both t₁ t₂)
-    nest : {f : Ix (inside m n) → B}
+```
+
+
+
+```agda
+    nestM : {f : Ix (inside m n) → B}
           {t : Trie (Trie B n) m}
         → (f2 : (ix : Ix m) → MemoTrie (f ∘ (ix ,_)))
         → t ≡ proj₁ (to-trie {f = f} f2)
         → Memoizes f (nest t)
+```
 
+```agda
   to-trie
       : {m n : Shape}
       → {f : Ix (inside m n) → B}
       → (f2 : (ix : Ix m) → Σ (Trie B n) (Memoizes (f ∘ (ix ,_))))
       → MemoTrie (proj₁ ∘ f2)
-  to-trie {m = num x} f2 = -, table
+  to-trie {m = num x} f2 = -, tableM
   to-trie {m = beside m m₁} f2
     with to-trie (f2 ∘ inj₁) | to-trie (f2 ∘ inj₂)
-  ... | t₁ , mt₁ | t₂ , mt₂ = -, both mt₁ mt₂
-  to-trie {m = inside m m₁} f2 = -, nest (λ i → to-trie λ j → f2 (i , j)) refl
+  ... | t₁ , mt₁ | t₂ , mt₂ = -, bothM mt₁ mt₂
+  to-trie {m = inside m m₁} f2 = -, nestM (λ i → to-trie λ j → f2 (i , j)) refl
 
 
 subget-is-memo
@@ -375,7 +457,7 @@ subget-is-memo
   → Memoizes (f ∘ (x ,_)) fst
   → ((ix : Ix m) → MemoTrie (f ∘ (ix ,_)))
   → MemoTrie f
-subget-is-memo x subtrmem mts = -, nest (λ ix →
+subget-is-memo x subtrmem mts = -, nestM (λ ix →
   case Ix-dec ix x of λ
     { (yes refl) → -, subtrmem
     ; (no z) → mts ix
@@ -387,29 +469,29 @@ get′
   → Memoizes f t
   → Ix sh
   → B × MemoTrie f
-get′ {sh = num x} empty a =
+get′ {sh = num x} emptyM a =
   let t = _
-   in lookup t a , table t , table
-get′ {sh = beside m n} empty (inj₁ x)
-  with get′ empty x
-... | b , fst , snd = b , both fst empty , both snd empty
-get′ {sh = beside m n} empty (inj₂ y)
-  with get′ empty y
-... | b , fst , snd = b , both empty fst , both empty snd
-get′ {sh = inside m n} {f = f} empty (x , y)
-  with get′ { f = f ∘ (x ,_) } empty y
+   in lookup t a , table t , tableM
+get′ {sh = beside m n} emptyM (inj₁ x)
+  with get′ emptyM x
+... | b , fst , snd = b , both fst empty , bothM snd emptyM
+get′ {sh = beside m n} emptyM (inj₂ y)
+  with get′ emptyM y
+... | b , fst , snd = b , both empty fst , bothM emptyM snd
+get′ {sh = inside m n} {f = f} emptyM (x , y)
+  with get′ { f = f ∘ (x ,_) } emptyM y
 ... | b , subtr , subtr-memo
-  with get′ { f = const subtr } empty x
+  with get′ { f = const subtr } emptyM x
 ... | b2 , tr , tr-memo
-    = b , subget-is-memo x subtr-memo λ { ix → -, empty }
-get′ {sh = num _} {t = table t} table a = lookup t a , table t , table
-get′ {sh = beside m n} (both l r) (inj₁ x)
+    = b , subget-is-memo x subtr-memo λ { ix → -, emptyM }
+get′ {sh = num _} {t = table t} tableM a = lookup t a , table t , tableM
+get′ {sh = beside m n} (bothM l r) (inj₁ x)
   with get′ l x
-... | b , fst , snd = b , both fst _ , both snd r
-get′ {sh = beside m n} (both l r) (inj₂ y)
+... | b , fst , snd = b , both fst _ , bothM snd r
+get′ {sh = beside m n} (bothM l r) (inj₂ y)
   with get′ r y
-... | b , fst , snd = b , both _ fst , both l snd
-get′ {sh = inside m n} (nest mts _) (x , y) with mts x
+... | b , fst , snd = b , both _ fst , bothM l snd
+get′ {sh = inside m n} (nestM mts _) (x , y) with mts x
 ... | _ , subtrmem
   with get′ subtrmem y
 ... | b , _ , _ = b , subget-is-memo x subtrmem mts
@@ -418,14 +500,14 @@ get′-is-fn
     : {sh : Shape} {t : Trie B sh} {f : Ix sh → B}
     → (mt : Memoizes f t)
     → proj₁ ∘ get′ mt ≗ f
-get′-is-fn {sh = num _}     empty x         = lookup∘tabulate _ x
-get′-is-fn {sh = beside _ _}  empty (inj₁ x)  = get′-is-fn empty x
-get′-is-fn {sh = beside _ _}  empty (inj₂ y)  = get′-is-fn empty y
-get′-is-fn {sh = inside _ _} empty (x , y)   = get′-is-fn empty y
-get′-is-fn {sh = num _}     table x        = lookup∘tabulate _ x
-get′-is-fn {sh = beside _ _}  (both mt mt₁) (inj₁ x)  = get′-is-fn mt x
-get′-is-fn {sh = beside _ _}  (both mt mt₁) (inj₂ y)  = get′-is-fn mt₁ y
-get′-is-fn {sh = inside _ _} (nest mts _) (x , y)   = get′-is-fn (proj₂ (mts x)) y
+get′-is-fn {sh = num _}     emptyM x         = lookup∘tabulate _ x
+get′-is-fn {sh = beside _ _}  emptyM (inj₁ x)  = get′-is-fn emptyM x
+get′-is-fn {sh = beside _ _}  emptyM (inj₂ y)  = get′-is-fn emptyM y
+get′-is-fn {sh = inside _ _} emptyM (x , y)   = get′-is-fn emptyM y
+get′-is-fn {sh = num _}     tableM x        = lookup∘tabulate _ x
+get′-is-fn {sh = beside _ _}  (bothM mt mt₁) (inj₁ x)  = get′-is-fn mt x
+get′-is-fn {sh = beside _ _}  (bothM mt mt₁) (inj₂ y)  = get′-is-fn mt₁ y
+get′-is-fn {sh = inside _ _} (nestM mts _) (x , y)   = get′-is-fn (proj₂ (mts x)) y
 
 module _ {A : Set} (sh : Shape) (sized : prop-setoid A Has ∣ sh ∣ Elements) (f : A → B) where
   A≅Ix : prop-setoid A ≅ prop-setoid (Ix sh)
