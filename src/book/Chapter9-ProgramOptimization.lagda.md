@@ -464,14 +464,86 @@ implementation, actually comes for free given the types.
     = -, tableM
   to-trie {m = beside _ _} subf
     with proj₂ (to-trie (subf ∘ inj₁)) , proj₂ (to-trie (subf ∘ inj₂))
-  ...  |  mt₁ , mt₂
-       =  -, bothM mt₁ mt₂
+  ...  |  mt₁ , mt₂ =  -, bothM mt₁ mt₂
   to-trie {m = inside _ _} f2
     = -, nestM (λ i → to-trie λ j → f2 (i , j))
 ```
 
 
-##
+## Inspecting Memoized Tries
+
+Before we go through the work of actually getting values *out* of
+`type:MemoTrie`s, let's take a moment to see how far our current machinery can
+go. We'll write a dummy function to memoize, which simply turns its desired
+index into a `type:ℕ`:
+
+```agda
+dummy : (sh : Shape) → Ix sh → ℕ
+dummy sh ix = toℕ (to (shape-fin sh) ix)
+```
+
+Now, for any arbitrary `def:Shape`, perhaps the one from @fig:weird above, whose
+definition you will recall as:
+
+```agda
+weird⅋ : Shape
+weird⅋ = beside  (beside  (num 3)
+                          (inside (num 2) (num 1)))
+                 (inside (num 3) (num 1))
+```
+
+we can give a proof of memoization to Agda, and ask it to *build* the relevant
+trie for us. For example, given the following setup:
+
+```agda
+_ : Memoizes (dummy weird)
+      ?
+_ = bothM (bothM tableM emptyM)
+          (nestM λ { zero              → -, emptyM
+                   ; (suc zero)        → -, tableM
+                   ; (suc (suc zero))  → -, emptyM
+                   })
+```
+
+if we invoke [AgdaSolve](AgdCmd) in the hole, which recall, fills in values that
+Agda can infer on our behalf, Agda will fill in the hole with:
+
+
+Hidden
+
+:   ```agda
+_ : Memoizes (dummy weird)
+    ```
+
+
+```agda
+      (both  (both  (table  (0 ∷ 1 ∷ 2 ∷ []))
+                    empty)
+             (nest (table  ( empty
+                           ∷ table (6 ∷ [])
+                           ∷ empty
+                           ∷ []))))
+```
+
+
+Hidden
+
+:                     ```agda
+_ = bothM (bothM tableM emptyM)
+          (nestM λ { zero              → -, emptyM
+                   ; (suc zero)        → -, tableM
+                   ; (suc (suc zero))  → -, emptyM
+                   })
+                      ```
+
+
+In an incredible show, Agda managed to find the memoized `type:Trie`
+corresponding to our proof! Take a moment or two to marvel at this result; our
+type `type:Memoizes` is precise enough that it *completely* constrains *all*
+valid `type:Trie`s. Truly remarkable.
+
+
+## Updating the Trie
 
 ```agda
 subget-is-memo
@@ -523,37 +595,33 @@ get′-is-fn
     : {sh : Shape} {t : Trie B sh} {f : Ix sh → B}
     → (mt : Memoizes f t)
     → proj₁ ∘ get′ mt ≗ f
-get′-is-fn {sh = num _}     emptyM x         = lookup∘tabulate _ x
-get′-is-fn {sh = beside _ _}  emptyM (inj₁ x)  = get′-is-fn emptyM x
-get′-is-fn {sh = beside _ _}  emptyM (inj₂ y)  = get′-is-fn emptyM y
-get′-is-fn {sh = inside _ _} emptyM (x , y)   = get′-is-fn emptyM y
-get′-is-fn {sh = num _}     tableM x        = lookup∘tabulate _ x
-get′-is-fn {sh = beside _ _}  (bothM mt mt₁) (inj₁ x)  = get′-is-fn mt x
-get′-is-fn {sh = beside _ _}  (bothM mt mt₁) (inj₂ y)  = get′-is-fn mt₁ y
-get′-is-fn {sh = inside _ _} (nestM mts) (x , y)   = get′-is-fn (proj₂ (mts x)) y
+get′-is-fn {sh = num _}       emptyM x          = lookup∘tabulate _ x
+get′-is-fn {sh = beside _ _}  emptyM (inj₁  x)  = get′-is-fn emptyM x
+get′-is-fn {sh = beside _ _}  emptyM (inj₂  y)  = get′-is-fn emptyM y
+get′-is-fn {sh = inside _ _}  emptyM (x , y)    = get′-is-fn emptyM y
+get′-is-fn {sh = num _}       tableM x          = lookup∘tabulate _ x
+get′-is-fn {sh = beside _ _}  (bothM t₁ _) (inj₁  x) = get′-is-fn t₁  x
+get′-is-fn {sh = beside _ _}  (bothM _ t₂) (inj₂  y) = get′-is-fn t₂  y
+get′-is-fn {sh = inside _ _}  (nestM mts) (x , y)    = get′-is-fn (proj₂ (mts x)) y
 
-module _ {A : Set} (sh : Shape) (sized : prop-setoid A Has ∣ sh ∣ Elements) (f : A → B) where
+module _ {A : Set} {B : Set ℓ} (sh : Shape)
+         (sized : prop-setoid A Has ∣ sh ∣ Elements)
+         (f : A → B) where
   A≅Ix : prop-setoid A ≅ prop-setoid (Ix sh)
   A≅Ix = fin-iso sized (shape-fin sh)
 
-  f′ = f ∘ Iso.from (A≅Ix)
+  private
+    f′ = f ∘ Iso.from (A≅Ix)
 
-  get : MemoTrie f′ → A → B × MemoTrie f′
+  Memoized : Set ℓ
+  Memoized = MemoTrie f′
+
+  get : Memoized → A → B × Memoized
   get (_ , memo) = get′ memo ∘ (Iso.to A≅Ix)
 
 
 ----
 
-
-tsize : Shape
-tsize = inside (num 2) (beside (num 1) (num 1))
-
-tfun : Ix tsize → ℕ
-tfun ix = toℕ (to (shape-fin tsize) ix)
-
-test : Memoizes tfun (nest (table (empty ∷ both empty (table (3 ∷ [])) ∷ [])))
-test = nestM λ { zero → -, emptyM
-               ; (suc ix) → -, bothM emptyM tableM }
 
 
 --test : Σ ℕ (λ x → Σ (Trie ℕ (inside (num 2) (beside (num 1) (num 1)))) (Memoizes tfun))
