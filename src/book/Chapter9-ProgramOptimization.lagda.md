@@ -112,12 +112,11 @@ different memoization strategies for a function with 8 points are visualized in
 @fig:t8, @fig:t8by1, @fig:2x2x2, and @fig:complex, to give you a taste of how
 these data structures could look.
 
+-- TODO(sandy): remove mention of figures
+
+
 There is no one-size-fits-all memoization strategy, so our eventual solution to
 this problem must be polymorphic over all possible strategies.
-
-~~~~ {design=code/Languages/Tree.hs label="Table of Values. The filled squares represent places to cache results." #fig:t8}
-Table 8
-~~~~
 
 ~~~~ {design=code/Languages/Tree.hs label="Table of Pointers to Values" #fig:t8by1}
 And 8 (Table 1)
@@ -136,16 +135,54 @@ the task is less monumental than it seems. The hardest part is simply organizing
 the problem, and our theory will guide us the rest of the way.
 
 
+## Shaping the Cache
+
+Our first order of business is to find a means of describing our desired
+memoization strategy, which in turn means to find a way of describing the data
+type we will use to cache results.
+
+Note that while there are many variations on the theme, we are looking for the
+*building blocks* of these cache shapes. It is undeniable that we must be able to
+support a flat vector of contiguous results. Another means of building caching
+structures is to combine two *different* shapes together. And our final means is
+direct composition---that is, we'd like to nest one memoization strategy inside
+another. In essence, this composition means we are no longer caching values, but
+instead caching *caches of values.*
+
+Rather surprisingly, these are all the shape combinators we need in order to
+build any cache we'd like. We'll see some more examples soon, but in the
+meantime, we can write `type:Shape` in Agda:
+
 ```agda
 data Shape : Set where
-  num   : ℕ → Shape
-  plus  : Shape → Shape → Shape
-  times : Shape → Shape → Shape
+  num    : ℕ → Shape
+  plus   : Shape → Shape → Shape
+  times  : Shape → Shape → Shape
+-- FIX
+```
 
+The names of these constructors, while not what we'd expect, are certainly
+suggestive. Nevertheless `bind:n:num n` corresponds to a table of `n` elements.
+We will use `ctor:plus` to combine two caches "side by side", while `ctor:times`
+will describe composing one cache inside of another. To get a feel for how
+`type:Shape` describes data structures, let's look at a few examples.
+
+The simplest cache imaginable is just a vector, which we can represent via
+`ctor:num`. In @fig:t8 we see what a table of 8 elements looks like, noting that
+the filled squares represent places to cache results.
+
+~~~~ {design=code/Languages/Tree.hs label="A cache described by `expr:num 8`" #fig:t8}
+Table 8
+~~~~
+
+
+
+
+```agda
 ∣_∣ : Shape → ℕ
-∣ num  x      ∣ = x
-∣ plus   x y  ∣ = ∣ x  ∣ +  ∣ y ∣
-∣ times  x y  ∣ = ∣ x  ∣ *  ∣ y ∣
+∣ num    m    ∣ = m
+∣ plus   m n  ∣ = ∣ m  ∣ +  ∣ n ∣
+∣ times  m n  ∣ = ∣ m  ∣ *  ∣ n ∣
 
 
 Ix : Shape → Set
