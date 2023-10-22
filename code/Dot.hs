@@ -30,9 +30,12 @@ instance ToDot Ctor where
   toDot (Ctor s) = ctorNode s
   toDot (FakeCtor s) = newNode s
 
-instance {-# OVERLAPPING #-} ToDot (Trie Metavar) where
+instance {-# OVERLAPPING #-} ToDot (Trie Int) where
+  toDot Null = newNode ""
   toDot (Table 1 _) = shapedNode "square" "&#9632;"
-  toDot (Table n _) = tableNode $ show n : replicate n "&#9632;"
+  toDot (Table n _) = tableNode $ ("<b>" ++ show n ++ "</b>") : replicate n "&#9632;"
+  toDot (Tabled [a]) = shapedNode "square" $ show a
+  toDot (Tabled ts) = tableNode $ ("<b>" ++ show (length ts) ++ "</b>") : fmap show ts
   toDot (Or t1 t2) = do
     me <- shapedNode "circle" ""
     n1 <- toDot t1
@@ -43,10 +46,18 @@ instance {-# OVERLAPPING #-} ToDot (Trie Metavar) where
   toDot (And t) = toDot t
 
 instance ToDot a => ToDot (Trie a) where
+  toDot Null = newNode ""
   toDot (Table 1 t) = toDot t
   toDot (Table n t) = do
-    me <- tableNode $ show n : replicate n " "
+    me <- tableNode $ ("<b>" ++ show n ++ "</b>") : replicate n "&nbsp;"
     ns <- replicateM n $ toDot t
+    for_ (zip [1 .. n] ns) $ \(ix, n) -> addEdge (SubNode me ix) n
+    pure me
+  toDot (Tabled [t]) = toDot t
+  toDot (Tabled ts) = do
+    let n = length ts
+    me <- tableNode $ ("<b>" ++ show n ++ "</b>") : replicate n "&nbsp;"
+    ns <- traverse toDot ts
     for_ (zip [1 .. n] ns) $ \(ix, n) -> addEdge (SubNode me ix) n
     pure me
   toDot (Or t1 t2) = do
@@ -239,8 +250,19 @@ tableNode :: [String] -> DotM Node
 tableNode cols = do
   n <- fmap Node get
   modify' (+ 1)
-  let label = intercalate "|" $ zipWith (\ix l -> mconcat ["<f", show ix, "> ", l]) [0..] cols
-  tell $ pure $ nodeName n <> "[shape=\"record\";label=" ++ show label ++ "]"
+  let label = mconcat $ do
+        (ix, l) <- zip [0..] cols
+        pure $ mconcat
+          [ "<td port=\"f"
+          , show ix
+          , "\">"
+          , l
+          , "</td>"
+          ]
+
+  -- let label = intercalate "|" $ zipWith (\ix l -> mconcat ["<f", show ix, "> ", l]) [0..] cols
+  -- tell $ pure $ nodeName n <> "[shape=\"record\";label=" ++ show label ++ "]"
+  tell $ pure $ nodeName n <> "[shape=none;margin=0;label=<<table border=\"0\" cellborder=\"1\" cellspacing=\"0\" cellpadding=\"6\"><tr>" ++ label ++ "</tr></table>>]"
   pure n
 
 ctorNode :: String -> DotM Node
