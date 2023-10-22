@@ -35,9 +35,9 @@ open import Chapter2-Numbers
 
 :   ```agda
 open import Chapter3-Proofs
-  using (_≡_; case_of_; module PropEq)
+  using (_≡_; case_of_; module PropEq; module ≡-Reasoning)
 open PropEq
-  using (refl; cong)
+  using (refl; sym; trans; cong)
     ```
 
 :   ```agda
@@ -118,18 +118,6 @@ these data structures could look.
 There is no one-size-fits-all memoization strategy, so our eventual solution to
 this problem must be polymorphic over all possible strategies.
 
-~~~~ {design=code/Languages/Tree.hs label="Table of Pointers to Values" #fig:t8by1}
-And 8 (Table 1)
-~~~~
-
-~~~~ {design=code/Languages/Tree.hs label="Binary Tree" #fig:2x2x2}
-Or (Or (Or (Table 1) (Table 1)) (Or (Table 1) (Table 1))) (Or (Or (Table 1) (Table 1)) (Or (Table 1) (Table 1)))
-~~~~
-
-~~~~ {design=code/Languages/Tree.hs label="Something More Complicated" #fig:complex}
-Or (Or (Table 3) (And 2 (Table 1))) (And 3 (Table 1))
-~~~~
-
 It certainly feels like we have our work cut out for us, doesn't it? Thankfully,
 the task is less monumental than it seems. The hardest part is simply organizing
 the problem, and our theory will guide us the rest of the way.
@@ -139,90 +127,192 @@ the problem, and our theory will guide us the rest of the way.
 
 Our first order of business is to find a means of describing our desired
 memoization strategy, which in turn means to find a way of describing the data
-type we will use to cache results.
+type we will use to cache results. The data structures we end up building will
+all turn out to generalize *tries,* which is more commonly thought-of as a
+structure for representing collections of strings. We will leave the formal
+connection to tries unexplored in this text, but use the terminology
+interchangeably.
 
 Note that while there are many variations on the theme, we are looking for the
 *building blocks* of these cache shapes. It is undeniable that we must be able to
-support a flat vector of contiguous results. Another means of building caching
-structures is to combine two *different* shapes together. And our final means is
-direct composition---that is, we'd like to nest one memoization strategy inside
-another. In essence, this composition means we are no longer caching values, but
-instead caching *caches of values.*
+support a flat vector of contiguous results. Another means of building tries is
+to combine two *differently-shaped* tries together. And our final means is
+direct composition---that is, we'd like to nest one trie inside another. In
+essence, this composition means we are no longer caching values, but instead
+caching *caches of values.*
 
 Rather surprisingly, these are all the shape combinators we need in order to
-build any cache we'd like. We'll see some more examples soon, but in the
+describe any trie we'd like. We'll see some examples momentarily, but in the
 meantime, we can write `type:Shape` in Agda:
 
 ```agda
 data Shape : Set where
-  num    : ℕ → Shape
-  plus   : Shape → Shape → Shape
-  times  : Shape → Shape → Shape
+  num     : ℕ → Shape
+  beside  : Shape → Shape → Shape
+  inside  : Shape → Shape → Shape
 -- FIX
 ```
 
+-- TODO(sandy): no longer suggestive
+
 The names of these constructors, while not what we'd expect, are certainly
-suggestive. Nevertheless `bind:n:num n` corresponds to a table of `n` elements.
-We will use `ctor:plus` to combine two caches "side by side", while `ctor:times`
-will describe composing one cache inside of another. To get a feel for how
-`type:Shape` describes data structures, let's look at a few examples.
+suggestive. Nevertheless `bind:n:num n` corresponds to a table of `n` elements,
+while `ctor:beside` combines two caches "side by side", and `ctor:inside` composing
+one cache inside of another. To get a feel for how `type:Shape` describes data
+structures, let's look at a few examples.
 
-The simplest cache imaginable is just a vector, which we can represent via
-`ctor:num`. In @fig:t8 we see what a table of 8 elements looks like, noting that
-the filled squares represent places to cache results.
+As we have seen, the simplest trie imaginable is just a vector, which we will
+represent via `ctor:num`. An 8-celled cache described by this constructor is
+illustrated in @fig:t8; note that the filled squares represent places to cache
+results.
 
-~~~~ {design=code/Languages/Tree.hs label="A cache described by `expr:num 8`" #fig:t8}
-Table 8
+~~~~ {design=code/Languages/Tree.hs label="The trie described by `expr:num 8`" #fig:t8}
+asTrie $ Table 8 Box
 ~~~~
 
+The semantics of the trie built by `ctor:num` is that if any value in the table
+is required, the entire table will be populated. Sometimes this is not desirable,
+like when snappy startup times are expected, or when the function we'd like to
+memoize is prohibitively expensive. Thus, the `ctor:num` shape by itself gives
+us per-table caching. At the other end of the spectrum, we can get *per-element*
+caching semantics by nesting one table inside of another, as in @fig:t8by1.
+
+~~~~ {design=code/Languages/Tree.hs label="The trie described by `expr:inside (num 8) (num 1)`" #fig:t8by1}
+asTrie $ And $ Table 8 $ Table 1 Box
+~~~~
+
+The `ctor:inside` constructor allows us to compose caches; in the case of
+@fig:t8by1, we have nested a table of 1 inside a table of 8. The data structure
+described by this `type:Shape` is a vector of pointers to elements, where we have
+a convention that a pointer doesn't point anywhere until an element in its
+subtree has been cached.
+
+As another example of how flexible the tries defined by our `type:Shape`
+machinery are, we can look at using `ctor:beside`. This `type:Shape` lays out two
+tries side by side, which we can use to define a binary tree by subsequently
+nesting layers:
+
+```agda
+bintrie : ℕ → Shape
+bintrie zero     = num 1
+bintrie (suc n)  = beside (bintrie n) (bintrie n)
+```
+
+The result of this is is illustrated in @fig:2x2x2:
+
+~~~~ {design=code/Languages/Tree.hs label="The trie described by `expr:bintrie 3`" #fig:2x2x2}
+asTrie $ let two = Or (Table 1 Box) (Table 1 Box) in Or (Or two two) (Or two two)
+~~~~
+
+Of course, nothing says we can't go off the rails and define arbitrarily weird
+tries:
+
+```agda
+weird : Shape
+weird = beside  (beside  (num 3)
+                         (inside (num 2) (num 1)))
+                (inside (num 3) (num 1))
+```
+
+which is illustrated in @fig:weird.
+
+~~~~ {design=code/Languages/Tree.hs label="The trie described by `def:weird`" #fig:weird}
+asTrie $ Or (Or (Table 3 Box) (And (Table 2 (Table 1 Box)))) (And (Table 3 (Table 1 Box)))
+~~~~
+
+Hopefully you agree that the tries describable by `type:Shape` are indeed rich
+in variation. Of course, we haven't actually built any of this yet, merely given
+a type and its intended semantics. In the next section, we turn our attention
+towards building these tries.
 
 
+## Building the Tries
+
+Whenever we'd like to build a data structure whose cases correspond to some
+other type, our immediate reaction should be to use an indexed data type. This
+is no exception; we can build a `type:Trie` data structure *parameterized* by the
+values we'd like to store it in, and *indexed* by its shape:
+
+```agda
+private variable
+  ℓ ℓ₁ ℓ₂ : Level
+
+data Trie (B : Set ℓ) : Shape → Set ℓ where
+  empty  : {sh : Shape}                          → Trie B sh            -- ! 1
+  table  : {n : ℕ}        → Vec B n              → Trie B (num n)
+  both   : {m n : Shape}  → Trie B m → Trie B n  → Trie B (beside m n)
+  nest   : {m n : Shape}  → Trie (Trie B n) m    → Trie B (inside m n)  -- ! 2
+-- FIX
+```
+
+Alongside constructors corresponding to the three for `type:Shape`, we have
+added a fourth constructor at [1](Ann), corresponding to an empty, unpopulated
+trie. A trie of any shape can be empty, thus `ctor:empty` makes no demands on
+the index of `type:Trie`.
+
+At [2](Ann), notice the non-regular recursion; our trie parameter no longer
+contains `B`, but instead `bind:B n:Trie B n`.
+
+From the `type:Shape` of a trie, we can also compute an appropriate type for
+indexing it, given by `type:Ix`:
+
+```agda
+Ix : Shape → Set
+Ix (num n)       = Fin n
+Ix (beside m n)  = Ix m ⊎ Ix n
+Ix (inside m n)  = Ix m × Ix n
+```
+
+This `bind:sh:Ix sh` type acts as a lookup key in a corresponding `bind:B
+sh:Trie B sh`. If we ignore the `ctor:empty` case, a `ctor:num`-shaped trie is a
+vector, which we can index via a `type:Fin`. In the `ctor:beside` case, we have
+two subtries we'd like to differentiate between; a key is therefore the
+coproduct of the subtrie keys. Similarly, for `ctor:inside` we have nested one
+trie inside another, meaning we need a key for each trie in order to
+successfully find a `B`.
+
+The number of keys possible in a `type:Shape` is given by `def:∣_∣`:
 
 ```agda
 ∣_∣ : Shape → ℕ
-∣ num    m    ∣ = m
-∣ plus   m n  ∣ = ∣ m  ∣ +  ∣ n ∣
-∣ times  m n  ∣ = ∣ m  ∣ *  ∣ n ∣
+∣ num     m    ∣ = m
+∣ beside  m n  ∣ = ∣ m  ∣ +  ∣ n ∣
+∣ inside  m n  ∣ = ∣ m  ∣ *  ∣ n ∣
+```
 
+which we can prove by way of `def:shape-fin`:
 
-Ix : Shape → Set
-Ix (num n)      = Fin n
-Ix (times m n)  = Ix m × Ix n
-Ix (plus  m n)  = Ix m ⊎ Ix n
+```agda
+shape-fin : (sh : Shape) → prop-setoid (Ix sh) Has ∣ sh ∣ Elements
+shape-fin (num x)       = ≅-refl
+shape-fin (beside m n)  = ≅-trans  (≅-sym ⊎-prop-homo)
+                                   (⊎-fin (shape-fin m) (shape-fin n))
+shape-fin (inside m n)  = ≅-trans  (≅-sym ×-prop-homo)
+                                   (×-fin (shape-fin m) (shape-fin n))
+```
 
+```agda
 open import Relation.Nullary.Decidable.Core
   using (map′)
 open import Data.Fin using (_≟_)
 open import Data.Sum.Properties
   using (inj₁-injective; inj₂-injective)
 
+
+open Iso using (to; from; from∘to)
+
 Ix-dec : {sh : Shape} → (ix₁ ix₂ : Ix sh) → Dec (ix₁ ≡ ix₂)
-Ix-dec {num _} ix₁ ix₂ = ix₁ ≟ ix₂
-Ix-dec {times _ _} (a₁ , b₁) (a₂ , b₂)
-  with Ix-dec a₁ a₂ | Ix-dec b₁ b₂
-... | yes refl | yes refl = yes refl
-... | yes refl | no not-eq = no (not-eq ∘ cong proj₂)
-... | no not-eq | yes refl = no (not-eq ∘ cong proj₁)
-... | no not-eq | no _ = no (not-eq ∘ cong proj₁)
-Ix-dec {plus _ _} (inj₁ x₁) (inj₁ x₂)
-  = map′ (cong inj₁) inj₁-injective (Ix-dec x₁ x₂)
-Ix-dec {plus _ _} (inj₁ x₁) (inj₂ y₂) = no λ ()
-Ix-dec {plus _ _} (inj₂ y₁) (inj₁ x₂) = no λ ()
-Ix-dec {plus _ _} (inj₂ y₁) (inj₂ y₂)
-  = map′ (cong inj₂) inj₂-injective (Ix-dec y₁ y₂)
-
-open Iso
-  using (to; from; from∘to; to∘from; to-cong; from-cong)
-
-shape-fin : (sh : Shape) → prop-setoid (Ix sh) Has ∣ sh ∣ Elements
-shape-fin (num x)      = ≅-refl
-shape-fin (plus m n)   = ≅-trans  (≅-sym ⊎-prop-homo)
-                                  (⊎-fin (shape-fin m) (shape-fin n))
-shape-fin (times m n)  = ≅-trans  (≅-sym ×-prop-homo)
-                                  (×-fin (shape-fin m) (shape-fin n))
-
-private variable
-  ℓ ℓ₁ ℓ₂ : Level
+Ix-dec {sh = sh} ix₁ ix₂
+  = let s = shape-fin sh
+    in  map′
+          (λ toix₁=toix₂ → begin
+            ix₁                ≡⟨ sym (from∘to s ix₁) ⟩
+            from s (to s ix₁)  ≡⟨ cong (from s) toix₁=toix₂ ⟩
+            from s (to s ix₂)  ≡⟨ from∘to s ix₂ ⟩
+            ix₂                ∎)
+          (cong (to s))
+          (to s ix₁ ≟ to s ix₂)
+  where open ≡-Reasoning
 
 
 -,_ : {A : Set ℓ₁} → {a : A} → {B : A → Set ℓ₂} → B a → Σ A B
@@ -241,12 +331,6 @@ lookup∘tabulate f zero    = refl
 lookup∘tabulate f (suc i) = lookup∘tabulate (f ∘ suc) i
 
 
-data Trie (B : Set ℓ) : Shape → Set ℓ where
-  miss  : {sh : Shape} → Trie B sh
-  table : {n : ℕ} → Vec B n → Trie B (num n)
-  or    : {m n : Shape} → Trie B m → Trie B n → Trie B (plus m n)
-  and   : {m n : Shape} → Trie (Trie B n) m → Trie B (times m n)
-
 
 private variable
   B : Set ℓ
@@ -263,30 +347,30 @@ mutual
                              → (f : Ix sh → B)
                              → Trie B sh
                              → Set ℓ where
-    miss : {f : Ix sh → B}
-         → Memoizes f miss
+    empty : {f : Ix sh → B}
+         → Memoizes f empty
     table : {n : ℕ} {f : Ix (num n) → B}
           → Memoizes f (table (tabulate f))
-    or : {f : Ix (plus m n) → B}
+    both : {f : Ix (beside m n) → B}
       → Memoizes (f ∘ inj₁) t₁
       → Memoizes (f ∘ inj₂) t₂
-      → Memoizes f (or t₁ t₂)
-    and : {f : Ix (times m n) → B}
+      → Memoizes f (both t₁ t₂)
+    nest : {f : Ix (inside m n) → B}
           {t : Trie (Trie B n) m}
         → (f2 : (ix : Ix m) → MemoTrie (f ∘ (ix ,_)))
         → t ≡ proj₁ (to-trie {f = f} f2)
-        → Memoizes f (and t)
+        → Memoizes f (nest t)
 
   to-trie
       : {m n : Shape}
-      → {f : Ix (times m n) → B}
+      → {f : Ix (inside m n) → B}
       → (f2 : (ix : Ix m) → Σ (Trie B n) (Memoizes (f ∘ (ix ,_))))
       → MemoTrie (proj₁ ∘ f2)
   to-trie {m = num x} f2 = -, table
-  to-trie {m = plus m m₁} f2
+  to-trie {m = beside m m₁} f2
     with to-trie (f2 ∘ inj₁) | to-trie (f2 ∘ inj₂)
-  ... | t₁ , mt₁ | t₂ , mt₂ = -, or mt₁ mt₂
-  to-trie {m = times m m₁} f2 = -, and (λ i → to-trie λ j → f2 (i , j)) refl
+  ... | t₁ , mt₁ | t₂ , mt₂ = -, both mt₁ mt₂
+  to-trie {m = inside m m₁} f2 = -, nest (λ i → to-trie λ j → f2 (i , j)) refl
 
 
 subget-is-memo
@@ -295,7 +379,7 @@ subget-is-memo
   → Memoizes (f ∘ (x ,_)) fst
   → ((ix : Ix m) → MemoTrie (f ∘ (ix ,_)))
   → MemoTrie f
-subget-is-memo x subtrmem mts = -, and (λ ix →
+subget-is-memo x subtrmem mts = -, nest (λ ix →
   case Ix-dec ix x of λ
     { (yes refl) → -, subtrmem
     ; (no z) → mts ix
@@ -307,29 +391,29 @@ get′
   → Memoizes f t
   → Ix sh
   → B × MemoTrie f
-get′ {sh = num x} miss a =
+get′ {sh = num x} empty a =
   let t = _
    in lookup t a , table t , table
-get′ {sh = plus m n} miss (inj₁ x)
-  with get′ miss x
-... | b , fst , snd = b , or fst miss , or snd miss
-get′ {sh = plus m n} miss (inj₂ y)
-  with get′ miss y
-... | b , fst , snd = b , or miss fst , or miss snd
-get′ {sh = times m n} {f = f} miss (x , y)
-  with get′ { f = f ∘ (x ,_) } miss y
+get′ {sh = beside m n} empty (inj₁ x)
+  with get′ empty x
+... | b , fst , snd = b , both fst empty , both snd empty
+get′ {sh = beside m n} empty (inj₂ y)
+  with get′ empty y
+... | b , fst , snd = b , both empty fst , both empty snd
+get′ {sh = inside m n} {f = f} empty (x , y)
+  with get′ { f = f ∘ (x ,_) } empty y
 ... | b , subtr , subtr-memo
-  with get′ { f = const subtr } miss x
+  with get′ { f = const subtr } empty x
 ... | b2 , tr , tr-memo
-    = b , subget-is-memo x subtr-memo λ { ix → -, miss }
+    = b , subget-is-memo x subtr-memo λ { ix → -, empty }
 get′ {sh = num _} {t = table t} table a = lookup t a , table t , table
-get′ {sh = plus m n} (or l r) (inj₁ x)
+get′ {sh = beside m n} (both l r) (inj₁ x)
   with get′ l x
-... | b , fst , snd = b , or fst _ , or snd r
-get′ {sh = plus m n} (or l r) (inj₂ y)
+... | b , fst , snd = b , both fst _ , both snd r
+get′ {sh = beside m n} (both l r) (inj₂ y)
   with get′ r y
-... | b , fst , snd = b , or _ fst , or l snd
-get′ {sh = times m n} (and mts _) (x , y) with mts x
+... | b , fst , snd = b , both _ fst , both l snd
+get′ {sh = inside m n} (nest mts _) (x , y) with mts x
 ... | _ , subtrmem
   with get′ subtrmem y
 ... | b , _ , _ = b , subget-is-memo x subtrmem mts
@@ -338,14 +422,14 @@ get′-is-fn
     : {sh : Shape} {t : Trie B sh} {f : Ix sh → B}
     → (mt : Memoizes f t)
     → proj₁ ∘ get′ mt ≗ f
-get′-is-fn {sh = num _}     miss x         = lookup∘tabulate _ x
-get′-is-fn {sh = plus _ _}  miss (inj₁ x)  = get′-is-fn miss x
-get′-is-fn {sh = plus _ _}  miss (inj₂ y)  = get′-is-fn miss y
-get′-is-fn {sh = times _ _} miss (x , y)   = get′-is-fn miss y
+get′-is-fn {sh = num _}     empty x         = lookup∘tabulate _ x
+get′-is-fn {sh = beside _ _}  empty (inj₁ x)  = get′-is-fn empty x
+get′-is-fn {sh = beside _ _}  empty (inj₂ y)  = get′-is-fn empty y
+get′-is-fn {sh = inside _ _} empty (x , y)   = get′-is-fn empty y
 get′-is-fn {sh = num _}     table x        = lookup∘tabulate _ x
-get′-is-fn {sh = plus _ _}  (or mt mt₁) (inj₁ x)  = get′-is-fn mt x
-get′-is-fn {sh = plus _ _}  (or mt mt₁) (inj₂ y)  = get′-is-fn mt₁ y
-get′-is-fn {sh = times _ _} (and mts _) (x , y)   = get′-is-fn (proj₂ (mts x)) y
+get′-is-fn {sh = beside _ _}  (both mt mt₁) (inj₁ x)  = get′-is-fn mt x
+get′-is-fn {sh = beside _ _}  (both mt mt₁) (inj₂ y)  = get′-is-fn mt₁ y
+get′-is-fn {sh = inside _ _} (nest mts _) (x , y)   = get′-is-fn (proj₂ (mts x)) y
 
 module _ {A : Set} (sh : Shape) (sized : prop-setoid A Has ∣ sh ∣ Elements) (f : A → B) where
   A≅Ix : prop-setoid A ≅ prop-setoid (Ix sh)
@@ -361,7 +445,7 @@ module _ {A : Set} (sh : Shape) (sized : prop-setoid A Has ∣ sh ∣ Elements) 
 
 
 tsize : Shape
-tsize = times (num 2) (plus (num 1) (num 1))
+tsize = inside (num 2) (beside (num 1) (num 1))
 
 --tfun : ⌊ tsize ⌋ → ℕ
 --tfun (Fin.zero , inj₁ x) = 1
@@ -370,10 +454,10 @@ tsize = times (num 2) (plus (num 1) (num 1))
 --tfun (Fin.suc Fin.zero , inj₂ y) = 4
 
 
---test : Σ ℕ (λ x → Σ (Trie ℕ (times (num 2) (plus (num 1) (num 1)))) (Memoizes tfun))
---test = get′ miss (Fin.suc Fin.zero , inj₁ zero)
+--test : Σ ℕ (λ x → Σ (Trie ℕ (inside (num 2) (beside (num 1) (num 1)))) (Memoizes tfun))
+--test = get′ empty (Fin.suc Fin.zero , inj₁ zero)
 
---test2 : proj₁ (proj₂ test) ≡ and (table (miss Vec.∷ or (table (3 Vec.∷ Vec.[])) miss Vec.∷ Vec.[]))
+--test2 : proj₁ (proj₂ test) ≡ nest (table (empty Vec.∷ both (table (3 Vec.∷ Vec.[])) empty Vec.∷ Vec.[]))
 --test2 = refl
 
 ```
