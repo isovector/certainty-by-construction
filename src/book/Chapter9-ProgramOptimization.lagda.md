@@ -58,7 +58,7 @@ open import Chapter7-Structures
 :   ```agda
 open import Chapter8-Isomorphisms
   using ( Iso; _≅_; ≅-refl; ≅-sym; ≅-trans; ⊎-fin; fin-iso; ×-fin
-        ; Vec; []; _∷_; lookup; Fin; zero; suc; _⊎_; inj₁; inj₂
+        ; Vec; []; _∷_; lookup; Fin; zero; suc; toℕ; _⊎_; inj₁; inj₂
         ; _Has_Elements; ⊎-prop-homo; ×-prop-homo)
     ```
 
@@ -266,8 +266,8 @@ Ix (inside m n)  = Ix m × Ix n
 This `bind:sh:Ix sh` type acts as a lookup key in a corresponding `bind:B
 sh:Trie B sh`. If we ignore the `ctor:empty` case, a `ctor:num`-shaped trie is a
 vector, which we can index via a `type:Fin`. In the `ctor:beside` case, we have
-two subtries we'd like to differentiate between; a key is therefore the
-coproduct of the subtrie keys. Similarly, for `ctor:inside` we have nested one
+two sub-tries we'd like to differentiate between; a key is therefore the
+coproduct of the sub-trie keys. Similarly, for `ctor:inside` we have nested one
 trie inside another, meaning we need a key for each trie in order to
 successfully find a `B`.
 
@@ -391,16 +391,18 @@ Getting the definition of `type:Memoizes` right is rather finicky, so we will
 proceed by case. First, its type:
 
 ```agda
-  data Memoizes {B : Set ℓ}  : {sh : Shape}
-                             → (f : Ix sh → B)
-                             → Trie B sh
-                             → Set ℓ where
+  data Memoizes {B : Set ℓ}
+      : {sh : Shape}
+      → (f : Ix sh → B)
+      → Trie B sh
+      → Set ℓ where
 ```
 
 Of particular interest here is the sheer number of indices we have for
 `type:Memoizes`. We might expect that `sh` and `f` could be *parameters*
 instead of indices, but each constructor of `type:Memoizes` makes different
-demands of the shape, on which the function is dependent.
+demands of the shape, on which the function is dependent. Thus they must both be
+indices.
 
 For our first case, we note that an `ctor:empty` trie is vacuously memoized, for
 any function at all---as witnessed by the `ctor:emptyM` (for "memoized")
@@ -414,7 +416,9 @@ A `ctor:table` trie is memoized if the vector it contains was built via
 `def:tabulate`:
 
 ```agda
-    tableM : {n : ℕ} {f : Ix (num n) → B} → Memoizes f (table (tabulate f))
+    tableM
+      : {n : ℕ} {f : Ix (num n) → B}
+      → Memoizes f (table (tabulate f))
 ```
 
 We can show that a `ctor:both` trie is correctly memoized if its constituent
@@ -422,35 +426,54 @@ tries split the function space in half, memoizing the `ctor:inj₁` and
 `ctor:inj₂` halves, respectively:
 
 ```agda
-    bothM : {f : Ix (beside m n) → B}
+    bothM
+      : {f : Ix (beside m n) → B}
       → Memoizes (f ∘ inj₁) t₁
       → Memoizes (f ∘ inj₂) t₂
       → Memoizes f (both t₁ t₂)
 ```
 
+And now we come to the hard part---determining exactly when a `ctor:nest` trie
+correctly memoizes a function. Spiritually this should be the same as in
+`ctor:bothM`, except that we now need to split the function into an arbitrary
+number of smaller functions, show that each sub-trie correctly memoizes one, and
+use all of this information to actually *build* a `ctor:nest` trie.
 
+We will accomplish splitting the function and showing each sub-trie correctly
+memoizes its cut by way of a function, transforming the index of each sub-trie
+into a `type:MemoTrie`. We will use a helper function, `def:to-trie`, to
+transform this function-of-sub-tries into the necessary nested `type:Trie`.
 
 ```agda
-    nestM : {f : Ix (inside m n) → B}
-          {t : Trie (Trie B n) m}
-        → (f2 : (ix : Ix m) → MemoTrie (f ∘ (ix ,_)))
-        → t ≡ proj₁ (to-trie {f = f} f2)
-        → Memoizes f (nest t)
+    nestM
+      : {f : Ix (inside m n) → B}
+      → (subf : (ix : Ix m) → MemoTrie (f ∘ (ix ,_)))
+      → Memoizes f (nest (proj₁ (to-trie {f = f} subf)))
 ```
+
+All that's left is to write `def:to-trie`, which, despite the tricky-looking
+implementation, actually comes for free given the types.
 
 ```agda
   to-trie
       : {m n : Shape}
       → {f : Ix (inside m n) → B}
-      → (f2 : (ix : Ix m) → Σ (Trie B n) (Memoizes (f ∘ (ix ,_))))
-      → MemoTrie (proj₁ ∘ f2)
-  to-trie {m = num x} f2 = -, tableM
-  to-trie {m = beside m m₁} f2
-    with to-trie (f2 ∘ inj₁) | to-trie (f2 ∘ inj₂)
-  ... | t₁ , mt₁ | t₂ , mt₂ = -, bothM mt₁ mt₂
-  to-trie {m = inside m m₁} f2 = -, nestM (λ i → to-trie λ j → f2 (i , j)) refl
+      → (subf : (ix : Ix m) → Σ (Trie B n) (Memoizes (f ∘ (ix ,_))))
+      → MemoTrie (proj₁ ∘ subf)
+  to-trie {m = num _} _
+    = -, tableM
+  to-trie {m = beside _ _} subf
+    with proj₂ (to-trie (subf ∘ inj₁)) , proj₂ (to-trie (subf ∘ inj₂))
+  ...  |  mt₁ , mt₂
+       =  -, bothM mt₁ mt₂
+  to-trie {m = inside _ _} f2
+    = -, nestM (λ i → to-trie λ j → f2 (i , j))
+```
 
 
+##
+
+```agda
 subget-is-memo
   : {fst : Trie B n}
   → (x : Ix m)
@@ -462,7 +485,7 @@ subget-is-memo x subtrmem mts = -, nestM (λ ix →
     { (yes refl) → -, subtrmem
     ; (no z) → mts ix
     }
-  ) refl
+  )
 
 get′
   : {t : Trie B sh}
@@ -491,7 +514,7 @@ get′ {sh = beside m n} (bothM l r) (inj₁ x)
 get′ {sh = beside m n} (bothM l r) (inj₂ y)
   with get′ r y
 ... | b , fst , snd = b , both _ fst , bothM l snd
-get′ {sh = inside m n} (nestM mts _) (x , y) with mts x
+get′ {sh = inside m n} (nestM mts) (x , y) with mts x
 ... | _ , subtrmem
   with get′ subtrmem y
 ... | b , _ , _ = b , subget-is-memo x subtrmem mts
@@ -507,7 +530,7 @@ get′-is-fn {sh = inside _ _} emptyM (x , y)   = get′-is-fn emptyM y
 get′-is-fn {sh = num _}     tableM x        = lookup∘tabulate _ x
 get′-is-fn {sh = beside _ _}  (bothM mt mt₁) (inj₁ x)  = get′-is-fn mt x
 get′-is-fn {sh = beside _ _}  (bothM mt mt₁) (inj₂ y)  = get′-is-fn mt₁ y
-get′-is-fn {sh = inside _ _} (nestM mts _) (x , y)   = get′-is-fn (proj₂ (mts x)) y
+get′-is-fn {sh = inside _ _} (nestM mts) (x , y)   = get′-is-fn (proj₂ (mts x)) y
 
 module _ {A : Set} (sh : Shape) (sized : prop-setoid A Has ∣ sh ∣ Elements) (f : A → B) where
   A≅Ix : prop-setoid A ≅ prop-setoid (Ix sh)
@@ -525,11 +548,12 @@ module _ {A : Set} (sh : Shape) (sized : prop-setoid A Has ∣ sh ∣ Elements) 
 tsize : Shape
 tsize = inside (num 2) (beside (num 1) (num 1))
 
---tfun : ⌊ tsize ⌋ → ℕ
---tfun (Fin.zero , inj₁ x) = 1
---tfun (Fin.zero , inj₂ y) = 2
---tfun (Fin.suc Fin.zero , inj₁ x) = 3
---tfun (Fin.suc Fin.zero , inj₂ y) = 4
+tfun : Ix tsize → ℕ
+tfun ix = toℕ (to (shape-fin tsize) ix)
+
+test : Memoizes tfun (nest (table (empty ∷ both empty (table (3 ∷ [])) ∷ [])))
+test = nestM λ { zero → -, emptyM
+               ; (suc ix) → -, bothM emptyM tableM }
 
 
 --test : Σ ℕ (λ x → Σ (Trie ℕ (inside (num 2) (beside (num 1) (num 1)))) (Memoizes tfun))
