@@ -265,7 +265,7 @@ which will bring into scope the following definition:
 ```
 
 This is exactly the trick we will end up using to solve our problem of having
-too many `refl`s to count:
+too many `def:refl`s to count:
 
 ```agda
 open IsEquivalence  ⦃ ... ⦄ public

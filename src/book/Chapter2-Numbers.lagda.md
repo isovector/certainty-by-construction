@@ -660,8 +660,8 @@ Hidden
 
 Exercise (Easy)
 
-:   Write an inductive function `def:evenOdd` `:` `expr:{n : ℕ} → IsEven n → IsOdd (suc n)`
-    which witnesses the fact that every even number is followed by an odd number.
+:   Write an inductive function which witnesses the fact that every even number
+    is followed by an odd number. This function should have type `expr:{n : ℕ} → IsEven n → IsOdd (suc n)`.
 
 
 Solution

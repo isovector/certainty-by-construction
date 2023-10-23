@@ -253,6 +253,8 @@ second.
 
 You've probably seen the classic "proof" that $1 = 2$. It goes like this:
 
+-- TODO(sandy): split this up because it looks awful
+
 Let $a = b$, then
 
 $$
@@ -2357,6 +2359,7 @@ Hidden
       ```
 
 > TODO(sandy): A little prose would go a long way here if I have time!
+-- TODO(sandy): this next eqn overflows the margin
 
 
 Exercise (Medium)
@@ -2385,6 +2388,8 @@ Hidden
   -- fix expr
       ```
 
+
+-- TODO(sandy): this next eqn overflows the margin
 
 Exercise (Hard)
 

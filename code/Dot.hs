@@ -338,7 +338,7 @@ __design (name, _, kvs) _ hash a = do
     , "-units"
     , "pixelsperinch"
     , "-resize"
-    , "40%"
+    , "50%"
     , fp
     ]
 

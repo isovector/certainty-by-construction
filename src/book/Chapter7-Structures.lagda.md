@@ -861,7 +861,7 @@ We can now define the multiplication:
 
 and build the monoid over the product as follows:
 
-```
+```agda
     ×-is-monoid : IsMonoid _⊗_ (ε , ε)
     assoc ×-is-monoid (a₁ , b₁) (a₂ , b₂) (a₃ , b₃)
       rewrite assoc is-monoid  a₁ a₂ a₃
@@ -915,7 +915,7 @@ and then filling out `def:pointwise` results in:
   identityʳ pointwise = {! !}
 ```
 
-Unforuntately, here is where we get stuck. The first hole here has type
+Unfortunately, here is where we get stuck. The first hole here has type
 
 ```info
 ⊙ (⊙ f g) h ≡ ⊙ f (⊙ g h)
@@ -1051,9 +1051,8 @@ equal.* As we have seen, this doesn't make sense when computation is your main
 goal, but if you are simply modeling the world, it's an extremely convenient
 thing to have around. Agda has no opinion as to whether function extensionality
 holds or not, and its underlying theory is compatible with or without it.
-Therefore, the decision is up to us. If we'd like it, we must
-`keyword:postulate` `postulate:fun-ext`, which upgrades `def:_≗_` into
-`def:_≡_`:
+Therefore, the decision is up to us. If we'd like it, we must postulate
+`postulate:fun-ext`, which upgrades `def:_≗_` into `def:_≡_`:
 
 ```agda
   postulate
@@ -1252,6 +1251,8 @@ map equal elements in one setoid to equal elements in the other. Of course, this
 is not true of all functions between the carriers of `A` and `B`---it is exactly
 those which are congruent. So we can't yet define this setoid, we must first
 define a type corresponding to congruent functions between our two carrier sets:
+
+-- TODO(sandy): ???
 
 ```agda
 ```
@@ -1773,7 +1774,7 @@ module _ where
     func y (func w a)    ≡⟨⟩
     (func y ∘ func w) a  ∎
     where open ≡-Reasoning
--- FIXME
+-- FIX
 ```
 
 Armed with `def:∘-id`, we can now implement our string builder---better known in

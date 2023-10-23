@@ -543,7 +543,6 @@ _ = bothM (bothM tableM emptyM)
 asTrie $ Or (Or (Tabled [0, 1, 2]) Null) (And (Tabled [Null, Tabled [6], Null]))
 ~~~~
 
-
 In an incredible show, Agda managed to find the memoized `type:Trie`
 corresponding to our proof! Take a moment or two to marvel at this result; our
 type `type:Memoizes` is precise enough that it *completely* constrains *all*
@@ -559,9 +558,9 @@ subget-is-memo
   → Memoizes (f ∘ (x ,_)) fst
   → ((ix : Ix m) → MemoTrie (f ∘ (ix ,_)))
   → MemoTrie f
-subget-is-memo x subtrmem mts = -, nestM (λ ix →
+subget-is-memo x sub-mem mts = -, nestM (λ ix →
   case Ix-dec ix x of λ
-    { (yes refl) → -, subtrmem
+    { (yes refl) → -, sub-mem
     ; (no z) → mts ix
     }
   )
@@ -571,8 +570,8 @@ get′
   → Memoizes f t
   → Ix sh
   → B × MemoTrie f
-get′ {sh = num x} emptyM a =
-  let t = _
+get′ {sh = num x} {f = f} emptyM a =
+  let t = tabulate f
    in lookup t a , table t , tableM
 get′ {sh = beside m n} emptyM (inj₁ x)
   with get′ emptyM x
@@ -582,11 +581,10 @@ get′ {sh = beside m n} emptyM (inj₂ y)
 ... | b , fst , snd = b , both empty fst , bothM emptyM snd
 get′ {sh = inside m n} {f = f} emptyM (x , y)
   with get′ { f = f ∘ (x ,_) } emptyM y
-... | b , subtr , subtr-memo
-  with get′ { f = const subtr } emptyM x
-... | b2 , tr , tr-memo
-    = b , subget-is-memo x subtr-memo λ { ix → -, emptyM }
-get′ {sh = num _} {t = table t} tableM a = lookup t a , table t , tableM
+... | b , _ , sub-memo
+    = b , subget-is-memo x sub-memo λ ix → -, emptyM
+get′ {sh = num _} {t = table t} tableM a
+    = lookup t a , table t , tableM
 get′ {sh = beside m n} (bothM l r) (inj₁ x)
   with get′ l x
 ... | b , fst , snd = b , both fst _ , bothM snd r
@@ -594,9 +592,9 @@ get′ {sh = beside m n} (bothM l r) (inj₂ y)
   with get′ r y
 ... | b , fst , snd = b , both _ fst , bothM l snd
 get′ {sh = inside m n} (nestM mts) (x , y) with mts x
-... | _ , subtrmem
-  with get′ subtrmem y
-... | b , _ , _ = b , subget-is-memo x subtrmem mts
+... | _ , sub-mem
+  with get′ sub-mem y
+... | b , _ , _ = b , subget-is-memo x sub-mem mts
 
 get′-is-fn
     : {sh : Shape} {t : Trie B sh} {f : Ix sh → B}
@@ -625,19 +623,5 @@ module _ {A : Set} {B : Set ℓ} (sh : Shape)
 
   get : Memoized → A → B × Memoized
   get (_ , memo) = get′ memo ∘ (Iso.to A≅Ix)
-
-
-----
-
-
-
---test : Σ ℕ (λ x → Σ (Trie ℕ (inside (num 2) (beside (num 1) (num 1)))) (Memoizes tfun))
---test = get′ empty (Fin.suc Fin.zero , inj₁ zero)
-
---test2 : proj₁ (proj₂ test) ≡ nest (table (empty Vec.∷ both (table (3 Vec.∷ Vec.[])) empty Vec.∷ Vec.[]))
---test2 = refl
-
 ```
-
-
 

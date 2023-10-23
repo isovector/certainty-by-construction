@@ -492,6 +492,20 @@ To illustrate using negation in the real world, let's prove a claim made back in
 @sec:identities: that there is no left-identity for the monus operation
 `def:_∸_`. First, let's import it.
 
+
+Hidden
+
+:   ```agda
+open import Data.Empty
+  using (⊥)
+    ```
+
+:   ```agda
+open import Relation.Binary.PropositionalEquality
+  using (_≢_)
+    ```
+
+
 ```agda
 open import Relation.Nullary
   using (¬_)
@@ -594,13 +608,9 @@ More preferable would be a type with slightly more structure, corresponding to a
   data Dec {ℓ : Level} (P : Set ℓ) : Set ℓ where
     yes  :    P → Dec P
     no   : ¬  P → Dec P
+  -- FIX
 ```
 
-Hidden
-
-:   ```agda
--- fix bind
-    ```
 
 The type `bind:P:Dec P` state that either `P` definitely holds, or that it
 definitely *doesn't* hold. Of course, only one of these can ever be true at
@@ -1386,9 +1396,10 @@ simply massaging all six of the refutations in the recursive case:
                (s≤s x>y)
 ```
 
-Working directly with `type:Tri`, rather than several invocations to `Decidable₂
-_<_` will dramatically reduce the proof effort necessary to define `def:insert` and
-show that it preserves `type:IsBST`, which we will do in the next section.
+Working directly with `type:Tri`, rather than several invocations to
+`type:Decidable₂ _<_` will dramatically reduce the proof effort necessary to
+define `def:insert` and show that it preserves `type:IsBST`, which we will do in
+the next section.
 
 
 ## Insertion into BSTs

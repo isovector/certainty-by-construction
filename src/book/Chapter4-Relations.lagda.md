@@ -522,10 +522,12 @@ Hidden
   -- fix bind
     ```
 
+-- TODO(sandy): env for footgun??
+
 
 Footgun
 
-:   Notice that in the definition of [1](Functional) we have given the resulting
+:   Notice that in the definition of [1](Ann) we have given the resulting
     `type:Level` as `_`---asking Agda to do the work of inferring it for us. It
     gets correctly inferred as `bind:a b ℓ:a ⊔ b ⊔ ℓ`, but due to a misfeature
     in how Agda handles `keyword:variable`s, we are unable to write this for
