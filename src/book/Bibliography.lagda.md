@@ -1,0 +1,10 @@
+---
+nocite: |
+  @*
+...
+
+# Bibliography {-}
+
+::: {#refs}
+:::
+

@@ -7,6 +7,7 @@ PANDOC_OPTS := -F pandoc-crossref \
                --from markdown+fancy_lists+raw_tex \
                --tab-stop=100 \
                --no-highlight \
+               --bibliography=bibliography.bib \
                --top-level-division=part
 
 PANDOC_PDF_OPTS := --from latex+raw_tex \
@@ -35,7 +36,8 @@ ALL_CHAPTERS := Chapter00-preface \
                 Chapter7-Structures \
                 Chapter8-Isomorphisms \
                 Chapter9-ProgramOptimization \
-                Appendix1-Ring-Solving
+                Appendix1-Ring-Solving \
+                Bibliography
 
 ALL_LITERATE_AGDA := $(patsubst %,src/book/%.lagda.md,$(ALL_CHAPTERS))
 ALL_LAGDA_TEX := $(patsubst src/book/%.lagda.md,build/tex/agda/%.lagda.tex,$(ALL_LITERATE_AGDA))
