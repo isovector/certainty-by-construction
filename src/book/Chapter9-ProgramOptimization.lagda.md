@@ -626,6 +626,9 @@ get′ {sh = num x} {f = f} emptyM a =
    in lookup t a , table t , tableM
 ```
 
+Note, as you look through the remainder of the cases, that this is the only case
+in which we evaluate `f`.
+
 If instead we'd like to lookup a value in an empty `ctor:both` trie, we can
 branch on which sub-trie we're looking at. This sub-trie is also empty, but will
 recursively find the right answer, returning us a minimally-filled in trie,
@@ -641,8 +644,9 @@ get′ {sh = beside m n} emptyM (inj₂ y)
 ... | b , t₂  , memo = b , both empty t₂  , bothM emptyM memo
 ```
 
-In the last `ctor:emptyM` case, we are looking to build a `ctor:nest` trie. This
-is the same as replacing a branch of the empty-everywhere `subf`:
+The only other case in which we might be looking at a `ctor:emptyM` is when we
+are looking to build a `ctor:nest` trie. This is the same as replacing a branch
+of the empty-everywhere `subf`:
 
 ```agda
 get′ {sh = inside m n} {f = f} emptyM (x , y)
@@ -675,8 +679,10 @@ get′ {sh = beside m n} (bothM l r) (inj₂ y)
 In the last case, we need to look inside an existent `ctor:nestM` trie, which
 means looking at its `subf` function, and then recursively calling `def:get′` on
 what we find. Care must be taken to subsequently `def:replace` the sub-trie we
-found (although, rather amazingly, failing to call `def:replace` will prevent
-the program from typechecking!)
+found:[^wont-typecheck]
+
+[^wont-typecheck]: Although, rather amazingly, failing to call `def:replace`
+  will prevent the program from typechecking!
 
 ```agda
 get′ {sh = inside m n} (nestM subf) (x , y)
@@ -685,6 +691,13 @@ get′ {sh = inside m n} (nestM subf) (x , y)
   with get′ sub-mem y
 ... | b , _ , _ = b , replace x sub-mem subf
 ```
+
+And we're done! We've got a satisfactory implementation of `def:get′` that
+certainly seems to work! While we have good guarantees by the fact that
+`def:get′` operates over `type:MemoTrie`s, an outside observer might not be as
+impressed with our handiwork as we are. To convince any potential naysayers, we
+can also show `def:get′-is-fn`, which shows that `def:get′` and the
+function-being-memoized are extensionally equal:
 
 ```agda
 get′-is-fn
@@ -698,17 +711,41 @@ get′-is-fn {sh = inside _ _}  emptyM (x , y)    = get′-is-fn emptyM y
 get′-is-fn {sh = num _}       tableM x          = lookup∘tabulate _ x
 get′-is-fn {sh = beside _ _}  (bothM t₁ _) (inj₁  x) = get′-is-fn t₁  x
 get′-is-fn {sh = beside _ _}  (bothM _ t₂) (inj₂  y) = get′-is-fn t₂  y
-get′-is-fn {sh = inside _ _}  (nestM subf) (x , y)    = get′-is-fn (proj₂ (subf x)) y
+get′-is-fn {sh = inside _ _}  (nestM subf) (x , y)
+  = get′-is-fn (proj₂ (subf x)) y
+```
 
+
+## Wrapping It All Up
+
+Our machinery so far has all operated over this weird function out of indices of
+our `type:Shape`---but that's a poor interface for anyone who has a real
+function they'd like to memoize. All that remains is for us to package up our
+memoization code into something more readily usable.
+
+The trick is we'll take a `type:Shape`, the function we'd like to memoize, and
+a proof that its domain has the same size as the `type:Shape`. From there, we
+can run the isomorphism gauntlet to define a function more amenable to operating
+with our memoization machinery:
+
+```agda
 module _ {A : Set} {B : Set ℓ} (sh : Shape)
+         (f : A → B)
          (sized : prop-setoid A Has ∣ sh ∣ Elements)
-         (f : A → B) where
-  A≅Ix : prop-setoid A ≅ prop-setoid (Ix sh)
-  A≅Ix = fin-iso sized (shape-fin sh)
+         where
 
   private
-    f′ = f ∘ Iso.from (A≅Ix)
+    A≅Ix : prop-setoid A ≅ prop-setoid (Ix sh)
+    A≅Ix = fin-iso sized (shape-fin sh)
 
+    f′ : Ix sh → B
+    f′ = f ∘ Iso.from A≅Ix
+```
+
+And finally, we can give an implementation of `def:get` with a much nicer
+signature:
+
+```agda
   Memoized : Set ℓ
   Memoized = MemoTrie f′
 
