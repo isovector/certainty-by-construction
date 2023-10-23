@@ -339,18 +339,10 @@ $endif$
 
 \usepackage[tikz]{bclogo}
 
-% \newtcblisting{AgdaInfo}{ breakable, enhanced%
-%                         , colframe=blue!30!black, title={Info Window}%
-%                         , boxed title style={sharp corners}, left=3mm, sharp corners%
-%                         , attach boxed title to top left={yshift*=-\tcboxedtitleheight}%
-%                         , listing options={columns=fullflexible, breaklines=true, keepspaces=true}%
-%                         , listing only%
-%                         }
+\newcommand{\BookEnv}[3]{\newenvironment{#1}{\begin{tcolorbox}[breakable, left=2.5mm, right=3mm, top=4mm, bottom=0mm, skin=enhancedmiddle, colframe=white, title={\color{black}#2\quad{}\impact{#3}}]\color{black}}{\end{tcolorbox}}}
 
-% \newenvironment{AgdaInfo}{\smallskip\begin{bclogo}[arrondi=0.5,logo={\LARGE\Info},barre=none,tailleOndu=1.5,noborder=true,couleurBarre=gray]{\impact{Info Window}}}{\end{bclogo}}
-
-\newenvironment{AgdaInfo}{\begin{tcolorbox}[breakable, left=2.5mm, right=3mm, top=4mm, bottom=0mm,
-skin=enhancedmiddle, colframe=white, title={\color{black}\Info\quad{}\impact{INFO WINDOW}}]\color{black}}{\end{tcolorbox}}
+\BookEnv{AgdaInfo}{\Info}{INFO WINDOW}
+\BookEnv{Footgun}{\Radioactivity}{CAUTION}
 
 
 \newfontfamily{\impact}{SofiaSansCondensed-Medium}

@@ -522,8 +522,6 @@ Hidden
   -- fix bind
     ```
 
--- TODO(sandy): env for footgun??
-
 
 Footgun
 
