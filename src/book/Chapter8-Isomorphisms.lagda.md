@@ -155,13 +155,12 @@ count `ctor:zero`!
 To illustrate that this all works, we can give the five values of `Fin 5`:
 
 ```agda
-  module Examples where
-    0f 1f 2f 3f 4f : Fin 5
-    0f = zero
-    1f = suc zero
-    2f = suc (suc zero)
-    3f = suc (suc (suc zero))
-    4f = suc (suc (suc (suc zero)))
+  0f 1f 2f 3f 4f : Fin 5
+  0f = zero
+  1f = suc zero
+  2f = suc (suc zero)
+  3f = suc (suc (suc zero))
+  4f = suc (suc (suc (suc zero)))
 ```
 
 In an attempt to continue the pattern, we can try:
@@ -188,12 +187,53 @@ the process:
   toℕ (suc x)  = ℕ.suc (toℕ x)
 ```
 
+We can always modify a `type:Fin` by interpreting it as a larger `type:Fin`, as
+in `def:inject+`:
+
+```agda
+  inject+ : {m : ℕ} → (n : ℕ) → Fin m → Fin (m + n)
+  inject+ n zero = zero
+  inject+ n (suc x) = suc (inject+ n x)
+```
+
+A similar function, with a similar type, is `def:raise`, which increments the
+*value* of the `type:Fin`, rather than just the *bounds*:
+
+```agda
+  raise : {n : ℕ} → (m : ℕ) → Fin n → Fin (m + n)
+  raise zero     x = x
+  raise (suc m)  x = suc (raise m x)
+```
+
+The distinction between `def:inject+` and `def:raise` is subtle, but we can get
+a feel for the difference between the two by example. Compare
+
+```agda
+  inject-2f : Fin 7
+  inject-2f = inject+ 2 2f
+
+  _ : inject-2f ≡ suc (suc zero)
+  _ = refl
+```
+
+against
+
+```agda
+  raise-2f : Fin 7
+  raise-2f = raise 2 2f
+
+  _ : raise-2f ≡ suc (suc (suc (suc zero)))
+  _ = refl
+```
+
+-- TODO(sandy): a bit abrupt
+
 As usual, rather than giving our own definition for `type:Fin`, we will instead
 import it from the standard library:
 
 ```agda
 open import Data.Fin
-  using (Fin; zero; suc)
+  using (Fin; zero; suc; inject+; raise)
 ```
 
 
@@ -1020,9 +1060,6 @@ sum type, we can show this "reinterpretation" of a sum of two `type:Fin`s via
 `def:join`.
 
 ```agda
-  -- TODO(sandy): can we move these into fin?
-  open Data.Fin using (inject+; raise)
-
   module Definition-Join-SplitAt where
     join : Fin m ⊎ Fin n → Fin (m + n)
     join {n = n} (inj₁ x) = inject+ n x

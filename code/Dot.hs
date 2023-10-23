@@ -80,7 +80,6 @@ compile lbl = cluster (Just lbl) . toDot . Beside . go
           me <- toDot ctor
           for_ ns $ addEdge me
           pure me
-        -- TODO(sandy): bug. this should have a type box
         SList es -> pure $ toDot $ fmap showType es
 
 showType :: Either String Metavar -> String
