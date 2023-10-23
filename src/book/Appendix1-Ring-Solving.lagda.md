@@ -72,14 +72,15 @@ solver.*
 
 ## Rings
 
-The ring solver is a general purpose tool for automatically reasoning about
-rings. *Rings* are algebraic structures which generalize the relationships
-between addition and multiplication. A ring has an associative, commutative
-binary operation called "addition" and an associative, commutative binary
-operation called "multiplication." These operations need not correspond in any
-semantic way to the things we think of as being addition and multiplication,
-merely it's just they need to properly fit into the "ecosystem niche" that
-regular addition and multiplication do.
+The ring solver (presented here as a derivation of @kidney_automatically_2019)
+is a general purpose tool for automatically reasoning about rings. *Rings* are
+algebraic structures which generalize the relationships between addition and
+multiplication. A ring has an associative, commutative binary operation called
+"addition" and an associative, commutative binary operation called
+"multiplication." These operations need not correspond in any semantic way to
+the things we think of as being addition and multiplication, merely it's just
+they need to properly fit into the "ecosystem niche" that regular addition and
+multiplication do.
 
 What does this mean? A ring must also have distinguished elements 0 and 1 that
 behave like you'd expect with respect to addition and multiplication, namely

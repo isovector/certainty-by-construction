@@ -16,7 +16,10 @@ our gaze towards a difficult problem in computing---dynamic programming---and
 see how our new theoretical understanding completely eliminates the challenges.
 Since dynamic programming often improves algorithmic complexity asymptotically,
 solving it is therefore equivalent to program optimization, and doing it
-automatically demonstrates a total understanding of the problem space.
+automatically demonstrates a total understanding of the problem space. This is
+by no means a new idea, having first been done by @hinze_memo_2000, but we now
+have enough comprehension to be able to understand (and prove!) where exactly
+good ideas like this come from.
 
 As is fitting for a capstone, this chapter has a great number of dependencies in
 concepts:
@@ -129,11 +132,14 @@ the problem, and our theory will guide us the rest of the way.
 
 Our first order of business is to find a means of describing our desired
 memoization strategy, which in turn means to find a way of describing the data
-type we will use to cache results. The data structures we end up building will
-all turn out to generalize *tries,* which is more commonly thought-of as a
-structure for representing collections of strings. We will leave the formal
-connection to tries unexplored in this text, but use the terminology
+type we will use to cache results.[^cite-conal] The data structures we end up
+building will all turn out to generalize *tries,* which is more commonly
+thought-of as a structure for representing collections of strings. We will leave
+the formal connection to tries unexplored in this text, but use the terminology
 interchangeably.
+
+[^cite-conal]: Generating classes of algorithms giving a "factoring" of the
+  shape of the problem is a trick I learned from @elliott_generic_2017.
 
 Note that while there are many variations on the theme, we are looking for the
 *building blocks* of these cache shapes. It is undeniable that we must be able to
@@ -373,9 +379,12 @@ huge ordeal.
 Better than jumping in immediately is to take a moment and think about what
 exactly a memoized trie looks like. Having done that work, we will then
 immortalize this thinking in a new type, which indexes a `type:Trie`, proving
-that trie does indeed memoize the particular function. Only after all of this
-work is done will we jump into implementation, using our types to guarantee
-correctness *by construction.*
+that trie does indeed memoize the particular function.[^cite-trick] Only after
+all of this work is done will we jump into implementation, using our types to
+guarantee correctness *by construction.*
+
+[^cite-trick]: This is a trick I learned from @scholz_parsing_2011, where you
+  show correctness with respect to an indexed type that provides semantics.
 
 First, we'll need some variables in scope:
 

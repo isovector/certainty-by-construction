@@ -188,12 +188,13 @@ one, this fact must be explicitly documented in the prose by way of an `import`.
 If later chapters require code or extend concepts from earlier ones, they can
 simply import the necessary pieces.
 
-We will also assume the presence of the Agda standard library, but will first
-derive the pieces we use from scratch before importing it. Agda's flexibility is
-outstanding, and common "magical" constructions in other languages---like
-numbers, booleans, and `if..then..else` syntax---are all defined by the
-standard library. Getting a chance to define them for ourselves will help build
-an appreciation that none of this stuff needs to be special.
+We will also assume the presence of the Agda standard library
+(@the_agda_community_agda_2023), but will first derive the pieces we use from
+scratch before importing it. Agda's flexibility is outstanding, and common
+"magical" constructions in other languages---like numbers, booleans, and
+`if..then..else` syntax---are all defined by the standard library. Getting a
+chance to define them for ourselves will help build an appreciation that none of
+this stuff needs to be special.
 
 
 ## A Note on Interaction
