@@ -4,23 +4,20 @@
 
 ```agda
 module Appendix1-Ring-Solving where
-
-open import Data.Nat using (ℕ)
 ```
 
-With a good deal of practice under our belt by this point, you might have
-noticed a frustrating fact about doing proofs in Agda: the most obvious proofs
-can be the ones which are tryingly tedious. These are the proofs that involve
-reasoning about arithmetic---which is a feat that we humans take for granted,
-having so much experience doing it. Agda's mechanical insistence that we spell
-out every step of the tedious process by hand is indeed a barrier to its
-adoption, but thankfully, there are workarounds for those willing to plumb
-deeper into the depths of the theory.
+You might have noticed something---do proofs in Agda is frustrating! It seems
+like proofs which are most obvious are also the ones that are tryingly tedious.
+These are the proofs that involve reasoning about arithmetic---which is a feat
+that we humans take for granted, having so much experience doing it. Agda's
+mechanical insistence that we spell out every step of the tedious process by
+hand is indeed a barrier to its adoption, but thankfully, there are workarounds
+for those willing to plumb deeper into the depths of the theory.
 
-Recall that when we were implementing `def:*-cong₂-mod`, that is, `def:cong` for
-modular arithmetic, we built a lot of setoid machinery and reasoning to avoid
-needing to solve these large proofs by hand. The particular problem here was
-attempting to solve the following equation:
+Recall that when we were implementing `def:*-cong₂-mod` in @sec:cong-mod, that
+is, `def:cong` for modular arithmetic, we built a lot of setoid machinery and
+reasoning to avoid needing to solve these large proofs by hand. The particular
+problem here was attempting to solve the following equation:
 
 $$
 ac + (cx + az + xzn) \times n = bd + (dy + bw + ywn) \times n
@@ -70,17 +67,55 @@ Thankfully, this is not a cost we often need to pay, thanks to Agda's *ring
 solver.*
 
 
+Prerequisites
+
+:   ```agda
+open import Chapter2-Numbers
+  using (ℕ; zero; suc)
+    ```
+
+:   ```agda
+open import Chapter3-Proofs
+  using (_≡_; module PropEq; module ≡-Reasoning)
+open PropEq
+  using (refl; sym; cong)
+    ```
+
+:   ```agda
+open import Chapter4-Relations
+  using (Level)
+    ```
+
+:   ```agda
+open import Chapter7-Structures
+  using (List; []; _∷_; _∘_)
+    ```
+
+:   ```agda
+open import Chapter8-Isomorphisms
+  using (Fin; zero; suc)
+    ```
+
+
+Hidden
+
+:     ```agda
+postulate
+  exercise-for-the-reader : {ℓ : Level} {A : Set ℓ} → A
+      ```
+
+
 ## Rings
 
-The ring solver (presented here as a derivation of @kidney_automatically_2019)
-is a general purpose tool for automatically reasoning about rings. *Rings* are
-algebraic structures which generalize the relationships between addition and
-multiplication. A ring has an associative, commutative binary operation called
-"addition" and an associative, commutative binary operation called
-"multiplication." These operations need not correspond in any semantic way to
-the things we think of as being addition and multiplication, merely it's just
-they need to properly fit into the "ecosystem niche" that regular addition and
-multiplication do.
+The *ring solver* (presented here as a derivative work of
+@kidney_automatically_2019) is a general purpose tool for automatically
+reasoning about rings. *Rings* are algebraic structures which generalize the
+relationships between addition and multiplication. A ring has an associative,
+commutative binary operation called "addition" and another associative,
+commutative binary operation called "multiplication." These operations need not
+correspond in any semantic way to the things we think of as being addition and
+multiplication, merely it's just they need to properly fit into the "ecosystem
+niche" that regular addition and multiplication do.
 
 What does this mean? A ring must also have distinguished elements 0 and 1 that
 behave like you'd expect with respect to addition and multiplication, namely
@@ -95,18 +130,18 @@ full *ring*, we require an additive inverse operation analogous to
 unary negation, with the property that for any $a$ we have $a + -a = 0$.
 
 By virtue of generalizing addition and multiplication, addition and
-multiplication themselves had better form a ring! And indeed they do. Note that
-however, the natural numbers don't have any additive inverses, and so they can
-at best be semirings. Integers, however, weaken this constraint, and are fully
-realizable as rings.
+multiplication themselves had better form a ring! And indeed they do, though
+that however, the natural numbers don't have any additive inverses, and so they
+can be, at best, semirings. Integers, however, weaken this constraint, and are
+therefore fully realizable as rings.
 
 Rings occupy an excellent space in the mathematical hierarchy, corresponding to
 the sort of algebraic reasoning that is required in grade-school, at least,
-that subset before fractions are introduced. Given our extreme familiarity with
+before fractions are introduced. Given our extreme intuitive understanding of
 arithmetic over rings, it is the sort of reasoning that comes up everywhere in
-mathematics. And what's better is that, given we expect children to be able to
-solve it, there exists an algorithm for determining the equivalence of two
-expressions over the same ring.
+mathematics. Better yet: since we expect children to be able to solve it, there
+must exist an algorithm for determining the equivalence of two expressions over
+the same ring.
 
 In this chapter, we will get a feel for using Agda's ring solver to tackle
 problems, and then dive in more deeply to see exactly how it works by
@@ -115,11 +150,11 @@ implementing our own version.
 
 ## Agda's Ring Solver
 
-Agda's standard library comes with a *ring solver*, which is a series of tools
+Agda's standard library comes with a ring solver, which is a series of tools
 for automatically solving equalities over rings. Of course, calling it a *ring*
 solver is a bit of a misnomer, since the ring solver works over semirings as
 well, due to a subtle weakening of required ring structure. However, these
-details are irrelevant to today's discussion; all you need to keep in mind is
+details are irrelevant to our discussion here; all you need to keep in mind is
 that the ring solver works over any commutative semiring in addition to rings
 themselves.
 
@@ -134,13 +169,9 @@ solver itself by subsequently opening `module:+-*-Solver`:
 module Example-Nat-Solver where
   open import Data.Nat.Solver
   open +-*-Solver
-```
 
-Of course, we'd like the naturals themselves in scope, so we have something to
-prove about:
-
-```agda
-  open import Data.Nat
+  open import Chapter2-Numbers
+    using (_+_; _*_)
 ```
 
 In our pen and paper example above, we did a lot of work to show the equality of
@@ -149,7 +180,6 @@ Let's prove this with the ring solver. We can start with the type, which already
 is quite gnarly:
 
 ```agda
-  open import Relation.Binary.PropositionalEquality
 
   lemma₁
       : (a c n x z : ℕ)
@@ -161,7 +191,7 @@ Inside of `module:+-*-Solver` is `def:solve`, which is our front-end for
 invoking the ring solver. The type of `def:solve` is a dependent nightmare, but
 we can give its arguments informally:
 
-1. `type:n : ℕ`: the number of variables that exist in the expression.
+1. `n :` `type:ℕ`: the number of variables that exist in the expression.
 2. A function from `n` variables to a *syntactic* representation of the
    expression you'd like solved.
 3. A proof that the two expressions have the same normal form. This is almost
@@ -187,25 +217,32 @@ Thus the full implementation of `def:lemma₁` is:
     ) refl
 ```
 
+
+Hidden
+
+:     ```agda
+-- FIX
+      ```
+
+
 It's certainly not the most beautiful sight to behold, but you must admit that
 it's much better than proving this tedious fact by hand.
 
-The syntactic equality term we must build in the big lambda here is a curious
-thing. What exactly is going on here? This happens to be a quirk of the
-implementation of the solver, but it's there for a good reason. Recall that our
-"usual" operations (that is, `def:_+_` and `def:_*_` and, in general values that
-work over `ℕ`) are computational objects; Agda will compute and reduce them if
-it is able to do so, and will make these rewrites regardless of what you
-actually write down.
+The syntactic equality term we must build here is a curious thing. What exactly
+is going on? This happens to be a quirk of the implementation of the solver, but
+it's there for a good reason. Recall that our "usual" operations (that is,
+`def:_+_` and `def:_*_` and, in general values that work over `ℕ`) are
+computational objects; Agda will compute and reduce them if it is able to do so,
+and will make these rewrites regardless of what you actually write down.
 
 This syntax tree is an annoying thing to write, but is necessary to help the
 ring solver know what it's trying to solve. Remember, just because we've written
-out this expression with full syntax here doesn't mean this is the term Agda is
-working on! Agda is free to expand definitional equalities, meaning it might
-have already reduced some of these additions and multiplications away!
+out this expression with full syntax here doesn't mean this is the *actual term*
+that Agda is working on! Agda is free to expand definitional equalities, meaning
+it might have already reduced some of these additions and multiplications away!
 
 But when you think about solving these sorts of equations on paper, what you're
-actually doing is working with the syntax, and not actually computing in any
+actually doing is *working with the syntax,* and not actually *computing* in any
 real sense. The algorithm to solve equations is to use a series of syntactic
 rewrite rules that allow us to move symbolic terms around, without ever caring
 about the computational properties of those symbolic terms.
@@ -214,8 +251,8 @@ Thus, the lambda we need to give to `def:solve` is a concession to this fact;
 we'd like Agda to prove, *symbolically,* that the two terms are equivalent,
 without requiring any computation of the underlying terms in order to do so. And
 in order to do so, we must explicitly tell Agda what the symbolic equation is,
-since all it has access is to is some stuck value that exists in the theory of
-Agda, rather than in the theory of the ring itself.
+since all it has access is to is some stuck value that exists in Agda's
+meta-theory, rather than in the theory of the ring itself.
 
 This duplication between the Agda expression of the term and the symbolic
 version of the same is regrettable. Are we doomed to write them both, every
@@ -230,8 +267,8 @@ programs to access the typechecker. This is a tremendous (if fragile)
 superpower, and allows programmers to do all sorts of unholy things. One such
 capability is to use the type currently expected by Agda in order to synthesize
 values at compile time. Another, is to syntactically inspect an Agda expression
-at compile time. Together, these features can be used to automatically derive
-the symbolic form required for doing ring solving.
+(or type) at compile time. Together, these features can be used to automatically
+derive the symbolic form required for doing ring solving.
 
 To illustrate broadly how this works, we can write code of this form:
 
@@ -240,12 +277,13 @@ To illustrate broadly how this works, we can write code of this form:
     (a + x * n) + z * n
 ```
 
-Agda knows that the type of the hole must be `type:a + (x + z) * n ≡ (a + x * n)
-+ z * n`, and if we were to put a macro in place of the hole, that macro can
-inspect the type of the hole. It can then perform all of the necessary
-replacements (turning `def:_+_` into `def:_:+_` and so on) in order to write the
-ring-solving symbolic lambda for us. All that is left to do is to tell the
-solver which variables we'd like to use, by sticking them in a list.
+Agda knows that the type of the hole must be `a` `def:+` `(x` `def:+` `z)`
+`def:*` `n` `type:≡` `(a` `def:+` `x` `def:*` `n`) `def:+` `z` `def:*` `n`, and
+if we were to put a macro in place of the hole, that macro can inspect the type
+of the hole. It can then perform all of the necessary replacements (turning
+`def:_+_` into `def:_:+_` and so on) in order to write the ring-solving symbolic
+lambda for us. All that is left to do is to tell the solver which variables we'd
+like to use, by sticking them in a list.
 
 We can demonstrate all of this by implementing `def:≈-trans` again. This time,
 the tactical ring solver is found in `module:Data.Nat.Tactic.RingSolver`, and
@@ -254,15 +292,13 @@ requires lists to be in scope as well:
 ```agda
 module Example-Tactical where
   open import Data.Nat.Tactic.RingSolver
-  open import Data.List
-    using ([]; _∷_)
 ```
 
 We can then show `def:≈-trans`:
 
 ```agda
-  open import Data.Nat
-  open import Relation.Binary.PropositionalEquality
+  open import Chapter2-Numbers
+    using (_+_; _*_)
 
   ≈-trans
       : (a b c n x y z w : ℕ)
@@ -283,7 +319,6 @@ The `macro:solve` macro only works for terms of type `type:x ≡ y`, which means
 it can't be used to show parameterized properties, like `def:lemma₁` earlier.
 For that, we can instead invoke `macro:solve-∀`:
 
-
 ```agda
   lemma₁
       : (a c n x z : ℕ)
@@ -294,16 +329,11 @@ For that, we can instead invoke `macro:solve-∀`:
 
 As you can see, ring solving is an extremely powerful technique, capable of
 automating away hours of tedious proof work. But where does these magical powers
-come from? How can this possibly work? We will use the remainder of this chapter
-to explore that question, implementing our own ring solver in the process.
+come from? How can this possibly work? Let's implement our own ring solver to
+explore that question.
 
 
 ## The Pen and Paper Algorithm
-
-The question is---how does any of this work? Is it built-in to the compiler,
-or is it something we could have written for ourselves? Fascinatingly, the
-answer is the latter. It's the sort of thing we can build for ourselves, which
-we will explore now.
 
 An interesting insight into how to solve this problem is to use the analogy of
 solving a maze. Not not the corn-maze sort, but the variety that comes on the
@@ -368,10 +398,10 @@ ring equality to be:
 2. Compare the canonical forms.
 3. If the canonical forms match, compose the earlier proofs.
 
-This is a powerful, widely-useful technique, and you would do well to add it to
-your toolbox. Let's stop for a quick illustration of the idea in action. We'd
-like to prove that $(x + 1)(x - 1)$ is equal to $x(1 + x) + 1 - x - 2$. The first step
-is to reduce each to normal form:
+This is a powerful, widely-useful technique, so stick it in your belt! Let's
+stop for a quick illustration of the idea in action. We'd like to prove that $(x
++ 1)(x - 1)$ is equal to $x(1 + x) + 1 - x - 2$. The first step is to reduce
+each to normal form:
 
 $$
 \begin{aligned}
@@ -479,12 +509,12 @@ $$
 $$
 
 in *Horner normal form* (henceforth HNF.) Here, every expression in HNF is
-either a constant `𝔸 → HNF`, or it is of the form `HNF → 𝔸 → HNF`. We can
-express this as a data type:
+either a constant `𝔸 →` `type:HNF`, or it is of the form `type:HNF` `→ 𝔸 →`
+`type:HNF`. We can express this as a data type:
 
 ```agda
-module Sandbox-Univariate-HNF (𝔸 : Set) where
-  data HNF : Set where
+module Sandbox-Univariate-HNF {ℓ : Level} (𝔸 : Set ℓ) where
+  data HNF : Set ℓ where
     coeff : 𝔸 → HNF
     _*x+_ : HNF → 𝔸 → HNF
 ```
@@ -496,7 +526,7 @@ zero for its next power:
 
 ```agda
   postulate
-    0# : 𝔸
+    0# : 𝔸  -- ! 1
 
   nonunique : HNF → HNF
   nonunique (coeff a) = coeff 0# *x+ a
@@ -508,6 +538,12 @@ Agda's real ring solver performs a normalization stage after every computation
 to remove any highest-order zero powers, but this adds a great deal of
 complexity. Since we are only putting together a toy example, we will not
 concern ourselves with this problem, but do keep in mind its presence.
+
+Note that at [1](Ann), we have postulated `postulate:0#`; this is only because
+we haven't formally defined rings or semirings or any of the actual structure we
+will need to build a ring solver. So instead, we will simply postulate any piece
+we need, and you should treat this entire discussion as a sketch of the
+technique. The motivated reader is encouraged to fill in all the gaps!
 
 Horner normal form is desirable for computation since it gives rise to an
 interpretation into `𝔸` directly, via:
@@ -551,7 +587,7 @@ we would like eventual computational properties, we will add the bare minimum
 structure on `𝔸` as parameters to our module.
 
 ```agda
-module Sandbox-RingSolver {𝔸 : Set}
+module Sandbox-RingSolver {ℓ : Level} {𝔸 : Set ℓ}
     (0# 1# : 𝔸)
     (_+_ _*_ : 𝔸 → 𝔸 → 𝔸)
     -- TODO(sandy): explain this let binding
@@ -562,9 +598,7 @@ module Sandbox-RingSolver {𝔸 : Set}
 We will require many algebraic definitions to be in scope:
 
 ```agda
-  open import Relation.Binary.PropositionalEquality
-
-  module _ {A : Set} where
+  module _ {A : Set ℓ} where
     open import Algebra.Definitions {A = A} _≡_ public
 ```
 
@@ -575,13 +609,10 @@ used `HNF` we now use `HNF (suc n)`, and anywhere we used a scalar `𝔸` we
 instead use `HNF n`.
 
 ```agda
-  open import Data.Nat
-    using (ℕ; zero; suc)
-
   private variable
     n : ℕ
 
-  data HNF : ℕ → Set where
+  data HNF : ℕ → Set ℓ where
     const : 𝔸 → HNF zero
     coeff : HNF n → HNF (suc n)
     _*x+_ : HNF (suc n) → HNF n → HNF (suc n)
@@ -600,21 +631,21 @@ polynomials! For example, we would write $a^2+ab+b^2$ as:
   a²+ab+b² : HNF 2
   a²+ab+b² =
     ( coeff (coeff (const 1#))
-        *x+  -- x = a
+        *x+  -- ! a
           coeff (const 1#)
-    ) *x+ (  -- x = a
+    ) *x+ (  -- ! a
       (coeff (const 1#)
-        *x+  -- x = b
+        *x+  -- ! b
           const 0#
-      ) *x+  -- x = b
+      ) *x+  -- ! b
           const 0#)
 ```
 
 Here, `ctor:_*x+_` refers both to $a$ and to $b$, depending on its type (which
-itself depends on the constructor's position in the tree.) As you can see, it is
-no great joy to construct `type:HNF` terms by hand! Thankfully, we won't need
-to, and will instead use `type:HNF` as a sort of "compilation target" for other
-operations.
+itself depends on the constructor's position in the tree.) We've annotated
+[a](Ann) and [b](Ann) here to help, but, as you can see, it is no great joy to
+construct `type:HNF` terms by hand! Thankfully, we won't need to, and will
+instead use `type:HNF` as a sort of "compilation target" for other operations.
 
 
 ## Building a Semiring over HNF
@@ -713,11 +744,6 @@ must take a mapping of variables to `𝔸`, which we can encode as a function `F
 n → 𝔸`. Thus, we have:
 
 ```agda
-  open import Function
-    using (_∘_)
-  open import Data.Fin
-    using (Fin; zero; suc)
-
   eval : (Fin n → 𝔸) → HNF n → 𝔸
   eval v (const a)  = a
   eval v (coeff a)  = eval (v ∘ suc) a
@@ -734,7 +760,7 @@ equivalent structure on the other.
 As a first example, we can give the type of nullary homomorphisms:
 
 ```agda
-  Homomorphism₀ : HNF n → 𝔸 → Set
+  Homomorphism₀ : HNF n → 𝔸 → Set ℓ
   Homomorphism₀ h a =
     ∀ v → eval v h ≡ a
 ```
@@ -848,38 +874,22 @@ from `def:_⊕_` to `def:_+_`, and another between `def:_⊗_`  and `def:_*_`.
 First, we can give the definition of a binary homomorphism:
 
 ```agda
-  Homomorphism₂ : (HNF n → HNF n → HNF n) → (𝔸 → 𝔸 → 𝔸) → Set
+  Homomorphism₂ : (HNF n → HNF n → HNF n) → (𝔸 → 𝔸 → 𝔸) → Set ℓ
   Homomorphism₂ f g =
     ∀ v x₁ x₂ → eval v (f x₁ x₂) ≡ g (eval v x₁) (eval v x₂)
 ```
 
-The details of these two homomorphisms are quite cursed. As my friend says,
-"solvers are fun because they condense all the suffering into one place." The
-idea is that we will take on all the pain of solving ring problems, and tackle
-them once and for all. The result is hairy, to say the least. For the sake of
-this book's length, we will not prove these two homomorphisms in their full
-glory, instead we will sketch them out and leave the details for a particularly
-motivated reader. To that extent, we will introduce two postulates which we will
-use to hint the next step to the reader:
+The details of these two homomorphisms are quite cursed. As my Reed Mullanix
+says, "solvers are fun because they condense all the suffering into one place."
+The idea is that we will take on all the pain of solving ring problems, and
+tackle them once and for all. The result is hairy, to say the least. For the
+sake of this book's length, we will not prove these two homomorphisms in their
+full glory, instead we will sketch them out and leave the details for a
+particularly motivated reader.
 
-```agda
-  postulate
-    …algebra… : {x y : 𝔸} → x ≡ y
-    …via… : {B : Set} {x y : 𝔸} → B → x ≡ y
-```
-
-Here, `def:…algebra…` suggests the next step follows by standard algebraic
-tricks such as commutativity, associativity, or removing identities. Ironically,
-this is the step that we'd expect a ring solver to be able to tackle for us.
-
-Alternatively, we will use `def:…via…` to suggest that a `def:cong` needs to be
-applied in order to massage the given proof term into the right place. Since
-these expressions are exceptionally large, most of the work on these steps is
-merely the construction of the `def:cong` target.
-
-Anyway, in order to show the homomorphism for addition, we will require
-`def:+-assoc`, which we again postulate, but in a real solver should instead be
-brought in as part of the proof that `𝔸` is a (semi)ring in the first place.
+In order to show the homomorphism for addition, we will require `def:+-assoc`,
+which we again postulate, but in a real solver should instead be brought in as
+part of the proof that `𝔸` is a (semi)ring in the first place.
 
 ```agda
   postulate
@@ -888,25 +898,11 @@ brought in as part of the proof that `𝔸` is a (semi)ring in the first place.
   eval-⊕ : Homomorphism₂ {n} _⊕_ _+_
   eval-⊕ f (const a) (const b) = refl
   eval-⊕ f (coeff a) (coeff b) = eval-⊕ (f ∘ suc) a b
-  eval-⊕ f (coeff a) (b *x+ c)
-    rewrite eval-⊕ (f ∘ suc) a c = begin
-      f zero * eval f b + eval f' a + eval f' c  ≡⟨ …algebra… ⟩
-      eval f' a + f zero * eval f b + eval f' c  ∎
-    where f' = f ∘ suc
+  eval-⊕ f (coeff a) (b *x+ c) = exercise-for-the-reader
   eval-⊕ f (a *x+ b) (coeff c)
     rewrite eval-⊕ (f ∘ suc) b c =
       sym (+-assoc _ _ _)
-  eval-⊕ f (a *x+ b) (c *x+ d)
-    rewrite eval-⊕ f a c
-    rewrite eval-⊕ (f ∘ suc) b d =
-      begin
-        f zero * (eval f a + eval f c)
-          + (eval f' b + eval f' d)
-      ≡⟨ …algebra… ⟩
-        (f zero * eval f a + eval f' b)
-          + f zero * eval f c + eval f' d
-      ∎
-    where f' = f ∘ suc
+  eval-⊕ f (a *x+ b) (c *x+ d) = exercise-for-the-reader
 ```
 
 The real pain in writing a ring solver is in the homomorphism for
@@ -921,30 +917,8 @@ cases we need to look at, the first four of which are rather reasonable:
   eval-⊗ : Homomorphism₂ {n} _⊗_ _*_
   eval-⊗ f (const a) (const b) = refl
   eval-⊗ f (coeff a) (coeff b) = eval-⊗ (f ∘ suc) a b
-  eval-⊗ f (coeff a) (b *x+ c)
-    rewrite eval-⊗ f (coeff a) b
-    rewrite eval-⊗ (f ∘ suc) a c =
-      begin
-        f zero * eval f' a * eval f b + eval f' a * eval f' c
-      ≡⟨ …algebra… ⟩
-        eval f' a * f zero * eval f b + eval f' a * eval f' c
-      ≡⟨ sym (*-distribˡ-+ _ _ _) ⟩
-        eval f' a * (f zero * eval f b + eval f' c)
-      ∎
-    where
-      f' = f ∘ suc
-  eval-⊗ f (a *x+ b) (coeff c)
-    rewrite eval-⊗ (f ∘ suc) b c
-    rewrite eval-⊗ f a (coeff c) =
-      begin
-        f zero * eval f a * eval f' c + eval f' b * eval f' c
-      ≡⟨ …algebra… ⟩
-        (f zero * eval f a) * eval f' c + eval f' b * eval f' c
-      ≡⟨ sym (*-distribʳ-+ _ _ _) ⟩
-        (f zero * eval f a + eval f' b) * eval f' c
-      ∎
-    where
-      f' = f ∘ suc
+  eval-⊗ f (coeff a) (b *x+ c) = exercise-for-the-reader
+  eval-⊗ f (a *x+ b) (coeff c) = exercise-for-the-reader
 ```
 
 The final case, which multiplies `ctor:_*x+_` against `ctor:_*x+_`, is an
@@ -954,59 +928,11 @@ itself four times. Every instance of these uses requires an invocation of the
 corresponding homomorphism, `def:cong`ed into the right place, and then
 algebraically manipulated so that like terms can be grouped. This proof is no
 laughing matter; remember, the ring solver coalesces all of the pain into one
-place, and this is where it has accumulated.
+place, and this is where it has accumulated. Thankfully, that's your problem,
+not mine:
 
 ```agda
-  eval-⊗ f (a *x+ b) (c *x+ d) =
-    let f' = f ∘ suc
-        ↓ = eval f
-        ↓' = eval f'
-        v = f zero in
-    begin
-      v * (↓ (x* (a ⊗ c) ⊕ a ⊗ coeff d ⊕ c ⊗ coeff b))
-        + ↓' (↪ 0# ⊕ ↪ 0# ⊕ b ⊗ d)
-    ≡⟨ …algebra… ⟩
-      v * (↓ (x* (a ⊗ c) ⊕ a ⊗ coeff d ⊕ c ⊗ coeff b))
-        + ↓' (b ⊗ d)
-    ≡⟨ …via… (eval-⊕ f) ⟩
-      v * (↓ (x* (a ⊗ c)) + ↓ (a ⊗ coeff d ⊕ c ⊗ coeff b))
-        + ↓' (b ⊗ d)
-    ≡⟨ …via… (eval-⊕ f) ⟩
-      v * (↓ (x* (a ⊗ c)) + ↓ (a ⊗ coeff d) + ↓ (c ⊗ coeff b))
-        + ↓' (b ⊗ d)
-    ≡⟨ …via… (eval-⊗ f a (coeff d)) ⟩
-      v * (↓ (x* (a ⊗ c)) + ↓ a * ↓ (coeff d)
-            + ↓ (c ⊗ coeff b))
-        + ↓' (b ⊗ d)
-    ≡⟨ …via… (eval-coeff f d) ⟩
-      v * (↓ (x* (a ⊗ c)) + ↓ a * ↓' d + ↓ (c ⊗ coeff b))
-        + ↓' (b ⊗ d)
-    ≡⟨ …algebra… ⟩ -- …via… (eval-⊗ f c (coeff b)) ⟩
-      v * (↓ (x* (a ⊗ c)) + ↓ a * ↓' d + ↓ c * ↓ (coeff b))
-        + ↓' (b ⊗ d)
-    ≡⟨ …via… (eval-coeff f b) ⟩
-      v * (↓ (x* (a ⊗ c)) + ↓ a * ↓' d + ↓ c * ↓' b)
-        + ↓' (b ⊗ d)
-    ≡⟨ …via… (eval-⊗ f' b d) ⟩
-      v * (↓ (x* (a ⊗ c)) + ↓ a * ↓' d + ↓ c * ↓' b)
-        + ↓' b * ↓' d
-    ≡⟨ …via… (eval-x* f (a ⊗ c)) ⟩
-      v * (v * ↓ (a ⊗ c) + ↓ a * ↓' d + ↓ c * ↓' b)
-        + ↓' b * ↓' d
-    ≡⟨ …via… (eval-⊗ f a c) ⟩
-      v * (v * ↓ a * ↓ c + ↓ a * ↓' d + ↓ c * ↓' b)
-        + ↓' b * ↓' d
-    ≡⟨ …algebra… ⟩
-      ((v * ↓ a) * (v * ↓ c) + ↓' b * (v * ↓ c))
-        + (v * ↓ a * ↓' d + ↓' b * ↓' d)
-    ≡⟨ …via… *-distribʳ-+ ⟩
-      ((v * ↓ a) * (v * ↓ c) + ↓' b * (v * ↓ c))
-        + (v * ↓ a + ↓' b) * ↓' d
-    ≡⟨ …via… *-distribʳ-+ ⟩
-      (v * ↓ a + ↓' b) * (v * ↓ c) + (v * ↓ a + ↓' b) * ↓' d
-    ≡⟨ sym (*-distribˡ-+ _ _ _) ⟩
-      (v * ↓ a + ↓' b) * (v * ↓ c + ↓' d)
-    ∎
+  eval-⊗ f (a *x+ b) (c *x+ d) = exercise-for-the-reader
 ```
 
 ## Syntax
@@ -1021,14 +947,16 @@ slog proving the multiplication homomorphism.
 Our syntax for semirings is simple and unassuming:
 
 ```agda
-  data Syn (n : ℕ) : Set where
+  private variable
+    ℓ₁ : Level
+
+  data Syn (n : ℕ) : Set ℓ where
     var   : Fin n → Syn n
     con   : 𝔸 → Syn n
     _:+_  : Syn n → Syn n → Syn n
     _:*_  : Syn n → Syn n → Syn n
-  -- TODO(sandy): should I be infixl?
-  infixr 5 _:+_
-  infixr 6 _:*_
+  infixl 5 _:+_
+  infixl 6 _:*_
 ```
 
 Additionally, we can assign semantics for `type:Syn`, which, given a mapping for
@@ -1036,10 +964,10 @@ the variables, produces an `𝔸`.
 
 ```agda
   ⟦_⟧ : Syn n → (Fin n → 𝔸) → 𝔸
-  ⟦ var v ⟧   vs = vs v
-  ⟦ con c ⟧   vs = c
-  ⟦ x :+ y ⟧  vs = ⟦ x ⟧ vs + ⟦ y ⟧ vs
-  ⟦ x :* y ⟧  vs = ⟦ x ⟧ vs * ⟦ y ⟧ vs
+  ⟦ var   v ⟧ vs = vs v
+  ⟦ con   c ⟧ vs = c
+  ⟦ x :+  y ⟧ vs = ⟦ x ⟧ vs + ⟦ y ⟧ vs
+  ⟦ x :*  y ⟧ vs = ⟦ x ⟧ vs * ⟦ y ⟧ vs
 ```
 
 However, this is not the only interpretation we can give for `type:Syn`. There
@@ -1145,7 +1073,7 @@ a non-dependent version of this type is straightforward:
   open import Data.Vec
     using (Vec; []; _∷_; lookup; map)
 
-  N-ary′⅋ : ℕ → Set → Set → Set
+  N-ary′⅋ : ℕ → Set ℓ₁ → Set ℓ₁ → Set ℓ₁
   N-ary′⅋ zero     A B = B
   N-ary′⅋ (suc n)  A B = A → N-ary′⅋ n A B
 ```
@@ -1155,7 +1083,7 @@ accumulated in giving this type. Fixing the issue requires a little bit of
 brain-folding:
 
 ```agda
-  N-ary : (n : ℕ) → (A : Set) → (Vec A n → Set) → Set
+  N-ary : (n : ℕ) → (A : Set ℓ₁) → (Vec A n → Set ℓ₁) → Set ℓ₁
   N-ary zero     A B = B []
   N-ary (suc n)  A B = (a : A) → N-ary n A (B ∘ (a ∷_))
 ```
@@ -1165,7 +1093,7 @@ dependent ones, in which the argument is simply ignored. This gives us a
 "better" definition for `type:N-ary′`:
 
 ```agda
-  N-ary′ : ℕ → Set → Set → Set
+  N-ary′ : ℕ → Set ℓ₁ → Set ℓ₁ → Set ℓ₁
   N-ary′ n A B = N-ary n A (λ _ → B)
 ```
 
@@ -1178,11 +1106,11 @@ into an $n$-ary one:
 
 ```agda
   curryⁿ
-      : {n : ℕ} {A : Set} {B : Vec A n → Set}
+      : {n : ℕ} {A : Set ℓ₁} {B : Vec A n → Set ℓ₁}
       → ((v : Vec A n) → B v)
       → N-ary n A B
-  curryⁿ {zero}   x    = x []
-  curryⁿ {suc n}  x a  = curryⁿ (x ∘ (a ∷_))
+  curryⁿ {n = zero}   x    = x []
+  curryⁿ {n = suc n}  x a  = curryⁿ (x ∘ (a ∷_))
 ```
 
 As an inverse, we have `def_$ⁿ_`, which undoes the transformation made by
@@ -1191,11 +1119,11 @@ famous Haskell idiom where `_$_` is the function application operator.
 
 ```agda
   _$ⁿ_
-      : {n : ℕ} {A : Set} {B : Vec A n → Set}
+      : {n : ℕ} {A : Set ℓ₁} {B : Vec A n → Set ℓ₁}
       → N-ary n A B
       → ((v : Vec A n) → B v)
-  _$ⁿ_ {zero}   f []       = f
-  _$ⁿ_ {suc n}  f (x ∷ v)  = f x $ⁿ v
+  _$ⁿ_ {n = zero}   f []       = f
+  _$ⁿ_ {n = suc n}  f (x ∷ v)  = f x $ⁿ v
 ```
 
 `def:_$ⁿ_` and `def:curryⁿ` allow us to swap between an $n$-ary function---which
@@ -1213,7 +1141,7 @@ objects. Rather than going through the work of making a new type to do this for
 us, we can simply re-purpose `type:_×_` by giving it a new can of paint:
 
 ```agda
-  open import Data.Product
+  open import Chapter1-Agda
     using (_×_)
     renaming (_,_ to _:=_) public
 ```
@@ -1239,7 +1167,6 @@ And that's all, folks. We can now give a full-strength definition of
 `def:solve`, equivalent to the one in Agda's standard library:
 
 ```agda
-  -- TODO(sandy): lookup gives us a function from vec to fin
   solve
       : (n : ℕ)
       → (eq : N-ary′ n (Syn n) (Syn n × Syn n))

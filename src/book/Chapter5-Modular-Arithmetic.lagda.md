@@ -609,7 +609,7 @@ at a lower level than we'd prefer---we want to be thinking about modular
 arithmetic, not juggling equations!
 
 
-## Congruence of Multiplication
+## Congruence of Multiplication {#sec:cong-mod}
 
 Let's prove prove two more facts about modular arithmetic, the first in service
 of the second. We can show that modular multiplication by zero results in zero:
@@ -691,4 +691,9 @@ prove it holds on a function-by-function basis. There do exist extensions to
 Agda's type theory which allow us to upgrade equivalence to real,
 honest-to-goodness equality, but they are beyond the scope of this book, and are
 a major driving force in modern type theory research.
+
+
+## Automating Proofs
+
+-- TODO(sandy): maybe add a note in the proof about numbers chapter
 
