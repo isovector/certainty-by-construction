@@ -18,17 +18,17 @@ previously observed. Because different programming languages support different
 features and idioms, the imaginable shape of what programming *is* must be
 shaped by those languages we understand deeply.
 
-In a famous essay, "Beating the Averages," startup founder Paul Graham points
-out the so-called *Blub paradox.* This, Graham says, is the ordering of
-programming languages by powerfulness; a programmer who thinks in a
-middle-of-the-road language along this ordering (call it Blub) can identify less
-powerful languages, but not those which are more powerful. The idea rings true;
-one can arrange languages in power by the features they support, and
-subsequently check to see if a language supports all the features we feel to be
-important. If it doesn't, it must be less powerful. However, this technique
-doesn't work to identify more powerful languages---at best, you will see that
-the compared language supports all the features you're looking for, but you
-don't know enough to ask for more.
+In a famous essay, "Beating the Averages," @graham_beating_2001 points out the
+so-called *Blub paradox.* This, Graham says, is the ordering of programming
+languages by powerfulness; a programmer who thinks in a middle-of-the-road
+language along this ordering (call it Blub) can identify less powerful
+languages, but not those which are more powerful. The idea rings true; one can
+arrange languages in power by the features they support, and subsequently check
+to see if a language supports all the features we feel to be important. If it
+doesn't, it must be less powerful. However, this technique doesn't work to
+identify more powerful languages---at best, you will see that the compared
+language supports all the features you're looking for, but you don't know enough
+to ask for more.
 
 Quasi-formally, we can describe the Blub paradox as a semi-decision procedure.
 That is, given an ordering over programming languages (here, by their relative

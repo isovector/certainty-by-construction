@@ -1489,12 +1489,10 @@ We will now combine our free preorder with the preorder reasoning we built in
 @sec:preorder-reasoning to demonstrate actual paths through a social graph.
 
 Rather than incriminate any real group of humans, we can instead use the
-excellent early-noughties romantic comedy *About a Boy*[^aboutboy] as a case
-study. If you haven't seen the film, you should consider remedying that as soon
-as possible. Don't worry though, there are no spoilers here; it's safe to
-continue.
-
-[^aboutboy]: Nick Hornby and Peter Hedges. 2002. About a Boy, United Kingdom: Universal Pictures.
+excellent early-noughties romantic comedy *About a Boy* (@hedges_about_2002) as
+a case study. If you haven't seen the film, you should consider remedying that
+as soon as possible. Don't worry though, there are no spoilers here; it's safe
+to continue.
 
 Our first task is to to define the vertices of the social graph, which of
 course are the people involved:

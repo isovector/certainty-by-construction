@@ -1691,10 +1691,8 @@ discipline has taught us, and that is a notoriously difficult thing to do.
 ## An Intrinsic BST
 
 Constructing an intrinsic BST is not the most straightforward construction, but
-thankfully McBride[^cite-mcbride] has done the hard work for us---we will derive
+thankfully @mcbride_how_2014 has done the hard work for us and we will re-derive
 his solution here.
-
-[^cite-mcbride]: Conor Thomas McBride. 2014. How to keep your neighbours in order. SIGPLAN Not. 49, 9 (September 2014), 297–309. https://doi.org/10.1145/2692915.2628163
 
 In order to define an intrinsic binary search tree, we will proceed in two
 steps. First, we will define a BST indexed by its upper and lower bounds, which
