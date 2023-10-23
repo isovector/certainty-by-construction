@@ -152,8 +152,15 @@ data Shape : Set where
   num     : ℕ → Shape
   beside  : Shape → Shape → Shape
   inside  : Shape → Shape → Shape
--- FIX
 ```
+
+
+Hidden
+
+:     ```agda
+-- FIX
+      ```
+
 
 -- TODO(sandy): no longer suggestive
 
@@ -244,8 +251,15 @@ data Trie (B : Set ℓ) : Shape → Set ℓ where
   table  : {n : ℕ}        → Vec B n              → Trie B (num n)
   both   : {m n : Shape}  → Trie B m → Trie B n  → Trie B (beside m n)
   nest   : {m n : Shape}  → Trie (Trie B n) m    → Trie B (inside m n)  -- ! 2
--- FIX
 ```
+
+
+Hidden
+
+:     ```agda
+-- FIX
+      ```
+
 
 Alongside constructors corresponding to the three for `type:Shape`, we have
 added a fourth constructor at [1](Ann), corresponding to an empty, unpopulated
@@ -752,4 +766,7 @@ signature:
   get : Memoized → A → B × Memoized
   get (_ , memo) = get′ memo ∘ (Iso.to A≅Ix)
 ```
+
+-- TODO(sandy): some wrapping up ?
+
 

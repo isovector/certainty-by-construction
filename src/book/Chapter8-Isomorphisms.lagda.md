@@ -642,9 +642,15 @@ module Sandbox-Finite where
   _Has_Elements : Setoid c₁ ℓ₁ → ℕ → Set (c₁ ⊔ ℓ₁)
   s Has cardinality Elements =
     s ≅ prop-setoid (Fin cardinality)
-
-  -- FIX
 ```
+
+
+Hidden
+
+:     ```agda
+  -- FIX
+      ```
+
 
 We therefore know by definition (and reflexivity) that `bind:n:Fin n` has `n`
 elements:
@@ -851,10 +857,9 @@ Exercise (Easy)
   data List⅋ (A : Set ℓ) : Set ℓ where
     []   : List⅋ A
     _∷_  : A → List⅋ A → List⅋ A
-  -- FIX
     ```
 
-:   Show an isomorphism between `bind:A:List A` and `bind:A:⊤ ⊎ (A × List A)`
+:   Show an isomorphism between `type:List` `A` and `type:⊤ ⊎` `(A` `type:× List` `A)`.
 
 
 Solution
@@ -1083,8 +1088,15 @@ their injections. The trick is to map both finite isomorphisms across the
     = ≅-trans  (⊎-preserves-≅ fin₁ fin₂)
     ( ≅-trans  ⊎-prop-homo
                (≅-sym join-splitAt-iso))
-  -- FIX
 ```
+
+
+Hidden
+
+:     ```agda
+  -- FIX
+      ```
+
 
 Where there is a mathematical object for coproducts, there is usually one
 lurking just around the corner describing an analogous idea for products. Here
@@ -1313,8 +1325,15 @@ Finally, we must show congruence, which also comes "already paid for:"
     from t (func g (to s y)) ≈⟨ from-cong t (f refl) ⟩
     from t (func h (to s y)) ∎
     where open A-Reasoning t hiding (refl)
-  -- FIX
 ```
+
+
+Hidden
+
+:     ```agda
+  -- FIX
+      ```
+
 
 The next step we took for `type:_×_` and `type:_⊎_` was to show their respective
 homomorphisms with `def:prop-setoid`. While it would be desirable to do the same
@@ -1380,8 +1399,15 @@ vec-fin {m = suc m}
   ( ≅-trans  (×-preserves-≅ ≅-refl vec-fin)
   ( ≅-trans  ×-prop-homo
              (≅-sym combine-remQuot-iso))))
--- FIX
 ```
+
+
+Hidden
+
+:     ```agda
+-- FIX
+      ```
+
 
 To tie everything together, we can show that functions themselves also
 have an exponential cardinality. This is a straightforward application of

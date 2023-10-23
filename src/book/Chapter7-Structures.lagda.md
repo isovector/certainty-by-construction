@@ -355,8 +355,15 @@ abstractly:
 
     ex₃ : Bool
     ex₃ = ε
-  -- FIXEXPR
 ```
+
+
+Hidden
+
+:     ```agda
+  -- FIX
+      ```
+
 
 The way to think about `def:ex₁` and friends is that they compute abstract
 summaries of the booleans multiplied together in each. By instantiating them
@@ -377,8 +384,15 @@ exists at least one `ctor:true` in each data set:
 
     _ : ex₃ ≡ false
     _ = refl
-  -- FIXEXPR
 ```
+
+
+Hidden
+
+:     ```agda
+  -- FIX
+      ```
+
 
 Alternatively, if we were to use `expr:bundle ∧-true`, we would instead compute
 whether *every* boolean in the dataset be `ctor:true`:
@@ -428,8 +442,15 @@ data across a noisy channel[^checksum].
 
     _ : ex₃ ≡ false
     _ = refl
-  -- FIXEXPR
 ```
+
+
+Hidden
+
+:     ```agda
+  -- FIX
+      ```
+
 
 There you have it---three different monoids give us three different answers when
 summarizing each of `def:ex₁`, `def:ex₂`, and `def:ex₃`. When we conceptualize
@@ -1531,8 +1552,15 @@ always when dealing with setoids, a proof of congruence:
       preserves-ε  : f ε ≈ ε
       preserves-∙  : (a b : From) → f (a ∙ b) ≈ f a ∙ f b
       f-cong       : {a b : From} → a ≈ b → f a ≈ f b
--- FIX
 ```
+
+
+Hidden
+
+:     ```agda
+-- FIX
+      ```
+
 
 Now that we have the machinery in place to prove we're not fooling ourselves,
 let's begin our hunt for a monoid homomorphism. The simplest monoids we have are
@@ -1605,8 +1633,15 @@ mon-hom-not-unique claim
     false              ∎
   )
   where open ≡-Reasoning
--- FIX
 ```
+
+
+Hidden
+
+:     ```agda
+-- FIX
+      ```
+
 
 For technical reasons, we are forced to say that `s₁` and `s₂` are monoids over
 `expr:lzero`---work through where the quantification goes wrong if you'd like to
@@ -1774,8 +1809,15 @@ module _ where
     func y (func w a)    ≡⟨⟩
     (func y ∘ func w) a  ∎
     where open ≡-Reasoning
--- FIX
 ```
+
+
+Hidden
+
+:     ```agda
+-- FIX
+      ```
+
 
 Armed with `def:∘-id`, we can now implement our string builder---better known in
 the literature as a *difference list*, or *dlist* for short. It will be helpful

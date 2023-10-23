@@ -608,8 +608,14 @@ More preferable would be a type with slightly more structure, corresponding to a
   data Dec {ℓ : Level} (P : Set ℓ) : Set ℓ where
     yes  :    P → Dec P
     no   : ¬  P → Dec P
-  -- FIX
 ```
+
+
+Hidden
+
+:     ```agda
+  -- FIX
+      ```
 
 
 The type `bind:P:Dec P` state that either `P` definitely holds, or that it
