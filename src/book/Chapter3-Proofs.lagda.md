@@ -1081,9 +1081,8 @@ Exercise (Trivial)
 Solution
 
   :   ```agda
-  sym-involutive
-      : {A : Set} → {x y : A}
-      → (p : x ≡ y) → sym (sym p) ≡ p
+  sym-involutive  : {A : Set} {x y : A}
+                  → (p : x ≡ y) → sym (sym p) ≡ p
   sym-involutive refl = refl
     ```
 
