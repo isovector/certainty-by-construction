@@ -52,14 +52,16 @@ open import Chapter6-Decidability
 
 :   ```agda
 open import Chapter7-Structures
-  using (id; _∘_; const; _≗_; prop-setoid; Setoid; ⊎-setoid; ×-setoid)
+  using ( id; _∘_; const; _≗_; prop-setoid; Setoid; ⊎-setoid
+        ; ×-setoid)
     ```
 
 :   ```agda
 open import Chapter8-Isomorphisms
-  using ( Iso; _≅_; ≅-refl; ≅-sym; ≅-trans; ⊎-fin; fin-iso; ×-fin
-        ; Vec; []; _∷_; lookup; Fin; zero; suc; toℕ; _⊎_; inj₁; inj₂
-        ; _Has_Elements; ⊎-prop-homo; ×-prop-homo)
+  using ( Iso; _≅_; ≅-refl; ≅-sym; ≅-trans; ⊎-fin; fin-iso
+        ; ×-fin; Vec; []; _∷_; lookup; Fin; zero; suc; toℕ
+        ; _⊎_; inj₁; inj₂; _Has_Elements; ⊎-prop-homo
+        ; ×-prop-homo)
     ```
 
 
@@ -482,8 +484,9 @@ dummy : (sh : Shape) → Ix sh → ℕ
 dummy sh ix = toℕ (to (shape-fin sh) ix)
 ```
 
-Now, for any arbitrary `def:Shape`, perhaps the one from @fig:weird above, whose
-definition you will recall as:
+Now, for any arbitrary `type:Shape`, we can give a proof of memoization to Agda,
+and ask it to *build* us the relevant trie. For example, let's look again at the
+`type:Shape` for @fig:weird above:
 
 ```agda
 weird⅋ : Shape
@@ -492,11 +495,12 @@ weird⅋ = beside  (beside  (num 3)
                  (inside (num 3) (num 1))
 ```
 
-we can give a proof of memoization to Agda, and ask it to *build* the relevant
-trie for us. For example, given the following setup:
+For `def:dummy weird`, let's now give give a `type:Memoizes`, which chooses some
+sub-tries to be `ctor:emptyM`, and others to be full:
 
 ```agda
-_ : Memoizes (dummy weird)
+_ : Memoizes
+      (dummy weird)
       ?
 _ = bothM (bothM tableM emptyM)
           (nestM λ { zero              → -, emptyM
@@ -505,8 +509,10 @@ _ = bothM (bothM tableM emptyM)
                    })
 ```
 
-if we invoke [AgdaSolve](AgdaCmd) in the hole, which recall, fills in values that
-can be unambiguously inferred, Agda will replace the hole with:
+Recall that [Solve](AgdaCmd) fills in values that can be unambiguously
+inferred. If we invoke solve in the hole above, Agda will *synthesize* the only
+valid `type:Trie` which can possibly satisfy the given `type:Memoizes` proof. In
+this case, it responds with:
 
 
 Hidden
@@ -543,59 +549,144 @@ _ = bothM (bothM tableM emptyM)
 asTrie $ Or (Or (Tabled [0, 1, 2]) Null) (And (Tabled [Null, Tabled [6], Null]))
 ~~~~
 
-In an incredible show, Agda managed to find the memoized `type:Trie`
-corresponding to our proof! Take a moment or two to marvel at this result; our
+In an incredible show, Agda managed to find the memoized `type:Trie` which
+corresponds to our proof! Take a moment or two to marvel at this result; our
 type `type:Memoizes` is precise enough that it *completely* constrains *all*
 valid `type:Trie`s. Truly remarkable.
 
 
 ## Updating the Trie
 
+We are only a few steps away from a working, self-updating trie. Having
+successfully constrained what a memoized `type:Trie` must look like, we need
+only define the function which looks up a value in this `type:Trie`, possibly
+filling in more fields if they are not yet present. And then we will tie a
+little bow around the whole thing, wrapping all the machinery in a pleasant
+interface.
+
+For now, we will need a lemma, `def:replace`, which replaces a single
+branch of a `ctor:nestM`'s `subf` function. The idea here is to create a new
+`subf` which compares any looked-up index with the one we'd like to replace; if
+they match, return the new `type:Memoizes`, otherwise, look up this index in the
+old `subf`.
+
 ```agda
-subget-is-memo
+replace
   : {fst : Trie B n}
   → (x : Ix m)
   → Memoizes (f ∘ (x ,_)) fst
   → ((ix : Ix m) → MemoTrie (f ∘ (ix ,_)))
   → MemoTrie f
-subget-is-memo x sub-mem mts = -, nestM (λ ix →
+replace x sub-mem subf = -, nestM (λ ix →
   case Ix-dec ix x of λ
-    { (yes refl) → -, sub-mem
-    ; (no z) → mts ix
+    { (yes refl)  → -, sub-mem
+    ; (no z)      → subf ix
     }
   )
+```
 
+We are now ready for the main event, implementing `def:get′`, which looks up an
+index in a `type:Memoizes`[^why-not-trie]. If the index is already present in
+the trie, `def:get′` simply returns the associated value. If it's not,
+`def:get′` will build just enough of the trie so that it can get the correct
+value.
+
+[^why-not-trie]: Why don't we look up an index in a `type:Trie`, you might be
+  wondering? It's because every `type:Memoizes` *uniquely* describes a
+  memoized `type:Trie`, and we're only interested in the case where we're
+  looking something up in a `type:Trie` that is *guaranteed* to memoize the
+  given function.
+
+Note that we don't have mutation in Agda, so we can't *update* the trie
+directly. Instead, we will return a new `type:MemoTrie` alongside, corresponding
+to what the trie would be if we *could* update it. This is purely a concession
+in Agda, and if you wanted to implement the same algorithm in another language,
+you could certainly perform the mutation. Hence the type of `def:get′`:
+
+```agda
 get′
   : {t : Trie B sh}
   → Memoizes f t
   → Ix sh
   → B × MemoTrie f
+```
+
+There are eight cases we need to consider, so we will look at them in bunches.
+In general, we must first branch on the `type:Memoizes` proof, and, in the case
+of `ctor:emptyM`, subsequently branch on the `type:Shape` `sh` in order to
+determine how we must fill in the trie.
+
+The first case is when we've encountered an empty `ctor:table`, which we must
+`def:tabulate`, being careful to look up the desired `B` in the resulting table,
+rather than evaluating `f` any more than we have to:
+
+```agda
 get′ {sh = num x} {f = f} emptyM a =
   let t = tabulate f
    in lookup t a , table t , tableM
+```
+
+If instead we'd like to lookup a value in an empty `ctor:both` trie, we can
+branch on which sub-trie we're looking at. This sub-trie is also empty, but will
+recursively find the right answer, returning us a minimally-filled in trie,
+which we can insert into the proper branch, leaving `ctor:emptyM` in the other
+branch:
+
+```agda
 get′ {sh = beside m n} emptyM (inj₁ x)
   with get′ emptyM x
-... | b , fst , snd = b , both fst empty , bothM snd emptyM
+... | b , t₁  , memo = b , both t₁ empty  , bothM memo emptyM
 get′ {sh = beside m n} emptyM (inj₂ y)
   with get′ emptyM y
-... | b , fst , snd = b , both empty fst , bothM emptyM snd
+... | b , t₂  , memo = b , both empty t₂  , bothM emptyM memo
+```
+
+In the last `ctor:emptyM` case, we are looking to build a `ctor:nest` trie. This
+is the same as replacing a branch of the empty-everywhere `subf`:
+
+```agda
 get′ {sh = inside m n} {f = f} emptyM (x , y)
   with get′ { f = f ∘ (x ,_) } emptyM y
-... | b , _ , sub-memo
-    = b , subget-is-memo x sub-memo λ ix → -, emptyM
+... | b , _ , sub-mem
+    = b , replace x sub-mem λ ix → -, emptyM
+```
+
+In all other cases, the trie we'd like to index already exists. If it's a table,
+we know it must already be filled in, and so we can just lookup the answer in
+the vector:
+
+```agda
 get′ {sh = num _} {t = table t} tableM a
     = lookup t a , table t , tableM
+```
+
+Otherwise, we need only call `def:get′` recursively, and replace the branch we
+looked at with the updated sub-trie:
+
+```agda
 get′ {sh = beside m n} (bothM l r) (inj₁ x)
   with get′ l x
-... | b , fst , snd = b , both fst _ , bothM snd r
+... | b , t₁ , memo = b , both t₁ _ , bothM memo r
 get′ {sh = beside m n} (bothM l r) (inj₂ y)
   with get′ r y
-... | b , fst , snd = b , both _ fst , bothM l snd
-get′ {sh = inside m n} (nestM mts) (x , y) with mts x
+... | b , t₂ , memo = b , both _ t₂ , bothM l memo
+```
+
+In the last case, we need to look inside an existent `ctor:nestM` trie, which
+means looking at its `subf` function, and then recursively calling `def:get′` on
+what we find. Care must be taken to subsequently `def:replace` the sub-trie we
+found (although, rather amazingly, failing to call `def:replace` will prevent
+the program from typechecking!)
+
+```agda
+get′ {sh = inside m n} (nestM subf) (x , y)
+  with subf x
 ... | _ , sub-mem
   with get′ sub-mem y
-... | b , _ , _ = b , subget-is-memo x sub-mem mts
+... | b , _ , _ = b , replace x sub-mem subf
+```
 
+```agda
 get′-is-fn
     : {sh : Shape} {t : Trie B sh} {f : Ix sh → B}
     → (mt : Memoizes f t)
@@ -607,7 +698,7 @@ get′-is-fn {sh = inside _ _}  emptyM (x , y)    = get′-is-fn emptyM y
 get′-is-fn {sh = num _}       tableM x          = lookup∘tabulate _ x
 get′-is-fn {sh = beside _ _}  (bothM t₁ _) (inj₁  x) = get′-is-fn t₁  x
 get′-is-fn {sh = beside _ _}  (bothM _ t₂) (inj₂  y) = get′-is-fn t₂  y
-get′-is-fn {sh = inside _ _}  (nestM mts) (x , y)    = get′-is-fn (proj₂ (mts x)) y
+get′-is-fn {sh = inside _ _}  (nestM subf) (x , y)    = get′-is-fn (proj₂ (subf x)) y
 
 module _ {A : Set} {B : Set ℓ} (sh : Shape)
          (sized : prop-setoid A Has ∣ sh ∣ Elements)
