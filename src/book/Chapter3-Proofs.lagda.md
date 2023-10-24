@@ -253,26 +253,37 @@ second.
 
 You've probably seen the classic "proof" that $1 = 2$. It goes like this:
 
--- TODO(sandy): split this up because it looks awful
-
 Let $a = b$, then
 
 $$
 \begin{aligned}
-& ab &= a^2 \\
-\therefore \quad &  ab - b^2 &= a^2 - b^2 \\
-& &= (a + b)(a - b) \\
-\therefore \quad & b(a - b) &= (a + b)(a - b) \\
-\therefore \quad & b &= a + b \\
-& &= b + b \\
-& &= 2b \\
-\therefore \quad & 1 &= 2
+ab &= a^2 \\
+\therefore \quad ab - b^2 &= a^2 - b^2  \\
+&= (a + b)(a - b)
 \end{aligned}
 $$
 
-The actual flaw in reasoning here is on line 5, when we cancel $a - b$ from both
-sides of the equation. Recall that $a = b$, so $a - b = 0$, and thus this is an
-implicit division by zero.
+However, we can also factor $ab - b^2$ as follows:
+
+$$
+ab - b^2 = b(a - b)
+$$
+
+in which case we know:
+
+$$
+\begin{aligned}
+b(a - b) &= (a + b)(a - b) \\
+\therefore \quad b &= a + b \\
+&= b + b \\
+&= 2b \\
+\therefore \quad 1 &= 2
+\end{aligned}
+$$
+
+The actual flaw in reasoning here is when we cancel $a - b$ from both sides of
+the equation. Recall that $a = b$, so $a - b = 0$, and thus this is an implicit
+division by zero.
 
 To see how we can use one false proof to get another, consider now Pythagoras'
 famous theorem about the side lengths of triangles:
@@ -289,13 +300,13 @@ a + b = c
 $$
 
 Whoops! As you can see, as soon as we manage to prove something false, all bets
-are off. In English, this property is known as the *principle of explosion* in
-English, but you can also call it *ex falso quodlibet* if you're feeling
-particularly regal. All this means is that, given a proof of false, you can
-subsequently provide a proof of anything. Therefore, contradictions are *really,
-really* bad, and a huge chunk of logical development (including computation
-itself) has arisen from scholars discovering contradictions in less rigorous
-mathematics than what we use today.
+are off. In English, this property is known as the *principle of explosion* but
+you can also call it *ex falso quodlibet* if you're feeling particularly regal.
+All this means is that, given a proof of false, you can subsequently provide a
+proof of anything. Therefore, contradictions are *really, really* bad, and a
+huge chunk of logical development (including computation itself) has arisen from
+scholars discovering contradictions in less rigorous mathematics than what we
+use today.
 
 All of this is to say: it's desirable that it be very difficult to prove
 something that is false. From afar, this sounds like a very good and righteous

@@ -338,9 +338,9 @@ hammer. Split $k$ into $y - x$, and then:
 
 $$
 \begin{aligned}
-& a - b &= (y - x)n \\
-& &= yn - xn \\
-\therefore \quad & a + xn &= b + yn
+a - b &= (y - x)n \\
+&= yn - xn \\
+\therefore \quad a + xn &= b + yn
 \end{aligned}
 $$
 
