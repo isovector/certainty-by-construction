@@ -1273,9 +1273,21 @@ is not true of all functions between the carriers of `A` and `B`---it is exactly
 those which are congruent. So we can't yet define this setoid, we must first
 define a type corresponding to congruent functions between our two carrier sets:
 
--- TODO(sandy): ???
 
 ```agda
+  module _ {a b : Level} (s₁ : Setoid a ℓ₁) (s₂ : Setoid b ℓ₂) where
+    open Setoid s₁  renaming (Carrier to From;  _≈_ to _≈₁_)
+    open Setoid s₂  renaming (Carrier to To;    _≈_ to _≈₂_)
+
+    record Fn : Set (a ⊔ b ⊔ ℓ₁ ⊔ ℓ₂) where
+      constructor fn
+      field
+        func  : From → To
+        cong  : {x y : From}
+              → x ≈₁ y
+              → func x ≈₂ func y
+
+    open Fn
 ```
 
 The type `type:Fn` now encodes functions between the carriers of `A` and `B`,
@@ -1299,20 +1311,6 @@ type generates a setoid whose *carrier* is now these `type:Fn` types, and
 relation is a proof that everything does in fact hold:
 
 ```agda
-  module _ {a b : Level} (s₁ : Setoid a ℓ₁) (s₂ : Setoid b ℓ₂) where
-    open Setoid s₁  renaming (Carrier to From;  _≈_ to _≈₁_)
-    open Setoid s₂  renaming (Carrier to To;    _≈_ to _≈₂_)
-
-    record Fn : Set (a ⊔ b ⊔ ℓ₁ ⊔ ℓ₂) where
-      constructor fn
-      field
-        func  : From → To
-        cong  : {x y : From}
-              → x ≈₁ y
-              → func x ≈₂ func y
-
-    open Fn
-
     fun-ext : Setoid _ _
     Carrier fun-ext = Fn
     _≈_ fun-ext f g = {x y : From} → x ≈₁ y → f .func x ≈₂ g .func y
