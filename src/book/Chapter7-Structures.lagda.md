@@ -1183,14 +1183,25 @@ module _ where
   refl′   (pre (equiv (prop-setoid A))) = refl
   trans′  (pre (equiv (prop-setoid A))) = trans
   sym′    (equiv (prop-setoid A)) = sym
+```
 
+which we will then give as an keyword for future shenanigans.
 
+```agda
   instance
     prop-setoid-inst : {c : Level} {A : Set c} → Setoid c c
     prop-setoid-inst {A = A} = prop-setoid A
 ```
 
--- TODO(sandy): write about warming up with some easier setoids
+Now that we our first setoid under our belt, let's try cutting our teeth on some
+harder ones. For example, we can make a setoid for the `type:_×_` type, which
+lifts a setoid over each projection. That is, two pairs `a₁` `ctor:,` `b₁` and
+`a₂` `ctor:,` `b₂` are equal only when `a₁` is equivalent to `a₂` under the
+first setoid, and when `b₁` and `b₂` do under the second. In other words, a
+setoid for pairs is a pair of setoids.
+
+We'll begin with some setup, just to get everything into scope with reasonable
+names:
 
 ```agda
   private variable
@@ -1206,7 +1217,11 @@ module _ where
       Carrier₂ = s₂ .Carrier
       _≈₁_ = s₁ ._≈_
       _≈₂_ = s₂ ._≈_
+```
 
+and then we can construct our setoid for `type:_×_`:
+
+```agda
     ×-setoid : Setoid _ _
     Carrier ×-setoid = s₁ .Carrier × s₂ .Carrier
     _≈_ ×-setoid (a₁ , b₁) (a₂ , b₂) = (a₁ ≈₁ a₂) × (b₁ ≈₂ b₂)
@@ -1214,14 +1229,26 @@ module _ where
     trans′ (pre (equiv ×-setoid)) (a₁₂ , b₁₂) (a₂₃ , b₂₃)
       = trans a₁₂ a₂₃ , trans b₁₂ b₂₃
     sym′ (equiv ×-setoid) (a , b) = sym a , sym b
+```
 
+That wasn't too bad, was it? Now let's do one for coproducts. Here we're not so
+lucky as to just lift `type:_⊎_` for our equivalence relation, since the indices
+don't work out. Instead, we can define `type:⊎-Pointwise`, whose sole purpose of
+existence is to act as an equivalence relation for `def:⊎-setoid`:
 
+```agda
+    -- TODO(sandy): somewhere else please
     open import Data.Sum using (_⊎_; inj₁; inj₂)
 
     data ⊎-Pointwise : Rel (Carrier₁ ⊎ Carrier₂) (ℓ₁ ⊔ ℓ₂) where
       inj₁  : {x y : Carrier₁} → x ≈₁  y → ⊎-Pointwise (inj₁ x) (inj₁ y)
       inj₂  : {x y : Carrier₂} → x ≈₂  y → ⊎-Pointwise (inj₂ x) (inj₂ y)
+```
 
+We then resign ourselves to showing `type:⊎-Pointwise` is indeed an equivalence
+relation:
+
+```agda
     ⊎-equiv : IsEquivalence ⊎-Pointwise
     refl′   (pre ⊎-equiv) {inj₁  x} = inj₁ refl
     refl′   (pre ⊎-equiv) {inj₂  y} = inj₂ refl
@@ -1229,14 +1256,30 @@ module _ where
     trans′  (pre ⊎-equiv) (inj₂  x=y) (inj₂  y=z) = inj₂  (trans x=y y=z)
     sym′    ⊎-equiv (inj₁  x) = inj₁  (sym x)
     sym′    ⊎-equiv (inj₂  x) = inj₂  (sym x)
+```
 
+and then thankfully, giving `def:⊎-setoid` is no additional work:
+
+```agda
     ⊎-setoid : Setoid (c₁ ⊔ c₂) (ℓ₁ ⊔ ℓ₂)
     Carrier  ⊎-setoid = s₁ .Carrier ⊎ s₂ .Carrier
     _≈_      ⊎-setoid = ⊎-Pointwise
     equiv    ⊎-setoid = ⊎-equiv
 ```
 
-Furthermore, we can build a setoid corresponding to function extensionality:
+Welcome to the godawful world of *setoid hell,* where the burden of the
+should-be-mechanical congruence proofs are handed over to you, poor, sweet
+reader. As a general rule, you are going to need to make a helper data type that
+looks a lot like the thing you're trying to show a setoid over, use that thing
+as your setoid carrier, and then give a relation that preserves all the relevant
+equivalences. It's a nightmare. And don't worry; we'll see a great deal more of
+them in our future.
+
+
+## Function Extensionality
+
+Now that we're familiar (if not *comfortable*) with how to set up setoids, we
+can try our hand at building one for function extensionality:
 
 ```agda
   fun-ext⅋ : Set ℓ₁ → Set ℓ₂ → Setoid _ _
@@ -1325,16 +1368,10 @@ relation is a proof that everything does in fact hold:
     _⇒_ = fun-ext
 ```
 
-Welcome to the godawful world of *setoid hell,* where the burden of the
-should-be-mechanical congruence proofs are handed over to you, poor, sweet
-reader. And before you ask, no, I don't understand all the details of the proofs
-in `def:_⇒_`---I just set up the types and bashed my way through the
-implementation for twenty minutes. `def:_⇒_` is an egregious example of a
-setoid, but not particularly so. As a general rule, you are going to need to
-make a helper data type that looks a lot like the thing you're trying to show a
-setoid over, use that thing as your setoid carrier, and then give a relation
-that preserves all the relevant equivalences. It's a nightmare. And don't worry;
-we'll see a great deal more of them in our future.
+Before you ask, no, I don't understand all the details of the proofs in
+`def:_⇒_`---I just set up the types and bashed my way through the implementation
+for twenty minutes. `def:_⇒_` is an egregious example of a setoid, but not
+particularly so. Setoids, dude...
 
 We've taken a great detour from our original discussion about monoids, so let's
 now unwind the stack and return there, seeing how setoids can help (and hinder)
