@@ -56,10 +56,11 @@ SAMPLE_TEX := $(patsubst src/book/%.lagda.md,build/tex/book/%.tex,$(SAMPLE_LITER
 # $(RULES): %: build/%.pdf
 
 pdf : build/pdf.pdf
+print : build/print.pdf
 sample : build/sample.pdf
 epub : build/epub.epub
 
-all : build/pdf.pdf build/sample.pdf build-epub.epub
+all : build/pdf.pdf build/print.pdf build/sample.pdf build-epub.epub
 
 # -- Source the files
 # Transpile markdown to latex
@@ -109,6 +110,16 @@ build/tex/pdf.tex : $(ALL_TEX) format/tex/template.tex build/.design-tools Makef
 	sed -i 's/VERYILLEGALCODE/code/g' $@
 	sed -i '/{part}/d' $@
 
+build/tex/print.tex : $(ALL_TEX) format/tex/template.tex build/.design-tools Makefile
+	cp .design-tools/*.png build/.design-tools
+	pandoc $(PANDOC_PDF_OPTS) -o $@ $(ALL_TEX)
+	sed -i 's/\AgdaComment{--\\ !\\ \([0-9]\)}/annotate{\1}/g' $@
+	sed -i 's/\AgdaPostulate{Level}/\AgdaFunction{Level}/g' $@
+	sed -i 's/\\hypertarget{fig:\([^}]\+\)}{}//g' $@
+	sed -i 's/⅋[^ {}()._\\]*//g' $@
+	sed -i 's/VERYILLEGALCODE/code/g' $@
+	sed -i '/{part}/d' $@
+
 # HTML
 build-epub/epub.epub : $(ALL_HTML) format/epub/metadata.md build/.design-tools Makefile
 	cp .design-tools/*.png build/.design-tools
@@ -132,8 +143,11 @@ build/tex/agda.sty : format/tex/agda.sty
 	cp $^ $@
 
 # Build the pdf!
-build/pdf.pdf :  $(ALL_LAGDA_TEX) build/tex/pdf.tex build/tex/agda.sty
+build/pdf.pdf :  $(ALL_LAGDA_TEX) build/tex/pdf.tex build/tex/agda.sty art/cover.pdf
 	make -C build pdf.pdf
+
+build/print.pdf :  $(ALL_LAGDA_TEX) build/tex/print.tex build/tex/agda.sty
+	make -C build print.pdf
 
 # Build the sample!!
 build/sample.pdf :  $(SAMPLE_LAGDA_TEX) $(SAMPLE_AGDA_TEX) build/tex/sample.tex build/tex/agda.sty
