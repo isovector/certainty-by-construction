@@ -1,4 +1,4 @@
-# Monoids and Setoids
+# Monoids and Setoids {#sec:chapter7}
 
 Hidden
 

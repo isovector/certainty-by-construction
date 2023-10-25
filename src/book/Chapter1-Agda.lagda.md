@@ -1680,13 +1680,30 @@ precedence of 2.
 
 ## Coproduct Types {#sec:coproducts}
 
--- TODO(sandy): write
+Closely related to the tuple type is the *coproduct* type, which also "joins
+together" two disparate types into one. A coproduct of `A` and `B` is *either* a
+value of `A`, *or* a value of `B`. But unlike our everyday notion of
+"either/or", a coproduct cannot simultaneously be both an `A` *and* a `B`. The
+coproduct of `A` and `B` is written symbolically as `A` `type:⊎` `B`, where `⊎`
+is input as [`u+`](AgdaMode).
+
+While the tuple type has two projections and one constructor, the coproduct type
+conversely has two constructors, and one projection. These two constructors
+correspond to the two ways of building a `type:_⊎_`, either out of an `A`, or
+out of a `B`. Thus, we can give the definition of coproducts as:
 
 ```agda
   data _⊎_ (A : Set) (B : Set) : Set where
     inj₁  : A → A ⊎ B
     inj₂  : B → A ⊎ B
+
+  infixr 1 _⊎_
 ```
+
+We won't deal much with coproducts in this much generality until
+@sec:chapter7. Don't worry---in the interim, we will see many, many special
+cases. But coproducts are a nice thing to know about if you're going out and
+writing Agda on your own.
 
 
 ## Function Types
