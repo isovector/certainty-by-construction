@@ -1676,15 +1676,15 @@ Hidden
 
 
 For technical reasons, we are forced to say that `s₁` and `s₂` are monoids over
-`expr:lzero`---work through where the quantification goes wrong if you'd like to
-see why. This is not a fundamental limitation in Agda, but working around it
-here is much more effort than it's worth.[^level-lifting]
+`expr:lzero`---you're encouraged to work work through where the quantification
+if you'd like to see why. This is not a fundamental limitation in Agda, but
+working around it here is much more effort than it's worth.[^level-lifting]
 
 [^level-lifting]: The construction, for those interested, requires showing that
-we can lift a `type:Monoid` up levels, that is, we require a function
-`expr:{c c′ ℓ ℓ′ : Level} → Monoid c ℓ → Monoid (c ⊔ c′) (ℓ ⊔ ℓ′)`, give a
-similar lift for `def:MonHom`s, and then use this to lift `def:not-hom` and
-`def:false-hom` to the necessary levels.
+    we can lift a `type:Monoid` up levels, that is, we require a function
+    `expr:{c c′ ℓ ℓ′ : Level} → Monoid c ℓ → Monoid (c ⊔ c′) (ℓ ⊔ ℓ′)`, give a
+    similar lift for `def:MonHom`s, and then use this to lift `def:not-hom` and
+    `def:false-hom` to the necessary levels.
 
 Returning to `def:not-hom`, expanding out the definition of `field:preserves-∙`
 gives us the following equation:
