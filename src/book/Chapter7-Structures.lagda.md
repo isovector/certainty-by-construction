@@ -1237,9 +1237,6 @@ don't work out. Instead, we can define `type:⊎-Pointwise`, whose sole purpose 
 existence is to act as an equivalence relation for `def:⊎-setoid`:
 
 ```agda
-    -- TODO(sandy): somewhere else please
-    open import Data.Sum using (_⊎_; inj₁; inj₂)
-
     data ⊎-Pointwise : Rel (Carrier₁ ⊎ Carrier₂) (ℓ₁ ⊔ ℓ₂) where
       inj₁  : {x y : Carrier₁} → x ≈₁  y → ⊎-Pointwise (inj₁ x) (inj₁ y)
       inj₂  : {x y : Carrier₂} → x ≈₂  y → ⊎-Pointwise (inj₂ x) (inj₂ y)

@@ -28,7 +28,7 @@ Prerequisites
 
 :   ```agda
 open import Chapter1-Agda
-  using (_×_; _,_; proj₁; proj₂)
+  using (_×_; _,_; proj₁; proj₂; _⊎_; inj₁; inj₂)
     ```
 
 :   ```agda
@@ -63,8 +63,7 @@ open import Chapter7-Structures
 open import Chapter8-Isomorphisms
   using ( Iso; _≅_; ≅-refl; ≅-sym; ≅-trans; ⊎-fin; fin-iso
         ; ×-fin; Vec; []; _∷_; lookup; Fin; zero; suc; toℕ
-        ; _⊎_; inj₁; inj₂; _Has_Elements; ⊎-prop-homo
-        ; ×-prop-homo)
+        ; _Has_Elements; ⊎-prop-homo; ×-prop-homo)
     ```
 
 

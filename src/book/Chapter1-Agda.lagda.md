@@ -1,5 +1,7 @@
 # A Gentle Introduction to Agda {#sec:chapter1}
 
+-- TODO(sandy): note on skimming this
+
 This book is no ordinary prose. It is not just a book, but it is also a piece of
 software. Literate programming is a technique for interspersing text and
 computer programs in the same document. The result is a single artifact that can
@@ -1673,6 +1675,17 @@ precedence of 2.
 ```
 
 
+## Coproduct Types {#sec:coproducts}
+
+-- TODO(sandy): write
+
+```agda
+  data _⊎_ (A : Set) (B : Set) : Set where
+    inj₁  : A → A ⊎ B
+    inj₂  : B → A ⊎ B
+```
+
+
 ## Function Types
 
 It is now time to tackle the question of what's up with the funny syntax for
@@ -1714,7 +1727,10 @@ Let's take an example. The following models a family pet with a record. The
       bird cat dog reptile : Species
 
     data Temperament  : Set where
-      anxious chill excitable grumpy : Temperament
+      anxious   : Temperament
+      chill     : Temperament
+      excitable : Temperament
+      grumpy    : Temperament
 
     record Pet : Set where
       constructor makePet
@@ -2283,8 +2299,16 @@ curried functions and functions which take all of their arguments at once---were
 defined in @sec:currying.
 
 ```agda
-open import Data.Product public
+open import Data.Product
   using (_×_; _,_; proj₁; proj₂; curry; uncurry)
+  public
+```
+
+Also, in @sec:coproducts, we quickly looked at the coproduct type `type:_⊎_`:
+
+```agda
+open import Data.Sum
+  using (_⊎_; inj₁; inj₂)
   public
 ```
 

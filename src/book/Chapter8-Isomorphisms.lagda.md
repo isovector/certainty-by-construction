@@ -53,7 +53,8 @@ Prerequisites
 
 :   ```agda
 open import Chapter1-Agda
-  using (Bool; true; false; _×_; proj₁; proj₂; uncurry)
+  using  ( Bool; true; false; _×_; proj₁; proj₂; uncurry; _⊎_
+         ; inj₁; inj₂)
     ```
 
 :   ```agda
@@ -795,9 +796,6 @@ whatsoever, which is exactly the property that `type:⊤` also satisfies.
 Therefore, we should be able to find an isomorphism between `type:Bool` and
 `type:⊤ ⊎ ⊤`.
 
-```agda
-  open import Data.Sum using (_⊎_; inj₁; inj₂)
-```
 
 Exercise (Easy)
 
@@ -1477,11 +1475,6 @@ open import Data.Vec
 
 open import Data.Product
   using (assocʳ′; assocˡ′)
-  public
-
--- TODO(sandy): write about me!
-open import Data.Sum
-  using (_⊎_; inj₁; inj₂)
   public
 
 open import Data.Fin
