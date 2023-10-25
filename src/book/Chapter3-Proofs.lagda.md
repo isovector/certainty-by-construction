@@ -2369,12 +2369,12 @@ Hidden
       ```
 
 > TODO(sandy): A little prose would go a long way here if I have time!
--- TODO(sandy): this next eqn overflows the margin
 
 
 Exercise (Medium)
 
-:   Prove `def:*-distribʳ-+` `:` `expr:(x y z : ℕ) → (y + z) * x ≡ y * x + z * x`.
+:   Prove `def:*-distribʳ-+` `:` `(` `x y z :` `type:ℕ` `)` `→ (y` `def:+` `z)`
+    `def:*` `x` `type:≡` `y` `def:*` `x` `def:+` `z` `def:*` `x`.
 
 
 Solution
@@ -2399,11 +2399,11 @@ Hidden
       ```
 
 
--- TODO(sandy): this next eqn overflows the margin
 
 Exercise (Hard)
 
-:   Prove `def:*-distribˡ-+` `:` `expr:(x y z : ℕ) → x * (y + z) ≡ x * y + x * z`.
+:   Prove `def:*-distribˡ-+` `:` `(` `x y z :` `type:ℕ` `) ` `→ x` `def:*` `(y`
+    `def:+` `z)` `type:≡` `x` `def:*` `y` `def:+` `x` `def:*` `z`.
 
 
 Solution
