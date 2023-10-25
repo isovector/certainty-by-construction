@@ -1489,7 +1489,7 @@ open Sandbox-Finite
 
 
 
-## Unicode {.unlisted}
+---
 
 ```unicodetable
 × U+00D7 MULTIPLICATION SIGN (\x)

@@ -1929,7 +1929,7 @@ open BinaryTrees
 
 
 
-## Unicode {.unlisted}
+---
 
 ```unicodetable
 ¬ U+00AC NOT SIGN (\neg)

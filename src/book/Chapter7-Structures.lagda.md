@@ -1967,7 +1967,7 @@ open import Data.Maybe
 
 
 
-## Unicode {.unlisted}
+---
 
 ```unicodetable
 ¬ U+00AC NOT SIGN (\neg)

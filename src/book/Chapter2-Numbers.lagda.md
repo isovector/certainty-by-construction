@@ -1881,7 +1881,7 @@ you'd like to use them in your own code, you can find all of our definitions
 under `module:Data.Int`.
 
 
-## Unicode {.unlisted}
+---
 
 ```unicodetable
 ₀ U+2080 SUBSCRIPT ZERO (\_0)

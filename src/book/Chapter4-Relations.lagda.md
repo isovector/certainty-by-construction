@@ -1756,7 +1756,7 @@ open import Data.Nat.Properties
 
 
 
-## Unicode {.unlisted}
+---
 
 ```unicodetable
 × U+01D7 MULTIPLICATION SIGN (\x)

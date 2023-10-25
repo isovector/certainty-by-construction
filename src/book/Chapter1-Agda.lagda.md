@@ -2339,7 +2339,7 @@ possible in Agda, but we now have enough background that we can earnestly get
 into the meat of this book. Prepare yourself.
 
 
-## Unicode {.unlisted}
+---
 
 ```unicodetable
 ¬ U+00AC NOT SIGN (\neg)

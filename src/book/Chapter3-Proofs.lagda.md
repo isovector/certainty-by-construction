@@ -2497,7 +2497,7 @@ open import Data.Nat.Properties
 
 
 
-## Unicode {.unlisted}
+---
 
 ```unicodetable
 ʳ U+02B3 MODIFIER LETTER SMALL R (\^r)

@@ -705,7 +705,7 @@ a major driving force in modern type theory research.
 
 
 
-## Unicode {.unlisted}
+---
 
 ```unicodetable
 ʳ U+02B3 MODIFIER LETTER SMALL R (\^r)
