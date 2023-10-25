@@ -112,13 +112,7 @@ table large enough to memoize the whole function, and proceed to only cache a
 handful of points in it. Therefore, we conclude that different memoization
 strategies must result in different caching data structures. And in fact, this
 class of memoization strategies grows *fast*---corresponding to every possible
-way of splitting the input space into contiguous chunks. Some examples of
-different memoization strategies for a function with 8 points are visualized in
-@fig:t8, @fig:t8by1, @fig:2x2x2, and @fig:complex, to give you a taste of how
-these data structures could look.
-
--- TODO(sandy): remove mention of figures
-
+way of splitting the input space into contiguous chunks.
 
 There is no one-size-fits-all memoization strategy, so our eventual solution to
 this problem must be polymorphic over all possible strategies.
@@ -168,11 +162,9 @@ Hidden
       ```
 
 
--- TODO(sandy): no longer suggestive
-
-The names of these constructors, while not what we'd expect, are certainly
-suggestive. Nevertheless `bind:n:num n` corresponds to a table of `n` elements,
-while `ctor:beside` combines two caches "side by side", and `ctor:inside` composing
+The names of these constructors are pleasingly straightforward. We have
+`bind:n:num n`, which corresponds to a table of `n` elements, while
+`ctor:beside` combines two caches "side by side", and `ctor:inside` composing
 one cache inside of another. To get a feel for how `type:Shape` describes data
 structures, let's look at a few examples.
 
