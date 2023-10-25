@@ -552,7 +552,7 @@ In a very real sense, our indexed type `type:IsEven` is the "opposite" of our
 original decision function `def:even?`. Where before we removed two calls to
 `ctor:suc` before recursing, we now recurse first, and then *add* two calls to
 `ctor:suc`. This is not a coincidence, but is in fact a deep principle of
-computation itself, that we will return to in @sec:todo.
+mathematics that we will discuss later.
 
 The concept of indexed types is so foreign to mainstream programming that it is
 prudent to spend some time here and work through several examples of
@@ -1881,24 +1881,18 @@ you'd like to use them in your own code, you can find all of our definitions
 under `module:Data.Int`.
 
 
-
-
 ## Unicode {.unlisted}
 
 ```unicodetable
-₀ U+2080 SUBSCRIPT ZERO
-₁ U+2081 SUBSCRIPT ONE
-₂ U+2082 SUBSCRIPT TWO
-₃ U+2083 SUBSCRIPT THREE
-₄ U+2084 SUBSCRIPT FOUR
-₅ U+2085 SUBSCRIPT FIVE
-₆ U+2086 SUBSCRIPT SIX
-₇ U+2087 SUBSCRIPT SEVEN
-ℕ U+2115 DOUBLE-STRUCK CAPITAL N
-ℤ U+2124 DOUBLE-STRUCK CAPITAL Z
-→ U+2192 RIGHTWARDS ARROW
-∸ U+2238 DOT MINUS
-≡ U+2261 IDENTICAL TO
-⊖ U+2296 CIRCLED MINUS
+₀ U+2080 SUBSCRIPT ZERO (\_0)
+₁ U+2081 SUBSCRIPT ONE (\_1)
+₂ U+2082 SUBSCRIPT TWO (\_2)
+₃ U+2083 SUBSCRIPT THREE (\_3)
+ℕ U+2115 DOUBLE-STRUCK CAPITAL N (\bN)
+ℤ U+2124 DOUBLE-STRUCK CAPITAL Z (\bZ)
+→ U+2192 RIGHTWARDS ARROW (\to)
+∸ U+2238 DOT MINUS (\.-)
+≡ U+2261 IDENTICAL TO (\==)
+⊖ U+2296 CIRCLED MINUS (\o-)
 ```
 

@@ -24,6 +24,8 @@ which are ubiquitous in real Agda code. Despite being written in Agda, this book
 is not *about* Agda, and so the goal is to get you to a minimum degree of
 competency as quickly as possible.
 
+-- TODO(sandy): note about agda version
+
 The technical content of this chapter is slightly heavier than desirable if you
 do not already have a strong programming background. Should that be the case,
 the best option might be to skim this chapter to get a feeling for what Agda can
@@ -2352,12 +2354,8 @@ into the meat of this book. Prepare yourself.
 ᶠ U+1DA0 MODIFIER LETTER SMALL F (\^f)
 ᶻ U+1DBB MODIFIER LETTER SMALL Z (\^z)
 ′ U+2032 PRIME (\')
-₀ U+2080 SUBSCRIPT ZERO (\_0)
 ₁ U+2081 SUBSCRIPT ONE (\_1)
 ₂ U+2082 SUBSCRIPT TWO (\_2)
-₄ U+2084 SUBSCRIPT FOUR (\_4)
-₅ U+2085 SUBSCRIPT FIVE (\_5)
-₉ U+2089 SUBSCRIPT NINE (\_9)
 ₓ U+2093 LATIN SUBSCRIPT SMALL LETTER X (\_x)
 ℕ U+2115 DOUBLE-STRUCK CAPITAL N (\bN)
 ℚ U+211A DOUBLE-STRUCK CAPITAL Q (\bQ)
