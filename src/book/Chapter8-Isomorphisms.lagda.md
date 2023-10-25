@@ -1468,6 +1468,8 @@ now by `def:vec-fin`:
 
 ## Wrapping Up
 
+-- TODO(sandy): finalize wrapping up
+
 ```agda
 open import Data.Vec
   using (Vec; []; _∷_; lookup)

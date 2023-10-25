@@ -1942,6 +1942,9 @@ leaving behind only the appended list.
 
 ## Wrapping Up
 
+-- TODO(sandy): finalize wrapping up
+
+
 ```agda
 open import Algebra
   using (Op₂)

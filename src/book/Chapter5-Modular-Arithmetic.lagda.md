@@ -697,3 +697,8 @@ a major driving force in modern type theory research.
 
 -- TODO(sandy): maybe add a note in the proof about numbers chapter
 
+
+## Wrapping Up
+
+-- TODO(sandy): finalize wrapping up
+

@@ -1718,6 +1718,8 @@ but that's exactly the sort of thing we'll tackle in @sec:decidability.
 
 ## Wrapping Up
 
+-- TODO(sandy): finalize wrapping up
+
 ```agda
 open import Agda.Primitive
   using (Level; _⊔_; lzero; lsuc)

@@ -1888,6 +1888,8 @@ and finally, define insertion by merely plugging in some trivial proofs:
 
 ## Wrapping Up
 
+-- TODO(sandy): finalize wrapping up
+
 ```agda
 open import Relation.Binary
   using (Reflexive; Transitive; DecidableEquality)
