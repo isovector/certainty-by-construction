@@ -1,7 +1,5 @@
 # A Gentle Introduction to Agda {#sec:chapter1}
 
--- TODO(sandy): note on skimming this
-
 This book is no ordinary prose. It is not just a book, but it is also a piece of
 software. Literate programming is a technique for interspersing text and
 computer programs in the same document. The result is a single artifact that can
@@ -24,7 +22,12 @@ interactive tooling. By the end, you will be able to parse Agda code mentally,
 be able to write simple functions, and type the many funny Unicode characters
 which are ubiquitous in real Agda code. Despite being written in Agda, this book
 is not *about* Agda, and so the goal is to get you to a minimum degree of
-competency as quickly as possible. Let's get going!
+competency as quickly as possible.
+
+The technical content of this chapter is slightly heavier than desirable if you
+do not already have a strong programming background. Should that be the case,
+the best option might be to skim this chapter to get a feeling for what Agda can
+do, and return here as the need arises.
 
 
 ## Modules and Imports
