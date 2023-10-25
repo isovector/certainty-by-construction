@@ -101,7 +101,7 @@ build/.design-tools :
 # TEX
 build/tex/pdf.tex : $(ALL_TEX) format/tex/template.tex build/.design-tools Makefile
 	cp .design-tools/*.png build/.design-tools
-	pandoc $(PANDOC_PDF_OPTS) -o $@ $(ALL_TEX)
+	pandoc $(PANDOC_PDF_OPTS) -M wants-cover -V wants-cover -o $@ $(ALL_TEX)
 	sed -i 's/\AgdaComment{--\\ !\\ \([0-9]\)}/annotate{\1}/g' $@
 	sed -i 's/\AgdaPostulate{Level}/\AgdaFunction{Level}/g' $@
 	sed -i 's/\\hypertarget{fig:\([^}]\+\)}{}//g' $@
