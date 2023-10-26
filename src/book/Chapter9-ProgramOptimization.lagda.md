@@ -772,10 +772,18 @@ addition for ourselves, and we have now followed that path all the way to
 automating program optimization. Make no mistake, this is the result of an
 *impressive* understanding of mathematics and its application to software.
 
-*It is this construction about which we can finally be certain.*
+---
 
 
-## Unicode {.unlisted}
+Hidden
+
+:   FIXME before doing epub
+
+
+\begingroup\centering{\emph{Of this construction, we can finally be certain.}}\endgroup
+
+
+---
 
 ```unicodetable
 × U+00D7 MULTIPLICATION SIGN (\x)
