@@ -48,7 +48,7 @@ defining them for ourselves. Only later will we import those same ideas from the
 standard library. This is done in order to maintain compatibility with the wider
 world as it stands today. Should the standard library change, you can still make
 progress by using the definitions provided here. Should the language itself die,
-well, this is much more a book about mathematics than it is about Agda.
+well, this book has always been much more about mathematics than about Agda.
 
 
 ## Modules and Imports
