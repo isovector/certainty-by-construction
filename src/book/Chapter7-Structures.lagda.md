@@ -10,6 +10,19 @@ Hidden
 module Chapter7-Structures where
 ```
 
+In this chapter we will now try our hands at interpreting abstract mathematical
+structures. We will see how we can translate them into Agda definitions and
+explore what can go wrong when we use only our existing notions of equality. But
+most excitingly, we will look at a bevy of usual functions in computer science,
+and see how they all arise "for free" by instantiating the same generic code
+with different abstract mathematical objects.
+
+This is one of my favorite examples for bridging between pure math and computer
+science, as it shows an exciting side-effect---not only is the math interesting
+for its own sake, but it also is real-world applicable, and serves to illustrate
+patterns in code that you might never have noticed before.
+
+
 Prerequisites
 
 :   ```agda
@@ -41,20 +54,6 @@ open Chapter6-Decidability.BinaryTrees
   using (BinTree; leaf; branch; empty)
     ```
 
-In this chapter we will now try our hands at interpreting abstract mathematical
-structures. We will see how we can translate them into Agda definitions and
-explore what can go wrong when we use only our existing notions of equality. But
-most excitingly, we will look at a bevy of usual functions in computer science,
-and see how they all arise "for free" by instantiating the same generic code
-with different abstract mathematical objects.
-
-This is one of my favorite examples for bridging between pure math and computer
-science, as it shows an exciting side-effect---not only is the math interesting
-for its own sake, but it also is real-world applicable, and serves to illustrate
-patterns in code that you might never have noticed before.
-
-Without further ado, let's begin.
-
 
 ## Structured Sets
 
@@ -81,7 +80,7 @@ understanding a particularly rich example of a structured set: the unassuming
 and understated *monoid.*
 
 
-## Monoids
+## Monoids {#sec:monoids}
 
 The terse, textbook definition of a *monoid* is:
 
@@ -463,7 +462,7 @@ of monoids, keeping our catchphrase that "monoids generate summaries" in mind as
 we do so.
 
 
-## More Monoids
+## More Monoids {#sec:more-mons}
 
 In @sec:maybe we looked at the `type:Maybe` type, which is parameterized by
 another type, extending it with the possibility that there might not be any data
@@ -1939,22 +1938,19 @@ leaving behind only the appended list.
 
 ## Wrapping Up
 
--- TODO(sandy): finalize wrapping up
-
+We introduced monoids in @sec:monoids, but in order to do so, needed a
+definition `type:Op₂`, which you can find in `module:Algebra`:
 
 ```agda
 open import Algebra
   using (Op₂)
   public
+```
 
-open import Relation.Binary.PropositionalEquality
-  using (_≗_)
-  public
+In @sec:more-mons, we came across `type:List`s, the alternative operator over
+`type:Maybe`, which are present in the standard library under:
 
-open import Function
-  using (id; _∘_; const; flip)
-  public
-
+```agda
 open import Data.List
   using (List; []; _∷_; _++_)
   public
@@ -1963,6 +1959,28 @@ open import Data.Maybe
   using (_<∣>_)
   public
 ```
+
+Furthermore, when trying to give a pointwise monoid over functions, we looked at
+several higher-order functions like `def:_∘_` and `def:flip`. You can find all
+of these under `module:Function`:
+
+```agda
+open import Function
+  using (id; _∘_; const; flip)
+  public
+```
+
+We then looked at extensional equality of functions, witnessed by `type:_≗_`,
+which you can find alongside everything else related to propositional equality:
+
+```agda
+open import Relation.Binary.PropositionalEquality
+  using (_≗_)
+  public
+```
+
+For technical reasons, we will not use the standard library's definitions of
+`type:Monoid` or `type:Setoid`, preferring to export our own.
 
 
 

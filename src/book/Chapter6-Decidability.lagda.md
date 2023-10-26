@@ -730,7 +730,7 @@ and give a more "semantically-inclined" type to our old function:
 ```
 
 
-## Transforming Decisions
+## Transforming Decisions {#sec:map-dec}
 
 Often times, you will be trying to decide a problem, but can instead only
 directly decide some closely-related problem. In cases like these, it can be
@@ -1948,13 +1948,20 @@ open import Relation.Binary
   public
 ```
 
-Alongside all this, there are a few miscellaneous re-exports that we must give:
+Alongside all this, there are a few miscellaneous re-exports that we must give,
+like `def:map-dec` from @sec:map-dec is really called `def:map′` in
+`module:Relation.Nullary.Decidable`:
 
 ```agda
 open import Relation.Nullary.Decidable
   renaming (map′ to map-dec)
   public
+```
 
+and the fact that `def:_<_` is `type:Trichotomous` comes again from
+`module:Data.Nat.Properties`:
+
+```agda
 open import Data.Nat.Properties
   using (<-cmp)
   public
