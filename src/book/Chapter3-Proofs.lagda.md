@@ -2480,7 +2480,7 @@ For reasons that will become clear in @sec:modarith, we will export the rest of
 our propositional equality tools under a new module `module:PropEq`, which will
 need to be opened separately:
 
-```
+```agda
 module PropEq where
   open Relation.Binary.PropositionalEquality
     using (refl; cong; sym; trans)
