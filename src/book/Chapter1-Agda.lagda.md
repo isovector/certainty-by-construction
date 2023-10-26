@@ -1073,7 +1073,7 @@ ourselves:
   true   ∨⅋⅋⅋⅋⅋ true   = {! !}
 ```
 
-We can finish the definition of `def:_∨_` by giving filling in the desired
+We can finish the definition of `def:_∨_` by filling in the desired
 answers in each hole:
 
 ```agda
