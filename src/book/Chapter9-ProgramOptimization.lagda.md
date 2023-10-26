@@ -10,11 +10,11 @@ Hidden
 module Chapter9-ProgramOptimization where
 ```
 
-The purpose of theory is not satisfying idle curiosities; instead it is to make
+The purpose of theory is not satisfying idle curiosities; it is to make
 short work of otherwise difficult problems. In this final chapter, we will turn
 our gaze towards a difficult problem in computing---dynamic programming---and
 see how our new theoretical understanding completely eliminates the challenges.
-Since dynamic programming often improves algorithmic complexity asymptotically,
+Dynamic programming often improves algorithmic complexity asymptotically;
 solving it is therefore equivalent to program optimization, and doing it
 automatically demonstrates a total understanding of the problem space. This is
 by no means a new idea, having first been done by @hinze_memo_2000, but we now
@@ -73,8 +73,8 @@ Computing is a practical means to an end. One of the greatest tragedies in our
 field is the muddled thinking that arises from conflating "what do we want to do"
 from "how should we do it." But confusion exists only in our minds, and never in
 reality. Because dynamic programming is an often-confusing solution to a class
-of problems, we will likely learn more by studying the class of problems than we
-will the offered solution.
+of problems, we will likely learn more by studying that class than by studying
+the offered solutions.
 
 Dynamic programming is helpful for problems with a great deal of overlapping
 subproblems. This notion of subproblems arises from the algorithmic concept of
@@ -86,7 +86,7 @@ finitely many points. Seen through this lens, dynamic programming is a technique
 which makes functions less expensive to repeatedly sample, by caching their
 results somewhere convenient.
 
-This is the true nature of dynamic programming---as a technique, it is nothing
+This is the true nature of dynamic programming---as a technique. It is nothing
 more than thinking about problems inductively, and memoizing that induction. By
 virtue of being the sort of person who would read this book, you are clearly
 already capable of thinking compositionally, and so all we have left is to
@@ -96,8 +96,8 @@ Why should we expect to be able to make progress on this problem? As seen in
 @sec:exponents, we proved an isomorphism between functions on finite domains and
 vectors. Indeed, it is exactly this vector which is most-often used as a caching
 data structure when doing dynamic programming by hand. Figuring out exactly how
-to index such a structure is often less clear and requires much fiddling in the
-absence of explicit isomorphisms.
+to index such a structure is often less clear and requires cumbersome fiddling
+in the absence of explicit isomorphisms.
 
 Note however that an effective memoization strategy is dependent on the problem.
 This "one big vector" isn't necessarily always the best choice. If you know that
@@ -107,7 +107,7 @@ expensive and you have no guarantee you'll need all of its image, you might
 prefer to memoize the function at only those points necessary.
 
 For functions with large input spaces, it would be quite wasteful to allocate a
-table large enough to memoize the whole function, and proceed to only cache a
+table large enough to memoize the whole function but proceed to only cache a
 handful of points in it. Therefore, we conclude that different memoization
 strategies must result in different caching data structures. And in fact, this
 class of memoization strategies grows *fast*---corresponding to every possible
@@ -163,7 +163,7 @@ Hidden
 
 The names of these constructors are pleasingly straightforward. We have
 `bind:n:num n`, which corresponds to a table of `n` elements, while
-`ctor:beside` combines two caches "side by side", and `ctor:inside` composing
+`ctor:beside` combines two caches "side by side", and `ctor:inside` composes
 one cache inside of another. To get a feel for how `type:Shape` describes data
 structures, let's look at a few examples.
 
@@ -326,7 +326,7 @@ Ix-dec {sh = sh} ix₁ ix₂
   where open ≡-Reasoning
 ```
 
-We'll need a few other miscellaneous helper functions and proofs as well. First,
+We'll need a three other miscellaneous helper functions and proofs. First,
 often we can infer the first argument of a `type:Σ` type, in which case we can
 omit it using `def:-,_`:
 
@@ -335,7 +335,7 @@ omit it using `def:-,_`:
 -,_ {a = a} b = a , b
 ```
 
-Also, given a function out of `type:Fin`, we can use it to build a `type:Vec`,
+Second, given a function out of `type:Fin`, we can use it to build a `type:Vec`,
 as in `def:tabulate`:
 
 ```agda
@@ -344,7 +344,7 @@ tabulate {n = zero}   f = []
 tabulate {n = suc n}  f = f zero ∷ tabulate (f ∘ suc)
 ```
 
-Finally, we know that calling `def:lookup` on `def:tabulate` is the same as
+Third, we know that calling `def:lookup` on `def:tabulate` is the same as
 sampling the function we used to build the table:
 
 ```agda
@@ -371,7 +371,7 @@ Better than jumping in immediately is to take a moment and think about what
 exactly a memoized trie looks like. Having done that work, we will then
 immortalize this thinking in a new type, which indexes a `type:Trie`, proving
 that trie does indeed memoize the particular function.[^cite-trick] Only after
-all of this work is done will we jump into implementation, using our types to
+all this work is done will we jump into implementation, using our types to
 guarantee correctness *by construction.*
 
 [^cite-trick]: This is a trick I learned from @scholz_parsing_2011, where you
@@ -640,8 +640,8 @@ get′ {sh = num x} {f = f} emptyM a =
    in lookup t a , table t , tableM
 ```
 
-Note, as you look through the remainder of the cases, that this is the only case
-in which we evaluate `f`.
+Note that, as you look through the remainder of the implementation, this is
+the only case in which we evaluate `f`.
 
 If instead we'd like to lookup a value in an empty `ctor:both` trie, we can
 branch on which sub-trie we're looking at. This sub-trie is also empty, but will
