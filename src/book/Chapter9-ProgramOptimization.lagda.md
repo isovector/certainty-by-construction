@@ -756,7 +756,7 @@ module _ {A : Set} {B : Set ℓ} (sh : Shape)
 ```
 
 And finally, we can give an implementation of `def:get` with a much nicer
-signature:
+signature indeed:
 
 ```agda
   Memoized : Set ℓ
@@ -765,11 +765,6 @@ signature:
   get : Memoized → A → B × Memoized
   get (_ , memo) = get′ memo ∘ (Iso.to A≅Ix)
 ```
-
--- TODO(sandy): some wrapping up ?
-
-
-
 
 
 ## Unicode {.unlisted}

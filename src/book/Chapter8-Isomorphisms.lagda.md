@@ -227,8 +227,6 @@ against
   _ = refl
 ```
 
--- TODO(sandy): a bit abrupt
-
 As usual, rather than giving our own definition for `type:Fin`, we will instead
 import it from the standard library:
 
@@ -1466,7 +1464,8 @@ now by `def:vec-fin`:
 
 ## Wrapping Up
 
--- TODO(sandy): finalize wrapping up
+The standard library contains many things we have built in this chapter, which
+we will re-export here:
 
 ```agda
 open import Data.Vec
@@ -1486,7 +1485,8 @@ open Sandbox-Finite
   public
 ```
 
-
+In addition, the standard library also gives a definition for `type:Fn`, which
+it calls `type:Func`, from `module:Function.Bundles`.
 
 
 ---

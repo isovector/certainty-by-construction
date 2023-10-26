@@ -1851,9 +1851,9 @@ Hidden
 
 
 Armed with `def:∘-id`, we can now implement our string builder---better known in
-the literature as a *difference list*, or *dlist* for short. It will be helpful
-to specialize `def:∘-id` for `bind:A:List A`, which we will call the dlist
-monoid:
+the literature (@hughes_novel_1986) as a *difference list*, or *dlist* for
+short. It will be helpful to specialize `def:∘-id` for `bind:A:List A`, which we
+will call the dlist monoid:
 
 ```agda
 module DList where
@@ -1981,7 +1981,8 @@ open import Relation.Binary.PropositionalEquality
 
 For technical reasons, we will not use the standard library's definitions of
 `type:Monoid` or `type:Setoid`, preferring to export our own definitions facing
-forwards.
+forwards. Users hoping to get their hands on the standard library's versions can
+find them under `module:Algebra` and `module:Relation.Binary`, respectively.
 
 
 ---
