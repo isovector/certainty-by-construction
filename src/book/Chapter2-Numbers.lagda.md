@@ -1502,7 +1502,7 @@ forget them.
 While our second approach dramatically improves on the syntax of integers and
 eliminates most problems from `module:Misstep-Integers₂`, there is still one
 small issue: there is still a non-unique representation for zero, as we can
-encode it as being either positivr or negative:
+encode it as being either positive or negative:
 
 ```agda
   _ : ℤ
