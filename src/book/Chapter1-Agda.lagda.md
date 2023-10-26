@@ -1096,7 +1096,7 @@ with matching only on one.
 
 If the argument we matched on is `ctor:true`, we're done, without needing to
 inspect the other. Otherwise, if our matched argument is `ctor:false`, it
-doesn't affect the answer, because the result is `ctor:true` only with the other
+doesn't affect the answer, because the result is `ctor:true` only when the other
 argument is `ctor:true`.
 
 Thus, in neither the `ctor:true` nor `ctor:false` case do we need to look at
