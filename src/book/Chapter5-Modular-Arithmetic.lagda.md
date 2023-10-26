@@ -47,7 +47,7 @@ search.
 
 ## Instance Arguments {#sec:instance-args}
 
-In @sec:preorders, we had to do some gymnastics with modules in order to
+In @sec:on-preorders, we had to do some gymnastics with modules in order to
 differentiate between the `ctor:refl` constructor of `type:_≡_`, and the
 `field:refl` field of `type:IsPreorder`. As we begin to juggle more and more
 notions of equality, it will quickly become burdensome to need to unambiguously

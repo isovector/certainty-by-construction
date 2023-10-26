@@ -37,7 +37,8 @@ ALL_CHAPTERS := Chapter00-preface \
                 Chapter8-Isomorphisms \
                 Chapter9-ProgramOptimization \
                 Appendix1-Ring-Solving \
-                Bibliography
+                Bibliography \
+                Backmatter
 
 ALL_LITERATE_AGDA := $(patsubst %,src/book/%.lagda.md,$(ALL_CHAPTERS))
 ALL_LAGDA_TEX := $(patsubst src/book/%.lagda.md,build/tex/agda/%.lagda.tex,$(ALL_LITERATE_AGDA))

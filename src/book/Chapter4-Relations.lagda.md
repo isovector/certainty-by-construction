@@ -1152,7 +1152,7 @@ Exercise (Easy)
       ```
 
 
-## Preorders {#sec:preorders}
+## Preorders {#sec:on-preorders}
 
 As humans, we are naturally drawn to order, structure, and patterns, and thus
 the properties of reflexivity and transitivity can seem mundane to us. But this
@@ -1762,7 +1762,7 @@ open import Data.Nat.Properties
   public
 ```
 
-Finally, we also explored preorders, as in @sec:preorder. For technical reasons,
+Finally, we also explored preorders, as in @sec:on-preorders. For technical reasons,
 the remainder of this book will not re-export the standard library's definition
 of preorders. However, should you need it for your own projects, you can find
 them under `module:Relation.Binary`. Instead, we will export our own
