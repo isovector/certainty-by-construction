@@ -1332,7 +1332,7 @@ module Example-Employees where
 ```
 
 Our company has five departments. Every employee must belong to one of these.
-Whenever you hear the words "one of" used to describe how a piece of
+Whenever you hear the words "one of" used to describe a piece of
 information, you should think about modeling it using a `keyword:data` type:
 
 ```agda
