@@ -1,4 +1,4 @@
-# Modular Arithmetic
+# Modular Arithmetic {#sec:modarith}
 
 ```agda
 module Chapter5-Modular-Arithmetic where
@@ -45,7 +45,7 @@ on modular arithmetic. That feature is Agda's programmable, automatic proof
 search.
 
 
-## Instance Arguments
+## Instance Arguments {#sec:instance-args}
 
 In @sec:preorders, we had to do some gymnastics with modules in order to
 differentiate between the `ctor:refl` constructor of `type:_≡_`, and the
@@ -712,9 +712,17 @@ first place.
 
 ## Wrapping Up
 
--- TODO(sandy): finalize wrapping up
+This chapter serves mostly as an interlude, giving a more "real-world" example
+by which we can reflect on everything we've done thus far. Since the remainder
+of this book doesn't rely on any facts about modular arithmetic, we will not
+export anything we've built here.
 
-
+However, in our exploration, we did notice how annoying it can be to work with
+overloaded names in Agda. Therefore, we will use the instance-argument-equipped
+versions of `def:refl`, `def:sym`, and `def:trans` that we built in
+@sec:instance-args. Additionally, we will export `def:equiv-to-preorder` and
+`def:≡-is-equivalence`, as many future chapters will rely on the fact that we
+can continue to use `def:refl` to mean propositional reflexivity.
 
 
 ---

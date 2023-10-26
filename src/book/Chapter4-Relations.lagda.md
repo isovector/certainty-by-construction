@@ -12,6 +12,13 @@ open import Chapter1-Agda using () renaming (_,_ to _,⅋_; _×_ to _×⅋_)
 module Chapter4-Relations where
 ```
 
+In the last chapter we explored what equality *is*, and what sorts of things we
+could prove with it. We turn our discussion now to *relations* more generally,
+of which equality is only one example. In the process, we will learn about
+universe polymorphism, pre-orders, partially ordered sets, and touch briefly on
+graphs---all while learning much more about working with Agda interactively.
+
+
 Prerequisites
 
 :   ```agda
@@ -27,17 +34,6 @@ open import Chapter2-Numbers
 :   ```agda
 open import Chapter3-Proofs
     ```
-
-In the last chapter, we thoroughly investigated the notion of doing proof work
-in Agda. We gave a propositional definition what it means for two things to be
-equal, derived relevant properties of equality, built a domain-specific language
-for doing equational reasoning, and proved many facts about the algebra of the
-natural numbers.
-
-Now, we will turn our discussion to *relations* more generally, of which
-equality is only one example. In the process, we will learn about universe
-polymorphism, pre-orders, partially ordered sets, and touch briefly on
-graphs---all while learning much more about working with Agda interactively.
 
 
 ## Universe Levels {#sec:levels}
