@@ -343,7 +343,8 @@ $endif$
 
 \BookEnv{AgdaInfo}{}{\Info}{INFO WINDOW}
 \BookEnv{Footgun}{}{\Radioactivity}{CAUTION}
-\BookEnv{UnicodeTable}{\spaceMyBox}{\Keyboard}{UNICODE IN THIS CHAPTER}
+\newenvironment{UnicodeTable}{\spaceMyBox\begin{tcolorbox}[breakable, left=2.5mm, right=3mm, top=4mm, bottom=0mm,
+skin=enhancedmiddle, colback=white, colframe=white, title={\color{black}\Keyboard\quad{}\impact{UNICODE IN THIS CHAPTER}}]\color{black}}{\end{tcolorbox}}
 
 
 \newfontfamily{\impact}{SofiaSansCondensed-Medium}

@@ -1768,10 +1768,10 @@ Let's take an example. The following models a family pet with a record. The
       bird cat dog reptile : Species
 
     data Temperament  : Set where
-      anxious   : Temperament
-      chill     : Temperament
-      excitable : Temperament
-      grumpy    : Temperament
+      anxious    : Temperament
+      chill      : Temperament
+      excitable  : Temperament
+      grumpy     : Temperament
 
     record Pet : Set where
       constructor makePet
