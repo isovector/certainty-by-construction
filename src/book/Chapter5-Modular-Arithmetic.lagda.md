@@ -695,7 +695,19 @@ a major driving force in modern type theory research.
 
 ## Automating Proofs
 
--- TODO(sandy): maybe add a note in the proof about numbers chapter
+While it's certainly impressive that we *can* prove all of these interesting
+facts in Agda, one can't help but feel somewhat underwhelmed. Surely the
+language can't require *this much effort* to prove such trivial facts that
+humans take for granted every day, can it?
+
+Of course, going through all of the toil by hand is an excellent tool of
+pedagogy, writing long proofs for facts that should be easy does quickly get
+old. Thankfully, most of these proofs can indeed be automated away. It doesn't
+quite fit the theme of this book, so I've squirreled the details away in the
+appendix on *ring solving.* If you just want to bash out some proofs, the
+details of how to do it are there. But it's also a great place to look if you're
+also curious in how the computer is capable of automating such proofs in the
+first place.
 
 
 ## Wrapping Up

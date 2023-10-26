@@ -590,10 +590,12 @@ structure on `𝔸` as parameters to our module.
 module Sandbox-RingSolver {ℓ : Level} {𝔸 : Set ℓ}
     (0# 1# : 𝔸)
     (_+_ _*_ : 𝔸 → 𝔸 → 𝔸)
-    -- TODO(sandy): explain this let binding
-    (let infixr 5 _+_; _+_ = _+_)
+    (let infixr 5 _+_; _+_ = _+_)  -- ! 1
     (let infixr 6 _*_; _*_ = _*_) where
 ```
+
+The strange use of `keyword:let` at [1](Ann) is an uncommon Agda idiom for
+defining a fixity on parameters, nothing more.
 
 We will require many algebraic definitions to be in scope:
 
