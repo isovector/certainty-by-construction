@@ -24,12 +24,31 @@ which are ubiquitous in real Agda code. Despite being written in Agda, this book
 is not *about* Agda, and so the goal is to get you to a minimum degree of
 competency as quickly as possible.
 
--- TODO(sandy): note about agda version
-
 The technical content of this chapter is slightly heavier than desirable if you
 do not already have a strong programming background. Should that be the case,
 the best option might be to skim this chapter to get a feeling for what Agda can
 do, and return here as the need arises.
+
+
+## The Longevity of Knowledge
+
+This book was written against Agda version 2.6.3, and later chapters assume that
+Agda's standard library `agda-stdlib` is present at version 1.7.2. In order to
+assure longevity, I will not include any instructions for how to get your hands
+on these dependencies, instead trusting fully and completely in your agency.
+
+It is probable that, like all knowledge, the information in this book will
+slowly decay. Thankfully, mathematics seems to decay slower than most of
+humanity's learning, but the engineering side can (and should) eventually fall
+down. The Agda language might not survive the test of time, or it might evolve
+into something unrecognizable. Its standard library almost certainly will.
+
+To combat this bit-rot, the structure of this book is to introduce concepts by
+defining them for ourselves. Only later will we import those same ideas from the
+standard library. This is done in order to maintain compatibility with the wider
+world as it stands today. Should the standard library change, you can still make
+progress by using the definitions provided here. Should the language itself die,
+well, this is much more a book about mathematics than it is about Agda.
 
 
 ## Modules and Imports
