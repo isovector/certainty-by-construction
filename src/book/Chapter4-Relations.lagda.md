@@ -1752,7 +1752,7 @@ open import Relation.Binary.PropositionalEquality
 
 In @sec:nat-ord we gave two orderings for the natural numbers---strictly less than, and less-than-or-equal-to. These, and the properties about them we proved, can be found in `module:Data.Nat` and `module:Data.Nat.Properties`:
 
-```aga
+```agda
 open import Data.Nat
   using (_≤_; z≤n; s≤s; _<_)
   public
