@@ -1911,7 +1911,7 @@ open import Data.Empty
   public
 ```
 
-while negation can be found alongside `type:Dec` (from @sec:dec) under
+while negation can be found alongside `type:Dec` (from @sec:on-dec) under
 `module:Relation.Nullary`:
 
 ```agda

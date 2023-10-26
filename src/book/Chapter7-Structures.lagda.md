@@ -787,7 +787,7 @@ We will use `type:Foldable` as a typeclass, and note that as already shown,
     Foldable.fold fold-list = ListSummaries.foldList
 ```
 
-However, most other containers are `def:Foldable` too. In @sec:bindtrees we
+However, most other containers are `def:Foldable` too. In @sec:bintrees we
 defined `type:BinTree`, which also admits folding:
 
 ```agda

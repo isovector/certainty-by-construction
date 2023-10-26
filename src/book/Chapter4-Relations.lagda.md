@@ -1,4 +1,4 @@
-# Relations
+# Relations {#sec:relations}
 
 Hidden
 
@@ -356,7 +356,7 @@ encoded in Agda as functions into `type:Set`. Taken at face value, this would
 make a relation have type `expr:{A B : Set} → A × B → Set`.
 
 We can do slightly better however, by recalling the curry/uncurry isomorphism
-(@sec:curry) and splitting the explicit Cartesian product into two arguments.
+(@sec:currying) and splitting the explicit Cartesian product into two arguments.
 Such a transformation results then in `expr:{A B : Set} → A → B → Set`.
 
 A fully-fledged solution here must be level polymorphic, since many of the
@@ -1247,7 +1247,7 @@ Solution
 
 ## Preorder Reasoning {#sec:preorder-reasoning}
 
-In @sec:equational-reasoning, we built equational reasoning tools for working
+In @sec:propreasoning, we built equational reasoning tools for working
 with propositional equality. Now that we know a little more, recall that our
 equational reasoning machinery used only reflexivity and transitivity. That is
 to say, we can generalize equational reasoning so that it works over any

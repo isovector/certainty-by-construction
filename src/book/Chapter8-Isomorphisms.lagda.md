@@ -1,4 +1,4 @@
-# Isomorphisms
+# Isomorphisms {#sec:isomorphisms}
 
 Hidden
 

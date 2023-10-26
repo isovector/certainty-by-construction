@@ -479,11 +479,10 @@ concept of modular and composable programs---those that we can write and prove
 correct once, without needing to worry about what the future will bring.
 
 In short, working directly with postulates is dangerous and, in general, an
-anti-pattern. We will return to postulates in @sec:postulates and see how they
-can be useful as mathematical tools. Instead, we will investigate a tool that
-instead allows us to simultaneously define `type:Bool`, `def:false` and
-`def:true` into a *closed theory.* That is, we'd like to say that these are *the
-only* two booleans, allowing us and Agda to reason about that fact.
+anti-pattern. Instead, we will investigate a tool that instead allows us to
+simultaneously define `type:Bool`, `def:false` and `def:true` into a *closed
+theory.* That is, we'd like to say that these are *the only* two booleans,
+allowing us and Agda to reason about that fact.
 
 To do this, we can use a `keyword:data` declaration:
 
@@ -903,7 +902,7 @@ produce a value. Therefore, there are no control-flow statements in this
 language, because control flow doesn't directly produce a value. Agda has no
 support for common constructions like `for` or `while` loops, and while it does
 support `if..then..else` its prevalence is very subdued. In Agda, we have much
-better tools for branching, as we will see soon in @sec:patterns.
+better tools for branching, as we will soon see.
 
 This ascetic expression dedication precludes many other features that you might
 think be ubiquitous in programming languages. The most substantial of these
@@ -1021,8 +1020,8 @@ standard library calls it, and we'd like to reimplement the standard library as
 a pedagogical exercise. Incidentally, the standard library didn't just make up
 this name; `∨` is the mathematical symbol used for joins in a semilattice, and
 `OR` is exactly that join on the boolean semilattice. Don't worry if you don't
-yet know what this means, as we'll look investigate semilattices in
-@sec:semilattices.
+yet know what this means; the purpose of this book is to get you familiar with
+many mathematical concepts.
 
 We can start our implementation for `def:_∨⅋⅋_` by writing out a function
 signature, and then giving a hole on the next line, as in:
@@ -1315,7 +1314,7 @@ types with distinct values. Most programming languages do not admit any features
 analogous to the `keyword:data` type former, which is why booleans and
 numbers---two types that are *all about* distinct values---are usually baked
 directly into most languages. We have already looked at defining our own
-booleans, in @sec:numbers we will focus on defining numbers for ourselves.
+booleans, in @sec:chapter2 we will focus on defining numbers for ourselves.
 
 To tide us over in the meantime, we will look at the more-familiar *record
 types*: those built by sticking a value of *this* type, and a value of *that*

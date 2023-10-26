@@ -172,7 +172,7 @@ Before we play around with our new numeric toys, I'd like to take a moment to
 discuss some of the subtler points around modeling data in Agda.
 
 The `keyword:data` keyword also came up when we defined the booleans in
-@sec:booleans, as well as for other toy examples in @sec:chapter1.
+@sec:bools, as well as for other toy examples in @sec:chapter1.
 
 Indeed, `keyword:data` will arise whenever we'd like to build a type whose
 values are *apart*---that is, new symbols whose purpose is in their

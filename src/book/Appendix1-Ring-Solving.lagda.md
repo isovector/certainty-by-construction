@@ -1061,7 +1061,7 @@ An $n$-ary function is one which receives $n$ arguments of type `A` before
 returning something of type `B`. Building such a thing is less difficult than it
 might seem at first blush.
 
-Recall in @sec:curry-uncurry, in which we discussed the curry/uncurry
+Recall in @sec:currying, in which we discussed the curry/uncurry
 isomorphism, showing that it's always possible to transform between a curried
 function of the form `type:A -> B -> C`, and a tupled function of the form
 `type:A × B → C`. This is exactly the same idea as what we'll need to implement
