@@ -1026,8 +1026,8 @@ graph?*
 
 By Newton's good grace, thankfully the answer is a resounding *no!* What we are
 missing here is a conceptual piece of the puzzle. Recall that propositional
-equality itself proves that the two things on either side of `def:_≡_ are in
-fact just one thing. That is, once we've pattern matched on `ctor:refl` `:
+equality itself proves that the two things on either side of `def:_≡_` are in
+fact just one thing. That is, once we've pattern matched on `ctor:refl`:
 `bind:x y:x ≡ y`, there is no longer a distinction between `x` and `y`!
 
 We can exploit this fact to flip any propositional equality proof, via a new
