@@ -1,4 +1,4 @@
-rules = pdf print
+rules = pdf print sample
 
 targets = $(addsuffix .pdf,$(rules))
 
