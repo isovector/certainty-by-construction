@@ -251,13 +251,13 @@ left-identity. As you might expect, `def:xor` also forms a monoid:
 
 ```agda
   xor-false : IsMonoid xor false
-  assoc xor-false false y z        = refl
-  assoc xor-false true false z     = refl
-  assoc xor-false true true false  = refl
-  assoc xor-false true true true   = refl
-  identityˡ xor-false x     = refl
-  identityʳ xor-false false = refl
-  identityʳ xor-false true  = refl
+  assoc      xor-false false y z        = refl
+  assoc      xor-false true false z     = refl
+  assoc      xor-false true true false  = refl
+  assoc      xor-false true true true   = refl
+  identityˡ  xor-false x      = refl
+  identityʳ  xor-false false  = refl
+  identityʳ  xor-false true   = refl
 ```
 
 Notice that we have not proven the intermediary results `def:xor-assoc`,
@@ -487,11 +487,11 @@ unit:
 
 ```agda
   <∣>-nothing : IsMonoid {Carrier = Maybe A} _<∣>_ nothing
-  assoc <∣>-nothing (just x)  y z = refl
-  assoc <∣>-nothing nothing   y z  = refl
-  identityˡ <∣>-nothing x = refl
-  identityʳ <∣>-nothing (just x)  = refl
-  identityʳ <∣>-nothing nothing   = refl
+  assoc      <∣>-nothing (just x)  y z = refl
+  assoc      <∣>-nothing nothing   y z = refl
+  identityˡ  <∣>-nothing x = refl
+  identityʳ  <∣>-nothing (just x)  = refl
+  identityʳ  <∣>-nothing nothing   = refl
 ```
 
 Because we'd like `def:<∣>-nothing` to work over any type at all, we must
@@ -643,8 +643,8 @@ for which we have a `type:Monoid`, and then combine all of the `B`s together via
 ```agda
   module ListSummaries where
     foldList : ⦃ Monoid B ⦄ → (A → B) → List A → B
-    foldList f [] = ε  -- ! 1
-    foldList f (x ∷ l) = f x ∙ foldList f l  -- ! 2
+    foldList f []       = ε                   -- ! 1
+    foldList f (x ∷ l)  = f x ∙ foldList f l  -- ! 2
 ```
 
 Note that at [1](Ann) we are forced to return `field:ε`, because we don't have
@@ -930,9 +930,9 @@ and then filling out `def:pointwise` results in:
 
 ```agda
   pointwise : ⦃ _ : Monoid B ⦄ → IsMonoid (⊙ {A = A}) (const ε)
-  assoc pointwise f g h = {! !}
-  identityˡ pointwise = {! !}
-  identityʳ pointwise = {! !}
+  assoc      pointwise f g h = {! !}
+  identityˡ  pointwise = {! !}
+  identityʳ  pointwise = {! !}
 ```
 
 Unfortunately, here is where we get stuck. The first hole here has type
@@ -1048,8 +1048,8 @@ and now show that `def:_≗_` is a `type:Fn`-typed equivalence relation:
     ≗-trans f≗g g≗h a = trans (f≗g a) (g≗h a)
 
     ≗-equiv : IsEquivalence {A = Fn} _≗_
-    IsPreorder.refl (IsEquivalence.isPreorder ≗-equiv) = ≗-refl
-    IsPreorder.trans (IsEquivalence.isPreorder ≗-equiv) = ≗-trans
+    IsPreorder.refl   (IsEquivalence.isPreorder ≗-equiv) = ≗-refl
+    IsPreorder.trans  (IsEquivalence.isPreorder ≗-equiv) = ≗-trans
     IsEquivalence.sym ≗-equiv = ≗-sym
 ```
 
@@ -1208,14 +1208,14 @@ names:
 
   module _ (s₁ : Setoid c₁ ℓ₁) (s₂ : Setoid c₂ ℓ₂) where
     private instance
-      s₁-equiv = equiv s₁
-      s₂-equiv = equiv s₂
+      s₁-equiv  = equiv s₁
+      s₂-equiv  = equiv s₂
 
     private
-      Carrier₁ = s₁ .Carrier
-      Carrier₂ = s₂ .Carrier
-      _≈₁_ = s₁ ._≈_
-      _≈₂_ = s₂ ._≈_
+      Carrier₁  = s₁ .Carrier
+      Carrier₂  = s₂ .Carrier
+      _≈₁_  = s₁  ._≈_
+      _≈₂_  = s₂  ._≈_
 ```
 
 and then we can construct our setoid for `type:_×_`:
@@ -1224,8 +1224,8 @@ and then we can construct our setoid for `type:_×_`:
     ×-setoid : Setoid _ _
     Carrier ×-setoid = s₁ .Carrier × s₂ .Carrier
     _≈_ ×-setoid (a₁ , b₁) (a₂ , b₂) = (a₁ ≈₁ a₂) × (b₁ ≈₂ b₂)
-    refl′  (pre (equiv ×-setoid)) = refl , refl
-    trans′ (pre (equiv ×-setoid)) (a₁₂ , b₁₂) (a₂₃ , b₂₃)
+    refl′   (pre (equiv ×-setoid)) = refl , refl
+    trans′  (pre (equiv ×-setoid)) (a₁₂ , b₁₂) (a₂₃ , b₂₃)
       = trans a₁₂ a₂₃ , trans b₁₂ b₂₃
     sym′ (equiv ×-setoid) (a , b) = sym a , sym b
 ```
@@ -1353,8 +1353,8 @@ relation is a proof that everything does in fact hold:
     fun-ext : Setoid _ _
     Carrier fun-ext = Fn
     _≈_ fun-ext f g = {x y : From} → x ≈₁ y → f .func x ≈₂ g .func y
-    refl′   (pre (equiv fun-ext)) {f} x=y = f .cong x=y
-    trans′  (pre (equiv fun-ext)) ij jk x=y
+    refl′   (pre (equiv fun-ext)) {f}    x=y = f .cong x=y
+    trans′  (pre (equiv fun-ext)) ij jk  x=y
       = trans′  (pre (equiv s₂))
                 (ij x=y)
                 (jk (refl′ (pre (equiv s₁))))
@@ -1980,9 +1980,8 @@ open import Relation.Binary.PropositionalEquality
 ```
 
 For technical reasons, we will not use the standard library's definitions of
-`type:Monoid` or `type:Setoid`, preferring to export our own.
-
-
+`type:Monoid` or `type:Setoid`, preferring to export our own definitions facing
+forwards.
 
 
 ---
