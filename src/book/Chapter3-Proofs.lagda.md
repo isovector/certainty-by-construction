@@ -202,7 +202,7 @@ To drive the point home, we can also try asking one is an even number:
   one-is-even = ?
 ```
 
-However, as we saw in @sec:evens, there is no way to fill this hole. Therefore,
+However, as we saw in @sec:even, there is no way to fill this hole. Therefore,
 `def:one-is-even` cannot be implemented, and therefore it is not a
 theorem---even though `expr:IsEven (suc zero)` is a perfect acceptable
 statement.
@@ -265,7 +265,10 @@ $$
 However, we can also factor $ab - b^2$ as follows:
 
 $$
-ab - b^2 = b(a - b)
+\begin{aligned}
+ab - b^2 &= (a - b)b \\
+&= b(a - b)
+\end{aligned}
 $$
 
 in which case we know:
@@ -928,7 +931,7 @@ Solution
     ```
 
 
-## Symmetry and Involutivity
+## Symmetry and Involutivity {#sec:involutivity}
 
 In the previous section, we proved the elementary fact `def:*-identityˡ`,
 stating that $1 \times a = a$. Given that we now have that proof under our
@@ -1393,7 +1396,7 @@ miniature *domain specific language* in order to get more natural looking
 proofs. We will explore this idea in the next section.
 
 
-## Mixfix Parsing
+## Mixfix Parsing {#sec:mixfix-parsing}
 
 As we saw when defining binary operators like `def:_∨_` in @sec:operators, and
 again when representing negative integers via `ctor:-[1+_]` in @sec:integers, we
@@ -1604,7 +1607,7 @@ explore how to use mixfix parsing to construct valid syntax more amenable to
 equational reasoning.
 
 
-## Equational Reasoning
+## Equational Reasoning {#sec:propreasoning}
 
 Recall, we'd like to develop some syntax amenable to doing "pen and paper" style
 proofs. That is, we'd like to write something in Agda equivalent to:
@@ -2450,22 +2453,46 @@ Solution
     where open ≡-Reasoning
       ```
 
+Congratulations! You made it through all of the tedious proofs about numbers. Go
+and celebrate with a snack of your choice; you've earned it!
+
 
 ## Wrapping Up
 
--- TODO(sandy): add some prose here
+In @sec:propeq, we defined *propositional equality,* represented by `type:_≡_`,
+which we used to prove to Agda that two values are syntactically equal. We
+proved that equality is reflexive, symmetric, and transitive, as well as showing
+that it is congruent (preserved by functions.) Furthermore, in
+@sec:propreasoning, we built a little domain-specific language in Agda for doing
+equational reasoning.
 
+All of this machinery can be found be found in the standard library under
+`module:Relation.Binary.PropositionalEquality`, however, for now we will only
+publicly re-export `type:_≡_` and `module:≡-Reasoning`:
 
 ```agda
 open import Relation.Binary.PropositionalEquality
   using (_≡_; module ≡-Reasoning)
   public
+```
 
+For reasons that will become clear in @sec:modarith, we will export the rest of
+our propositional equality tools under a new module `module:PropEq`, which will
+need to be opened separately:
+
+```
 module PropEq where
   open Relation.Binary.PropositionalEquality
     using (refl; cong; sym; trans)
     public
+```
 
+In @sec:mixfix-parsing we discussed mixfix parsing, where we leave underscores
+in the names of identifiers in order to enable more interesting syntactic forms.
+As examples of mixfix identifiers, we created ``def:if_then_else_ and
+`def:case_of_`, which can be found in the standard library here:
+
+```agda
 open import Data.Bool
   using (if_then_else_)
   public
@@ -2473,7 +2500,13 @@ open import Data.Bool
 open import Function
   using (case_of_)
   public
+```
 
+While discussing common flavors of proofs in @sec:identities and
+@sec:involutivity, we proved many facts about `def:_∨_` and `def:_∧_`. These can
+all be found under `module:Data.Bool.Properties`:
+
+```agda
 open import Data.Bool.Properties
   using  ( ∨-identityˡ  ; ∨-identityʳ
          ; ∨-zeroˡ      ; ∨-zeroʳ
@@ -2483,7 +2516,13 @@ open import Data.Bool.Properties
          ; not-involutive
          )
   public
+```
 
+Additionally, we tried our hand at defining many facts about the natural
+numbers---all of which can be found in the standard library under
+`module:Data.Nat.Properties`:
+
+```agda
 open import Data.Nat.Properties
   using  ( +-identityˡ  ; +-identityʳ
          ; *-identityˡ  ; *-identityʳ
@@ -2496,8 +2535,6 @@ open import Data.Nat.Properties
          )
   public
 ```
-
-
 
 ---
 
