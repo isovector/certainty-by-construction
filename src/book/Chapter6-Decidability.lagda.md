@@ -1114,7 +1114,7 @@ if those constructors existed before the pattern was defined.
 
 
 Since `type:All` reuses the constructor names `ctor:empty` and `ctor:branch`, we
-need only redefine `ctor:leaf` in order for it to work work not only over
+need only redefine `ctor:leaf` in order for it to work not only over
 `type:BinTree`, but `type:All` too.
 
 ```agda
@@ -1342,7 +1342,7 @@ Instead, we can generalize the idea of decidability to a *trichotomy*, which is
 the idea that exactly one of three choices must hold. From this perspective,
 `type:Dec` is merely a type that states exactly one of `P` or `type:¬` `P`
 holds, and so the notion of trichotomy shouldn't be earth-shattering. We can
-define `type:Tri` (analogous to `type:Dec`) as as proof that exactly one of `A`,
+define `type:Tri` (analogous to `type:Dec`) as proof that exactly one of `A`,
 `B` or `C` holds:
 
 ```agda

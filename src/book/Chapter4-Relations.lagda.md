@@ -1492,7 +1492,7 @@ a case study. If you haven't seen the film, you should consider remedying that
 as soon as possible. Don't worry though, there are no spoilers here; it's safe
 to continue.
 
-Our first task is to to define the vertices of the social graph, which of
+Our first task is to define the vertices of the social graph, which of
 course are the people involved:
 
 ```agda

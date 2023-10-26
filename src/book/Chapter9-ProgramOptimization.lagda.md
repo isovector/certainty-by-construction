@@ -204,7 +204,7 @@ bintrie zero     = num 1
 bintrie (suc n)  = beside (bintrie n) (bintrie n)
 ```
 
-The result of this is is illustrated in @fig:2x2x2:
+The result of this is illustrated in @fig:2x2x2:
 
 ~~~~ {design=code/Languages/Tree.hs label="The trie described by `expr:bintrie 3`" #fig:2x2x2}
 asTrie $ let two = Or (Table 1 0) (Table 1 0) in Or (Or two two) (Or two two)
@@ -509,7 +509,7 @@ weird⅋ = beside  (beside  (num 3)
                  (inside (num 3) (num 1))
 ```
 
-For `def:dummy weird`, let's now give give a `type:Memoizes`, which chooses some
+For `def:dummy weird`, let's now give a `type:Memoizes`, which chooses some
 sub-tries to be `ctor:emptyM`, and others to be full:
 
 ```agda

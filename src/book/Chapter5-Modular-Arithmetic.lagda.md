@@ -611,7 +611,7 @@ arithmetic, not juggling equations!
 
 ## Congruence of Multiplication {#sec:cong-mod}
 
-Let's prove prove two more facts about modular arithmetic, the first in service
+Let's prove two more facts about modular arithmetic, the first in service
 of the second. We can show that modular multiplication by zero results in zero:
 
 ```agda

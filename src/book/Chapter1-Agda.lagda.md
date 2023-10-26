@@ -1624,7 +1624,7 @@ module Sandbox-Tuples₂⅋ where
 There is one small change compared to our previous definition, and that's the
 `keyword:constructor` keyword at [1](Ann). Adding a `keyword:constructor`
 definition tells Agda that we'd like to avoid the whole `keyword:record` `{ ...
-}` nonsense. Instead, we we automatically get `ctor:_,_` for free, which you
+}` nonsense. Instead, we automatically get `ctor:_,_` for free, which you
 will notice is now colored red, to let us know that it is a constructor.
 
 

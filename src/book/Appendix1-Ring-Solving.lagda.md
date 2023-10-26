@@ -336,7 +336,7 @@ explore that question.
 ## The Pen and Paper Algorithm
 
 An interesting insight into how to solve this problem is to use the analogy of
-solving a maze. Not not the corn-maze sort, but the variety that comes on the
+solving a maze. Not the corn-maze sort, but the variety that comes on the
 back of cereal boxes. Solving a maze is often a two-sided approach; you explore
 from the beginning of the maze, and you simultaneously explore from the end. The
 goal is to meet somewhere in the middle. If you can get to the same place from

@@ -78,7 +78,7 @@ acceptable proof would go something like this:
 1. Suppose there does not exist any prime number greater than 10.
 2. Therefore, the prime factorization of every number must consist only of 2, 3,
    5, and 7.
-3. If a number $n$ has a prime factor $d$, then $n + 1$ does not have have $d$ as
+3. If a number $n$ has a prime factor $d$, then $n + 1$ does not have $d$ as
    a prime factor.
 4. The number $2 \times 3 \times 5 \times 7 = 210$ has prime factors of 2, 3, 5,
    and 7.
@@ -128,7 +128,7 @@ purview of mathematics when done right.
 In math, it's common to differentiate between *statements* and *theorems.*
 Statements are claims you can make, while theorems are claims you can prove. For
 example, it's a perfectly valid statement that $2 = 3$, but such a claim isn't a
-theorem under any any usual definitions for 2, 3, or equality. Occasionally,
+theorem under any usual definitions for 2, 3, or equality. Occasionally,
 you'll also hear statements called *propositions,* but this word is amazingly
 overloaded, and we will not adopt such usage.
 
@@ -146,7 +146,7 @@ such evidence.
 
 It is exactly this analogy that we will exploit for the remainder of this book
 in order to show the relationship between mathematics and programming. In doing
-so, we will help programmers use the tools they already have, in order to to
+so, we will help programmers use the tools they already have, in order to
 start being productive in mathematics. But let's make the connection more
 formal.
 
@@ -1917,7 +1917,7 @@ out and work with, but the latter looks prettier once the proof is all sorted.
 As you can see, this is a marked improvement over our original definition. The
 original implementation emphasized the proof justification---which are important
 to the computer---while this one emphasizes the actual steps taken---which is
-much more important to the human. Whenever you find yourself doing doing
+much more important to the human. Whenever you find yourself doing
 non-ergonomic things for the sake of the computer, it's time to take a step back
 as we have done here. This is an important lesson, inside Agda and out.
 

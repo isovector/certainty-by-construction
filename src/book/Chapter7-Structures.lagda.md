@@ -334,7 +334,7 @@ to repackage a `type:IsMonoid` as a `type:Monoid`:
   Monoid.is-monoid (bundle x) = x
 ```
 
-Finally, we will open `type:Monoid` as as typeclass:
+Finally, we will open `type:Monoid` as typeclass:
 
 ```agda
   open Monoid ⦃ ... ⦄
@@ -1676,7 +1676,7 @@ Hidden
 
 
 For technical reasons, we are forced to say that `s₁` and `s₂` are monoids over
-`expr:lzero`---you're encouraged to work work through where the quantification
+`expr:lzero`---you're encouraged to work through where the quantification
 if you'd like to see why. This is not a fundamental limitation in Agda, but
 working around it here is much more effort than it's worth.[^level-lifting]
 
