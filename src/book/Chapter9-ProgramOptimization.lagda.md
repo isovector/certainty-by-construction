@@ -70,11 +70,11 @@ open import Chapter8-Isomorphisms
 ## Why Can This Be Done?
 
 Computing is a practical means to an end. One of the greatest tragedies in our
-field is the muddled thinking that arises from conflating "what do we want to do"
-from "how should we do it." But confusion exists only in our minds, and never in
-reality. Because dynamic programming is an often-confusing solution to a class
-of problems, we will likely learn more by studying that class than by studying
-the offered solutions.
+field is the muddled thinking that arises from conflating "what do we want to
+do" with "how should we do it." But confusion exists only in our minds, and
+never in reality. Because dynamic programming is an often-confusing solution to
+a class of problems, we will likely learn more by studying that class than by
+studying the offered solutions.
 
 Dynamic programming is helpful for problems with a great deal of overlapping
 subproblems. This notion of subproblems arises from the algorithmic concept of
@@ -124,11 +124,11 @@ the problem, and our theory will guide us the rest of the way.
 ## Shaping the Cache
 
 Our first order of business is to find a means of describing our desired
-memoization strategy, which in turn means to find a way of describing the data
-type we will use to cache results.[^cite-conal] The data structures we end up
-building will all turn out to generalize *tries,* which is more commonly
-thought-of as a structure for representing collections of strings. We will leave
-the formal connection to tries unexplored in this text, but use the terminology
+memoization strategy, which in turn we will use to generate the data type we
+will use to cache results.[^cite-conal] The data structures we end up building
+will all turn out to generalize *tries,* which is more commonly thought-of as a
+structure for representing collections of strings. We will leave the formal
+connection to tries unexplored in this text, but use the terminology
 interchangeably.
 
 [^cite-conal]: Generating classes of algorithms giving a "factoring" of the
@@ -360,12 +360,11 @@ lookup∘tabulate f (suc i) = lookup∘tabulate (f ∘ suc) i
 
 ## Memoizing Functions
 
-An obvious way to go about implementing our memoizing tries is to jump into just
-that, the implementation, and prove separately that the implementation is
-correct. But take it from someone who went down that path and got stumped for a
-week, doing so is much less trivial than it seems. Not only did I manage to get
-the implementation wrong at first, proving the fixed version correct is also a
-huge ordeal.
+While it's tantalizing to jump in and begin implementing our memoizing trees,
+this is shortsighted. An implementation cannot possibly be correct without first
+specifying the problem. And take it from me, someone who wasted a week of his
+life because he initially went down the garden path trying to divorce
+implementation from proof.
 
 Better than jumping in immediately is to take a moment and think about what
 exactly a memoized trie looks like. Having done that work, we will then
