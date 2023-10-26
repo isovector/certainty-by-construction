@@ -945,7 +945,7 @@ implicit arguments:
 
 Doing a [`MakeCase:x≤y`](AgdaCmd) in this hole will correctly split apart the
 `x≤y`, but in doing so, will also leave behind dot patterns for variables that
-it unified in the process. Recall that dot patterns correspond arise from a
+it unified in the process. Recall that dot patterns arise from a
 constructor showing you which indices it must have, and constraining other
 variables in the process. Thus, dot patterns are an excellent way to look at
 what exactly Agda has solved:
