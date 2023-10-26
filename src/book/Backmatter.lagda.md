@@ -21,7 +21,46 @@ on this book, and it's frankly a little bittersweet to be finished this thing
 that's been with me for so long.
 
 Many people were involved in helping tie the knot in reality from which this
-book springs forth.
+book springs forth. Some of the particularly instrumental people in this journey
+are:
+
+*Erin Jackes,* for being my muse, my guiding star, and my one true love. Without
+her support and outstanding company, I never would have found the wherewithal to
+make it to the finish line.
+
+*Reed Mullanix,* whom has never once balked at taking an hour out of his day to
+explain something to me. And I ask *very often.* Most of the technical things I
+know have been taught to me by Reed.
+
+*Conal Elliott,* for his unwavering dedication to beauty and simplicity, and for
+inspiring me to demand more from my work. I pray that one day my taste will be
+half as good as his.
+
+Other fantastic people whom I can't praise enough include Solomon Bothwell, Shae
+Erisson, Li-yao Xia, Jonathan Lorimer, Asad Saeeduddin, Callan McGill, and the
+whole Cofree Coffee crew. Andrew McKnight and Yanze Li were instrumental in
+helping me get through some nasty proofs. Farhad Mehta, John Hughes, Judah
+Jacobson, Ryan Hunter, thank you all for your support.
+
+The punchy cover was designed by Laura Stepšytė. The interior styling was
+inspired by the work of Bob Nystrom, and the color scheme is lifted from Byrne's
+Euclid. The book is compiled through an unholy matrimony made possible by John
+MacFarlane, Rijnard van Tonder and Amélia Liao, among others. Some ideas for
+what a book on Agda should be like came from *Programming Language Foundations
+in Agda,* although I must admit (abashedly) that I haven't actually read it.
+Yet.
+
+Finally, my most sincere gratitude goes out to everyone who has helped make Agda
+happen. It's a marvelous piece of technology with a delightful community, and is
+the most fun I've had programming in years.
+
+Thank you all most sincerely, from the very bottom of my heart.
+
+
+FlushRight
+
+: Sandy Maguire\
+  Vancouver, Canada, October 2023.
 
 
 # About the Author
