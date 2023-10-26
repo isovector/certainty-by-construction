@@ -722,7 +722,7 @@ away.
 ## Identity and Zero Elements {#sec:identities}
 
 A common algebraic structure is the idea of an *identity element*---annoyingly,
-"identity" in a difference sense than in algebraic identity." An identity
+"identity" in a difference sense than in algebraic identity. An identity
 element is a value which doesn't change the answer when applied as a function
 argument. That's a very abstract sentence, so let's dive into it in more detail.
 
