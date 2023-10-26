@@ -2368,7 +2368,12 @@ Hidden
   -- fix expr
       ```
 
-> TODO(sandy): A little prose would go a long way here if I have time!
+
+Throughout this book, we will require a slew of additional mathematical facts.
+They are not particularly *interesting* facts, and none of them should surprise
+you in the slightest. Nevertheless, our insistence that we build everything by
+hand requires this expenditure of energy. The propositions are thus given as
+exercises, in order that you might find some value in the tedium.
 
 
 Exercise (Medium)
@@ -2445,8 +2450,6 @@ Solution
     suc x * (y * z)      ∎
     where open ≡-Reasoning
       ```
-
--- TODO(sandy): add some prose here
 
 
 ## Wrapping Up
