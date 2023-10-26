@@ -1,3 +1,7 @@
+---
+suppress-bibliography: true
+...
+
 # Decidability {#sec:decidability}
 
 

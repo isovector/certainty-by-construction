@@ -38,9 +38,9 @@ half as good as his.
 
 Other fantastic people whom I can't praise enough include Solomon Bothwell, Shae
 Erisson, Li-yao Xia, Jonathan Lorimer, Asad Saeeduddin, Callan McGill, and the
-whole Cofree Coffee crew. Andrew McKnight and Yanze Li were instrumental in
-helping me get through some nasty proofs. Farhad Mehta, John Hughes, Judah
-Jacobson, Ryan Hunter, thank you all for your support.
+whole Cofree Coffee crew. Andrew McKnight, Kenneth Bruskiewicz, and Yanze Li
+were instrumental in helping me get through some nasty proofs. Farhad Mehta,
+John Hughes, Judah Jacobson, Ryan Hunter, thank you all for your support.
 
 The punchy cover was designed by Laura Stepšytė. The interior styling was
 inspired by the work of Bob Nystrom, and the color scheme is lifted from Byrne's
