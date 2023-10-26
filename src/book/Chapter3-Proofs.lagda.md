@@ -195,7 +195,7 @@ Of course, zero *is* even, the proof of which we have seen before:
 Because we have successfully implemented `def:zero-is-even`, we say that
 `def:zero-is-even` is a theorem, and that it a proof of `expr:IsEven zero`.
 
-To drive the point home, we can also try asking if one is an even number:
+To drive the point home, we can also try asking whether one is an even number:
 
 ```agda
   one-is-even : IsEven (suc zero)

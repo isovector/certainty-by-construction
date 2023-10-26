@@ -1336,7 +1336,11 @@ information, you should think about modeling it using a `keyword:data` type:
 
 ```agda
   data Department : Set where
-    administrative engineering finance marketing sales : Department
+    administrative  : Department
+    engineering     : Department
+    finance         : Department
+    marketing       : Department
+    sales           : Department
 ```
 
 Let's say employees at our company have three relevant pieces of information:
@@ -2037,7 +2041,7 @@ the type of `expr:uncurry _∨_` as `expr:Bool × Bool → Bool`. Since this is 
 entire expression, the type of our definition is fully known to Agda, and it
 will happily solve it for us.
 
-As you can see, Agda is quite clever! The constraint solving exhibited here
+As you can see, Agda is quite lever! The constraint solving exhibited here
 is a generally useful tool when coding. For example, you can state a proof as
 being trivial, and then work backwards---asking Agda to synthesize the solution
 for you! It sounds absolutely bonkers, but somehow this actually works.

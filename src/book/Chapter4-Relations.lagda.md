@@ -351,7 +351,7 @@ Hidden
 -- fix bind
     ```
 
-As we saw when in @sec:even when discussing `type:IsEven`s, subsets are best
+As we saw when in @sec:even when discussing `type:IsEven`, subsets are best
 encoded in Agda as functions into `type:Set`. Taken at face value, this would
 make a relation have type `expr:{A B : Set} → A × B → Set`.
 
