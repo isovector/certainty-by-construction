@@ -337,7 +337,7 @@ open import Data.Product
 ```
 
 
-## Heterogeneous Binary Relations
+## Heterogeneous Binary Relations {#sec:hetgen-rels}
 
 One extremely common mathematical construction is the *relation,* which, in the
 canon, is used to categorize disparate things like functions, equalities,
@@ -576,7 +576,7 @@ definition, and use that to show what we intend to. Very rarely do we actually
 need to get our hands dirty and give any implementations.
 
 
-## Homogeneous Relations
+## Homogeneous Relations {#sec:homgen-rels}
 
 The relations we're much more familiar with oare *homogeneous*---those which
 relate two elements of the same type. It is under this category that things like
@@ -611,7 +611,7 @@ relations in the remainder of this chapter, alongside their useful applications
 of, and constructions over.
 
 
-## Standard Properties of Relations
+## Standard Properties of Relations {#sec:rel-props}
 
 It's a good habit to look for what generalizes whenever you notice a connection
 to something you already understand. In this case, how much of our understanding
@@ -1027,7 +1027,7 @@ away from the definition, and can be hard to diagnose without constant
 vigilance.
 
 
-## Ordering the Natural Numbers
+## Ordering the Natural Numbers {#sec:nat-ord}
 
 Having worked through this extremely long digression on the nature of Agda's
 ability to perform pattern matching, we should now see what's gone wrong with
@@ -1718,35 +1718,47 @@ but that's exactly the sort of thing we'll tackle in @sec:decidability.
 
 ## Wrapping Up
 
--- TODO(sandy): finalize wrapping up
+We covered a lot of ground in this chapter, beginning in @sec:levels discussing Agda's universe levels. Many people get `type:Level` from the standard library under the module `module:Level`, but we will prefer to take it from `module:Agda.Primitive`, which uses slightly different names:
 
 ```agda
 open import Agda.Primitive
   using (Level; _⊔_; lzero; lsuc)
   public
+```
 
+Later, in @sec:sigma we discussed sigma types, which, recall, can be used to
+encode the mathematical idea of "there exists." Sigma types are closely related
+to product types, and in fact can be found in the same place:
+
+```agda
 open import Data.Product
   using (Σ; _,_)
   public
+```
 
+In @sec:hetgen-rels and @sec:homgen-rels, we discussed heterogeneous and
+homogeneous relations, while we explored many of their properties in
+#sec:rel-props. The machinery we built here can be found in the standard library under `module:Relation.Binary`:
+
+```agda
 open import Relation.Binary
   using (Rel; REL; Transitive; Reflexive; Symmetric; Antisymmetric)
   public
+```
 
+We briefly explored substitution in @sec:subst, which you can find alongside propositional equality:
+
+```agda
 open import Relation.Binary.PropositionalEquality
   using (subst)
   public
+```
 
+In @sec:nat-ord we gave two orderings for the natural numbers---strictly less than, and less-than-or-equal-to. These, and the properties about them we proved, can be found in `module:Data.Nat` and `module:Data.Nat.Properties`:
+
+```aga
 open import Data.Nat
   using (_≤_; z≤n; s≤s; _<_)
-  public
-
-open Sandbox-Preorders
-  using ( IsPreorder; IsEquivalence; IsPartialOrder
-        ; module Preorder-Reasoning
-        ; ≡-preorder; ≡-equiv
-        ; ≤-preorder; ≤-poset
-        )
   public
 
 open import Data.Nat.Properties
@@ -1754,6 +1766,21 @@ open import Data.Nat.Properties
   public
 ```
 
+Finally, we also explored preorders, as in @sec:preorder. For technical reasons,
+the remainder of this book will not re-export the standard library's definition
+of preorders. However, should you need it for your own projects, you can find
+them under `module:Relation.Binary`. Instead, we will export our own
+definitions:
+
+```agda
+open Sandbox-Preorders
+  using ( IsPreorder; IsEquivalence; IsPartialOrder
+        ; module Preorder-Reasoning
+        ; ≡-preorder; ≡-equiv
+        ; ≤-preorder; ≤-poset
+        )
+  public
+```
 
 
 ---
