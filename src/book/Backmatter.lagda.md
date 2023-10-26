@@ -65,6 +65,15 @@ FlushRight
 
 # About the Author
 
+Sandy is a self-described author, programmer, musician, trouble-maker. He's been
+slinging code for two decades, and has only recently figured out how to do it
+well. He's a pianist and avid car-hater.
+
+When he's not spreading the good word about purely functional programming, he
+spends his time jumping over things and trying not to blow up coffee machines.
+
+Sandy lives in Vancouver with his wife.
+
 
 # Other Books by Sandy Maguire
 
