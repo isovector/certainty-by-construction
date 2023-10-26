@@ -1,3 +1,7 @@
+---
+suppress-bibliography: true
+...
+
 # Proof Objects {#sec:proofs}
 
 Hidden

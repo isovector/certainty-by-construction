@@ -1,3 +1,7 @@
+---
+suppress-bibliography: true
+...
+
 # Modular Arithmetic {#sec:modarith}
 
 ```agda

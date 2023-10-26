@@ -1,3 +1,7 @@
+---
+suppress-bibliography: true
+...
+
 # A Gentle Introduction to Agda {#sec:chapter1}
 
 This book is no ordinary prose. It is not just a book, but it is also a piece of

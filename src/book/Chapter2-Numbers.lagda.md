@@ -1,3 +1,7 @@
+---
+suppress-bibliography: true
+...
+
 # An Exploration of Numbers {#sec:chapter2}
 
 Hidden

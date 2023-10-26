@@ -5,6 +5,8 @@ PANDOC_OPTS := -F pandoc-crossref \
                --citeproc \
                --filter design-tools-exe \
                --from markdown+fancy_lists+raw_tex \
+               --bibliography=bibliography.bib \
+               -M link-citations \
                --tab-stop=100 \
                --no-highlight \
                --top-level-division=part

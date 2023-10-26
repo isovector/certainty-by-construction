@@ -1,3 +1,7 @@
+---
+suppress-bibliography: true
+...
+
 # Program Optimization
 
 Hidden

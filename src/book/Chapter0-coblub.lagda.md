@@ -1,3 +1,7 @@
+---
+suppress-bibliography: true
+...
+
 # The Co-blub Paradox {.unnumbered #sec:coblub}
 
 It is widely acknowledged that the languages you speak shape the thoughts you

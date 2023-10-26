@@ -1,3 +1,7 @@
+---
+suppress-bibliography: true
+...
+
 # Isomorphisms {#sec:isomorphisms}
 
 Hidden

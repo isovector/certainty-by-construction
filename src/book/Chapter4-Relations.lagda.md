@@ -1,3 +1,7 @@
+---
+suppress-bibliography: true
+...
+
 # Relations {#sec:relations}
 
 Hidden

@@ -1,3 +1,7 @@
+---
+suppress-bibliography: true
+...
+
 # Monoids and Setoids {#sec:chapter7}
 
 Hidden

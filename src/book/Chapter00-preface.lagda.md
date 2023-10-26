@@ -1,3 +1,7 @@
+---
+suppress-bibliography: true
+...
+
 # Preface {.unnumbered}
 
 It was almost ten years ago when I stumbled across the idea that in order to

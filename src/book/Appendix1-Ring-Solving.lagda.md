@@ -1,3 +1,7 @@
+---
+suppress-bibliography: true
+...
+
 \backmatter
 
 # Appendix: Ring Solving {-}
@@ -1149,7 +1153,7 @@ us, we can simply re-purpose `type:_×_` by giving it a new can of paint:
 ```
 
 By renaming `ctor:_,_` to `ctor:_:=_`, we can now write a syntactic equality as
-`lhs := rhs`, and our users are none the wiser.
+`lhs` `ctor::=` `rhs`, and our users are none the wiser.
 
 There is one final thing to do, and that's to generate a vector full of distinct
 variables that we can inject into the syntax lambda that the user gives us. This

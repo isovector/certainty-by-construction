@@ -72,7 +72,7 @@ well. He's a pianist and avid car-hater.
 When he's not spreading the good word about purely functional programming, he
 spends his time jumping over things and trying not to blow up coffee machines.
 
-Sandy lives in Vancouver with his wife.
+Sandy lives in Vancouver with his wife, Erin.
 
 
 # Other Books by Sandy Maguire
