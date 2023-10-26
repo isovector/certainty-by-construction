@@ -1142,7 +1142,8 @@ Exercise
 
 : The `def:_∨_` function corresponds to the boolean operation OR, which is
   `ctor:true` if either of its arguments was. There is an analogous function
-  `def:_∧_` (input via [and](AgdaMode)), which returns `ctor:true` if *both* of its arguments are. Define this function.
+  `def:_∧_` (input via [and](AgdaMode)), which returns `ctor:true` if *both*
+ of its arguments are. Define this function.
 
 
 Solution
@@ -1217,8 +1218,7 @@ tells us that `expr:true ∨₂_` is equal to a function which ignores its argum
 and always returns `ctor:true`. This is what we would expect semantically, based
 on the definitions we gave above for `def:_∨₂_`.
 
-It's informative to compare these results against running [`Normalise:true
-∨₁_`](AgdaCmd):
+It's informative to compare these results against running [`Normalise:true ∨₁_`](AgdaCmd):
 
 ```info
 true ∨₁_
