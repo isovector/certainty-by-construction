@@ -1143,7 +1143,7 @@ Exercise
 : The `def:_∨_` function corresponds to the boolean operation OR, which is
   `ctor:true` if either of its arguments was. There is an analogous function
   `def:_∧_` (input via [and](AgdaMode)), which returns `ctor:true` if *both*
- of its arguments are. Define this function.
+  of its arguments are. Define this function.
 
 
 Solution
