@@ -2159,7 +2159,7 @@ delimited hole:
   _ = {! !}
 ```
 
-we can type `def:mk-tuple` *inside the hole:*
+we can write `def:mk-tuple` *inside the hole:*
 
 ```agda
   _ : Bool × Bool
