@@ -883,7 +883,7 @@ identifiers without throwing away information. In addition, you will notice a
 common vocabulary for how these symbols get used. Being able to recognize more
 symbols means you can recognize more concepts at a distance. For example, we
 will often use the floor brackets `⌊⌋` (given by [`clL`](AgdaMode) and
-[`clR`](AgdaMode)) for as a name for an "evaluation" function.
+[`clR`](AgdaMode)) as a name for an "evaluation" function.
 
 As a bonus, when transcribing mathematics, your program can look exceptionally
 close to the source material. This is nice, as it minimizes the cognitive load
