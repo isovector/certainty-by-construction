@@ -766,6 +766,14 @@ signature indeed:
   get (_ , memo) = get′ memo ∘ (Iso.to A≅Ix)
 ```
 
+This is the culmination of our journey; we've come from nothing, building up
+everything as we go. It wasn't very long ago that we defined numbers and
+addition for ourselves, and we have now followed that path all the way to
+automating program optimization. Make no mistake, this is the result of an
+*impressive* understanding of mathematics and its application to software.
+
+*It is this construction about which we can finally be certain.*
+
 
 ## Unicode {.unlisted}
 

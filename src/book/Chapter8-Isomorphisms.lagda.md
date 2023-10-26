@@ -1459,8 +1459,6 @@ now by `def:vec-fin`:
               vec-fin)
 ```
 
--- TODO(sandy): prose
-
 
 ## Wrapping Up
 
