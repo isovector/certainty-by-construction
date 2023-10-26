@@ -882,7 +882,7 @@ identifiers without throwing away information. In addition, you will notice a
 common vocabulary for how these symbols get used. Being able to recognize more
 symbols means you can recognize more concepts at a distance. For example, we
 will often use the floor brackets `⌊⌋` (given by [`clL`](AgdaMode) and
-[`clR`](AgdaMode)) for as a name for an "evaluation" function.
+[`clR`](AgdaMode)) as a name for an "evaluation" function.
 
 As a bonus, when transcribing mathematics, your program can look exceptionally
 close to the source material. This is nice, as it minimizes the cognitive load
@@ -996,7 +996,7 @@ Therefore, the first equation says "the function `def:not` called with argument
 The equals sign is really and truly an *equals* sign; it denotes that we have
 *defined* `expr:not⅋⅋⅋⅋ false` to be `ctor:true`. And the funny thing about
 equalities is that they go both directions, so it's also correct to say that
-`ctor:true` is equal to `expr:not⅋⅋⅋⅋ false``.
+`ctor:true` is equal to `expr:not⅋⅋⅋⅋ false`.
 
 This equality is very deep. While Agda will simplify the left side to the right
 whenever possible, the two sides are exactly equivalent in all computational
@@ -1072,7 +1072,7 @@ ourselves:
   true   ∨⅋⅋⅋⅋⅋ true   = {! !}
 ```
 
-We can finish the definition of `def:_∨_` by giving filling in the desired
+We can finish the definition of `def:_∨_` by filling in the desired
 answers in each hole:
 
 ```agda
@@ -1095,7 +1095,7 @@ with matching only on one.
 
 If the argument we matched on is `ctor:true`, we're done, without needing to
 inspect the other. Otherwise, if our matched argument is `ctor:false`, it
-doesn't affect the answer, because the result is `ctor:true` only with the other
+doesn't affect the answer, because the result is `ctor:true` only when the other
 argument is `ctor:true`.
 
 Thus, in neither the `ctor:true` nor `ctor:false` case do we need to look at
@@ -1142,7 +1142,7 @@ Exercise
 : The `def:_∨_` function corresponds to the boolean operation OR, which is
   `ctor:true` if either of its arguments was. There is an analogous function
   `def:_∧_` (input via [and](AgdaMode)), which returns `ctor:true` if *both*
-  only when both of its arguments are. Define this function.
+  of its arguments are. Define this function.
 
 
 Solution
@@ -1217,8 +1217,7 @@ tells us that `expr:true ∨₂_` is equal to a function which ignores its argum
 and always returns `ctor:true`. This is what we would expect semantically, based
 on the definitions we gave above for `def:_∨₂_`.
 
-It's informative to compare these results against running [`Normalise:true
-∨₁_`](AgdaCmd):
+It's informative to compare these results against running [`Normalise:true ∨₁_`](AgdaCmd):
 
 ```info
 true ∨₁_
@@ -1332,7 +1331,7 @@ module Example-Employees where
 ```
 
 Our company has five departments. Every employee must belong to one of these.
-Whenever you hear the words "one of" used to describe how a piece of
+Whenever you hear the words "one of" used to describe a piece of
 information, you should think about modeling it using a `keyword:data` type:
 
 ```agda
@@ -2038,7 +2037,7 @@ the type of `expr:uncurry _∨_` as `expr:Bool × Bool → Bool`. Since this is 
 entire expression, the type of our definition is fully known to Agda, and it
 will happily solve it for us.
 
-As you can see, Agda is quite the clever! The constraint solving exhibited here
+As you can see, Agda is quite clever! The constraint solving exhibited here
 is a generally useful tool when coding. For example, you can state a proof as
 being trivial, and then work backwards---asking Agda to synthesize the solution
 for you! It sounds absolutely bonkers, but somehow this actually works.

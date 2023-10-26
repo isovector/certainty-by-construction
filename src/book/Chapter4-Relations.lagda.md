@@ -96,7 +96,7 @@ as we become more sophisticated Agda programmers (*eg.* later in this chapter,)
 we will start going the other direction: using types as values.
 
 When we write a proof about values, such a thing lives in `type:Set`. But proofs
-above *types* must necessarily exist in a higher universe so as to not taunt the
+about *types* must necessarily exist in a higher universe so as to not taunt the
 barber and his dreadful paradox. Of course, proofs about *those* proofs must
 again live in a higher universe.
 
@@ -574,7 +574,7 @@ need to get our hands dirty and give any implementations.
 
 ## Homogeneous Relations {#sec:homgen-rels}
 
-The relations we're much more familiar with oare *homogeneous*---those which
+The relations we're much more familiar with are *homogeneous*---those which
 relate two elements of the same type. It is under this category that things like
 equality and orderings fall. You will not be surprised to learn that homogeneous
 relations are a special case of heterogeneous ones. We will name such a thing
@@ -945,7 +945,7 @@ implicit arguments:
 
 Doing a [`MakeCase:x≤y`](AgdaCmd) in this hole will correctly split apart the
 `x≤y`, but in doing so, will also leave behind dot patterns for variables that
-it unified in the process. Recall that dot patterns correspond arise from a
+it unified in the process. Recall that dot patterns arise from a
 constructor showing you which indices it must have, and constraining other
 variables in the process. Thus, dot patterns are an excellent way to look at
 what exactly Agda has solved:

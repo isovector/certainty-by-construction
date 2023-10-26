@@ -51,7 +51,7 @@ distinction between these two groups of truth-seekers is their opinion on the
 nature of falsities.
 
 The classicists---the vast majority---believe all mathematical statements are
-partitioned those which are *true* those which are *false.* There is simply no
+partitioned between those which are *true*, and those which are *false.* There is simply no
 middle ground. This opinion certainly doesn't sound controversial, but it does
 admit odd tactics for proving things. One common proof technique in the
 classical camp is to show that something *can't not* exist, and therefore
@@ -195,7 +195,7 @@ Of course, zero *is* even, the proof of which we have seen before:
 Because we have successfully implemented `def:zero-is-even`, we say that
 `def:zero-is-even` is a theorem, and that it a proof of `expr:IsEven zero`.
 
-To drive the point home, we can also try asking one is an even number:
+To drive the point home, we can also try asking if one is an even number:
 
 ```agda
   one-is-even : IsEven (suc zero)
@@ -722,7 +722,7 @@ away.
 ## Identity and Zero Elements {#sec:identities}
 
 A common algebraic structure is the idea of an *identity element*---annoyingly,
-"identity" in a difference sense than in algebraic identity." An identity
+"identity" in a difference sense than in algebraic identity. An identity
 element is a value which doesn't change the answer when applied as a function
 argument. That's a very abstract sentence, so let's dive into it in more detail.
 
@@ -1026,8 +1026,8 @@ graph?*
 
 By Newton's good grace, thankfully the answer is a resounding *no!* What we are
 missing here is a conceptual piece of the puzzle. Recall that propositional
-equality itself proves that the two things on either side of `def:_≡_ are in
-fact just one thing. That is, once we've pattern matched on `ctor:refl` `:
+equality itself proves that the two things on either side of `def:_≡_` are in
+fact just one thing. That is, once we've pattern matched on `ctor:refl`:
 `bind:x y:x ≡ y`, there is no longer a distinction between `x` and `y`!
 
 We can exploit this fact to flip any propositional equality proof, via a new
