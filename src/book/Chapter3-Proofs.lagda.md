@@ -51,7 +51,7 @@ distinction between these two groups of truth-seekers is their opinion on the
 nature of falsities.
 
 The classicists---the vast majority---believe all mathematical statements are
-partitioned those which are *true* those which are *false.* There is simply no
+partitioned between those which are *true*, and those which are *false.* There is simply no
 middle ground. This opinion certainly doesn't sound controversial, but it does
 admit odd tactics for proving things. One common proof technique in the
 classical camp is to show that something *can't not* exist, and therefore
