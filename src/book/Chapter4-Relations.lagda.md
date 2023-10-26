@@ -96,7 +96,7 @@ as we become more sophisticated Agda programmers (*eg.* later in this chapter,)
 we will start going the other direction: using types as values.
 
 When we write a proof about values, such a thing lives in `type:Set`. But proofs
-above *types* must necessarily exist in a higher universe so as to not taunt the
+about *types* must necessarily exist in a higher universe so as to not taunt the
 barber and his dreadful paradox. Of course, proofs about *those* proofs must
 again live in a higher universe.
 
