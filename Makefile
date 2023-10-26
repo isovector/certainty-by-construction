@@ -132,7 +132,7 @@ build/epub.epub : build-epub/epub.epub
 
 build/tex/sample.tex : $(SAMPLE_TEX) format/tex/template.tex build/.design-tools Makefile
 	cp .design-tools/*.png build/.design-tools
-	pandoc $(PANDOC_PDF_OPTS) -o $@ $(SAMPLE_TEX)
+	pandoc $(PANDOC_PDF_OPTS) -M wants-cover -V wants-cover -o $@ $(SAMPLE_TEX)
 	sed -i 's/\AgdaComment{--\\ !\\ \([0-9]\)}/annotate{\1}/g' $@
 	sed -i 's/\AgdaPostulate{Level}/\AgdaFunction{Level}/g' $@
 	sed -i 's/\\hypertarget{fig:\([^}]\+\)}{}//g' $@
@@ -152,7 +152,7 @@ build/print.pdf :  $(ALL_LAGDA_TEX) build/tex/print.tex build/tex/agda.sty
 	make -C build print.pdf
 
 # Build the sample!!
-build/sample.pdf :  $(SAMPLE_LAGDA_TEX) $(SAMPLE_AGDA_TEX) build/tex/sample.tex build/tex/agda.sty
+build/sample.pdf :  $(SAMPLE_LAGDA_TEX) $(SAMPLE_AGDA_TEX) build/tex/sample.tex build/tex/agda.sty art/cover.pdf
 	make -C build sample.pdf
 
 
