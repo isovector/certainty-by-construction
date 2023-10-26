@@ -574,7 +574,7 @@ need to get our hands dirty and give any implementations.
 
 ## Homogeneous Relations {#sec:homgen-rels}
 
-The relations we're much more familiar with oare *homogeneous*---those which
+The relations we're much more familiar with are *homogeneous*---those which
 relate two elements of the same type. It is under this category that things like
 equality and orderings fall. You will not be surprised to learn that homogeneous
 relations are a special case of heterogeneous ones. We will name such a thing
