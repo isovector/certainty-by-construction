@@ -1,4 +1,5 @@
 ---
+bibliography: bibliography.bib
 nocite: |
   @*
 ...

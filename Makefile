@@ -7,7 +7,6 @@ PANDOC_OPTS := -F pandoc-crossref \
                --from markdown+fancy_lists+raw_tex \
                --tab-stop=100 \
                --no-highlight \
-               --bibliography=bibliography.bib \
                --top-level-division=part
 
 PANDOC_PDF_OPTS := --from latex+raw_tex \
