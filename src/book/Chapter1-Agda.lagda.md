@@ -997,7 +997,7 @@ Therefore, the first equation says "the function `def:not` called with argument
 The equals sign is really and truly an *equals* sign; it denotes that we have
 *defined* `expr:not⅋⅋⅋⅋ false` to be `ctor:true`. And the funny thing about
 equalities is that they go both directions, so it's also correct to say that
-`ctor:true` is equal to `expr:not⅋⅋⅋⅋ false``.
+`ctor:true` is equal to `expr:not⅋⅋⅋⅋ false`.
 
 This equality is very deep. While Agda will simplify the left side to the right
 whenever possible, the two sides are exactly equivalent in all computational
