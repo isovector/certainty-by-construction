@@ -14,6 +14,26 @@ open import Chapter1-Agda using () renaming (_,_ to _,⅋_; _×_ to _×⅋_)
 module Chapter6-Decidability where
 ```
 
+In the last chapter, we thoroughly investigated the notion of doing proof work
+in Agda. We gave a propositional definition what it means for two things to be
+equal, derived relevant properties of equality, built a domain-specific language
+for doing equational reasoning, and proved many facts about the algebra of the
+natural numbers.
+
+Perhaps now we can smugly think that we know all there is to know about
+proofs---but this is patently false. For example, we haven't the notion of
+falseness itself! Furthermore, everything we've built so far works only for
+*statically-known* values. But is it possible that we can use dependent types in
+contexts where we don't know all the values we need to work with? Maybe the
+values came from the user via an interactive system. Are we forced to throw away
+everything we've done and degrade our guarantees to those of a weaker
+programming language?
+
+Thankfully the answer to all of these is "no," and we will explore each in this
+chapter. Additionally, we will also get our hands dirty modeling and proving
+facts about more computer-sciencey objects. After all, these proof techniques
+are applicable outside of the ivory tower, too!
+
 
 Prerequisites
 
@@ -37,27 +57,6 @@ open PropEq
 open import Chapter4-Relations
   using (Level; _⊔_; lsuc; Σ; _,_)
     ```
-
-
-In the last chapter, we thoroughly investigated the notion of doing proof work
-in Agda. We gave a propositional definition what it means for two things to be
-equal, derived relevant properties of equality, built a domain-specific language
-for doing equational reasoning, and proved many facts about the algebra of the
-natural numbers.
-
-Perhaps now we can smugly think that we know all there is to know about
-proofs---but this is patently false. For example, we haven't the notion of
-falseness itself! Furthermore, everything we've built so far works only for
-*statically-known* values. But is it possible that we can use dependent types in
-contexts where we don't know all the values we need to work with? Maybe the
-values came from the user via an interactive system. Are we forced to throw away
-everything we've done and degrade our guarantees to those of a weaker
-programming language?
-
-Thankfully the answer to all of these is "no," and we will explore each in this
-chapter. Additionally, we will also get our hands dirty modeling and proving
-facts about more computer-sciencey objects. After all, these proof techniques
-are applicable outside of the ivory tower, too!
 
 
 ## Negation {#sec:negation}
@@ -239,7 +238,7 @@ pattern in Agda---to make each and every `type:Set` you bind
 universe-polymorphic.
 
 
-## Inequality
+## Inequality {#sec:ineq}
 
 With a satisfactory definition for propositional negation, we can
 define inequality (input as [`neq`](AgdaMode)):
@@ -559,7 +558,7 @@ that the second pattern match is necessarily absurd:
 ```
 
 
-## Decidability
+## Decidability {#sec:on-dec}
 
 It is now time to return to the question of how does one use dependent types in
 the "real world." That is, the proofs we've seen so far work fine and dandy when
@@ -733,7 +732,17 @@ and give a more "semantically-inclined" type to our old function:
 
 ## Transforming Decisions
 
--- TODO(sandy): write about me
+Often times, you will be trying to decide a problem, but can instead only
+directly decide some closely-related problem. In cases like these, it can be
+helpful to have some machinery for transforming one decision into another.
+
+Doing so is trickier than you might expect; at first blush, it seems like if we
+have some function `bind:P Q:P → Q` we should be able to write a related
+function `bind:P Q:Dec P → Dec Q`. But alas we cannot! Doing so also requires a
+function `bind:P Q:Q → P`, because in the `ctor:no` case, we also need to
+transform `Q` back into a `P` in order to refute it!
+
+We can wrap up this logic once and for all as `def:map-dec`:
 
 ```agda
   map-dec  : {ℓ₁ ℓ₂ : Level} {P : Set ℓ₁} {Q : Set ℓ₂}
@@ -742,6 +751,8 @@ and give a more "semantically-inclined" type to our old function:
   map-dec to from (yes  p)   = yes  (to p)
   map-dec to from (no   ¬p)  = no   (λ q → ¬p (from q))
 ```
+
+which will come in handy in the future.
 
 
 ## Binary Trees {#sec:bintrees}
@@ -1888,7 +1899,46 @@ and finally, define insertion by merely plugging in some trivial proofs:
 
 ## Wrapping Up
 
--- TODO(sandy): finalize wrapping up
+Decidability turns out to be quite a big topic! The field of computer science
+tends to hold up decidability as the gold standard of things to care about, but
+here we are, having not mentioned it until chapter 6.
+
+In @sec:negation, we discussed negation, falseness, and the principle of explosion. The last two of these can be found in the standard library under `module:Data.Empty`:
+
+```agda
+open import Data.Empty
+  using (⊥; ⊥-elim)
+  public
+```
+
+while negation can be found alongside `type:Dec` (from @sec:dec) under
+`module:Relation.Nullary`:
+
+```agda
+open import Relation.Nullary
+  using (Dec; yes; no; ¬_)
+  public
+```
+
+Despite `type:Dec` and `def:¬_` allegedly being nullary relations, for some reason the type `type:Decidable` itself comes from `module:Relation.Unary`:
+
+```agda
+open import Relation.Unary
+  using (Decidable)
+  public
+```
+
+In @sec:ineq we discussed inequality, which can be found in the same place as
+propositional equality:
+
+```agda
+open import Relation.Binary.PropositionalEquality
+  using (_≢_; ≢-sym)
+  public
+```
+
+Many of the properties we could show inequality *didn't respect* come instead
+from `module:Relation.Binary`:
 
 ```agda
 open import Relation.Binary
@@ -1896,19 +1946,11 @@ open import Relation.Binary
   using (Trichotomous; Tri)
   renaming (Decidable to Decidable₂)
   public
+```
 
-open import Data.Empty
-  using (⊥; ⊥-elim)
-  public
+Alongside all this, there are a few miscellaneous re-exports that we must give:
 
-open import Relation.Unary
-  using (Decidable)
-  public
-
-open import Relation.Nullary
-  using (Dec; yes; no; ¬_)
-  public
-
+```agda
 open import Relation.Nullary.Decidable
   renaming (map′ to map-dec)
   public
@@ -1916,18 +1958,16 @@ open import Relation.Nullary.Decidable
 open import Data.Nat.Properties
   using (<-cmp)
   public
+```
 
-open import Relation.Binary.PropositionalEquality
-  using (_≢_; ≢-sym)
-  public
+And finally, even though they aren't in the standard library, we will see our
+old binary tree friends from @sec:bintrees again soon.
 
+```agda
 open BinaryTrees
   using (BinTree; empty; branch; leaf)
   public
 ```
-
-
-
 
 ---
 
