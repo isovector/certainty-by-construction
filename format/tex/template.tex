@@ -339,11 +339,11 @@ $endif$
 
 \usepackage[tikz]{bclogo}
 
-\newcommand{\BookEnv}[3]{\newenvironment{#1}{\begin{tcolorbox}[breakable, left=2.5mm, right=3mm, top=4mm, bottom=0mm, skin=enhancedmiddle, colframe=white, title={\color{black}#2\quad{}\impact{#3}}]\color{black}}{\end{tcolorbox}}}
+\newcommand{\BookEnv}[4]{\newenvironment{#1}{#2\begin{tcolorbox}[breakable, left=2.5mm, right=3mm, top=4mm, bottom=0mm, skin=enhancedmiddle, colframe=white, title={\color{black}#3\quad{}\impact{#4}}]\color{black}}{\end{tcolorbox}}}
 
-\BookEnv{AgdaInfo}{\Info}{INFO WINDOW}
-\BookEnv{Footgun}{\Radioactivity}{CAUTION}
-\BookEnv{UnicodeTable}{\Keyboard}{UNICODE IN THIS CHAPTER}
+\BookEnv{AgdaInfo}{}{\Info}{INFO WINDOW}
+\BookEnv{Footgun}{}{\Radioactivity}{CAUTION}
+\BookEnv{UnicodeTable}{\spaceMyBox}{\Keyboard}{UNICODE IN THIS CHAPTER}
 
 
 \newfontfamily{\impact}{SofiaSansCondensed-Medium}
@@ -501,7 +501,7 @@ $endfor$
 
 % NOTE(sandy): beginning of frontmatter stuff
 
-\newcommand{\spaceMyBox}{\par\addvspace{8mm}}
+\newcommand{\spaceMyBox}{\par\addvspace{7mm}}
 
 \newcommand{\bigQuote}[2]{
 \centering

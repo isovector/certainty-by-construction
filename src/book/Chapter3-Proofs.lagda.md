@@ -10,20 +10,6 @@ Hidden
 module Chapter3-Proofs where
 ```
 
-
-Prerequisites
-
-:   ```agda
-open import Chapter1-Agda
-  using (Bool; true; false; _∨_; _∧_; not)
-    ```
-
-:   ```agda
-open import Chapter2-Numbers
-  using (ℕ; zero; suc)
-    ```
-
-
 My first encounter with mathematical proofs was in a first-year university
 algebra course, where I immediately realized I had no idea what was going on.
 The reasoning that seemed perfectly convincing to me was much less so to
@@ -40,6 +26,19 @@ In this chapter we will take our first looks at what constitutes a proof and see
 how we can articulate them in Agda. In the process, we will need to learn a
 little more about Agda's execution model and begin exploring the exciting world
 of dependent types.
+
+
+Prerequisites
+
+:   ```agda
+open import Chapter1-Agda
+  using (Bool; true; false; _∨_; _∧_; not)
+    ```
+
+:   ```agda
+open import Chapter2-Numbers
+  using (ℕ; zero; suc)
+    ```
 
 
 ## Constructivism
