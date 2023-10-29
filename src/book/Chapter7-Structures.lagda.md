@@ -1276,7 +1276,7 @@ equivalences. It's a nightmare. And don't worry; we'll see a great deal more of
 them in our future.
 
 
-## Function Extensionality
+## A Setoid for Extensionality
 
 Now that we're familiar (if not *comfortable*) with how to set up setoids, we
 can try our hand at building one for function extensionality:
