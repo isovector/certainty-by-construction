@@ -91,11 +91,14 @@ machines. Sandy Maguire's unique blend of expertise, creativity, and adventurous
 spirit make him a compelling and dynamic figure in the world of software.
 
 
-# Other Books by Sandy Maguire
+# Books by Sandy Maguire
 
 * Thinking with Types, 2018, Cofree Press `sdcp:br`
   available at [https://leanpub.com/thinking-with-types](https://leanpub.com/thinking-with-types)
 
 * Algebra-Driven Design, 2020, Cofree Press `sdcp:br`
   available at [https://leanpub.com/algebra-driven-design](https://leanpub.com/algebra-driven-design)
+
+* Certainty by Construction, 2023, Cofree Press `sdcp:br`
+  available at [https://leanpub.com/certainty-by-construction](https://leanpub.com/certainty-by-construction)
 
