@@ -48,7 +48,8 @@ Euclid. The book is compiled through an unholy matrimony made possible by John
 MacFarlane, Rijnard van Tonder and Amélia Liao, among others. Some ideas for
 what a book on Agda should be like came from *Programming Language Foundations
 in Agda,* although I must admit (abashedly) that I haven't actually read it.
-Yet.
+Yet. This book uses Dan Zadorozny's excellent font "Special Agent Condensed,"
+and the spectacular "Front Page Neue" by Allison James.
 
 Finally, my most sincere gratitude goes out to everyone who has helped make Agda
 happen. It's a marvelous piece of technology with a delightful community, and is
@@ -65,14 +66,29 @@ FlushRight
 
 # About the Author
 
-Sandy is a self-described author, programmer, musician, trouble-maker. He's been
-slinging code for two decades, and has only recently figured out how to do it
-well. He's a pianist and avid car-hater.
+Sandy Maguire is a man of many facets, whose passion for software correctness
+has led him to become the author of three influential books in the field. He
+firmly believes that a combination of solid theoretical foundations and the
+practical wisdom to apply them is paramount in the world of software
+development.
 
-When he's not spreading the good word about purely functional programming, he
-spends his time jumping over things and trying not to blow up coffee machines.
+In addition to theoretical software, Sandy's interests are as diverse as they
+are unique. He's an avid car-hater who finds solace from the busy city as a
+talented pianist. His enthusiasm doesn't stop there, as he's also a dedicated
+parkour enthusiast, constantly seeking new heights and challenges.
 
-Sandy lives in Vancouver with his wife, Erin.
+Not content with the status quo, Sandy stepped away from the software industry
+in 2018 to actively pursue change. He's a self-described author, programmer,
+musician, and trouble-maker who's been immersed in the world of coding for over
+two decades. With considerable time and experience, he feels like he's finally
+making progress on where good software comes from.
+
+Currently residing in Vancouver with his wife Erin, you can find Sandy
+vigorously researching programming languages and delving into the intricacies of
+mathematics. When he's not busy advocating for purely functional programming, he
+can be found leaping over obstacles and attempting not to destroy coffee
+machines. Sandy Maguire's unique blend of expertise, creativity, and adventurous
+spirit make him a compelling and dynamic figure in the world of software.
 
 
 # Other Books by Sandy Maguire
