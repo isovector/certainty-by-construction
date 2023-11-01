@@ -4,7 +4,7 @@ CONTENT := book
 PANDOC_OPTS := -F pandoc-crossref \
                --citeproc \
                --filter design-tools-exe \
-               --from markdown+fancy_lists+raw_tex \
+               --from markdown+fancy_lists+raw_tex+raw_html \
                --bibliography=bibliography.bib \
                -M link-citations \
                --tab-stop=100 \
@@ -23,7 +23,14 @@ PANDOC_EPUB_OPTS := --from markdown+fancy_lists+raw_html \
                     --toc \
                     --citeproc \
                     -s \
+                    --epub-cover-image art/epub-cover.png \
+                    -M title="Certainty by Construction" \
+                    -M subtitle="Software & Mathematics in Agda" \
+                    -M author="Sandy Maguire" \
+                    -M publisher="Cofree Press" \
+                    -M rights="© 2023 Sandy Maguire" \
                     --top-level-division=chapter \
+                    -f html-native_spans+raw_html \
                     -t epub
 
 ALL_CHAPTERS := Chapter00-preface \
@@ -45,7 +52,8 @@ ALL_LITERATE_AGDA := $(patsubst %,src/book/%.lagda.md,$(ALL_CHAPTERS))
 ALL_LAGDA_TEX := $(patsubst src/book/%.lagda.md,build/tex/agda/%.lagda.tex,$(ALL_LITERATE_AGDA))
 ALL_LAGDA_HTML := $(patsubst src/book/%.lagda.md,build-epub/agda/%.lagda.html,$(ALL_LITERATE_AGDA))
 ALL_TEX := $(patsubst src/book/%.lagda.md,build/tex/book/%.tex,$(ALL_LITERATE_AGDA))
-ALL_HTML := $(patsubst src/book/%.lagda.md,build-epub/book/%.md,$(ALL_LITERATE_AGDA))
+ALL_HTML := $(patsubst src/book/%.lagda.md,build-epub/book/%.html,$(ALL_LITERATE_AGDA))
+ALL_SOME_HTML := $(patsubst src/book/%.lagda.md,build-epub/agda/html/%.md,$(ALL_LITERATE_AGDA))
 
 SAMPLE_CHAPTERS := Chapter0-coblub \
                    Chapter6-Decidability
@@ -71,7 +79,7 @@ build/tex/agda/%.lagda.tex : src/book/%.lagda.md
 
 # Just copy for html
 build-epub/agda/%.lagda.md : src/book/%.lagda.md
-	cp $^ $@
+	pandoc $(PANDOC_OPTS) -t html+lagda -o $@ $^
 
 # -- Run the agda processor
 # TEX
@@ -83,18 +91,21 @@ build/tex/agda/latex/%.tex : build/tex/agda/%.lagda.tex
 build-epub/agda/html/%.md : build-epub/agda/%.lagda.md
 	(cd build-epub/agda && agda --html --html-highlight=code $*.lagda.md)
 
+build-epub/agda/html/%.html : build-epub/agda/html/%.md
+	cp $^ $@
+
 # -- Copy the resulting documents
 # TEX
 build/tex/book/%.tex : build/tex/agda/latex/%.tex
 	mv $^ $@
 
 # HTML
-build-epub/book/%.md : build-epub/agda/html/%.md
-	mv $^ $@
-	sed -i 's/⅋[^ {}()._\\]*//g' $@
-	sed -i 's/id="\([^"]\+\)"/id="$*-\1"/g' $@
-	sed -i 's/href="\([^#]\+\).html#\([^"]\+\)"/href="#\1-\2"/g' $@
-	sed -i 's/href="[^"#]\+"//g' $@
+build-epub/book/%.html : build-epub/agda/html/%.html
+	cp $^ $@
+	sed -i 's/⅋[^ {}()._\\<>"]*//g' $@
+	sed -i 's/id="\([^"]\+\)"//g' $@
+	sed -i 's/href="\([^"]\+\)"//g' $@
+	sed -i 's/doc-endnotes/doc-footnote/g' $@
 
 build/.design-tools :
 	mkdir build/.design-tools
@@ -125,7 +136,7 @@ build/tex/print.tex : $(ALL_TEX) format/tex/template.tex build/.design-tools Mak
 # HTML
 build-epub/epub.epub : $(ALL_HTML) format/epub/metadata.md build/.design-tools Makefile
 	cp .design-tools/*.png build/.design-tools
-	pandoc $(PANDOC_EPUB_OPTS) -o $@ format/epub/metadata.md $(ALL_HTML)
+	pandoc $(PANDOC_EPUB_OPTS) -o $@ $(ALL_HTML)
 
 build/epub.epub : build-epub/epub.epub
 	cp $^ $@
@@ -158,9 +169,10 @@ build/sample.pdf :  $(SAMPLE_LAGDA_TEX) $(SAMPLE_AGDA_TEX) build/tex/sample.tex 
 
 .NOTINTERMEDIATE: build/tex/agda/%.lagda.tex $(ALL_LAGDA_TEX) $(ALL_LAGDA_HTML) $(ALL_TEX) $(ALL_HTML)
 
-.PHONY: clean clean-epub all $(RULES)
+.PHONY: clean clean-epub all $(RULES) refresh-epub
 
-
+refresh-epub:
+	rm build-epub/book/*.md
 clean-epub:
 	rm -r build-epub/agda/* || echo 0
 	rm -r build-epub/agda/html/* || echo 0
