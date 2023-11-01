@@ -53,7 +53,7 @@ ALL_LAGDA_TEX := $(patsubst src/book/%.lagda.md,build/tex/agda/%.lagda.tex,$(ALL
 ALL_LAGDA_HTML := $(patsubst src/book/%.lagda.md,build-epub/agda/%.lagda.html,$(ALL_LITERATE_AGDA))
 ALL_TEX := $(patsubst src/book/%.lagda.md,build/tex/book/%.tex,$(ALL_LITERATE_AGDA))
 ALL_HTML := $(patsubst src/book/%.lagda.md,build-epub/book/%.html,$(ALL_LITERATE_AGDA))
-ALL_SOME_HTML := $(patsubst src/book/%.lagda.md,build-epub/agda/html/%.md,$(ALL_LITERATE_AGDA))
+ALL_SOME_HTML := $(patsubst src/book/%.lagda.md,build-epub/agda/html/%.html,$(ALL_LITERATE_AGDA))
 
 SAMPLE_CHAPTERS := Chapter0-coblub \
                    Chapter6-Decidability
@@ -103,6 +103,7 @@ build/tex/book/%.tex : build/tex/agda/latex/%.tex
 build-epub/book/%.html : build-epub/agda/html/%.html
 	cp $^ $@
 	sed -i 's/⅋[^ {}()._\\<>"]*//g' $@
+	sed -i 's/&#8523;[^ {}()._\\<>"]*//g' $@
 	sed -i 's/id="\([^"]\+\)"//g' $@
 	sed -i 's/href="\([^"]\+\)"//g' $@
 	sed -i 's/doc-endnotes/doc-footnote/g' $@
@@ -167,12 +168,13 @@ build/sample.pdf :  $(SAMPLE_LAGDA_TEX) $(SAMPLE_AGDA_TEX) build/tex/sample.tex 
 	make -C build sample.pdf
 
 
-.NOTINTERMEDIATE: build/tex/agda/%.lagda.tex $(ALL_LAGDA_TEX) $(ALL_LAGDA_HTML) $(ALL_TEX) $(ALL_HTML)
+.NOTINTERMEDIATE: build/tex/agda/%.lagda.tex $(ALL_LAGDA_TEX) $(ALL_LAGDA_HTML) $(ALL_TEX) $(ALL_HTML) $(ALL_SOME_HTML)
 
 .PHONY: clean clean-epub all $(RULES) refresh-epub
 
 refresh-epub:
-	rm build-epub/book/*.md
+	rm build-epub/book/*.html
+
 clean-epub:
 	rm -r build-epub/agda/* || echo 0
 	rm -r build-epub/agda/html/* || echo 0
