@@ -23,6 +23,7 @@ PANDOC_EPUB_OPTS := --from markdown+fancy_lists+raw_html \
                     --toc \
                     --citeproc \
                     -s \
+                    --css=format/epub/css.css \
                     --epub-cover-image art/epub-cover.png \
                     -M title="Certainty by Construction" \
                     -M subtitle="Software & Mathematics in Agda" \
@@ -135,7 +136,7 @@ build/tex/print.tex : $(ALL_TEX) format/tex/template.tex build/.design-tools Mak
 	sed -i '/{part}/d' $@
 
 # HTML
-build-epub/epub.epub : $(ALL_HTML) format/epub/metadata.md build/.design-tools Makefile
+build-epub/epub.epub : $(ALL_HTML) format/epub/metadata.md build/.design-tools Makefile format/epub/css.css
 	cp .design-tools/*.png build/.design-tools
 	pandoc $(PANDOC_EPUB_OPTS) -o $@ $(ALL_HTML)
 
