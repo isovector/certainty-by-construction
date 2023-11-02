@@ -25,6 +25,7 @@ PANDOC_EPUB_OPTS := --from markdown+fancy_lists+raw_html \
                     -s \
                     --css=format/epub/css.css \
                     --epub-cover-image art/epub-cover.png \
+                    --no-highlight \
                     -M title="Certainty by Construction" \
                     -M subtitle="Software & Mathematics in Agda" \
                     -M author="Sandy Maguire" \
@@ -53,8 +54,11 @@ ALL_LITERATE_AGDA := $(patsubst %,src/book/%.lagda.md,$(ALL_CHAPTERS))
 ALL_LAGDA_TEX := $(patsubst src/book/%.lagda.md,build/tex/agda/%.lagda.tex,$(ALL_LITERATE_AGDA))
 ALL_LAGDA_HTML := $(patsubst src/book/%.lagda.md,build-epub/agda/%.lagda.html,$(ALL_LITERATE_AGDA))
 ALL_TEX := $(patsubst src/book/%.lagda.md,build/tex/book/%.tex,$(ALL_LITERATE_AGDA))
-ALL_HTML := $(patsubst src/book/%.lagda.md,build-epub/book/%.html,$(ALL_LITERATE_AGDA))
-ALL_SOME_HTML := $(patsubst src/book/%.lagda.md,build-epub/agda/html/%.html,$(ALL_LITERATE_AGDA))
+
+ALL_FINAL_HTML := $(patsubst src/book/%.lagda.md,build-epub/book/%.html,$(ALL_LITERATE_AGDA))
+ALL_BUILD_LAGDA := $(patsubst src/book/%.lagda.md,build-epub/agda/%.lagda.md,$(ALL_LITERATE_AGDA))
+ALL_BUILD_AGDA_HTML := $(patsubst src/book/%.lagda.md,build-epub/agda/html/%.md,$(ALL_LITERATE_AGDA))
+ALL_BUILD_BOOK_HTML := $(patsubst src/book/%.lagda.md,build-epub/book/%.html,$(ALL_LITERATE_AGDA))
 
 SAMPLE_CHAPTERS := Chapter0-coblub \
                    Chapter6-Decidability
@@ -78,36 +82,43 @@ all : build/pdf.pdf build/print.pdf build/sample.pdf build-epub.epub
 build/tex/agda/%.lagda.tex : src/book/%.lagda.md
 	pandoc $(PANDOC_OPTS) -t latex+lagda -o $@ $^
 
-# Just copy for html
-build-epub/agda/%.lagda.md : src/book/%.lagda.md
-	pandoc $(PANDOC_OPTS) -t html+lagda -o $@ $^
-
 # -- Run the agda processor
 # TEX
 build/tex/agda/latex/%.tex : build/tex/agda/%.lagda.tex
 	(cd build/tex/agda && agda --latex $*.lagda.tex)
 	(grep UnsolvedMeta $@ > /dev/null && scripts/fix-metaspan.sh $@) || echo "ok"
 
-# HTML
-build-epub/agda/html/%.md : build-epub/agda/%.lagda.md
-	(cd build-epub/agda && agda --html --html-highlight=code $*.lagda.md)
-
-build-epub/agda/html/%.html : build-epub/agda/html/%.md
-	cp $^ $@
-
 # -- Copy the resulting documents
 # TEX
 build/tex/book/%.tex : build/tex/agda/latex/%.tex
 	mv $^ $@
 
-# HTML
-build-epub/book/%.html : build-epub/agda/html/%.html
+
+
+
+# EPUB PIPELINE
+build-epub/agda/%.lagda.md : src/book/%.lagda.md
+	pandoc $(PANDOC_OPTS) -t html+lagda -o $@ $^ &> /dev/null
+
+build-epub/agda/html/%.md : build-epub/agda/%.lagda.md
+	(cd build-epub/agda && agda --html --html-highlight=code $*.lagda.md)
+
+build-epub/book/%.html : build-epub/agda/html/%.md
 	cp $^ $@
 	sed -i 's/⅋[^ {}()._\\<>"]*//g' $@
 	sed -i 's/&#8523;[^ {}()._\\<>"]*//g' $@
 	sed -i 's/id="\([^"]\+\)"//g' $@
 	sed -i 's/href="\([^"]\+\)"//g' $@
 	sed -i 's/doc-endnotes/doc-footnote/g' $@
+
+# HTML
+build-epub/epub.epub : $(ALL_FINAL_HTML) format/epub/metadata.md build/.design-tools Makefile format/epub/css.css
+	cp .design-tools/*.png build/.design-tools
+	pandoc $(PANDOC_EPUB_OPTS) -o $@ $(ALL_FINAL_HTML) &> /dev/null
+
+build/epub.epub : build-epub/epub.epub
+	cp $^ $@
+
 
 build/.design-tools :
 	mkdir build/.design-tools
@@ -135,14 +146,6 @@ build/tex/print.tex : $(ALL_TEX) format/tex/template.tex build/.design-tools Mak
 	sed -i 's/VERYILLEGALCODE/code/g' $@
 	sed -i '/{part}/d' $@
 
-# HTML
-build-epub/epub.epub : $(ALL_HTML) format/epub/metadata.md build/.design-tools Makefile format/epub/css.css
-	cp .design-tools/*.png build/.design-tools
-	pandoc $(PANDOC_EPUB_OPTS) -o $@ $(ALL_HTML)
-
-build/epub.epub : build-epub/epub.epub
-	cp $^ $@
-
 build/tex/sample.tex : $(SAMPLE_TEX) format/tex/template.tex build/.design-tools Makefile
 	cp .design-tools/*.png build/.design-tools
 	pandoc $(PANDOC_PDF_OPTS) -M wants-cover -V wants-cover -o $@ $(SAMPLE_TEX)
@@ -169,7 +172,7 @@ build/sample.pdf :  $(SAMPLE_LAGDA_TEX) $(SAMPLE_AGDA_TEX) build/tex/sample.tex 
 	make -C build sample.pdf
 
 
-.NOTINTERMEDIATE: build/tex/agda/%.lagda.tex $(ALL_LAGDA_TEX) $(ALL_LAGDA_HTML) $(ALL_TEX) $(ALL_HTML) $(ALL_SOME_HTML)
+.NOTINTERMEDIATE: build/tex/agda/%.lagda.tex $(ALL_LAGDA_TEX) $(ALL_LAGDA_HTML) $(ALL_TEX) $(ALL_FINAL_HTML) $(ALL_BUILD_LAGDA) $(ALL_BUILD_AGDA_HTML) $(ALL_BUILD_BOOK_HTML)
 
 .PHONY: clean clean-epub all $(RULES) refresh-epub
 

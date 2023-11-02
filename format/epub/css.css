@@ -224,31 +224,32 @@ div.hidden {
   display: none;
 }
 
-.AgdaComment                {color: #999999;}
-.AgdaPragma                 {color: #c49822;}
-.AgdaKeyword                {color: #c49822;}
-.AgdaString                 {color: #3f3c36;}
-.AgdaNumber                 {color: #3f3c36;}
-.AgdaSymbol                 {color: #000000;}
-.AgdaPrimitiveType          {color: #0F698C;}
-.AgdaBound                  {color: #3f3c36;}
-.AgdaGeneralizable          {color: #3f3c36;}
-.AgdaInductiveConstructor   {color: #d42a20;}
-.AgdaCoinductiveConstructor {color: #d42a20;}
-.AgdaDatatype               {color: #0F698C;}
-.AgdaField                  {color: #005c2e;}
-.AgdaFunction               {color: #0F698C;}
-.AgdaMacro                  {color: #000000;}
-.AgdaModule                 {color: #000000;}
-.AgdaPostulate              {background-color: #c8ebf9;}
-.AgdaPrimitive              {color: #0F698C;}
-.AgdaRecord                 {color: #0F698C;}
-.AgdaArgument               {color: #3f3c36;}
-.AgdaDottedPattern          {color: #000000;}
-.AgdaUnsolvedMeta           {background-color: #fac22b;}
-.AgdaUnsolvedConstraint     {background-color: #fac22b;}
-.AgdaTerminationProblem     {background-color: #FF0000;}
-.AgdaIncompletePattern      {background-color: #A020F0;}
-.AgdaErrorWarning           {background-color: #FF0000;}
-.AgdaError                  {background-color: #F4A460;}
-.AgdaHole                   {background-color: #fcf3d9;}
+.Comment                {color: #999999            !important;}
+.Pragma                 {color: #c49822            !important;}
+.Keyword                {color: #c49822            !important;}
+.String                 {color: #3f3c36            !important;}
+.Number                 {color: #3f3c36            !important;}
+.Symbol                 {color: #000000            !important;}
+.PrimitiveType          {color: #0F698C            !important;}
+.Bound                  {color: #3f3c36            !important;}
+.Generalizable          {color: #3f3c36            !important;}
+.InductiveConstructor   {color: #d42a20            !important;}
+.CoinductiveConstructor {color: #d42a20            !important;}
+.Datatype               {color: #0F698C            !important;}
+.Field                  {color: #005c2e            !important;}
+.Function               {color: #0F698C            !important;}
+.Macro                  {color: #000000            !important;}
+.Module                 {color: #000000            !important;}
+.Postulate              {background-color: #c8ebf9 !important;}
+.Primitive              {color: #0F698C            !important;}
+.Record                 {color: #0F698C            !important;}
+.Argument               {color: #3f3c36            !important;}
+.DottedPattern          {color: #000000            !important;}
+.UnsolvedMeta           {background-color: #fac22b !important;}
+.UnsolvedConstraint     {background-color: #fac22b !important;}
+.TerminationProblem     {background-color: #FF0000 !important;}
+.IncompletePattern      {background-color: #A020F0 !important;}
+.ErrorWarning           {background-color: #FF0000 !important;}
+.Error                  {background-color: #F4A460 !important;}
+.Hole                   {background-color: #fcf3d9 !important;}
+

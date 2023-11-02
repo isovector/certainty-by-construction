@@ -1536,8 +1536,8 @@ and `⦂` ([`z:`](AgdaMode)):
 
 ```agda
   _‽_⦂_ : {A : Set} → Bool → A → A → A
-  false ‽ t ⦂ f = f
-  true ‽ t ⦂ f = t
+  false  ‽ t ⦂ f = f
+  true   ‽ t ⦂ f = t
 
   infixr 20 _‽_⦂_
 
