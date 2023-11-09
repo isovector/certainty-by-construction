@@ -57,8 +57,8 @@ Prerequisites
 
 :   ```agda
 open import Chapter1-Agda
-  using  ( Bool; true; false; _×_; proj₁; proj₂; uncurry; _⊎_
-         ; inj₁; inj₂)
+  using  ( Bool; true; false; _×_; proj₁; proj₂; uncurry
+         ; _⊎_; inj₁; inj₂)
     ```
 
 :   ```agda
@@ -77,7 +77,8 @@ open import Chapter4-Relations
 
 :   ```agda
 open import Chapter5-Modular-Arithmetic
-  using (equiv-to-preorder; ≡-is-equivalence; refl; sym; trans)
+  using  (equiv-to-preorder; ≡-is-equivalence; refl
+         ; sym; trans)
     ```
 
 :   ```agda
@@ -808,16 +809,16 @@ Solution
 
 :       ```agda
   generic-bool : prop-setoid Bool ≅ prop-setoid (⊤ ⊎ ⊤)
-  to        generic-bool false  = inj₁  tt
-  to        generic-bool true   = inj₂  tt
-  from      generic-bool (inj₁  tt) = false
-  from      generic-bool (inj₂  tt) = true
-  from∘to   generic-bool false  = refl
-  from∘to   generic-bool true   = refl
-  to∘from   generic-bool (inj₁  tt) = refl
-  to∘from   generic-bool (inj₂  tt) = refl
-  to-cong   generic-bool ≡.refl = refl
-  from-cong generic-bool ≡.refl = refl
+  to        generic-bool false       = inj₁  tt
+  to        generic-bool true        = inj₂  tt
+  from      generic-bool (inj₁  tt)  = false
+  from      generic-bool (inj₂  tt)  = true
+  from∘to   generic-bool false       = refl
+  from∘to   generic-bool true        = refl
+  to∘from   generic-bool (inj₁  tt)  = refl
+  to∘from   generic-bool (inj₂  tt)  = refl
+  to-cong   generic-bool ≡.refl      = refl
+  from-cong generic-bool ≡.refl      = refl
         ```
 
 Of course, it feels like we've traded needing to write an annoying isomorphism
@@ -978,12 +979,13 @@ isomorphism between the product setoid given by `def:×-preserves-≅`:
     : s₁ ≅ s₂
     → s₃ ≅ s₄
     → ×-setoid s₁ s₃ ≅ ×-setoid s₂ s₄
-  to    (×-preserves-≅ s t) = ×.map (to s)    (to t)
-  from  (×-preserves-≅ s t) = ×.map (from s)  (from t)
-  from∘to (×-preserves-≅ s t) (x , y) = from∘to s x , from∘to t y
-  to∘from (×-preserves-≅ s t) (x , y) = to∘from s x , to∘from t y
+  to       (×-preserves-≅ s t) = ×.map (to s)    (to t)
+  from     (×-preserves-≅ s t) = ×.map (from s)  (from t)
+  from∘to  (×-preserves-≅ s t) (x , y) = from∘to s x , from∘to t y
+  to∘from  (×-preserves-≅ s t) (x , y) = to∘from s x , to∘from t y
   to-cong    (×-preserves-≅ s t) = ×.map (to-cong s)    (to-cong t)
-  from-cong  (×-preserves-≅ s t) = ×.map (from-cong s)  (from-cong t)
+  from-cong  (×-preserves-≅ s t)
+    = ×.map (from-cong s)  (from-cong t)
 ```
 
 In order to get back to the land of `def:prop-setoid`s, we can show a further
@@ -1192,12 +1194,13 @@ Armed with everything, we can indeed show an isomorphism between a product of
   combine-remQuot-iso
       : prop-setoid (Fin (m * n))
       ≅ (prop-setoid (Fin m × Fin n))
-  to    combine-remQuot-iso             = remQuot _
-  from  combine-remQuot-iso (fst , snd) = combine fst snd
-  from∘to  (combine-remQuot-iso {m = m}) x  = combine-remQuot {m} _ x
-  to∘from  combine-remQuot-iso (x , y)      = remQuot-combine x y
-  to-cong    combine-remQuot-iso ≡.refl = refl
-  from-cong  combine-remQuot-iso ≡.refl = refl
+  to    combine-remQuot-iso              = remQuot _
+  from  combine-remQuot-iso (fst , snd)  = combine fst snd
+  from∘to  (combine-remQuot-iso {m = m}) x
+    = combine-remQuot {m} _ x
+  to∘from    combine-remQuot-iso (x , y)  = remQuot-combine x y
+  to-cong    combine-remQuot-iso ≡.refl   = refl
+  from-cong  combine-remQuot-iso ≡.refl   = refl
 ```
 
 We can do a similar trick to show that `type:_×_` multiplies the cardinalities
@@ -1270,9 +1273,9 @@ we are now prepared to show `def:×-⊤-monoid`:
   setoid  ×-⊤-monoid = ips-setoid
   _∙_     ×-⊤-monoid = _×_
   ε       ×-⊤-monoid = ⊤
-  assoc   ×-⊤-monoid x y z  = ≅-prop assocʳ′ assocˡ′ refl refl
-  identityˡ  ×-⊤-monoid x   = ≅-prop proj₂ (tt ,_) refl refl
-  identityʳ  ×-⊤-monoid x   = ≅-prop proj₁ (_, tt) refl refl
+  assoc   ×-⊤-monoid x y z  = ≅-prop assocʳ′ assocˡ′  refl refl
+  identityˡ  ×-⊤-monoid x   = ≅-prop proj₂ (tt ,_)    refl refl
+  identityʳ  ×-⊤-monoid x   = ≅-prop proj₁ (_, tt)    refl refl
   ∙-cong     ×-⊤-monoid h k
     = ≅-trans  (≅-sym ×-prop-homo)
     ( ≅-trans  (×-preserves-≅ h k)

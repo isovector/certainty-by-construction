@@ -59,8 +59,8 @@ open import Chapter6-Decidability
 
 :   ```agda
 open import Chapter7-Structures
-  using ( id; _∘_; const; _≗_; prop-setoid; Setoid; ⊎-setoid
-        ; ×-setoid)
+  using  ( id; _∘_; const; _≗_; prop-setoid; Setoid
+         ; ⊎-setoid; ×-setoid)
     ```
 
 :   ```agda
@@ -300,12 +300,16 @@ The number of keys possible in a `type:Shape` is given by `def:∣_∣`:
 which we can prove by way of `def:shape-fin`:
 
 ```agda
-shape-fin : (sh : Shape) → prop-setoid (Ix sh) Has ∣ sh ∣ Elements
+shape-fin
+  : (sh : Shape)
+  → prop-setoid (Ix sh) Has ∣ sh ∣ Elements
 shape-fin (num x)       = ≅-refl
-shape-fin (beside m n)  = ≅-trans  (≅-sym ⊎-prop-homo)
-                                   (⊎-fin (shape-fin m) (shape-fin n))
-shape-fin (inside m n)  = ≅-trans  (≅-sym ×-prop-homo)
-                                   (×-fin (shape-fin m) (shape-fin n))
+shape-fin (beside m n)  =
+  ≅-trans  (≅-sym ⊎-prop-homo)
+           (⊎-fin (shape-fin m) (shape-fin n))
+shape-fin (inside m n)  =
+  ≅-trans  (≅-sym ×-prop-homo)
+           (×-fin (shape-fin m) (shape-fin n))
 ```
 
 We will also require decidability of propositional equality over two indices,
@@ -482,7 +486,8 @@ implementation, actually comes for free given the types.
   to-trie {m = num _} _
     = -, tableM
   to-trie {m = beside _ _} subf
-    with proj₂ (to-trie (subf ∘ inj₁)) , proj₂ (to-trie (subf ∘ inj₂))
+    with  proj₂ (to-trie (subf ∘ inj₁))
+       ,  proj₂ (to-trie (subf ∘ inj₂))
   ...  |  mt₁ , mt₂ =  -, bothM mt₁ mt₂
   to-trie {m = inside _ _} f2
     = -, nestM (λ i → to-trie λ j → f2 (i , j))
@@ -726,8 +731,10 @@ get′-is-fn {sh = beside _ _}  emptyM (inj₁  x)  = get′-is-fn emptyM x
 get′-is-fn {sh = beside _ _}  emptyM (inj₂  y)  = get′-is-fn emptyM y
 get′-is-fn {sh = inside _ _}  emptyM (x , y)    = get′-is-fn emptyM y
 get′-is-fn {sh = num _}       tableM x          = lookup∘tabulate _ x
-get′-is-fn {sh = beside _ _}  (bothM t₁ _) (inj₁  x) = get′-is-fn t₁  x
-get′-is-fn {sh = beside _ _}  (bothM _ t₂) (inj₂  y) = get′-is-fn t₂  y
+get′-is-fn {sh = beside _ _}  (bothM t₁ _) (inj₁  x)
+  = get′-is-fn t₁  x
+get′-is-fn {sh = beside _ _}  (bothM _ t₂) (inj₂  y)
+  = get′-is-fn t₂  y
 get′-is-fn {sh = inside _ _}  (nestM subf) (x , y)
   = get′-is-fn (proj₂ (subf x)) y
 ```

@@ -732,7 +732,8 @@ problem in the info window:
 
 ```info
 false != true of type Bool
-when checking that the expression refl has type not (not false) ≡ true
+when checking that the expression refl has type
+  not (not false) ≡ true
 ```
 
 This error is telling us that our unit test failed; that `not (not false)`
@@ -2222,7 +2223,8 @@ The response from Agda is immediate and serious:
 
 ```info
 PrimaryColor != Bool of type Set
-when checking that the expression mk-tuple PrimaryColor Bool ? ?
+when checking that the expression
+  mk-tuple PrimaryColor Bool ? ?
 has type Bool × Bool
 ```
 

@@ -1211,9 +1211,12 @@ Solution
   all? : {P : A → Set} → Decidable P → Decidable (All P)
   all? p? empty = yes empty
   all? p? (branch l a r) with p? a | all? p? l | all? p? r
-  ... | no ¬pa  | _       | _       = no λ { (branch _ pa _)  → ¬pa pa }
-  ... | yes _   | no ¬al  | _       = no λ { (branch al _ _)  → ¬al al }
-  ... | yes _   | yes _   | no ¬ar  = no λ { (branch _ _ ar)  → ¬ar ar }
+  ... | no ¬pa  | _       | _       = no λ { (branch _ pa _)
+                                                → ¬pa pa }
+  ... | yes _   | no ¬al  | _       = no λ { (branch al _ _)
+                                                → ¬al al }
+  ... | yes _   | yes _   | no ¬ar  = no λ { (branch _ _ ar)
+                                                → ¬ar ar }
   ... | yes pa  | yes al  | yes ar  = yes (branch al pa ar)
     ```
 
@@ -1305,10 +1308,12 @@ one property at a time---leading to a more "vertical" definition:
   ... | no   ≰r = no λ { (bst-branch _ ≤r _ _) → ≰r ≤r }
   ... | yes  ≤r
     with is-bst? _≤?_ l
-  ... | no   ¬bst-l = no λ { (bst-branch _ _ bst-l _) → ¬bst-l bst-l }
+  ... | no   ¬bst-l = no λ { (bst-branch _ _ bst-l _)
+                                → ¬bst-l bst-l }
   ... | yes  bst-l
     with is-bst? _≤?_ r
-  ... | no   ¬bst-r  = no λ { (bst-branch _ _ _ bst-r) → ¬bst-r bst-r }
+  ... | no   ¬bst-r  = no λ { (bst-branch _ _ _ bst-r)
+                                → ¬bst-r bst-r }
   ... | yes  bst-r   = yes (bst-branch l≤ ≤r bst-l bst-r)
 ```
 

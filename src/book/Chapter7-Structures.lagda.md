@@ -48,7 +48,8 @@ open import Chapter4-Relations
 
 :   ```agda
 open import Chapter5-Modular-Arithmetic
-  using (equiv-to-preorder; ≡-is-equivalence; refl; sym; trans)
+  using  (equiv-to-preorder; ≡-is-equivalence; refl; sym
+         ; trans)
     ```
 
 :   ```agda
@@ -835,7 +836,11 @@ in any container:
 Or we can extract every element from a container into a `def:List`:
 
 ```agda
-  build : ∀ {Container} → ⦃ Foldable Container ⦄ → Container A → List A
+  build
+      : ∀ {Container}
+      → ⦃ Foldable Container ⦄
+      → Container A
+      → List A
   build = fold ⦃ monoid = bundle ++-[] ⦄ (_∷ [])
 ```
 
@@ -1423,7 +1428,10 @@ moving them to this new and exciting land of setoids, by way of `def:recover`:
 ```agda
 module Naive = Sandbox-Naive-Monoids
 
-recover : {_∙_ : Op₂ A} {ε : A} → Naive.IsMonoid _∙_ ε → Monoid _ _
+recover
+    : {_∙_ : Op₂ A} {ε : A}
+    → Naive.IsMonoid _∙_ ε
+    → Monoid _ _
 recover {A = A} {_∙_} {ε} x = record
   { setoid     = prop-setoid A
   ; _∙_        = _∙_
@@ -1478,7 +1486,8 @@ module _ {a c : Level} (A : Set a) (mb : Monoid c ℓ) where
                                                 (func h x)
   identityˡ pointwise f {x} ≡.refl  = identityˡ mb (func f x)
   identityʳ pointwise f {x} ≡.refl  = identityʳ mb (func f x)
-  ∙-cong pointwise x=y z=y ≡.refl   = ∙-cong mb (x=y refl) (z=y refl)
+  ∙-cong pointwise x=y z=y ≡.refl   = ∙-cong mb (x=y refl)
+                                                (z=y refl)
 ```
 
 The `def:pointwise` function is an excellent demonstration of why setoids are
@@ -1651,7 +1660,8 @@ implies the equality of their mappings over the carriers:
 
 ```agda
 mon-hom-not-unique
-  : ¬ (  {s₁ : Monoid lzero lzero} {s₂ : Monoid lzero lzero}
+  : ¬ (  {s₁ : Monoid lzero lzero}
+         {s₂ : Monoid lzero lzero}
          {f g : s₁ .Monoid.Carrier → s₂ .Monoid.Carrier}
       →  (hom₁ : MonHom s₁ s₂ f)
       →  (hom₂ : MonHom s₁ s₂ g)
@@ -1921,9 +1931,10 @@ homomorphism we've been searching for this whole time:
   open MonHom
 
   hurry-hom : MonHom ++-[] (dlist-mon A) hurry
-  preserves-ε  hurry-hom ≡.refl             = refl
-  preserves-∙  hurry-hom xs ys {zs} ≡.refl  = Monoid.assoc ++-[] xs ys zs
-  f-cong       hurry-hom ≡.refl ≡.refl      = refl
+  preserves-ε  hurry-hom ≡.refl = refl
+  preserves-∙  hurry-hom xs ys {zs} ≡.refl
+    = Monoid.assoc ++-[] xs ys zs
+  f-cong       hurry-hom ≡.refl ≡.refl = refl
 ```
 
 Hidden

@@ -781,8 +781,8 @@ immediately goes awry when we run [MakeCase:x≤x](AgdaCmd):
 
 ```info
 I'm not sure if there should be a case for the constructor lte,
-because I get stuck when trying to solve the following unification
-problems (inferred index ≟ expected index):
+because I get stuck when trying to solve the following
+unification problems (inferred index ≟ expected index):
   x₁ ≟ x₂
   x₁ + y ≟ x₂
 Possible reason why unification failed:
