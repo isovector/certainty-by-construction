@@ -80,7 +80,7 @@ $if(verbatim-in-note)$
 \usepackage{fancyvrb}
 $endif$
 \usepackage{xcolor}
-\usepackage[paperwidth=6.25in,paperheight=9.25in,inner=0.75in, outer=1.5cm, top=2cm, bottom=2cm]{geometry}
+\usepackage[paperwidth=6.25in,paperheight=9.25in,inner=2.2cm, outer=2cm, top=2.2cm, bottom=2cm]{geometry}
 $if(listings)$
 \usepackage{listings}
 \newcommand{\passthrough}[1]{#1}
@@ -248,7 +248,6 @@ $endif$
 \usepackage{commath}
 \usepackage{pifont}
 \usepackage{sectsty}
-\usepackage{mlmodern}
 
 
 \usepackage{listings}
@@ -284,11 +283,13 @@ $endif$
 
 \setlength{\agdaindent}{0cm}
 
+\usepackage{fontspec}
 
 \usepackage{unicode-math}
 \setsansfont[Scale=MatchLowercase]{Noto Sans Mono}
 \setmathfont{XITS Math}
 \setmonofont{Noto Sans Mono}
+\setmainfont{MLMRoman12}
 
 \colorlet{RED}{black}
 
@@ -301,12 +302,21 @@ $endif$
 
 
 \usepackage{fancyhdr}
-\usepackage{fontspec}
 
 % \makeatletter
 % \renewcommand\normalsize{\@setfontsize\normalsize{14pt}{16pt}}
 % \normalsize
 % \makeatother
+
+
+\makeatletter
+\renewcommand*{\cleardoublepage}{\clearpage\if@twoside \ifodd\c@page\else
+\hbox{}%
+\thispagestyle{empty}%
+\newpage%
+\if@twocolumn\hbox{}\newpage\fi\fi\fi}
+\makeatother
+
 
 
 \usepackage{newunicodechar}
@@ -350,7 +360,7 @@ skin=enhancedmiddle, colback=white, colframe=white, title={\color{black}\Keyboar
 \newfontfamily{\impact}{SofiaSansCondensed-Medium}
 
 \pagestyle{fancy}
-\setlength{\headheight}{15.71pt}
+\setlength{\headheight}{18.71pt}
 \renewcommand{\headrulewidth}{0pt}
 % \renewcommand{\headrulewidth}{0pt}
 % \renewcommand{\footrulewidth}{0pt}

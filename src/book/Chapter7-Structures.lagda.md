@@ -949,8 +949,7 @@ which doesn't seem too bad until you expand the definition of `def:⊙`, which
 results in:
 
 ```info
-(λ x → (f x ∙ g x) ∙ h x)
-  ≡ (λ x → f x ∙ (g x ∙ h x))
+(λ x → (f x ∙ g x) ∙ h x) ≡ (λ x → f x ∙ (g x ∙ h x))
 ```
 
 Something we've been carefully avoiding throughout this entire text is the
