@@ -993,7 +993,7 @@ back at our definition of `def:not`; recall:
   not⅋⅋⅋⅋ true   = false
 ```
 
-we can now mentally parse these definitions differently, that is, we can read
+We can now mentally parse these definitions differently, that is, we can read
 them *literally.* The left side of each equation is just a function call!
 Therefore, the first equation says "the function `def:not` called with argument
 `ctor:false` is equal to `ctor:true`".
