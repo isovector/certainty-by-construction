@@ -1236,9 +1236,9 @@ reductions until we know what the second argument is!
 ## Stuckness {#sec:stuckness}
 
 Terms which are unable to reduce further are called *stuck*, and can make no
-progress in evaluation until something unsticks them. The usual reason something
-behind being stuck is that it's waiting to inspect a value which hasn't yet been
-provided.
+progress in evaluation until something unsticks them. The usual reason behind
+something being stuck is that it's waiting to inspect a value which hasn't yet
+been provided.
 
 Stuckness can be quite a challenge to debug if you're unaware of it, so it bears
 some discussion.
