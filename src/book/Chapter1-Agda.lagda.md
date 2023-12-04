@@ -14,7 +14,7 @@ Most technical books work only by dint of having been read by a diligent
 copy-editor. But technical editors are fallible, and can nevertheless miss some
 details. The compiler, however, is superhuman in its level of nitpicking
 pedantry. By virtue of being a literate program, this book is capable of being
-typeset only when all of the code actually works The book simply will not
+typeset only when all of the code actually works. The book simply will not
 compile if any of the Agda code presented in it doesn't typecheck, or if any of
 its tests fail.
 
