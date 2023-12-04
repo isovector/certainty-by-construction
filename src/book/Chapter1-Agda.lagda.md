@@ -1501,7 +1501,7 @@ The reason that record selector syntax looks like a function call is because it
 *is* a function call. Every record field `field:f` of type `type:F` in record
 `type:R` gives rise to a function `field:f` `:` `type:R → F`.
 
-Record access and record selectors just different syntax for the exact same
+Record access and record selectors are just different syntax for the exact same
 functionality, and it's a matter of personal preference as to which you pick.
 Personally, I like using record selectors, because it means I can forget the
 fact that I'm working with *records* and think only about *functions.*
