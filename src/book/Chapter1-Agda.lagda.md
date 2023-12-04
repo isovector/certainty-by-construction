@@ -184,8 +184,8 @@ OnlyBook
 
 :   The important point here is that you should indent when you see a
     $\rightarrowbar$, and likewise de-dent when you see a $\barleftarrow$. If
-    you (or Agda) ever confused about where your indentation should be, use a
-    number of spaces equal to number indicated. Getting your indentation wrong
+    you (or Agda) are ever confused about where your indentation should be, use
+    a number of spaces equal to number indicated. Getting your indentation wrong
     is a serious error that the compiler *will* complain about, so if you get
     mysterious errors when working through the code presented here, the first
     diagnostic step is to ensure your indentation is correct.
