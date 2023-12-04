@@ -834,7 +834,7 @@ examples. None of these should be surprising to you.
 As you have already seen, one common binding you'll need is that for function
 arrows, `→`. This is typed in the obvious way, [`->`](AgdaMode), but can also be
 written in fewer keystrokes as [`to`](AgdaMode). Typesetting aficionados might
-be delighted that this is mnemonic that LaTeX uses to inset the arrow symbol. If
+be delighted that this is the mnemonic that LaTeX uses to inset the arrow symbol. If
 you're familiar with LaTeX, many bindings you know from there will also work in
 Agda:
 
