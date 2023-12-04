@@ -1089,7 +1089,7 @@ answers in each hole:
 ```
 
 Here we have taken the same approach as in `def:not`: for each argument, we
-enumerate every possibilities, giving the answer on the right side of the equals
+enumerate every possibility, giving the answer on the right side of the equals
 sign. You will quickly notice that this strategy grows exponentially fast; a
 function of five booleans would require 32 clauses to enumerate every
 possibility. Fortunately, this is not the only way to define `def:_∨_`. We can
