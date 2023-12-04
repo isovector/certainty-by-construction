@@ -924,7 +924,7 @@ possible about anything---mutable variables are quite a taxing feature, in that
 they effectively limit our ability to confidently reuse code.
 
 Writing real code without mutable variables is surprisingly comfortable, once
-you've wrapped your head around how. The trick is a to perform a series of
+you've wrapped your head around how. The trick is to perform a series of
 syntactic transformations which eliminate the mutation. For example, whenever
 you need to read from a mutable variable, instead, just pass in a function
 argument. That is, instead of:
