@@ -1449,7 +1449,7 @@ fields out of records. The first is a regular old pattern match:
 The syntax here brings pleasure to no ones heart, but it does work. There are
 some things to note. First, I didn't write this definition out by hand. I
 instead wrote down the type, stuck in a hole, and then invoked
-[`MakeCase`](AgdaCmd) twice. Nobody has type to write out this ugly syntax; just
+[`MakeCase`](AgdaCmd) twice. Nobody has time to write out this ugly syntax; just
 get the computer to do it for you.
 
 Second, once again, Agda's syntax highlighting has done us a great favor. Look
