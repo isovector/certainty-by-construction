@@ -2095,7 +2095,7 @@ this `keyword:renaming`. It's necessary here only to simplify some details that
 we don't usually care about (or even notice.)
 
 Our sandbox is now equivalent to our last environment, where we defined
-everything by hand. In Agda like any other programming language, it's desirable
+everything by hand. In Agda, like any other programming language, it's desirable
 to use existing machinery rather than build your own copy, although admittedly
 building it for yourself leads to better understanding.
 
