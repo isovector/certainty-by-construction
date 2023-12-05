@@ -2046,7 +2046,7 @@ the type of `expr:uncurry _∨_` as `expr:Bool × Bool → Bool`. Since this is 
 entire expression, the type of our definition is fully known to Agda, and it
 will happily solve it for us.
 
-As you can see, Agda is quite lever! The constraint solving exhibited here
+As you can see, Agda is quite clever! The constraint solving exhibited here
 is a generally useful tool when coding. For example, you can state a proof as
 being trivial, and then work backwards---asking Agda to synthesize the solution
 for you! It sounds absolutely bonkers, but somehow this actually works.
