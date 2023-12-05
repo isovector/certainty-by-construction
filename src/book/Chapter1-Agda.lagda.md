@@ -2334,7 +2334,7 @@ open import Data.Bool
   public
 ```
 
-Note the `keyword:public` modifier on this`keyword:import`s. By default, Agda
+Note the `keyword:public` modifier on this `keyword:import`. By default, Agda
 won't export anything you imported, but the `keyword:public` keyword changes
 this behavior, allowing us to re-export definitions that we didn't write for
 ourselves.
