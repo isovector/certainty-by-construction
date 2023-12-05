@@ -2297,8 +2297,8 @@ Agda refers to problems like these as *unsolved metas.*
 
 Whenever you see this yellow background, something has gone wrong, and it's
 worth fixing before powering on. Ambiguities have a habit of propagating
-themselves forwards, and so what is one unsolved meta now might turn into ten a
-few functions down the line.
+themselves forwards, and so what is one unsolved meta now might turn into ten
+functions down the line.
 
 
 ## Wrapping Up
