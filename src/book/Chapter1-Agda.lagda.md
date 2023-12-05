@@ -14,7 +14,7 @@ Most technical books work only by dint of having been read by a diligent
 copy-editor. But technical editors are fallible, and can nevertheless miss some
 details. The compiler, however, is superhuman in its level of nitpicking
 pedantry. By virtue of being a literate program, this book is capable of being
-typeset only when all of the code actually works The book simply will not
+typeset only when all of the code actually works. The book simply will not
 compile if any of the Agda code presented in it doesn't typecheck, or if any of
 its tests fail.
 
@@ -184,8 +184,8 @@ OnlyBook
 
 :   The important point here is that you should indent when you see a
     $\rightarrowbar$, and likewise de-dent when you see a $\barleftarrow$. If
-    you (or Agda) ever confused about where your indentation should be, use a
-    number of spaces equal to number indicated. Getting your indentation wrong
+    you (or Agda) are ever confused about where your indentation should be, use
+    a number of spaces equal to number indicated. Getting your indentation wrong
     is a serious error that the compiler *will* complain about, so if you get
     mysterious errors when working through the code presented here, the first
     diagnostic step is to ensure your indentation is correct.
@@ -762,8 +762,8 @@ In fact, Agda follows this line of reasoning, but decides that, since we have a
 perfectly good Unicode symbol anyway, we ought to just use `≟` instead!
 
 Unicode, more than the weird lack of computation and advanced type system, is
-many programmers' biggest challenging when coming to Agda. Learning to wrangle
-all of the Unicode characters is be daunting for at least three reasons---how
+many programmers' biggest challenge when coming to Agda. Learning to wrangle
+all of the Unicode characters can be daunting for at least three reasons---how
 can we distinguish all of these characters, what should we call them, and how in
 heck do we input them?
 
@@ -834,7 +834,7 @@ examples. None of these should be surprising to you.
 As you have already seen, one common binding you'll need is that for function
 arrows, `→`. This is typed in the obvious way, [`->`](AgdaMode), but can also be
 written in fewer keystrokes as [`to`](AgdaMode). Typesetting aficionados might
-be delighted that this is mnemonic that LaTeX uses to inset the arrow symbol. If
+be delighted that this is the mnemonic that LaTeX uses to inset the arrow symbol. If
 you're familiar with LaTeX, many bindings you know from there will also work in
 Agda:
 
@@ -910,7 +910,7 @@ support `if..then..else` its prevalence is very subdued. In Agda, we have much
 better tools for branching, as we will soon see.
 
 This ascetic expression dedication precludes many other features that you might
-think be ubiquitous in programming languages. The most substantial of these
+think ubiquitous in programming languages. The most substantial of these
 elided features is that Agda does not support any form of mutable variables.
 While at first blush this feels like an insane limitation, mutable variables
 don't end up being a thing you miss after a little time apart.
@@ -924,7 +924,7 @@ possible about anything---mutable variables are quite a taxing feature, in that
 they effectively limit our ability to confidently reuse code.
 
 Writing real code without mutable variables is surprisingly comfortable, once
-you've wrapped your head around how. The trick is a to perform a series of
+you've wrapped your head around how. The trick is to perform a series of
 syntactic transformations which eliminate the mutation. For example, whenever
 you need to read from a mutable variable, instead, just pass in a function
 argument. That is, instead of:
@@ -993,7 +993,7 @@ back at our definition of `def:not`; recall:
   not⅋⅋⅋⅋ true   = false
 ```
 
-we can now mentally parse these definitions differently, that is, we can read
+We can now mentally parse these definitions differently, that is, we can read
 them *literally.* The left side of each equation is just a function call!
 Therefore, the first equation says "the function `def:not` called with argument
 `ctor:false` is equal to `ctor:true`".
@@ -1089,7 +1089,7 @@ answers in each hole:
 ```
 
 Here we have taken the same approach as in `def:not`: for each argument, we
-enumerate every possibilities, giving the answer on the right side of the equals
+enumerate every possibility, giving the answer on the right side of the equals
 sign. You will quickly notice that this strategy grows exponentially fast; a
 function of five booleans would require 32 clauses to enumerate every
 possibility. Fortunately, this is not the only way to define `def:_∨_`. We can
@@ -1236,9 +1236,9 @@ reductions until we know what the second argument is!
 ## Stuckness {#sec:stuckness}
 
 Terms which are unable to reduce further are called *stuck*, and can make no
-progress in evaluation until something unsticks them. The usual reason something
-behind being stuck is that it's waiting to inspect a value which hasn't yet been
-provided.
+progress in evaluation until something unsticks them. The usual reason behind
+something being stuck is that it's waiting to inspect a value which hasn't yet
+been provided.
 
 Stuckness can be quite a challenge to debug if you're unaware of it, so it bears
 some discussion.
@@ -1449,7 +1449,7 @@ fields out of records. The first is a regular old pattern match:
 The syntax here brings pleasure to no ones heart, but it does work. There are
 some things to note. First, I didn't write this definition out by hand. I
 instead wrote down the type, stuck in a hole, and then invoked
-[`MakeCase`](AgdaCmd) twice. Nobody has type to write out this ugly syntax; just
+[`MakeCase`](AgdaCmd) twice. Nobody has time to write out this ugly syntax; just
 get the computer to do it for you.
 
 Second, once again, Agda's syntax highlighting has done us a great favor. Look
@@ -1501,7 +1501,7 @@ The reason that record selector syntax looks like a function call is because it
 *is* a function call. Every record field `field:f` of type `type:F` in record
 `type:R` gives rise to a function `field:f` `:` `type:R → F`.
 
-Record access and record selectors just different syntax for the exact same
+Record access and record selectors are just different syntax for the exact same
 functionality, and it's a matter of personal preference as to which you pick.
 Personally, I like using record selectors, because it means I can forget the
 fact that I'm working with *records* and think only about *functions.*
@@ -2046,7 +2046,7 @@ the type of `expr:uncurry _∨_` as `expr:Bool × Bool → Bool`. Since this is 
 entire expression, the type of our definition is fully known to Agda, and it
 will happily solve it for us.
 
-As you can see, Agda is quite lever! The constraint solving exhibited here
+As you can see, Agda is quite clever! The constraint solving exhibited here
 is a generally useful tool when coding. For example, you can state a proof as
 being trivial, and then work backwards---asking Agda to synthesize the solution
 for you! It sounds absolutely bonkers, but somehow this actually works.
@@ -2094,8 +2094,8 @@ When you import `module:Data.Product` for yourself in the future, you won't need
 this `keyword:renaming`. It's necessary here only to simplify some details that
 we don't usually care about (or even notice.)
 
-Our sandbox is now be equivalent to our last environment, where we defined
-everything by hand. In Agda like any other programming language, it's desirable
+Our sandbox is now equivalent to our last environment, where we defined
+everything by hand. In Agda, like any other programming language, it's desirable
 to use existing machinery rather than build your own copy, although admittedly
 building it for yourself leads to better understanding.
 
@@ -2297,8 +2297,8 @@ Agda refers to problems like these as *unsolved metas.*
 
 Whenever you see this yellow background, something has gone wrong, and it's
 worth fixing before powering on. Ambiguities have a habit of propagating
-themselves forwards, and so what is one unsolved meta now might turn into ten a
-few functions down the line.
+themselves forwards, and so what is one unsolved meta now might turn into ten
+functions down the line.
 
 
 ## Wrapping Up
@@ -2334,7 +2334,7 @@ open import Data.Bool
   public
 ```
 
-Note the `keyword:public` modifier on this`keyword:import`s. By default, Agda
+Note the `keyword:public` modifier on this `keyword:import`. By default, Agda
 won't export anything you imported, but the `keyword:public` keyword changes
 this behavior, allowing us to re-export definitions that we didn't write for
 ourselves.
