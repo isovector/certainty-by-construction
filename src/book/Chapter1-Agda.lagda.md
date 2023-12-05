@@ -762,7 +762,7 @@ In fact, Agda follows this line of reasoning, but decides that, since we have a
 perfectly good Unicode symbol anyway, we ought to just use `≟` instead!
 
 Unicode, more than the weird lack of computation and advanced type system, is
-many programmers' biggest challenging when coming to Agda. Learning to wrangle
+many programmers' biggest challenge when coming to Agda. Learning to wrangle
 all of the Unicode characters is be daunting for at least three reasons---how
 can we distinguish all of these characters, what should we call them, and how in
 heck do we input them?
