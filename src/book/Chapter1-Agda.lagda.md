@@ -910,7 +910,7 @@ support `if..then..else` its prevalence is very subdued. In Agda, we have much
 better tools for branching, as we will soon see.
 
 This ascetic expression dedication precludes many other features that you might
-think are ubiquitous in programming languages. The most substantial of these
+think ubiquitous in programming languages. The most substantial of these
 elided features is that Agda does not support any form of mutable variables.
 While at first blush this feels like an insane limitation, mutable variables
 don't end up being a thing you miss after a little time apart.
