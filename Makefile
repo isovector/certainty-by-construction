@@ -61,6 +61,7 @@ ALL_BUILD_AGDA_HTML := $(patsubst src/book/%.lagda.md,build-epub/agda/html/%.md,
 ALL_BUILD_BOOK_HTML := $(patsubst src/book/%.lagda.md,build-epub/book/%.html,$(ALL_LITERATE_AGDA))
 
 SAMPLE_CHAPTERS := Chapter0-coblub \
+                   Chapter2-Numbers \
                    Chapter6-Decidability
 
 SAMPLE_LITERATE_AGDA := $(patsubst %,src/book/%.lagda.md,$(SAMPLE_CHAPTERS))
