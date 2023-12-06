@@ -213,7 +213,7 @@ of ints. This is an amazingly restricting limitation.
 
 Note that in Agda, `keyword:data` types are strictly more powerful than enums,
 because they don't come with this implicit conversion to ints. As a quick
-demonstration, note that `ctor:suc` is apart from `ctor:zero`, but `cotr:suc`
+demonstration, note that `ctor:suc` is apart from `ctor:zero`, but `ctor:suc`
 can accept any `type:ℕ` as an *argument!* While there are only $2^{64}$ ints,
 there are *infinitely many* `type:ℕ`s, and thus types defined by `keyword:data`
 in Agda must be more powerful than those defined as enums in other languages.
