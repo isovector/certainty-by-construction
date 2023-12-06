@@ -267,7 +267,7 @@ for the time being, to really hammer-in that there is no magic happening behind
 the scenes here.
 
 The simplest function we can write over the naturals is to determine whether or
-not the argument is equal to 0. For the same of simplicity, this function will
+not the argument is equal to 0. For the sake of simplicity, this function will
 return a boolean, but note that this is a bad habit in Agda. There are
 much better techniques that don't lead to *boolean blindness* that we will
 explore in @sec:decidability. This function therefore is only provided to help
