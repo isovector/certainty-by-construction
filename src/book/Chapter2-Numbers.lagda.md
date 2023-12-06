@@ -204,7 +204,7 @@ Most programming languages have a concept of `keyword:record` types (whether
 they be called *structures*, *tuples*, or *classes*), but very few support
 `keyword:data` types. Booleans and numbers are the canonical examples of
 `keyword:data` types, and the lack of support for them is exactly why these two
-types are usually baked-in to a language.
+types are usually baked into to a language.
 
 It can be tempting to think of types defined by `keyword:data` as enums, but
 this is a subtly misleading. While enums are indeed apart from one another, this
