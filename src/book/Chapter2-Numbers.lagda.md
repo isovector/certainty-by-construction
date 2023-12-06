@@ -297,7 +297,7 @@ After [MakeCase](AgdaCmd), our argument is bound for us:
 ```
 
 and, like when writing functions over the booleans, we can immediately
-[`MakeCase:x`](AgdaCmd) to split `x` apart into its distinct possible
+[`MakeCase:n`](AgdaCmd) to split `n` apart into its distinct possible
 constructors:
 
 ```agda
