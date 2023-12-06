@@ -84,7 +84,7 @@ positive numbers somehow results in a negative one? Or by the fact that, when
 working with floats, we get different answers depending on which two of three
 numbers we multiply together first.
 
-One might make a successful argument that these are a necessarily limitations of
+One might make a successful argument that these are necessary limitations of
 our computing hardware. As a retort, I will only point to the co-Blub paradox
 (@sec:coblub), and remind you that our goal here is to learn *how things can
 be,* rather than limit our minds to the way we perceive things must be. After
