@@ -1551,7 +1551,7 @@ Hidden
 
 
 You'll notice this definition of `type:ℤ` is identical to the one from
-`module:Naive-Integers₂`; the only difference being that we've renamed `ctor:-_`
+`module:Misstep-Integers₃`; the only difference being that we've renamed `ctor:-_`
 to `ctor:-[1+_]`. This new name suggests that `bind:n:-[1+ n ]` corresponds to
 the number $-(1+n) = -n - 1$. By subtracting this 1 from all negative numbers,
 we have removed the possibility of a negative zero.
