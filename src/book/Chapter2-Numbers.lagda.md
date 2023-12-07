@@ -1116,7 +1116,7 @@ pattern match on `b`:
 
 The first case is a usual identity, namely that
 
-$
+$$
 a^0 = 1
 $$
 
