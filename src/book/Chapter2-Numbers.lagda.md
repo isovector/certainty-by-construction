@@ -1266,7 +1266,7 @@ the first five of which are:
 
 This is not just a problem for zero; in fact, every number has infinitely many
 encodings in this definition of `type:ℤ`. We could plausibly try to fix this
-problem by writing a function `def:normalize`, whose job is it is to cancel out
+problem by writing a function `def:normalize`, whose job it is to cancel out
 `ctor:suc`s with `ctor:pred`s, and vice versa. An honest attempt at such a
 function might look like this:
 
