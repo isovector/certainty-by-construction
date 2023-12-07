@@ -1303,7 +1303,7 @@ different type to model integers which doesn't have this limitation.
 
 Instead, this time let's see what happens if we model integers as a pair of two
 natural numbers---one for the positive count, and another for the negative
-count. The actual integer in question in thus the difference between these two
+count. The actual integer in question is thus the difference between these two
 naturals.
 
 Because we'd like to use the natural numbers, we must import them. But we
