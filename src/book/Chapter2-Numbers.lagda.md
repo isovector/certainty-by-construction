@@ -1799,7 +1799,7 @@ Multiplication by either 1 or $-1$ merely transfers the sign:
   x * -[1+  ℕ.zero ]  = - x
 ```
 
-and otherwise, multiplication is just can perform repeated addition or
+and otherwise, multiplication can just perform repeated addition or
 subtraction on one argument, moving towards zero:
 
 ```agda
