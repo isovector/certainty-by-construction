@@ -84,7 +84,7 @@ positive numbers somehow results in a negative one? Or by the fact that, when
 working with floats, we get different answers depending on which two of three
 numbers we multiply together first.
 
-One might make a successful argument that these are a necessarily limitations of
+One might make a successful argument that these are necessary limitations of
 our computing hardware. As a retort, I will only point to the co-Blub paradox
 (@sec:coblub), and remind you that our goal here is to learn *how things can
 be,* rather than limit our minds to the way we perceive things must be. After
@@ -204,7 +204,7 @@ Most programming languages have a concept of `keyword:record` types (whether
 they be called *structures*, *tuples*, or *classes*), but very few support
 `keyword:data` types. Booleans and numbers are the canonical examples of
 `keyword:data` types, and the lack of support for them is exactly why these two
-types are usually baked-in to a language.
+types are usually baked into to a language.
 
 It can be tempting to think of types defined by `keyword:data` as enums, but
 this is a subtly misleading. While enums are indeed apart from one another, this
@@ -213,7 +213,7 @@ of ints. This is an amazingly restricting limitation.
 
 Note that in Agda, `keyword:data` types are strictly more powerful than enums,
 because they don't come with this implicit conversion to ints. As a quick
-demonstration, note that `ctor:suc` is apart from `ctor:zero`, but `cotr:suc`
+demonstration, note that `ctor:suc` is apart from `ctor:zero`, but `ctor:suc`
 can accept any `type:ℕ` as an *argument!* While there are only $2^{64}$ ints,
 there are *infinitely many* `type:ℕ`s, and thus types defined by `keyword:data`
 in Agda must be more powerful than those defined as enums in other languages.
@@ -267,7 +267,7 @@ for the time being, to really hammer-in that there is no magic happening behind
 the scenes here.
 
 The simplest function we can write over the naturals is to determine whether or
-not the argument is equal to 0. For the same of simplicity, this function will
+not the argument is equal to 0. For the sake of simplicity, this function will
 return a boolean, but note that this is a bad habit in Agda. There are
 much better techniques that don't lead to *boolean blindness* that we will
 explore in @sec:decidability. This function therefore is only provided to help
@@ -297,7 +297,7 @@ After [MakeCase](AgdaCmd), our argument is bound for us:
 ```
 
 and, like when writing functions over the booleans, we can immediately
-[`MakeCase:x`](AgdaCmd) to split `x` apart into its distinct possible
+[`MakeCase:n`](AgdaCmd) to split `n` apart into its distinct possible
 constructors:
 
 ```agda
@@ -1116,7 +1116,7 @@ pattern match on `b`:
 
 The first case is a usual identity, namely that
 
-$
+$$
 a^0 = 1
 $$
 
@@ -1266,7 +1266,7 @@ the first five of which are:
 
 This is not just a problem for zero; in fact, every number has infinitely many
 encodings in this definition of `type:ℤ`. We could plausibly try to fix this
-problem by writing a function `def:normalize`, whose job is it is to cancel out
+problem by writing a function `def:normalize`, whose job it is to cancel out
 `ctor:suc`s with `ctor:pred`s, and vice versa. An honest attempt at such a
 function might look like this:
 
@@ -1303,7 +1303,7 @@ different type to model integers which doesn't have this limitation.
 
 Instead, this time let's see what happens if we model integers as a pair of two
 natural numbers---one for the positive count, and another for the negative
-count. The actual integer in question in thus the difference between these two
+count. The actual integer in question is thus the difference between these two
 naturals.
 
 Because we'd like to use the natural numbers, we must import them. But we
@@ -1551,7 +1551,7 @@ Hidden
 
 
 You'll notice this definition of `type:ℤ` is identical to the one from
-`module:Naive-Integers₂`; the only difference being that we've renamed `ctor:-_`
+`module:Misstep-Integers₃`; the only difference being that we've renamed `ctor:-_`
 to `ctor:-[1+_]`. This new name suggests that `bind:n:-[1+ n ]` corresponds to
 the number $-(1+n) = -n - 1$. By subtracting this 1 from all negative numbers,
 we have removed the possibility of a negative zero.
@@ -1799,7 +1799,7 @@ Multiplication by either 1 or $-1$ merely transfers the sign:
   x * -[1+  ℕ.zero ]  = - x
 ```
 
-and otherwise, multiplication is just can perform repeated addition or
+and otherwise, multiplication can just perform repeated addition or
 subtraction on one argument, moving towards zero:
 
 ```agda
