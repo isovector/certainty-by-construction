@@ -615,7 +615,7 @@ distinguish between them, including looking at the result of function call.
 Therefore, we can make the much stronger claim that "if `x` and `y` are equal,
 then so too are `f x` and `f y` for *any function* `f`!"
 
-Now we really cooking with gas.
+Now we're really cooking with gas.
 
 This property is known as *congruence*, which again gets shortened to `def:cong`
 due its frequency. The type of `def:cong` is rather involved, but most of the
