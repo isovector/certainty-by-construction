@@ -719,7 +719,7 @@ ask Agda to fill in the rest of the definition for us by invoking
 
 Congruence is an excellent tool for doing induction in proofs. You can do
 induction as normal, but the resulting proof from the recursive step is usually
-not quite be what you need. Luckily, the solution is often just a `def:cong`
+not quite what you need. Luckily, the solution is often just a `def:cong`
 away.
 
 
