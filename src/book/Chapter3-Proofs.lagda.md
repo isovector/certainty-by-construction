@@ -123,8 +123,8 @@ of this chapter.
 But if numbers are not the focus of mathematics, then what *is*? In the opinion
 of this author, it's the process of clear, logical deduction around precise
 ideas. Numbers are one such precise idea, but they are by no means the only.
-Some common other examples are the booleans, graphs, and geometry. Some less
-examples less often considered math are digital circuits, and computer programs.
+Some other common examples are the booleans, graphs, and geometry. Some
+examples less often considered math are digital circuits and computer programs.
 Anything you can define precisely and manipulate symbolically can fall under the
 purview of mathematics when done right.
 
