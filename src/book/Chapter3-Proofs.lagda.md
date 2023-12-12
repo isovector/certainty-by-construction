@@ -768,7 +768,7 @@ Instead, we content ourselves in exposing "trivial" proofs like
 `def:+-identityˡ` with the understanding that it is the *name* of this proof
 that is important. Throughout your exposure to the Agda standard library, you
 will find many such-named functions, and the conventions will help you find the
-theorems you need without needing to dig deeply into the each implementation.
+theorems you need without needing to dig deeply into each implementation.
 
 In addition to addition, multiplication also enjoys both left and right
 identities as we have seen. A good exercise is to prove both.
