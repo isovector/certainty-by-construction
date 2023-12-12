@@ -862,7 +862,7 @@ Solution
     ```
 
 
-While identity elements might seem unexciting and pointless right now, but they
+While identity elements might seem unexciting and pointless right now, they
 are an integral part for a rich computational structure that we will study in
 @sec:monoids. For the time being, we will remark only that the discovery of the
 number zero was a marvelous technological achievement in its day.
