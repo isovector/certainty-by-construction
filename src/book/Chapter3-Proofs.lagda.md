@@ -998,7 +998,7 @@ behalf. Instead, we resign ourselves to the fact that we will need a different
 approach to implement `def:*-identityˡ′`.
 
 The next obvious solution is to just write out our proof of $a = 1 \times a$
-again, pattern match and all. The original implementation of `def:*-identityʳ`
+again, pattern match and all. The original implementation of `def:*-identityˡ`
 was, if you will recall:
 
 ```agda
