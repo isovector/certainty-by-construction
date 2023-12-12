@@ -756,7 +756,7 @@ Therefore, let's give better names to our functions from earlier:
 ```
 
 The attentive reader might question why exactly we need `def:+-identityˡ`, since
-it's fully-normalized definition is just `ctor:refl`, which is to say that it's
+its fully-normalized definition is just `ctor:refl`, which is to say that it's
 something Agda can work out for itself without explicitly using `def:+-identityˡ`.
 
 While that is true, it is an implementation detail. If we were to not expose
