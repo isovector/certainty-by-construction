@@ -890,7 +890,7 @@ The name "zero element" can be misleading. Zero elements can exist for
 non-numeric functions, but the potential confusion doesn't end there. Many
 less type-safe languages have a notion of falsey values---that is, values which
 can be implicitly converted to a boolean, and elicit false when doing so. The
-number 0 a prototypical example of a falsey value, which unfortunately causes
+number 0 is a prototypical example of a falsey value, which unfortunately causes
 people to equivocate between zero and false.
 
 At risk of stating the obvious, falsey values do not exist in Agda, and more
