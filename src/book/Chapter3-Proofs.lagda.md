@@ -1174,8 +1174,8 @@ $$
 
 Notice how we have now constructed an equality of two rather disparate
 expressions, simply by chaining together smaller equalities end on end, like
-dominoes. This property of equality---that we're allowed to such a thing in the
-first place---is called *transitivity,* and we can be stated as:
+dominoes. This property of equality---that we're allowed to do such a thing in
+the first place---is called *transitivity,* and can be stated as:
 
 ```agda
   trans&
