@@ -2143,7 +2143,7 @@ Solution
 
 
 Given `def:+-suc`, we would now like to show the *commutativity* of addition,
-which is the idea that the idea of the arguments don't matter. Symbolically, the
+which is the idea that the order of the arguments don't matter. Symbolically, the
 commutativity property of addition is written as:
 
 $$
