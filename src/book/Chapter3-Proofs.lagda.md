@@ -1648,7 +1648,7 @@ $$
 $$
 
 This is the syntax we will emulate in Agda, although doing so is a little
-finicky and will require much thought. To pique your interested, after this
+finicky and will require much thought. To pique your interest, after this
 section is complete we will be able to structure the above proof in Agda as:
 
 
