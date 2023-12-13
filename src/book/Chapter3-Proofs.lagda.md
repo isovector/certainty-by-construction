@@ -1121,7 +1121,7 @@ to success as a new mathematician is to simply to not get crushed under all of
 the jargon. The ideas are often easy enough, but there are an awful lot of
 things you need to simultaneously keep in your head.
 
-Discovering new abstractions like these allow you to reuse your entire existing
+Discovering new abstractions like these allows you to reuse your entire existing
 vocabulary and understanding, transplanting those ideas into the new area, which
 means you can hit the ground running. Indeed, much to the surprise of
 traditionally-educated people, mathematics is much more about things like
