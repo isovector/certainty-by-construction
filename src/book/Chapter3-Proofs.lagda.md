@@ -1738,7 +1738,7 @@ which is why we need no justifications. But you'll notice where once we had `x`
 and `y`s in our types, now have a human-legible argument about *which* things
 are equal!
 
-Agda successfully parses the above, but it can be helpful for own sanity to
+Agda successfully parses the above, but it can be helpful for our own sanity to
 make the parse tree explicit. Rather than use infix notation, we'll use the full
 unsectioned names for both `def:_≡⟨⟩_` and `def:_∎`, and then insert all of the
 parentheses:
