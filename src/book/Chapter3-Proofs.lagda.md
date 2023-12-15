@@ -2493,7 +2493,7 @@ module PropEq where
 
 In @sec:mixfix-parsing we discussed mixfix parsing, where we leave underscores
 in the names of identifiers in order to enable more interesting syntactic forms.
-As examples of mixfix identifiers, we created ``def:if_then_else_ and
+As examples of mixfix identifiers, we created `def:if_then_else_` and
 `def:case_of_`, which can be found in the standard library here:
 
 ```agda
