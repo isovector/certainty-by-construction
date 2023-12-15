@@ -64,7 +64,7 @@ the barber who doesn't cut his own hair is swept under the rug, much like the
 hair at actual barbershops.
 
 But this only punts on the problem. What is the corresponding mathematical
-object here. If the set of all sets is not a set, then, what exactly is it? The
+object here? If the set of all sets is not a set, then, what exactly is it? The
 trick is to build a hierarchy of set-like things, no one of which contains
 itself, but each subsequent object contains the previous one.
 
