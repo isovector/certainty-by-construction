@@ -54,7 +54,7 @@ posed to underline a problem with the now-called "naive set theory" that was in
 vogue at the time. We call it naive set theory these days because it allowed for
 paradoxes like the one above, and paradoxes are anathema to mathematics. Once
 you have a contradiction, the entire mathematical system falls apart and it's
-possible to prove anything whatsoever. We will look at how to exactly this in
+possible to prove anything whatsoever. We will look at how to correct this in
 @sec:negation.
 
 Modern mathematics' solution to the barber paradox is the realization that not
