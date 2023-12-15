@@ -277,7 +277,7 @@ mathematics, but it's not usually a problem.
 
 How do we actually build such a there-exists type in Agda? The construction is
 usually known as a *sigma* type, written `type:Σ` and input as [GS](AgdaMode).
-It's definition is given by:
+Its definition is given by:
 
 ```agda
 module Definition-DependentPair where
