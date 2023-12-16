@@ -589,7 +589,7 @@ relations are a special case of heterogeneous ones. We will name such a thing
   Rel A ℓ = REL A A ℓ
 ```
 
-As an illustration of `type:Rel`, while previously defined propositional
+As an illustration of `type:Rel`, we previously defined propositional
 equality in this way:
 
 ```agda
