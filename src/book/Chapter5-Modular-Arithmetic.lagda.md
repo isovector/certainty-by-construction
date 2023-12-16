@@ -64,7 +64,7 @@ exactly what Agda can do for us, but we must opt-in and explicitly ask it to do
 so.
 
 The mechanism we need here is Agda's support for *instance arguments,* which are
-much like implicit arguments (#sec:implicits), except that we can control how
+much like implicit arguments (@sec:implicits), except that we can control how
 Agda searches for them. There are two sides to instance arguments---the
 arguments themselves, and the tools for controlling the search.
 
