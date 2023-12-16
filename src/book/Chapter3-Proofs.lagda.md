@@ -123,8 +123,8 @@ of this chapter.
 But if numbers are not the focus of mathematics, then what *is*? In the opinion
 of this author, it's the process of clear, logical deduction around precise
 ideas. Numbers are one such precise idea, but they are by no means the only.
-Some common other examples are the booleans, graphs, and geometry. Some less
-examples less often considered math are digital circuits, and computer programs.
+Some other common examples are the booleans, graphs, and geometry. Some
+examples less often considered math are digital circuits and computer programs.
 Anything you can define precisely and manipulate symbolically can fall under the
 purview of mathematics when done right.
 
@@ -197,7 +197,7 @@ Of course, zero *is* even, the proof of which we have seen before:
 ```
 
 Because we have successfully implemented `def:zero-is-even`, we say that
-`def:zero-is-even` is a theorem, and that it a proof of `expr:IsEven zero`.
+`def:zero-is-even` is a theorem, and that it is a proof of `expr:IsEven zero`.
 
 To drive the point home, we can also try asking whether one is an even number:
 
@@ -615,7 +615,7 @@ distinguish between them, including looking at the result of function call.
 Therefore, we can make the much stronger claim that "if `x` and `y` are equal,
 then so too are `f x` and `f y` for *any function* `f`!"
 
-Now we really cooking with gas.
+Now we're really cooking with gas.
 
 This property is known as *congruence*, which again gets shortened to `def:cong`
 due its frequency. The type of `def:cong` is rather involved, but most of the
@@ -719,7 +719,7 @@ ask Agda to fill in the rest of the definition for us by invoking
 
 Congruence is an excellent tool for doing induction in proofs. You can do
 induction as normal, but the resulting proof from the recursive step is usually
-not quite be what you need. Luckily, the solution is often just a `def:cong`
+not quite what you need. Luckily, the solution is often just a `def:cong`
 away.
 
 
@@ -756,7 +756,7 @@ Therefore, let's give better names to our functions from earlier:
 ```
 
 The attentive reader might question why exactly we need `def:+-identityˡ`, since
-it's fully-normalized definition is just `ctor:refl`, which is to say that it's
+its fully-normalized definition is just `ctor:refl`, which is to say that it's
 something Agda can work out for itself without explicitly using `def:+-identityˡ`.
 
 While that is true, it is an implementation detail. If we were to not expose
@@ -768,7 +768,7 @@ Instead, we content ourselves in exposing "trivial" proofs like
 `def:+-identityˡ` with the understanding that it is the *name* of this proof
 that is important. Throughout your exposure to the Agda standard library, you
 will find many such-named functions, and the conventions will help you find the
-theorems you need without needing to dig deeply into the each implementation.
+theorems you need without needing to dig deeply into each implementation.
 
 In addition to addition, multiplication also enjoys both left and right
 identities as we have seen. A good exercise is to prove both.
@@ -862,7 +862,7 @@ Solution
     ```
 
 
-While identity elements might seem unexciting and pointless right now, but they
+While identity elements might seem unexciting and pointless right now, they
 are an integral part for a rich computational structure that we will study in
 @sec:monoids. For the time being, we will remark only that the discovery of the
 number zero was a marvelous technological achievement in its day.
@@ -890,7 +890,7 @@ The name "zero element" can be misleading. Zero elements can exist for
 non-numeric functions, but the potential confusion doesn't end there. Many
 less type-safe languages have a notion of falsey values---that is, values which
 can be implicitly converted to a boolean, and elicit false when doing so. The
-number 0 a prototypical example of a falsey value, which unfortunately causes
+number 0 is a prototypical example of a falsey value, which unfortunately causes
 people to equivocate between zero and false.
 
 At risk of stating the obvious, falsey values do not exist in Agda, and more
@@ -998,7 +998,7 @@ behalf. Instead, we resign ourselves to the fact that we will need a different
 approach to implement `def:*-identityˡ′`.
 
 The next obvious solution is to just write out our proof of $a = 1 \times a$
-again, pattern match and all. The original implementation of `def:*-identityʳ`
+again, pattern match and all. The original implementation of `def:*-identityˡ`
 was, if you will recall:
 
 ```agda
@@ -1121,7 +1121,7 @@ to success as a new mathematician is to simply to not get crushed under all of
 the jargon. The ideas are often easy enough, but there are an awful lot of
 things you need to simultaneously keep in your head.
 
-Discovering new abstractions like these allow you to reuse your entire existing
+Discovering new abstractions like these allows you to reuse your entire existing
 vocabulary and understanding, transplanting those ideas into the new area, which
 means you can hit the ground running. Indeed, much to the surprise of
 traditionally-educated people, mathematics is much more about things like
@@ -1174,11 +1174,11 @@ $$
 
 Notice how we have now constructed an equality of two rather disparate
 expressions, simply by chaining together smaller equalities end on end, like
-dominoes. This property of equality---that we're allowed to such a thing in the
-first place---is called *transitivity,* and we can be stated as:
+dominoes. This property of equality---that we're allowed to do such a thing in
+the first place---is called *transitivity,* and can be stated as:
 
 ```agda
-  trans&
+  trans⅋
     : {A : Set} {x y z : A}
     → x ≡ y
     → y ≡ z
@@ -1189,7 +1189,7 @@ first place---is called *transitivity,* and we can be stated as:
 Hidden
 
 :   ```agda
-  trans& = ?
+  trans⅋ = ?
     ```
 
 
@@ -1648,7 +1648,7 @@ $$
 $$
 
 This is the syntax we will emulate in Agda, although doing so is a little
-finicky and will require much thought. To pique your interested, after this
+finicky and will require much thought. To pique your interest, after this
 section is complete we will be able to structure the above proof in Agda as:
 
 
@@ -1738,7 +1738,7 @@ which is why we need no justifications. But you'll notice where once we had `x`
 and `y`s in our types, now have a human-legible argument about *which* things
 are equal!
 
-Agda successfully parses the above, but it can be helpful for own sanity to
+Agda successfully parses the above, but it can be helpful for our own sanity to
 make the parse tree explicit. Rather than use infix notation, we'll use the full
 unsectioned names for both `def:_≡⟨⟩_` and `def:_∎`, and then insert all of the
 parentheses:
@@ -2143,7 +2143,7 @@ Solution
 
 
 Given `def:+-suc`, we would now like to show the *commutativity* of addition,
-which is the idea that the idea of the arguments don't matter. Symbolically, the
+which is the idea that the order of the arguments don't matter. Symbolically, the
 commutativity property of addition is written as:
 
 $$
@@ -2493,7 +2493,7 @@ module PropEq where
 
 In @sec:mixfix-parsing we discussed mixfix parsing, where we leave underscores
 in the names of identifiers in order to enable more interesting syntactic forms.
-As examples of mixfix identifiers, we created ``def:if_then_else_ and
+As examples of mixfix identifiers, we created `def:if_then_else_` and
 `def:case_of_`, which can be found in the standard library here:
 
 ```agda

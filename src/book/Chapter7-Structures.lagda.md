@@ -1244,7 +1244,7 @@ don't work out. Instead, we can define `type:⊎-Pointwise`, whose sole purpose 
 existence is to act as an equivalence relation for `def:⊎-setoid`:
 
 ```agda
-    data ⊎-Pointwise : Rel (Carrier₁ ⊎ Carrier₂) (ℓ₁ ⊔ ℓ₂) where
+    data ⊎-Pointwise : Rel (Carrier₁ ⊎ Carrier₂) (c₁ ⊔ c₂ ⊔ ℓ₁ ⊔ ℓ₂) where
       inj₁  : {x y : Carrier₁} → x ≈₁  y → ⊎-Pointwise (inj₁ x) (inj₁ y)
       inj₂  : {x y : Carrier₂} → x ≈₂  y → ⊎-Pointwise (inj₂ x) (inj₂ y)
 ```
@@ -1265,7 +1265,7 @@ relation:
 and then thankfully, giving `def:⊎-setoid` is no additional work:
 
 ```agda
-    ⊎-setoid : Setoid (c₁ ⊔ c₂) (ℓ₁ ⊔ ℓ₂)
+    ⊎-setoid : Setoid (c₁ ⊔ c₂) (c₁ ⊔ c₂ ⊔ ℓ₁ ⊔ ℓ₂)
     Carrier  ⊎-setoid = s₁ .Carrier ⊎ s₂ .Carrier
     _≈_      ⊎-setoid = ⊎-Pointwise
     equiv    ⊎-setoid = ⊎-equiv
@@ -1574,14 +1574,12 @@ private variable
   c c₁ c₂ : Level
 
 module _ (m₁ : Monoid c₁ ℓ₁) (m₂ : Monoid c₂ ℓ₂) where
-  open Monoid ⦃ ... ⦄
-
-  private instance
-    _ = m₁
-    _ = m₂
-
-  From = m₁  .Monoid.Carrier
-  To   = m₂  .Monoid.Carrier
+  open Monoid m₁
+    renaming (  Carrier to From
+             ;  ε to ε₁; _∙_ to _∙₁_; _≈_ to _≈₁_)
+  open Monoid m₂
+    renaming (  Carrier to To
+             ;  ε to ε₂; _∙_ to _∙₂_; _≈_ to _≈₂_)
 ```
 
 we are ready to give a definition `type:MonHom`, witnessing the fact that some
@@ -1592,9 +1590,9 @@ always when dealing with setoids, a proof of congruence:
   record MonHom (f : From → To)
         : Set (c₁ ⊔ c₂ ⊔ ℓ₁ ⊔ ℓ₂) where
     field
-      preserves-ε  : f ε ≈ ε
-      preserves-∙  : (a b : From) → f (a ∙ b) ≈ f a ∙ f b
-      f-cong       : {a b : From} → a ≈ b → f a ≈ f b
+      preserves-ε  : f ε₁ ≈₂ ε₂
+      preserves-∙  : (a b : From) → f (a ∙₁ b) ≈₂ f a ∙₂ f b
+      f-cong       : {a b : From} → a ≈₁ b → f a ≈₂ f b
 ```
 
 
