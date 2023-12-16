@@ -14,7 +14,7 @@ have tried our hands at building equivalence relations.
 
 Presented in the abstract, it can be easy to miss the forest for the trees, and
 think that all this *stuff* is good only for padding a resume. Not so! In my
-first year being an undergraduate, p was forced to battle with modular
+first year being an undergraduate, I was forced to battle with modular
 arithmetic, and it was one of the worst grades in my academic career. A decade
 later, I'm ready to fight back, and thought it would be fun to put together this
 chapter to prove to myself that Agda really can help me learn difficult topics.
@@ -317,7 +317,7 @@ must be parsed as a three-way relationship; that is, the $=$ and $\pmod{n}$
 should be considered part of the same symbol.
 
 Speaking of bad notation, the mathematicians write this so-called ring of
-natural numbers modulo `n` as `ℕ/nℕ`. No wonder p had such a hard time with this
+natural numbers modulo `n` as `ℕ/nℕ`. No wonder I had such a hard time with this
 back in my undergraduate. We can parameterize the entire module over `n :`
 `ℕ`---in essence, holding it constant for the remainder of our definition:
 
