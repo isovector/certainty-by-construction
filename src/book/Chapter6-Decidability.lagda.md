@@ -8,7 +8,7 @@ suppress-bibliography: true
 Hidden
 
 :   ```agda
-{-# OPTIONS --allow-unsolved-metas #-}
+{-# OPTIONS --allow-unsolved-metas --large-indices #-}
 open import Data.Integer using (ℤ)
 open import Chapter1-Agda using () renaming (_,_ to _,⅋_; _×_ to _×⅋_)
     ```

@@ -7,7 +7,7 @@ suppress-bibliography: true
 Hidden
 
 :   ```agda
-{-# OPTIONS --allow-unsolved-metas #-}
+{-# OPTIONS --allow-unsolved-metas --large-indices #-}
     ```
 
 ```agda
