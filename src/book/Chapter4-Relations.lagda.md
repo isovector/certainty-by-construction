@@ -911,7 +911,7 @@ $$
 where we read `~` as "unifies to." In order to correctly determine if a
 constructor needs to exist in a pattern match, Agda must be able to
 syntactically assign an expression to each *metavariable* (here, `?a` and `?b`.)
-While we can use the first equation to unify `?a` with `x`, equation, there is
+While we can use the first equation to unify `?a` with `x`, there is
 no way to syntactically unify `?a + ?b` with `x`. Even after replacing `?a`, we
 get `x + ?b ~ x`.
 
