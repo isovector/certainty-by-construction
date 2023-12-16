@@ -1178,7 +1178,7 @@ dominoes. This property of equality---that we're allowed to do such a thing in
 the first place---is called *transitivity,* and can be stated as:
 
 ```agda
-  trans&
+  trans⅋
     : {A : Set} {x y z : A}
     → x ≡ y
     → y ≡ z
@@ -1189,7 +1189,7 @@ the first place---is called *transitivity,* and can be stated as:
 Hidden
 
 :   ```agda
-  trans& = ?
+  trans⅋ = ?
     ```
 
 
