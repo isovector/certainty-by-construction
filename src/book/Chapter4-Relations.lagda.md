@@ -897,7 +897,7 @@ Internally, Agda implements this functionality by attempting to *unify*---that
 is, via matching syntactically---the indices on type's constructors with the
 indices of your expression. In this case, we have `x≤x` `:` `bind:x:x ≤ x`,
 which Agda needs to unify against `ctor:lte` whose eventual indices are
-`bind:?a ?b:?a ≤ ?a + ?b` (after some renaming to avoid confusion.)
+`bind:?a ?b:?a ≤ ?a + ?b` (after some renaming to avoid confusion).
 
 Doing so sets up the following series of equations that Agda must solve:
 
@@ -910,7 +910,7 @@ $$
 
 where we read `~` as "unifies to." In order to correctly determine if a
 constructor needs to exist in a pattern match, Agda must be able to
-syntactically assign an expression to each *metavariable* (here, `?a` and `?b`.)
+syntactically assign an expression to each *metavariable* (here, `?a` and `?b`).
 While we can use the first equation to unify `?a` with `x`, there is
 no way to syntactically unify `?a + ?b` with `x`. Even after replacing `?a`, we
 get `x + ?b ~ x`.
@@ -1398,7 +1398,7 @@ We have shown that both `type:_≤_` and `type:_≡_` form a preorders. From thi
 you might be tempted to think that preorders are just tools that are sorta like
 ordering or equality. Not so. Let's look at another example to break that intuition.
 
-Consider a graph (as in a network, not like a plot.) Math textbooks often begin
+Consider a graph (as in a network, not like a plot). Math textbooks often begin
 their discussion around graphs with the telltale phrase:
 
 > Let $G = (V, E)$ be a graph with vertices $V$ and edges $E$.
