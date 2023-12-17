@@ -1207,10 +1207,8 @@ problems arise for `trans`.
 An easy solution is to give qualified identifiers for the particular things we'd
 like. We can give the alias `module:PropEq` to `module:Chapter3-Proof`
 (the module where we first defined `ctor:refl` and `def:trans`) by way of the
-following syntax:
-
-which now gives us unambiguous access to `ctor:PropEq.refl` and
-`def:PropEq.trans`:
+following syntax, which now gives us unambiguous access to `ctor:PropEq.refl`
+and `def:PropEq.trans`:
 
 ```agda
   ≡-preorder⅋₀ : IsPreorder (_≡_)
