@@ -1435,7 +1435,7 @@ that does!
 
 When exactly is one vertex reachable from another? The easiest case is if we
 already have an edge in `_⇒_` that connects two vertices. As a trivial case, two
-vertices are already connect if they are the same. Finally, if we know an
+vertices already connect if they are the same. Finally, if we know an
 intermediary vertex is reachable from our starting point, and that the goal is
 reachable from there, we can connect the two paths. This gives rise to a very
 straightforward definition:
