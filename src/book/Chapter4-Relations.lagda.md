@@ -1198,7 +1198,7 @@ realizing it. Of course, `type:_≤_` forms one:
 
 as does `type:_≡_`, though we need to be a little careful in showing it.
 
-The most salient issue in showing `expr:IsPreorder _≡_`is that, given our new
+The most salient issue in showing `expr:IsPreorder _≡_` is that, given our new
 definition of `type:IsPreorder`, the identifiers `refl` and `trans` are no
 longer unambiguous. Agda just isn't sure if we want the `ctor:refl` constructor
 for propositional equality, or `field:refl` from `def:IsPreorder`, and similar
