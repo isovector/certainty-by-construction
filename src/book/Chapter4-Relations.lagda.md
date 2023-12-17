@@ -1450,7 +1450,7 @@ straightforward definition:
       connect  : Path v₁ v₂ → Path v₂ v₃ → Path v₁ v₃
 ```
 
-Where we can type `↪` by scrolling through the possibilities under [r](AgdaCmd).
+Where we can type `↪` by scrolling through the possibilities under [`r`](AgdaMode).
 
 It is not difficult to show that `type:Path` forms a preorder:
 
