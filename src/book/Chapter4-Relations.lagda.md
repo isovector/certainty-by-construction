@@ -1394,7 +1394,7 @@ the effort will be appreciated.
 
 ## Graph Reachability
 
-We have shown that both `type:_≤_` and `type:_≡_` form a preorders. From this
+We have shown that both `type:_≤_` and `type:_≡_` form preorders. From this
 you might be tempted to think that preorders are just tools that are sorta like
 ordering or equality. Not so. Let's look at another example to break that intuition.
 
