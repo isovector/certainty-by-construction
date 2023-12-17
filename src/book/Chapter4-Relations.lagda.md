@@ -1410,7 +1410,7 @@ the edges do actually lie between the vertices!
 As a computer scientist, you probably have implemented a graph before at some
 point, whether it be via pointer-chasing or as an adjacency matrix. These are
 indeed encodings of graphs, but they are concessions to computability, which we
-are not particularly intersted in. Playing with graphs in Agda requires only
+are not particularly interested in. Playing with graphs in Agda requires only
 some set `type:V` and an edge relation `type:_⇒_` ([`=>`](AgdaMode)) over it:
 
 ```agda
