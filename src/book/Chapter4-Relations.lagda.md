@@ -1185,7 +1185,7 @@ astronaut territory when it comes to structures like this---generalizing away
 from a hardcoded dependency on propositional equality to taking some notion of
 equality as a parameter. We will investigate what exactly is going on there when
 we discuss setoids in @sec:setoids. But that is a topic far in the future, and
-for now, we will deal exactly with `type:IsPreorder` as its defined here.
+for now, we will deal exactly with `type:IsPreorder` as it's defined here.
 
 We have already seen three preorders in this book, perhaps without even
 realizing it. Of course, `type:_≤_` forms one:
