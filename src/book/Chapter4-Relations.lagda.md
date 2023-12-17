@@ -1094,7 +1094,7 @@ constructor:
 ```
 
 Something interesting has happened here. Invoke [TypeContext](AgdaCmd) on the
-new hole, and you will see it has type `expr: 1 ≤ 4`! By using `ctor:s≤s`, Agda
+new hole, and you will see it has type `expr:1 ≤ 4`! By using `ctor:s≤s`, Agda
 has moved *both* sides of the inequality closer to zero. It makes sense when you
 stare at the definition of `ctor:s≤s`, but it's a rather magical thing to behold
 for the first time.
