@@ -1038,8 +1038,8 @@ simplest way to do *that* is to only ever use *constructors* as indices to your
 data type.
 
 A good way to proceed here is to work backwards; starting from each constructor,
-we can determine how to it in order to show our desired less-than-or-equal-to
-relationship.
+we can determine how to use it in order to show our desired
+less-than-or-equal-to relationship.
 
 The case of `ctor:zero` is easy, since `ctor:zero` is the smallest element, we
 have the case that `ctor:zero` `type:≤` `n`, for any other number `n`!
