@@ -96,7 +96,7 @@ _ = Set₉₈₆₀₂₅₀
 Why do these universes matter? As we have seen, Agda makes no distinction
 between values and types. So far, we've used this functionality primarily when
 working on indexed types, where we've seen values used as indices on types. But
-as we become more sophisticated Agda programmers (*e.g.* later in this chapter),
+as we become more sophisticated Agda programmers (*e.g.* later in this chapter,)
 we will start going the other direction: using types as values.
 
 When we write a proof about values, such a thing lives in `type:Set`. But proofs
