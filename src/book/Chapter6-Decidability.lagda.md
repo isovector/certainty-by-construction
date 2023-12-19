@@ -203,7 +203,7 @@ By this argument, any function we can successfully define which maps into bottom
 necessarily constrains at least one of its parameters to also have no elements.
 
 We still need to show that an element of `type:⊥` leads to the principle of
-explosion. This function is called bottom elimination," and is itself another
+explosion. This function is called "bottom elimination," and is itself another
 easy proof:
 
 ```agda
