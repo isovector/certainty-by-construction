@@ -1062,7 +1062,7 @@ thing from the standard library. In doing so, we will ensure everything else we
 build will play nicely with future chapters and any other Agda code you might
 want to write against the standard library itself.
 
-[^stdlib-approved]: Standard library-approved.
+[^stdlib-approved]: That is, equivalent to the definition given in the standard library.
 
 ```agda
 open import Data.Nat
