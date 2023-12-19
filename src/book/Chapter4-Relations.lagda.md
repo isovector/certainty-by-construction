@@ -1222,7 +1222,7 @@ failed to fill in an implicit on our behalf. What's gone wrong is that
 `type:_≡_` is polymorphic in the type for which it shows equality, and so Agda
 doesn't know how we'd like to instantiate that polymorphism. In fact---we don't,
 and would like to *keep* it polymorphic. This can be done by explicitly filling
-in `type:_≡_`'s implicit `A` parameter, which we'd like to conveniently fill in
+in `type:_≡_`'s implicit `A` parameter, which we'd like to fill in
 with our `keyword:variable` also named `A`:
 
 ```agda
