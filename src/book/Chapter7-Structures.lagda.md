@@ -319,7 +319,7 @@ so you just pass the whole structure around at once. The bundled version of
 We could have also chosen to bundle up the carrier set inside
 `type:Monoid`[^as-the-stdlib], but such will be inconvenient for us, as we'd
 like to give `type:Monoid` instances to Agda so we can overload the syntax of
-`field_∙_` and `field:ε`. Doing so, however, requires *something* for Agda to
+`field:_∙_` and `field:ε`. Doing so, however, requires *something* for Agda to
 dispatch on, and we will use the carrier set for that purpose.
 
 [^as-the-stdlib]: The standard library does indeed bundle the carrier set. This
