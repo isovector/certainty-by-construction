@@ -970,7 +970,7 @@ but try as we might, we are unable to fill the above holes.
 
 All of this bring up an interesting question at the foundation of
 mathematics---when exactly are two functions equal? The answer is not very cut
-and dry, and it's quite a hard a hard problem. Consider functions `def:f₁`,
+and dry, and it's quite a hard problem. Consider functions `def:f₁`,
 and `def:f₂`:
 
 
