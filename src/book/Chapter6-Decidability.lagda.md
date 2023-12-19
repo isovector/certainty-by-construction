@@ -301,7 +301,7 @@ Notice how the type `expr:Reflexive _≡_` expands to the type of `ctor:refl`,
 that is, `bind:A:{x : A} → x ≡ x`. We are required to explicitly bind `A :`
 `type:Set` here, so that we can use it to fill in the implicit `A` parameter of
 `type:Reflexive`. In principle, Agda could be inferred from the type of
-`type:_≡_`, but Agda has know way of knowing if we'd like to talk about
+`type:_≡_`, but Agda has no way of knowing if we'd like to talk about
 `type:_≡_` in its fully-polymorphic type, or if we'd like it specialized to
 some particular type like `type:ℕ`. The distinction isn't extremely poignant in
 this example, but there do exist monomorphic relations which we might still want
