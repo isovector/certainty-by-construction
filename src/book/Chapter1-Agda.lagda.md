@@ -1581,7 +1581,7 @@ helper function that will clean up the syntax for us.
 The type of `def:_,_` should really be `bind:A B:A → B → A ×⅋ B`. However, recall
 that `A` and `B` are variables standing in for *whatever type the user wants.*
 Unfortunately for us, we don't know what those types are yet, but we need them
-in order to give a proper type to `def:_⅋_`. Since those variables are not in
+in order to give a proper type to `def:_,⅋_`. Since those variables are not in
 scope, we must bind them ourselves.
 
 This binding is what's happening in the `{A B : Set}` syntax that prefixes the
