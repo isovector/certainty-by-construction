@@ -1014,7 +1014,7 @@ Agda as:
   _≗_ {A = A} f g = (x : A) → f x ≡ g x
 ```
 
-where the `≗` symbol is input as (AgdaMode). The type here is a little
+where the `≗` symbol is input as [=o](AgdaMode). The type here is a little
 hairy, but it shouldn't give you too much challenge by this point. The idea is
 that `def:_≗_` forms a relation over functions that ensures their images are
 propositionally equal at all points. Under this relation, we can now show that
