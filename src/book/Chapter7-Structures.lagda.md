@@ -319,7 +319,7 @@ so you just pass the whole structure around at once. The bundled version of
 We could have also chosen to bundle up the carrier set inside
 `type:Monoid`[^as-the-stdlib], but such will be inconvenient for us, as we'd
 like to give `type:Monoid` instances to Agda so we can overload the syntax of
-`field_∙_` and `field:ε`. Doing so, however, requires *something* for Agda to
+`field:_∙_` and `field:ε`. Doing so, however, requires *something* for Agda to
 dispatch on, and we will use the carrier set for that purpose.
 
 [^as-the-stdlib]: The standard library does indeed bundle the carrier set. This
@@ -970,7 +970,7 @@ but try as we might, we are unable to fill the above holes.
 
 All of this bring up an interesting question at the foundation of
 mathematics---when exactly are two functions equal? The answer is not very cut
-and dry, and it's quite a hard a hard problem. Consider functions `def:f₁`,
+and dry, and it's quite a hard problem. Consider functions `def:f₁`,
 and `def:f₂`:
 
 
@@ -1014,7 +1014,7 @@ Agda as:
   _≗_ {A = A} f g = (x : A) → f x ≡ g x
 ```
 
-where the `≗` symbol is input as (AgdaMode). The type here is a little
+where the `≗` symbol is input as [=o](AgdaMode). The type here is a little
 hairy, but it shouldn't give you too much challenge by this point. The idea is
 that `def:_≗_` forms a relation over functions that ensures their images are
 propositionally equal at all points. Under this relation, we can now show that
@@ -1029,7 +1029,7 @@ propositionally equal at all points. Under this relation, we can now show that
 As you'd expect, in order for `def:_≗_` to be a model of equality, it certainly
 ought to form an equivalence relation. And in fact it does. The construction is
 a little annoying to type due to the high parametricity, but we can build it
-together. For some types `A and `B`:
+together. For some types `A` and `B`:
 
 ```agda
   module _ {A : Set ℓ₁} {B : A → Set ℓ₂} where

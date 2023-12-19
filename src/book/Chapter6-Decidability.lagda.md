@@ -203,7 +203,7 @@ By this argument, any function we can successfully define which maps into bottom
 necessarily constrains at least one of its parameters to also have no elements.
 
 We still need to show that an element of `type:⊥` leads to the principle of
-explosion. This function is called bottom elimination," and is itself another
+explosion. This function is called "bottom elimination," and is itself another
 easy proof:
 
 ```agda
@@ -301,7 +301,7 @@ Notice how the type `expr:Reflexive _≡_` expands to the type of `ctor:refl`,
 that is, `bind:A:{x : A} → x ≡ x`. We are required to explicitly bind `A :`
 `type:Set` here, so that we can use it to fill in the implicit `A` parameter of
 `type:Reflexive`. In principle, Agda could be inferred from the type of
-`type:_≡_`, but Agda has know way of knowing if we'd like to talk about
+`type:_≡_`, but Agda has no way of knowing if we'd like to talk about
 `type:_≡_` in its fully-polymorphic type, or if we'd like it specialized to
 some particular type like `type:ℕ`. The distinction isn't extremely poignant in
 this example, but there do exist monomorphic relations which we might still want
@@ -650,7 +650,7 @@ were or were not equal. A better name for such a function is `def:_≟_` (input 
   _≟⅋₋₁_ = ?
 ```
 
-The goal is slightly modify the definition of `def:_≡_` such that whenever it
+The goal is slightly modify the definition of `def:_==_` such that whenever it
 returns `ctor:true` we instead get back a `ctor:yes`, and likewise replace
 `ctor:false` with `ctor:no`. Giving back the `ctor:yes`es is easy enough, but
 the `ctor:no`s take a little more thought:
