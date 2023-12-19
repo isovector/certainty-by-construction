@@ -1223,7 +1223,7 @@ failed to fill in an implicit on our behalf. What's gone wrong is that
 doesn't know how we'd like to instantiate that polymorphism. In fact---we don't,
 and would like to *keep* it polymorphic. This can be done by explicitly filling
 in `type:_≡_`'s implicit `A` parameter, which we'd like to fill in
-with our `keyword:variable` also named `A`:
+with our `keyword:variable`, conveniently also named `A`:
 
 ```agda
   ≡-preorder : IsPreorder (_≡_ {A = A})
