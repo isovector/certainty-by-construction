@@ -54,7 +54,7 @@ posed to underline a problem with the now-called "naive set theory" that was in
 vogue at the time. We call it naive set theory these days because it allowed for
 paradoxes like the one above, and paradoxes are anathema to mathematics. Once
 you have a contradiction, the entire mathematical system falls apart and it's
-possible to prove anything whatsoever. We will look at how to exactly this in
+possible to prove anything whatsoever. We will look at how to correct this in
 @sec:negation.
 
 Modern mathematics' solution to the barber paradox is the realization that not
@@ -64,7 +64,7 @@ the barber who doesn't cut his own hair is swept under the rug, much like the
 hair at actual barbershops.
 
 But this only punts on the problem. What is the corresponding mathematical
-object here. If the set of all sets is not a set, then, what exactly is it? The
+object here? If the set of all sets is not a set, then, what exactly is it? The
 trick is to build a hierarchy of set-like things, no one of which contains
 itself, but each subsequent object contains the previous one.
 
@@ -96,7 +96,7 @@ _ = Set₉₈₆₀₂₅₀
 Why do these universes matter? As we have seen, Agda makes no distinction
 between values and types. So far, we've used this functionality primarily when
 working on indexed types, where we've seen values used as indices on types. But
-as we become more sophisticated Agda programmers (*eg.* later in this chapter,)
+as we become more sophisticated Agda programmers (*e.g.* later in this chapter,)
 we will start going the other direction: using types as values.
 
 When we write a proof about values, such a thing lives in `type:Set`. But proofs
@@ -277,7 +277,7 @@ mathematics, but it's not usually a problem.
 
 How do we actually build such a there-exists type in Agda? The construction is
 usually known as a *sigma* type, written `type:Σ` and input as [GS](AgdaMode).
-It's definition is given by:
+Its definition is given by:
 
 ```agda
 module Definition-DependentPair where
@@ -589,7 +589,7 @@ relations are a special case of heterogeneous ones. We will name such a thing
   Rel A ℓ = REL A A ℓ
 ```
 
-As an illustration of `type:Rel`, while previously defined propositional
+As an illustration of `type:Rel`, we previously defined propositional
 equality in this way:
 
 ```agda
@@ -910,8 +910,8 @@ $$
 
 where we read `~` as "unifies to." In order to correctly determine if a
 constructor needs to exist in a pattern match, Agda must be able to
-syntactically assign an expression to each *metavariable* (here, `?a` and `?b`.)
-While we can use the first equation to unify `?a` with `x`, equation, there is
+syntactically assign an expression to each *metavariable* (here, `?a` and `?b`).
+While we can use the first equation to unify `?a` with `x`, there is
 no way to syntactically unify `?a + ?b` with `x`. Even after replacing `?a`, we
 get `x + ?b ~ x`.
 
@@ -1038,8 +1038,8 @@ simplest way to do *that* is to only ever use *constructors* as indices to your
 data type.
 
 A good way to proceed here is to work backwards; starting from each constructor,
-we can determine how to it in order to show our desired less-than-or-equal-to
-relationship.
+we can determine how to use it in order to show our desired
+less-than-or-equal-to relationship.
 
 The case of `ctor:zero` is easy, since `ctor:zero` is the smallest element, we
 have the case that `ctor:zero` `type:≤` `n`, for any other number `n`!
@@ -1062,7 +1062,7 @@ thing from the standard library. In doing so, we will ensure everything else we
 build will play nicely with future chapters and any other Agda code you might
 want to write against the standard library itself.
 
-[^stdlib-approved]: Standard-library approved.
+[^stdlib-approved]: That is, equivalent to the definition given in the standard library.
 
 ```agda
 open import Data.Nat
@@ -1094,7 +1094,7 @@ constructor:
 ```
 
 Something interesting has happened here. Invoke [TypeContext](AgdaCmd) on the
-new hole, and you will see it has type `expr: 1 ≤ 4`! By using `ctor:s≤s`, Agda
+new hole, and you will see it has type `expr:1 ≤ 4`! By using `ctor:s≤s`, Agda
 has moved *both* sides of the inequality closer to zero. It makes sense when you
 stare at the definition of `ctor:s≤s`, but it's a rather magical thing to behold
 for the first time.
@@ -1147,7 +1147,7 @@ Solution
 
 Exercise (Easy)
 
-:   Prove `def:≤-trans` `:` `expr:(x y z : ℕ) → x ≤ y → y ≤ z → x ≤ z`.
+:   Prove `def:≤-trans` `:` `expr:{x y z : ℕ} → x ≤ y → y ≤ z → x ≤ z`.
 
 :     ```agda
   ≤-trans : {x y z : ℕ} → x ≤ y → y ≤ z → x ≤ z
@@ -1185,7 +1185,7 @@ astronaut territory when it comes to structures like this---generalizing away
 from a hardcoded dependency on propositional equality to taking some notion of
 equality as a parameter. We will investigate what exactly is going on there when
 we discuss setoids in @sec:setoids. But that is a topic far in the future, and
-for now, we will deal exactly with `type:IsPreorder` as its defined here.
+for now, we will deal exactly with `type:IsPreorder` as it's defined here.
 
 We have already seen three preorders in this book, perhaps without even
 realizing it. Of course, `type:_≤_` forms one:
@@ -1198,7 +1198,7 @@ realizing it. Of course, `type:_≤_` forms one:
 
 as does `type:_≡_`, though we need to be a little careful in showing it.
 
-The most salient issue in showing `expr:IsPreorder _≡_`is that, given our new
+The most salient issue in showing `expr:IsPreorder _≡_` is that, given our new
 definition of `type:IsPreorder`, the identifiers `refl` and `trans` are no
 longer unambiguous. Agda just isn't sure if we want the `ctor:refl` constructor
 for propositional equality, or `field:refl` from `def:IsPreorder`, and similar
@@ -1207,10 +1207,8 @@ problems arise for `trans`.
 An easy solution is to give qualified identifiers for the particular things we'd
 like. We can give the alias `module:PropEq` to `module:Chapter3-Proof`
 (the module where we first defined `ctor:refl` and `def:trans`) by way of the
-following syntax:
-
-which now gives us unambiguous access to `ctor:PropEq.refl` and
-`def:PropEq.trans`:
+following syntax, which now gives us unambiguous access to `ctor:PropEq.refl`
+and `def:PropEq.trans`:
 
 ```agda
   ≡-preorder⅋₀ : IsPreorder (_≡_)
@@ -1224,8 +1222,8 @@ failed to fill in an implicit on our behalf. What's gone wrong is that
 `type:_≡_` is polymorphic in the type for which it shows equality, and so Agda
 doesn't know how we'd like to instantiate that polymorphism. In fact---we don't,
 and would like to *keep* it polymorphic. This can be done by explicitly filling
-in `type:_≡_`'s implicit `A` parameter, which we'd conveniently to fill in with
-our `keyword:variable` also named `A`:
+in `type:_≡_`'s implicit `A` parameter, which we'd like to fill in
+with our `keyword:variable`, conveniently also named `A`:
 
 ```agda
   ≡-preorder : IsPreorder (_≡_ {A = A})
@@ -1396,7 +1394,7 @@ the effort will be appreciated.
 
 ## Graph Reachability
 
-We have shown that both `type:_≤_` and `type:_≡_` form a preorders. From this
+We have shown that both `type:_≤_` and `type:_≡_` form preorders. From this
 you might be tempted to think that preorders are just tools that are sorta like
 ordering or equality. Not so. Let's look at another example to break that intuition.
 
@@ -1412,7 +1410,7 @@ the edges do actually lie between the vertices!
 As a computer scientist, you probably have implemented a graph before at some
 point, whether it be via pointer-chasing or as an adjacency matrix. These are
 indeed encodings of graphs, but they are concessions to computability, which we
-are not particularly intersted in. Playing with graphs in Agda requires only
+are not particularly interested in. Playing with graphs in Agda requires only
 some set `type:V` and an edge relation `type:_⇒_` ([`=>`](AgdaMode)) over it:
 
 ```agda
@@ -1437,7 +1435,7 @@ that does!
 
 When exactly is one vertex reachable from another? The easiest case is if we
 already have an edge in `_⇒_` that connects two vertices. As a trivial case, two
-vertices are already connect if they are the same. Finally, if we know an
+vertices are already connected if they are the same. Finally, if we know an
 intermediary vertex is reachable from our starting point, and that the goal is
 reachable from there, we can connect the two paths. This gives rise to a very
 straightforward definition:
@@ -1452,7 +1450,7 @@ straightforward definition:
       connect  : Path v₁ v₂ → Path v₂ v₃ → Path v₁ v₃
 ```
 
-Where we can type `↪` by scrolling through the possibilities under [r](AgdaCmd).
+Where we can type `↪` by scrolling through the possibilities under [`r`](AgdaMode).
 
 It is not difficult to show that `type:Path` forms a preorder:
 
@@ -1636,7 +1634,7 @@ length, where we would then get a bucket for every unique string length.
 
 We're going to define `type:IsEquivalence` and `type:IsPartialOrder` at the same
 time, and both are types parameterized by a given relation. While we could go
-through the effort and writing out all the necessary levels, sets, and
+through the effort and write out all the necessary levels, sets, and
 relationship bindings for both, it's simpler to put that stuff as parameters to
 an anonymous module:
 
@@ -1738,7 +1736,7 @@ open import Data.Product
 
 In @sec:hetgen-rels and @sec:homgen-rels, we discussed heterogeneous and
 homogeneous relations, while we explored many of their properties in
-#sec:rel-props. The machinery we built here can be found in the standard library under `module:Relation.Binary`:
+@sec:rel-props. The machinery we built here can be found in the standard library under `module:Relation.Binary`:
 
 ```agda
 open import Relation.Binary
