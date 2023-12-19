@@ -1029,7 +1029,7 @@ propositionally equal at all points. Under this relation, we can now show that
 As you'd expect, in order for `def:_≗_` to be a model of equality, it certainly
 ought to form an equivalence relation. And in fact it does. The construction is
 a little annoying to type due to the high parametricity, but we can build it
-together. For some types `A and `B`:
+together. For some types `A` and `B`:
 
 ```agda
   module _ {A : Set ℓ₁} {B : A → Set ℓ₂} where
