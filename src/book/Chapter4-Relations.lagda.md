@@ -1398,7 +1398,7 @@ We have shown that both `type:_≤_` and `type:_≡_` form preorders. From this
 you might be tempted to think that preorders are just tools that are sorta like
 ordering or equality. Not so. Let's look at another example to break that intuition.
 
-Consider a graph (as in a network, not like a plot). Math textbooks often begin
+Consider a graph (as in a network, not like a plot.) Math textbooks often begin
 their discussion around graphs with the telltale phrase:
 
 > Let $G = (V, E)$ be a graph with vertices $V$ and edges $E$.
