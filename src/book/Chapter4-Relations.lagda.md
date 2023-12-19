@@ -1736,7 +1736,7 @@ open import Data.Product
 
 In @sec:hetgen-rels and @sec:homgen-rels, we discussed heterogeneous and
 homogeneous relations, while we explored many of their properties in
-#sec:rel-props. The machinery we built here can be found in the standard library under `module:Relation.Binary`:
+@sec:rel-props. The machinery we built here can be found in the standard library under `module:Relation.Binary`:
 
 ```agda
 open import Relation.Binary
