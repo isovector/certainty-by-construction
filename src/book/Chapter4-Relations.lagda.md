@@ -1634,7 +1634,7 @@ length, where we would then get a bucket for every unique string length.
 
 We're going to define `type:IsEquivalence` and `type:IsPartialOrder` at the same
 time, and both are types parameterized by a given relation. While we could go
-through the effort and writing out all the necessary levels, sets, and
+through the effort and write out all the necessary levels, sets, and
 relationship bindings for both, it's simpler to put that stuff as parameters to
 an anonymous module:
 
