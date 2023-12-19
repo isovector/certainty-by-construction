@@ -650,7 +650,7 @@ were or were not equal. A better name for such a function is `def:_≟_` (input 
   _≟⅋₋₁_ = ?
 ```
 
-The goal is slightly modify the definition of `def:_≡_` such that whenever it
+The goal is slightly modify the definition of `def:_==_` such that whenever it
 returns `ctor:true` we instead get back a `ctor:yes`, and likewise replace
 `ctor:false` with `ctor:no`. Giving back the `ctor:yes`es is easy enough, but
 the `ctor:no`s take a little more thought:
