@@ -897,7 +897,7 @@ Internally, Agda implements this functionality by attempting to *unify*---that
 is, via matching syntactically---the indices on type's constructors with the
 indices of your expression. In this case, we have `x≤x` `:` `bind:x:x ≤ x`,
 which Agda needs to unify against `ctor:lte` whose eventual indices are
-`bind:?a ?b:?a ≤ ?a + ?b` (after some renaming to avoid confusion).
+`bind:?a ?b:?a ≤ ?a + ?b` (after some renaming to avoid confusion.)
 
 Doing so sets up the following series of equations that Agda must solve:
 
