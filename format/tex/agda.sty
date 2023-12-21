@@ -359,7 +359,7 @@
 \long\def\AgdaHide#1{\ignorespaces}
 
 % Misc.
-\newcommand{\AgdaHole}[2][]{\colorbox{#1AgdaHole}{#2}}
+\newcommand{\AgdaHole}[2][]{\AgdaFontStyle{\colorbox{#1AgdaHole}{#2}}}
 
 % ----------------------------------------------------------------------
 % The code environment.
@@ -752,6 +752,6 @@
               \)}{\AgdaIndentSpace{}}{}}
 
 % Underscores are typeset using \AgdaUnderscore{}.
-\newcommand{\AgdaUnderscore}{\_}
+\newcommand{\AgdaUnderscore}{\string_}
 
 \endinput

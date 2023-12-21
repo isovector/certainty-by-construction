@@ -341,13 +341,14 @@ $endif$
 \newunicodechar{⨄}{\iosevka{}⨄}
 \newunicodechar{𝔸}{\iosevka{}𝔸}
 \newunicodechar{≡}{\iosevka{}≡}
-\newunicodechar{∨}{\iosevka{}∨}
+% \newunicodechar{∨}{\iosevka{}∨}
 \newunicodechar{ʳ}{\iosevka{}ʳ}
 \allsectionsfont{\impact}
 
 \newfontfamily{\substitutefont}[Scale=MatchLowercase]{Noto Sans}
 
 \usepackage[tikz]{bclogo}
+\renewcommand{\textunderscore}{\string_}
 
 \newcommand{\BookEnv}[4]{\newenvironment{#1}{#2\begin{tcolorbox}[breakable, left=2.5mm, right=3mm, top=4mm, bottom=0mm, skin=enhancedmiddle, colframe=white, title={\color{black}#3\quad{}\impact{#4}}]\color{black}}{\end{tcolorbox}}}
 

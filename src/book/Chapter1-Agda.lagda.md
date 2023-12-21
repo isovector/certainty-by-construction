@@ -1016,7 +1016,7 @@ expressions we need to find.
 Armed with a better understanding of how Agda works, we can return to writing
 actual code. One simple operation over booleans is logical OR; that is, the
 result is true if at least one of its arguments is true. Mathematicians often
-use the symbol $\vee$ (pronounced "vel") for this operation, which we will
+use the symbol `∨` (pronounced "vel") for this operation, which we will
 follow. Note that this is not the Latin letter that comes before `w`, but
 instead the Unicode character produced by typing [`or`](AgdaMode).
 
@@ -1197,7 +1197,7 @@ Agda computes between `def:_∨₁_` and `def:_∨₂_`.
 
 At its root, [2](Ann) is a better program *because* it needs to inspect less
 data in order to make a decision. `def:_∨₂_` is able to make meaningful progress
-towards an answer, even when the second argument isn't yet known, while `def:_v₁_`
+towards an answer, even when the second argument isn't yet known, while `def:_∨₁_`
 is required to wait for both arguments.
 
 Agda supports *partial application* of functions, which means we're allowed to
