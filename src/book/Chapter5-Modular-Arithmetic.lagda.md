@@ -329,7 +329,7 @@ So what does it actually mean if $a = b \pmod{n}$? It means that these two
 numbers have the same remainder when divided by `n`. But since we're dealing
 with the natural numbers, we don't have any notion of division at hand. Instead,
 we can phrase the problem as "if we subtract $a$ from $b$, the result should be
-an integer multiple of `n`"  That is, there should exist some `k : ` `type:ℤ`
+an integer multiple of `n`".  That is, there should exist some `k : ` `type:ℤ`
 such that:
 
 $$
