@@ -528,7 +528,7 @@ new preorder:
 ## Congruence of Addition
 
 We're almost ready to build some interesting proofs; but we're going to need to
-define a few more trivial ones first. Let's prove two more fact "by hand", the
+define a few more trivial ones first. Let's prove two more facts "by hand", the
 fact that $0 = n \pmod{n}$:
 
 ```agda
