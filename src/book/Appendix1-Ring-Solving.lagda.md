@@ -10,8 +10,8 @@ suppress-bibliography: true
 module Appendix1-Ring-Solving where
 ```
 
-You might have noticed something---do proofs in Agda is frustrating! It seems
-like proofs which are most obvious are also the ones that are tryingly tedious.
+You might have noticed something---doing proofs in Agda is frustrating! It seems
+the proofs which are most obvious are also the ones that are tryingly tedious.
 These are the proofs that involve reasoning about arithmetic---which is a feat
 that we humans take for granted, having so much experience doing it. Agda's
 mechanical insistence that we spell out every step of the tedious process by

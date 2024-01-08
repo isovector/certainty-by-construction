@@ -28,7 +28,7 @@ are:
 her support and outstanding company, I never would have found the wherewithal to
 make it to the finish line.
 
-*Reed Mullanix,* whom has never once balked at taking an hour out of his day to
+*Reed Mullanix,* who has never once balked at taking an hour out of his day to
 explain something to me. And I ask *very often.* Most of the technical things I
 know have been taught to me by Reed.
 
