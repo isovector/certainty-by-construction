@@ -494,7 +494,7 @@ We're now ready to show `def:≈-trans`:
     where open ≡-Reasoning
 ```
 
-Haven now shown reflexivity, symmetry, and transitivity, it's clear that
+Having now shown reflexivity, symmetry, and transitivity, it's clear that
 `type:_≈_` is an equivalence relation:
 
 ```agda
