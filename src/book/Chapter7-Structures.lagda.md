@@ -1230,7 +1230,7 @@ and then we can construct our setoid for `type:_×_`:
 
 ```agda
     ×-setoid : Setoid _ _
-    Carrier ×-setoid = s₁ .Carrier × s₂ .Carrier
+    Carrier ×-setoid = Carrier₁ × Carrier₂
     _≈_ ×-setoid (a₁ , b₁) (a₂ , b₂) = (a₁ ≈₁ a₂) × (b₁ ≈₂ b₂)
     refl′   (pre (equiv ×-setoid)) = refl , refl
     trans′  (pre (equiv ×-setoid)) (a₁₂ , b₁₂) (a₂₃ , b₂₃)
@@ -1244,9 +1244,14 @@ don't work out. Instead, we can define `type:⊎-Pointwise`, whose sole purpose 
 existence is to act as an equivalence relation for `def:⊎-setoid`:
 
 ```agda
-    data ⊎-Pointwise : Rel (Carrier₁ ⊎ Carrier₂) (c₁ ⊔ c₂ ⊔ ℓ₁ ⊔ ℓ₂) where
-      inj₁  : {x y : Carrier₁} → x ≈₁  y → ⊎-Pointwise (inj₁ x) (inj₁ y)
-      inj₂  : {x y : Carrier₂} → x ≈₂  y → ⊎-Pointwise (inj₂ x) (inj₂ y)
+    data ⊎-Pointwise : Rel (Carrier₁ ⊎ Carrier₂) (c₁ ⊔ c₂ ⊔ ℓ₁ ⊔ ℓ₂)
+        where
+      inj₁  : {x y : Carrier₁}
+            → x ≈₁  y
+            → ⊎-Pointwise (inj₁ x) (inj₁ y)
+      inj₂  : {x y : Carrier₂}
+            → x ≈₂  y
+            → ⊎-Pointwise (inj₂ x) (inj₂ y)
 ```
 
 We then resign ourselves to showing `type:⊎-Pointwise` is indeed an equivalence
@@ -1256,8 +1261,10 @@ relation:
     ⊎-equiv : IsEquivalence ⊎-Pointwise
     refl′   (pre ⊎-equiv) {inj₁  x} = inj₁ refl
     refl′   (pre ⊎-equiv) {inj₂  y} = inj₂ refl
-    trans′  (pre ⊎-equiv) (inj₁  x=y) (inj₁  y=z) = inj₁  (trans x=y y=z)
-    trans′  (pre ⊎-equiv) (inj₂  x=y) (inj₂  y=z) = inj₂  (trans x=y y=z)
+    trans′  (pre ⊎-equiv) (inj₁  x=y) (inj₁  y=z)
+      = inj₁  (trans x=y y=z)
+    trans′  (pre ⊎-equiv) (inj₂  x=y) (inj₂  y=z)
+      = inj₂  (trans x=y y=z)
     sym′    ⊎-equiv (inj₁  x) = inj₁  (sym x)
     sym′    ⊎-equiv (inj₂  x) = inj₂  (sym x)
 ```
@@ -1322,7 +1329,8 @@ define a type corresponding to congruent functions between our two carrier sets:
 
 
 ```agda
-  module _ {a b : Level} (s₁ : Setoid a ℓ₁) (s₂ : Setoid b ℓ₂) where
+  module _ {a b : Level} (s₁ : Setoid a ℓ₁) (s₂ : Setoid b ℓ₂)
+      where
     open Setoid s₁  renaming (Carrier to From;  _≈_ to _≈₁_)
     open Setoid s₂  renaming (Carrier to To;    _≈_ to _≈₂_)
 

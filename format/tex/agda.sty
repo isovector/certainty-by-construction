@@ -571,10 +571,10 @@
   {\renewcommand{\Agda@IndentSymbol}{\ding{54}}}
   {
   \ifthenelse{\cnttest{#1}{>}{\value{Agda@LastIndent}}}
-    {\renewcommand{\Agda@IndentSymbol}{$\rightarrowbar$ #1}}
+    {\renewcommand{\Agda@IndentSymbol}{$\rightarrowbar$\,#1}}
     {
     \ifthenelse{\cnttest{#1}{<}{\value{Agda@LastIndent}}}
-      {\renewcommand{\Agda@IndentSymbol}{$\barleftarrow$ #1}}
+      {\renewcommand{\Agda@IndentSymbol}{$\barleftarrow$\,#1}}
       {\renewcommand{\Agda@IndentSymbol}{#1}}
     }
   }
@@ -684,7 +684,7 @@
     % and alignment.
         \begin{tcolorbox}[blanker, breakable, left=2.5mm, right=3mm, top=0mm, bottom=0mm, frame hidden, skin=enhancedmiddle,
           colback=white, borderline west={1.5pt}{0pt}{black}]%
-          \marginnote{\AgdaIndentation{\Agda@IndentSymbol} \enspace\quad}%
+          \marginnote{\AgdaIndentation{\Agda@IndentSymbol}\ \ }%
         \begin{pboxed}%
       %
       % Conditionally preserve alignment between code blocks.

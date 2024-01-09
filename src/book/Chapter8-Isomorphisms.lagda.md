@@ -63,7 +63,8 @@ open import Chapter1-Agda
 
 :   ```agda
 open import Chapter2-Numbers
-  using (ℕ; zero; suc; _+_; _*_; _^_; Maybe; just; nothing)
+  using  ( ℕ; zero; suc; _+_; _*_; _^_; Maybe; just
+         ; nothing)
     ```
 
 :   ```agda
@@ -546,9 +547,10 @@ Finally, we can show `def:vec-iso`:
   from-cong (vec-iso {n = zero}) _ = refl
   from-cong (vec-iso {n = suc n}) {v₁} {v₂} vi≡vj
     rewrite vi≡vj {x = zero} refl
-    rewrite from-cong  vec-iso {Fn-lmap suc v₁} {Fn-lmap suc v₂}  -- ! 1
-                       (vi≡vj ∘ ≡.cong suc)
-      = refl
+    rewrite from-cong  vec-iso
+                       {Fn-lmap suc v₁}  -- ! 1
+                       {Fn-lmap suc v₂}
+                       (vi≡vj ∘ ≡.cong suc) = refl
 ```
 
 The complications at [1](Ann) requiring `def:Fn-lmap` are due to us needing to
@@ -609,10 +611,14 @@ module _ where
   ≅-trans : s₁ ≅ s₂ → s₂ ≅ s₃ → s₁ ≅ s₃
   to    (≅-trans f g) = to    g ∘ to    f
   from  (≅-trans f g) = from  f ∘ from  g
-  from∘to (≅-trans f g) x = begin
-    from f (from g (to g (to f x)))  ≈⟨ from-cong f (from∘to g _) ⟩
-    from f (to f x)                  ≈⟨ from∘to f x ⟩
-    x                                ∎
+  from∘to (≅-trans f g) x =
+    begin
+      from f (from g (to g (to f x)))
+    ≈⟨ from-cong f (from∘to g _) ⟩
+      from f (to f x)
+    ≈⟨ from∘to f x ⟩
+      x
+    ∎
     where open A-Reasoning f
   to∘from (≅-trans f g) x = begin
     to g (to f (from f (from g x)))  ≈⟨ to-cong g (to∘from f _) ⟩
@@ -909,9 +915,9 @@ Solution
   generic-list  : {A : Set ℓ}
                 → prop-setoid (List A)
                 ≅ prop-setoid (⊤ ⊎ (A × List A))
-  to         generic-list []        = inj₁  tt
-  to         generic-list (x ∷ xs)  = inj₂  (x , xs)
-  from       generic-list (inj₁  x)          = []
+  to         generic-list []         = inj₁  tt
+  to         generic-list (x ∷ xs)   = inj₂  (x , xs)
+  from       generic-list (inj₁  x)  = []
   from       generic-list (inj₂  (x , xs))   = x ∷ xs
   from∘to    generic-list []         = refl
   from∘to    generic-list (x ∷ xs)   = refl
@@ -1017,8 +1023,8 @@ Similarly, we can give the same treatment to `type:_⊎_`, as in
       : s₁ ≅ s₂
       → s₃ ≅ s₄
       → ⊎-setoid s₁ s₃ ≅ ⊎-setoid s₂ s₄
-  to         (⊎-preserves-≅ s t)           = ⊎.map (to s)    (to t)
-  from       (⊎-preserves-≅ s t)           = ⊎.map (from s)  (from t)
+  to         (⊎-preserves-≅ s t) = ⊎.map (to s)    (to t)
+  from       (⊎-preserves-≅ s t) = ⊎.map (from s)  (from t)
   from∘to    (⊎-preserves-≅ s t) (inj₁ x)  = inj₁  (from∘to s x)
   from∘to    (⊎-preserves-≅ s t) (inj₂ y)  = inj₂  (from∘to t y)
   to∘from    (⊎-preserves-≅ s t) (inj₁ x)  = inj₁  (to∘from s x)

@@ -65,9 +65,10 @@ open import Chapter7-Structures
 
 :   ```agda
 open import Chapter8-Isomorphisms
-  using ( Iso; _≅_; ≅-refl; ≅-sym; ≅-trans; ⊎-fin; fin-iso
-        ; ×-fin; Vec; []; _∷_; lookup; Fin; zero; suc; toℕ
-        ; _Has_Elements; ⊎-prop-homo; ×-prop-homo)
+  using ( Iso; _≅_; ≅-refl; ≅-sym; ≅-trans; ⊎-fin
+        ; fin-iso; ×-fin; Vec; []; _∷_; lookup; Fin
+        ; zero; suc; toℕ; _Has_Elements; ⊎-prop-homo
+        ; ×-prop-homo)
     ```
 
 
@@ -248,10 +249,15 @@ private variable
   ℓ ℓ₁ ℓ₂ : Level
 
 data Trie (B : Set ℓ) : Shape → Set ℓ where
-  empty  : {sh : Shape}                          → Trie B sh            -- ! 1
-  table  : {n : ℕ}        → Vec B n              → Trie B (num n)
-  both   : {m n : Shape}  → Trie B m → Trie B n  → Trie B (beside m n)
-  nest   : {m n : Shape}  → Trie (Trie B n) m    → Trie B (inside m n)  -- ! 2
+  empty  : {sh : Shape}       → Trie B sh  -- ! 1
+  table  : {n : ℕ} → Vec B n  → Trie B (num n)
+  both   : {m n : Shape}
+         → Trie B m
+         → Trie B n
+         → Trie B (beside m n)
+  nest   : {m n : Shape}
+         → Trie (Trie B n) m
+         → Trie B (inside m n)             -- ! 2
 ```
 
 
@@ -726,11 +732,16 @@ get′-is-fn
     : {sh : Shape} {t : Trie B sh} {f : Ix sh → B}
     → (mt : Memoizes f t)
     → proj₁ ∘ get′ mt ≗ f
-get′-is-fn {sh = num _}       emptyM x          = lookup∘tabulate _ x
-get′-is-fn {sh = beside _ _}  emptyM (inj₁  x)  = get′-is-fn emptyM x
-get′-is-fn {sh = beside _ _}  emptyM (inj₂  y)  = get′-is-fn emptyM y
-get′-is-fn {sh = inside _ _}  emptyM (x , y)    = get′-is-fn emptyM y
-get′-is-fn {sh = num _}       tableM x          = lookup∘tabulate _ x
+get′-is-fn {sh = num _}       emptyM x
+  = lookup∘tabulate _ x
+get′-is-fn {sh = beside _ _}  emptyM (inj₁  x)
+  = get′-is-fn emptyM x
+get′-is-fn {sh = beside _ _}  emptyM (inj₂  y)
+  = get′-is-fn emptyM y
+get′-is-fn {sh = inside _ _}  emptyM (x , y)
+  = get′-is-fn emptyM y
+get′-is-fn {sh = num _}       tableM x
+  = lookup∘tabulate _ x
 get′-is-fn {sh = beside _ _}  (bothM t₁ _) (inj₁  x)
   = get′-is-fn t₁  x
 get′-is-fn {sh = beside _ _}  (bothM _ t₂) (inj₂  y)
