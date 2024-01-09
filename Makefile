@@ -60,21 +60,12 @@ ALL_BUILD_LAGDA := $(patsubst src/book/%.lagda.md,build-epub/agda/%.lagda.md,$(A
 ALL_BUILD_AGDA_HTML := $(patsubst src/book/%.lagda.md,build-epub/agda/html/%.md,$(ALL_LITERATE_AGDA))
 ALL_BUILD_BOOK_HTML := $(patsubst src/book/%.lagda.md,build-epub/book/%.html,$(ALL_LITERATE_AGDA))
 
-SAMPLE_CHAPTERS := Chapter0-coblub \
-                   Chapter2-Numbers \
-                   Chapter6-Decidability
-
-SAMPLE_LITERATE_AGDA := $(patsubst %,src/book/%.lagda.md,$(SAMPLE_CHAPTERS))
-SAMPLE_LAGDA_TEX := $(patsubst src/book/%.lagda.md,build/tex/agda/%.lagda.tex,$(SAMPLE_LITERATE_AGDA))
-SAMPLE_AGDA_TEX := $(patsubst src/book/%,build/tex/agda/%,$(wildcard src/book/*.agda))
-SAMPLE_TEX := $(patsubst src/book/%.lagda.md,build/tex/book/%.tex,$(SAMPLE_LITERATE_AGDA))
-
 # $(RULES): %: build/%.pdf
 
 pdf : build/pdf.pdf
 print : build/print.pdf
-sample : build/sample.pdf
 epub : build/epub.epub
+sample : build/sample.pdf
 
 all : build/pdf.pdf build/print.pdf build/sample.pdf build-epub.epub
 
@@ -147,16 +138,6 @@ build/tex/print.tex : $(ALL_TEX) format/tex/template.tex build/.design-tools Mak
 	sed -i 's/VERYILLEGALCODE/code/g' $@
 	sed -i '/{part}/d' $@
 
-build/tex/sample.tex : $(SAMPLE_TEX) format/tex/template.tex build/.design-tools Makefile
-	cp .design-tools/*.png build/.design-tools
-	pandoc $(PANDOC_PDF_OPTS) -M wants-cover -V wants-cover -o $@ $(SAMPLE_TEX)
-	sed -i 's/\AgdaComment{--\\ !\\ \([0-9a-z]\)}/annotate{\1}/g' $@
-	sed -i 's/\AgdaPostulate{Level}/\AgdaFunction{Level}/g' $@
-	sed -i 's/\\hypertarget{fig:\([^}]\+\)}{}//g' $@
-	sed -i 's/⅋[^ {}()._\\]*//g' $@
-	sed -i 's/VERYILLEGALCODE/code/g' $@
-	sed -i '/{part}/d' $@
-
 # Copy the agda style
 build/tex/agda.sty : format/tex/agda.sty
 	cp $^ $@
@@ -169,8 +150,8 @@ build/print.pdf :  $(ALL_LAGDA_TEX) build/tex/print.tex build/tex/agda.sty
 	make -C build print.pdf
 
 # Build the sample!!
-build/sample.pdf :  $(SAMPLE_LAGDA_TEX) $(SAMPLE_AGDA_TEX) build/tex/sample.tex build/tex/agda.sty art/cover.pdf
-	make -C build sample.pdf
+build/sample.pdf :  build/pdf.pdf
+	qpdf build/pdf.pdf --pages . 1-24 ./build/pdf.pdf 77-114 ./build/pdf.pdf 219-258 ./build/pdf.pdf 381-384  -- build/sample.pdf
 
 
 .NOTINTERMEDIATE: build/tex/agda/%.lagda.tex $(ALL_LAGDA_TEX) $(ALL_LAGDA_HTML) $(ALL_TEX) $(ALL_FINAL_HTML) $(ALL_BUILD_LAGDA) $(ALL_BUILD_AGDA_HTML) $(ALL_BUILD_BOOK_HTML)
