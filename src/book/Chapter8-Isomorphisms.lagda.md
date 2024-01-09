@@ -44,7 +44,7 @@ Before you learn to look for them, isomorphisms just feel like harmless
 equivocation between two different things that feel the same. Functions on a
 computer *are* just pointers to a series of instructions, aren't they? Numbers
 *are* just their binary representations, right? As we have seen throughout this
-book, numbers at least *are* much more than their binary representations.
+book, numbers at least are much more than their binary representations.
 
 In all of these cases, we are mentally invoking the idea that these two
 disparate things are similar enough that it's safe to think of one as the other.
@@ -143,7 +143,7 @@ module Definition-Fin where
 will notice that each of its constructors now produces a `type:Fin` indexed by a
 `ctor:ℕ.suc`. Agda technically doesn't require use to use a fully qualified
 `ctor:ℕ.suc` here, but it helps to visually differentiate which `ctor:suc` comes
-from `type:Fin` and which from `ℕ`.
+from `type:Fin` and which from `type:ℕ`.
 
 Because each data constructor is indexed by `ctor:ℕ.suc`, there is simply no way
 to build a `type:Fin 0`---consistent with our desideratum that `type:Fin n` have
@@ -514,18 +514,18 @@ isomorphism between `type:Vec` and its characteristic function `def:lookup`.
 Recall that isomorphisms are defined over setoids, which means we must lift
 `def:lookup` into the `type:_⇒_` setoid. The proof is mostly trivial, since
 we've already done all the heavy lifting. However, we will first need one lemma,
-which applies a function over a `type:Fn` (which, recall, is the notion of
+which *pre-composes* a function over a `type:Fn` (which, recall, is the notion of
 equivalence for the `type:_⇒_` setoid.) While we could generalize the type
 further, the following will be sufficient for our needs:
 
 ```agda
 module _ where
-  Fn-map
+  Fn-lmap
     : {A : Set ℓ₁} {B : Set ℓ₂} {C : Set ℓ₃}
     → (f : A → B)
     → Fn (prop-setoid B) (prop-setoid C)
     → Fn (prop-setoid A) (prop-setoid C)
-  Fn-map f x = fn (Fn.func x ∘ f) (Fn.cong x ∘ ≡.cong f)
+  Fn-lmap f x = fn (Fn.func x ∘ f) (Fn.cong x ∘ ≡.cong f)
 ```
 
 Finally, we can show `def:vec-iso`:
@@ -546,15 +546,15 @@ Finally, we can show `def:vec-iso`:
   from-cong (vec-iso {n = zero}) _ = refl
   from-cong (vec-iso {n = suc n}) {v₁} {v₂} vi≡vj
     rewrite vi≡vj {x = zero} refl
-    rewrite from-cong  vec-iso {Fn-map suc v₁} {Fn-map suc v₂}  -- ! 1
+    rewrite from-cong  vec-iso {Fn-lmap suc v₁} {Fn-lmap suc v₂}  -- ! 1
                        (vi≡vj ∘ ≡.cong suc)
       = refl
 ```
 
-The complications at [1](Ann) requiring `def:Fn-map` are due to us needing to
+The complications at [1](Ann) requiring `def:Fn-lmap` are due to us needing to
 show the congruence of two *completely different* functions when doing the
 recursive case in `field:from-cong`. In essence, we must chop off the head of
-both vector-as-a-functions, and unfortunately, Agda isn't smart enough to
+both vectors-as-a-function, and unfortunately, Agda isn't smart enough to
 determine this on its own.
 
 Having successfully shown `def:vec-iso`, and thus gotten our first taste of an
@@ -592,8 +592,8 @@ it all out is a bit of a pain, but there is no conceptual difficulty:
 
 ```agda
 ≅-sym : s₁ ≅ s₂ → s₂ ≅ s₁
-≅-sym (iso  f₁  f₂  id₁  id₂  cong₁  cong₂)
-     = iso  f₂  f₁  id₂  id₁  cong₂  cong₁
+≅-sym (  iso  f₁  f₂  id₁  id₂  cong₁  cong₂ )
+      =  iso  f₂  f₁  id₂  id₁  cong₂  cong₁
 ```
 
 Showing transitivity is more work than the other two cases, but again, there
@@ -748,7 +748,7 @@ As exciting as it is to show that there are *definitely* two booleans, one
 can't help but feel a bit underwhelmed by the difficulty of the process. Are we
 doomed to write giant isomorphisms for every type we care about? Is there
 nothing more compositional that we can instead reach for? Indeed, many types can
-be automatically disassembled into more compositional pieces.
+be automatically disassembled into more-compositional pieces.
 
 If we forget about dependent types for the time being, the types we can build
 are known as the *algebraic data types,* and correspond closely with types that
