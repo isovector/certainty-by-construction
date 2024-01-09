@@ -483,8 +483,8 @@ meaning in Agda and you will get mysterious errors if you use it.
 
 ```agda
   _<∣>_ : Maybe A → Maybe A → Maybe A
-  just x  <∣> my = just x
-  nothing <∣> my = my
+  just x   <∣> my = just x
+  nothing  <∣> my = my
 ```
 
 Given `def:_<∣>_`, we can show it forms a monoid with `ctor:nothing` as the
@@ -600,8 +600,8 @@ of the dataset. This is the usual way in which a relational database is
 queried, where we'd just like to get back each of the actual rows without any
 aggregation.
 
-One interesting monoid is the monoid of *endomorphisms*, which is just a
-fancy word for saying "functions of type `A → A`." First we can define function
+Another interesting monoid is that of *endomorphisms*, which is just a fancy
+word for saying "functions of type `A → A`." First we can define function
 composition:
 
 ```agda
@@ -676,7 +676,7 @@ function true:
 ```
 
 Similarly, `def:∧-true` lets us determine if the function is true of *every*
-element in the list .
+element in the list.
 
 ```agda
     all? : (A → Bool) → List A → Bool
@@ -836,12 +836,12 @@ in any container:
 Or we can extract every element from a container into a `def:List`:
 
 ```agda
-  build
+  toList
       : ∀ {Container}
       → ⦃ Foldable Container ⦄
       → Container A
       → List A
-  build = fold ⦃ monoid = bundle ++-[] ⦄ (_∷ [])
+  toList = fold ⦃ monoid = bundle ++-[] ⦄ (_∷ [])
 ```
 
 You are encouraged to work through the other examples in `module:ListSummaries`
@@ -910,12 +910,12 @@ All of the rewriting here is a little annoying, but is much terser than doing
 the equational reasoning ourselves and showing that both sides respect their
 respective identity laws.
 
-Because functions `A → B` can be thought of as really big pairs of `B` (in
-particular, one for every possible value of `A`)---a fact that we will prove in
+Because functions `A → B` can be thought of as really big pairs of `B`---in
+particular, one for every possible value of `A`, fact that we will prove in
 @sec:exponents---we should be able to build a similar monoid over functions.
 That is, whenever `B` is a monoid, we should be able to build a monoid over `A →
-B` given by the *pointwise* action on the functions. That is, the unit in `A →
-B` is a constant function that produces the unit in `B`:
+B` given by the *pointwise* action on the functions. In other words, the unit in
+`A → B` is a constant function that produces the unit in `B`:
 
 $$
 \varepsilon = x \mapsto \varepsilon
@@ -995,7 +995,7 @@ exist at the same place in memory, but this is mathematically abhorrent for many
 reasons---the worst of which is that the runtime gets to decide whether two
 functions are equal, and it might make a different choice if you run the
 program a second time. There are many ways to describe this behavior, but
-none of "sane", "mathematical", or even "good programming practice" are one.
+none of "sane", "mathematical", or even "good programming practice" is one.
 
 The answer in most of mathematics is that two functions are equal if and only if
 they produce the same output for every input. This is known both as *extensional
@@ -1014,7 +1014,7 @@ Agda as:
   _≗_ {A = A} f g = (x : A) → f x ≡ g x
 ```
 
-where the `≗` symbol is input as [=o](AgdaMode). The type here is a little
+where the `≗` symbol is input as [`=o`](AgdaMode). The type here is a little
 hairy, but it shouldn't give you too much challenge by this point. The idea is
 that `def:_≗_` forms a relation over functions that ensures their images are
 propositionally equal at all points. Under this relation, we can now show that
@@ -1152,9 +1152,9 @@ particular equivalence relation:
 Given all of this work, we can now define a few setoids to get a flavor for
 them. However, by this point, building objects out of copatterns on copatterns
 results in extremely long names, so we'll take great care to rename everything.
-We'll need all of this renaming several times, as we define a couple of setoids,
-and then give some examples, and then define a few more, so we can do the
-necessary work in a new module:
+We'll need all of this renaming several times: we'll define a couple of setoids,
+give some examples, and then define a few more. Therefore it seems prudent to do
+the necessary work in a new module:
 
 ```agda
 module Setoid-Renaming where
@@ -1192,7 +1192,7 @@ module _ where
   sym′    (equiv (prop-setoid A)) = sym
 ```
 
-which we will then give as an keyword for future shenanigans.
+which we will then give as an `keyword:instance` for future shenanigans.
 
 ```agda
   instance
@@ -1204,8 +1204,8 @@ Now that we our first setoid under our belt, let's try cutting our teeth on some
 harder ones. For example, we can make a setoid for the `type:_×_` type, which
 lifts a setoid over each projection. That is, two pairs `a₁` `ctor:,` `b₁` and
 `a₂` `ctor:,` `b₂` are equal only when `a₁` is equivalent to `a₂` under the
-first setoid, and when `b₁` and `b₂` do under the second. In other words, a
-setoid for pairs is a pair of setoids.
+first setoid, and when `b₁` is equivalent to `b₂` under the second. In other
+words, a setoid for pairs is a pair of setoids.
 
 We'll begin with some setup, just to get everything into scope with reasonable
 names:
@@ -1375,7 +1375,7 @@ relation is a proof that everything does in fact hold:
 Before you ask, no, I don't understand all the details of the proofs in
 `def:_⇒_`---I just set up the types and bashed my way through the implementation
 for twenty minutes. `def:_⇒_` is an egregious example of a setoid, but not
-particularly so. Setoids, dude...
+particularly so.
 
 We've taken a great detour from our original discussion about monoids, so let's
 now unwind the stack and return there, seeing how setoids can help (and hinder)
@@ -1405,7 +1405,7 @@ brings everything relevant into scope for the remainder of our fields. With the
 setoid in scope, we can carry on with our definition of `type:Monoid`. There are
 two salient differences here: all of our previous uses of `type:_≡_` are now
 replaced with `field:_≈_`, and we have an additional proof burden---we must
-showw that `field:_∙_` is congruent with respect to our equivalence relation:
+show that `field:_∙_` is congruent with respect to our equivalence relation:
 
 ```agda
   infixl  7 _∙_
@@ -1509,8 +1509,8 @@ is encouraged to explore this direction on their own.
 
 One particularly fruitful area to find mathematics that "work" for real problems
 is to investigate functions which *preserve structure* between mathematical
-structures. Since we're still jiving and excited about monoids, let's consider
-these structure-preserving functions in the context of monoids.
+structures. Since we're still jiving and excited about monoids, let's think
+about these structure-preserving functions in the context of monoids.
 
 Consider therefore what it would mean for a function to preserve the structure
 of a monoid. It's worth asking ourselves exactly what structure monoids have in
@@ -1686,7 +1686,7 @@ Hidden
 
 
 For technical reasons, we are forced to say that `s₁` and `s₂` are monoids over
-`expr:lzero`---you're encouraged to work through where the quantification
+`expr:lzero`---you're encouraged to work through where the quantification fails
 if you'd like to see why. This is not a fundamental limitation in Agda, but
 working around it here is much more effort than it's worth.[^level-lifting]
 
@@ -1721,10 +1721,10 @@ preserves-∙  not-hom′ true   y  = refl
 f-cong       not-hom′ ≡.refl    = refl
 ```
 
-Perhaps you're beginning to see the importance---if maybe not yet the *use*
----of monoid homomorphisms. We managed to rediscover an important mathematical
-fact simply by trying to find an example! In looking for monoid homomorphisms,
-we have seemingly stumbled across a good "pruning" strategy in the search of
+Perhaps you're beginning to see the importance---if maybe not yet the *use*---of
+monoid homomorphisms. We managed to rediscover an important mathematical fact
+simply by trying to find an example! In looking for monoid homomorphisms, we
+have seemingly stumbled across a good "pruning" strategy in the search of
 interesting theorems. This shouldn't come as much of a surprise; there are
 crushingly many functions out there, and most of them *can't* be interesting.
 Homomorphisms sufficiently constrain the search space without being so
