@@ -325,7 +325,7 @@ for translating between the book and your editor:
 |---------------------------:|:------------------------------------:|:----------------------------------------------:|
 |                    Numbers |         \AgdaNumber{grey}            |         \AgdaNumber[Standard]{purple}          |
 |                    Strings |         \AgdaString{grey}            |         \AgdaString[Standard]{red}             |
-|                   Comments |         \AgdaComment{red}            |         \AgdaComment[Standard]{red}            |
+|                   Comments |         \AgdaComment{light grey}            |         \AgdaComment[Standard]{red}            |
 |                   Keywords |         \AgdaKeyword{yellow}         |         \AgdaKeyword[Standard]{orange}         |
 |               Constructors |    \AgdaInductiveConstructor{red}    |   \AgdaInductiveConstructor[Standard]{green}   |
 |            Bound Variables |           \AgdaBound{grey}           |        \AgdaBound[Standard]{black}             |
