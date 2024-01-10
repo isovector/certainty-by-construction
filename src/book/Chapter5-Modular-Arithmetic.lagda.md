@@ -578,7 +578,7 @@ injective:
   suc-injective-mod (≈-mod x y p) = ≈-mod x y (suc-injective p)
 ```
 
-Give everything we've built, we can now show a major result, namely that
+Given everything we've built, we can now show a major result, namely that
 `def:_+_` also preserves `type:_≈_`:
 
 ```agda
