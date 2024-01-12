@@ -329,7 +329,7 @@ So what does it actually mean if $a = b \pmod{n}$? It means that these two
 numbers have the same remainder when divided by `n`. But since we're dealing
 with the natural numbers, we don't have any notion of division at hand. Instead,
 we can phrase the problem as "if we subtract $a$ from $b$, the result should be
-an integer multiple of `n`"  That is, there should exist some `k : ` `type:ℤ`
+an integer multiple of `n`".  That is, there should exist some `k : ` `type:ℤ`
 such that:
 
 $$
@@ -494,7 +494,7 @@ We're now ready to show `def:≈-trans`:
     where open ≡-Reasoning
 ```
 
-Haven now shown reflexivity, symmetry, and transitivity, it's clear that
+Having now shown reflexivity, symmetry, and transitivity, it's clear that
 `type:_≈_` is an equivalence relation:
 
 ```agda
@@ -528,7 +528,7 @@ new preorder:
 ## Congruence of Addition
 
 We're almost ready to build some interesting proofs; but we're going to need to
-define a few more trivial ones first. Let's prove two more fact "by hand", the
+define a few more trivial ones first. Let's prove two more facts "by hand", the
 fact that $0 = n \pmod{n}$:
 
 ```agda
@@ -578,7 +578,7 @@ injective:
   suc-injective-mod (≈-mod x y p) = ≈-mod x y (suc-injective p)
 ```
 
-Give everything we've built, we can now show a major result, namely that
+Given everything we've built, we can now show a major result, namely that
 `def:_+_` also preserves `type:_≈_`:
 
 ```agda
