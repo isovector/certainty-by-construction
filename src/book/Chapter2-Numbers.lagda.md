@@ -197,7 +197,7 @@ Contrast this apartness to the tuple type, which you'll recall was a type
 defined via `keyword:record` instead of `keyword:data`. In some sense, tuples
 exist only for bookkeeping. The tuple type doesn't build new things, it just
 lets you simultaneously move around two things that already exist. Another way
-to think about this is that `keyword:record`s are made up of things that already
+to think about this is that records are made up of things that already
 exist, while `keyword:data` types create new things *ex nihilo.*
 
 Most programming languages have a concept of `keyword:record` types (whether

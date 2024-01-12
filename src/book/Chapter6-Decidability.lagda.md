@@ -53,7 +53,8 @@ open import Chapter2-Numbers
 
 :   ```agda
 open import Chapter3-Proofs
-  using (_≡_; module PropEq; module ≡-Reasoning; suc-injective)
+  using  ( _≡_; module PropEq; module ≡-Reasoning
+         ; suc-injective)
 open PropEq
     ```
 

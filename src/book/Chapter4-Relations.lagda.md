@@ -1362,7 +1362,7 @@ While `≈` is a reasonable name for a *generic* preorder, many preorders have
 existing names that it would be preferable to reuse. In this case, we'd like to
 use `≤`!
 
-The trick, as usual, is to make a new module that `keyword:public`ly opens
+The trick, as usual, is to make a new module that publicly opens
 `module:Preorder-Reasoning`, using `keyword:renaming` to change whatever names
 need work. Furthermore, while we're here, we might as well fill in the preorder
 parameter with `def:≤-preorder`:
@@ -1740,7 +1740,8 @@ homogeneous relations, while we explored many of their properties in
 
 ```agda
 open import Relation.Binary
-  using (Rel; REL; Transitive; Reflexive; Symmetric; Antisymmetric)
+  using  ( Rel; REL; Transitive; Reflexive; Symmetric
+         ; Antisymmetric)
   public
 ```
 

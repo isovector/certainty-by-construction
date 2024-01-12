@@ -290,8 +290,8 @@ lambda for us. All that is left to do is to tell the solver which variables we'd
 like to use, by sticking them in a list.
 
 We can demonstrate all of this by implementing `def:≈-trans` again. This time,
-the tactical ring solver is found in `module:Data.Nat.Tactic.RingSolver`, and
-requires lists to be in scope as well:
+the tactical ring solver is found in the `module:RingSolver` module, under
+`module:Data.Nat.Tactic`, and requires lists to be in scope as well:
 
 ```agda
 module Example-Tactical where
