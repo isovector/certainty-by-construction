@@ -173,8 +173,8 @@ To illustrate that this all works, we can give the five values of `Fin 5`:
 In an attempt to continue the pattern, we can try:
 
 ```illegal
-    5f : Fin 5
-    5f = suc (suc (suc (suc (suc zero))))
+  5f : Fin 5
+  5f = suc (suc (suc (suc (suc zero))))
 ```
 
 but Agda instead insists that such a thing is not allowed:

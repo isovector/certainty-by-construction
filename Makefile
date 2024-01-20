@@ -90,7 +90,7 @@ build/tex/book/%.tex : build/tex/agda/latex/%.tex
 
 # EPUB PIPELINE
 build-epub/agda/%.lagda.md : src/book/%.lagda.md
-	pandoc $(PANDOC_OPTS) -t html+lagda -o $@ $^ &> /dev/null
+	pandoc $(PANDOC_OPTS) -t html+lagda -o $@ $^
 
 build-epub/agda/html/%.md : build-epub/agda/%.lagda.md
 	(cd build-epub/agda && agda --html --html-highlight=code $*.lagda.md)
@@ -102,11 +102,12 @@ build-epub/book/%.html : build-epub/agda/html/%.md
 	sed -i 's/id="\([^"]\+\)"//g' $@
 	sed -i 's/href="\([^"]\+\)"//g' $@
 	sed -i 's/doc-endnotes/doc-footnote/g' $@
+	sed -i 's/illegal-code/code/g' $@
 
 # HTML
 build-epub/epub.epub : $(ALL_FINAL_HTML) format/epub/metadata.md build/.design-tools Makefile format/epub/css.css
 	cp .design-tools/*.png build/.design-tools
-	pandoc $(PANDOC_EPUB_OPTS) -o $@ $(ALL_FINAL_HTML) &> /dev/null
+	pandoc $(PANDOC_EPUB_OPTS) -o $@ $(ALL_FINAL_HTML)
 
 build/epub.epub : build-epub/epub.epub
 	cp $^ $@
